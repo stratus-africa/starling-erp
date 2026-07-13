@@ -31,7 +31,7 @@ const stockByWh = [
   { name: "Dubai", value: 348 },
 ];
 
-const chartColors = ["var(--chart-1)", "var(--chart-2)", "var(--chart-3)", "var(--chart-4)", "var(--chart-5)"];
+const chartColors = ["#2563eb", "#38bdf8", "#22c55e", "#f59e0b", "#ef4444"];
 
 function KpiCard({ label, value, delta, up, icon }: { label: string; value: string; delta: string; up: boolean; icon: ReactNode }) {
   return (
@@ -54,10 +54,10 @@ function KpiCard({ label, value, delta, up, icon }: { label: string; value: stri
 
 const tooltipStyle = {
   contentStyle: {
-    background: "var(--popover)", border: "1px solid var(--border)",
+    background: "var(--popover)", border: "1px solid #e5e7eb",
     borderRadius: 8, fontSize: 12, color: "var(--popover-foreground)",
   },
-  labelStyle: { color: "var(--muted-foreground)", fontSize: 11 },
+  labelStyle: { color: "#64748b", fontSize: 11 },
 };
 
 export function DashboardPage() {
@@ -100,20 +100,20 @@ export function DashboardPage() {
               <AreaChart data={revenue} margin={{ left: -20, right: 8, top: 8, bottom: 0 }}>
                 <defs>
                   <linearGradient id="revG" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="var(--chart-1)" stopOpacity={0.35} />
-                    <stop offset="100%" stopColor="var(--chart-1)" stopOpacity={0} />
+                    <stop offset="0%" stopColor="#2563eb" stopOpacity={0.35} />
+                    <stop offset="100%" stopColor="#2563eb" stopOpacity={0} />
                   </linearGradient>
                   <linearGradient id="expG" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="var(--chart-5)" stopOpacity={0.3} />
-                    <stop offset="100%" stopColor="var(--chart-5)" stopOpacity={0} />
+                    <stop offset="0%" stopColor="#ef4444" stopOpacity={0.3} />
+                    <stop offset="100%" stopColor="#ef4444" stopOpacity={0} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
-                <XAxis dataKey="m" stroke="var(--muted-foreground)" fontSize={11} tickLine={false} axisLine={false} />
-                <YAxis stroke="var(--muted-foreground)" fontSize={11} tickLine={false} axisLine={false} />
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
+                <XAxis dataKey="m" stroke="#64748b" fontSize={11} tickLine={false} axisLine={false} />
+                <YAxis stroke="#64748b" fontSize={11} tickLine={false} axisLine={false} />
                 <Tooltip {...tooltipStyle} />
-                <Area type="monotone" dataKey="rev" stroke="var(--chart-1)" strokeWidth={2} fill="url(#revG)" name="Revenue" />
-                <Area type="monotone" dataKey="exp" stroke="var(--chart-5)" strokeWidth={2} fill="url(#expG)" name="Expenses" />
+                <Area type="monotone" dataKey="rev" stroke="#2563eb" strokeWidth={2} fill="url(#revG)" name="Revenue" />
+                <Area type="monotone" dataKey="exp" stroke="#ef4444" strokeWidth={2} fill="url(#expG)" name="Expenses" />
               </AreaChart>
             </ResponsiveContainer>
           </div>
@@ -149,11 +149,11 @@ export function DashboardPage() {
           <div className="h-56">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={sales} margin={{ left: -20, right: 8, top: 8, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
-                <XAxis dataKey="d" stroke="var(--muted-foreground)" fontSize={11} tickLine={false} axisLine={false} />
-                <YAxis stroke="var(--muted-foreground)" fontSize={11} tickLine={false} axisLine={false} />
-                <Tooltip {...tooltipStyle} cursor={{ fill: "var(--muted)" }} />
-                <Bar dataKey="v" fill="var(--chart-1)" radius={[4, 4, 0, 0]} name="Orders" />
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
+                <XAxis dataKey="d" stroke="#64748b" fontSize={11} tickLine={false} axisLine={false} />
+                <YAxis stroke="#64748b" fontSize={11} tickLine={false} axisLine={false} />
+                <Tooltip {...tooltipStyle} cursor={{ fill: "#f1f5f9" }} />
+                <Bar dataKey="v" fill="#2563eb" radius={[4, 4, 0, 0]} name="Orders" />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -218,12 +218,12 @@ export function DashboardPage() {
           <div className="h-52">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={revenue} margin={{ left: -20, right: 8, top: 8, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
-                <XAxis dataKey="m" stroke="var(--muted-foreground)" fontSize={11} tickLine={false} axisLine={false} />
-                <YAxis stroke="var(--muted-foreground)" fontSize={11} tickLine={false} axisLine={false} />
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
+                <XAxis dataKey="m" stroke="#64748b" fontSize={11} tickLine={false} axisLine={false} />
+                <YAxis stroke="#64748b" fontSize={11} tickLine={false} axisLine={false} />
                 <Tooltip {...tooltipStyle} />
-                <Line type="monotone" dataKey="rev" stroke="var(--chart-1)" strokeWidth={2} dot={{ r: 3 }} name="Inflow" />
-                <Line type="monotone" dataKey="exp" stroke="var(--chart-3)" strokeWidth={2} dot={{ r: 3 }} name="Outflow" />
+                <Line type="monotone" dataKey="rev" stroke="#2563eb" strokeWidth={2} dot={{ r: 3 }} name="Inflow" />
+                <Line type="monotone" dataKey="exp" stroke="#22c55e" strokeWidth={2} dot={{ r: 3 }} name="Outflow" />
               </LineChart>
             </ResponsiveContainer>
           </div>

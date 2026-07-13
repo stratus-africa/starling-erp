@@ -12,7 +12,7 @@ import type { ReactNode } from "react";
 
 const tooltipStyle = {
   contentStyle: {
-    background: "var(--popover)", border: "1px solid var(--border)",
+    background: "var(--popover)", border: "1px solid #e5e7eb",
     borderRadius: 8, fontSize: 12, color: "var(--popover-foreground)",
   },
 };
@@ -78,21 +78,21 @@ export function RoleDashboard({ title, subtitle, metrics, actions, chart, chartT
             <ResponsiveContainer width="100%" height="100%">
               {chart === "bar" ? (
                 <BarChart data={chartData} margin={{ left: -20, right: 8, top: 8, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
-                  <XAxis dataKey="x" stroke="var(--muted-foreground)" fontSize={11} tickLine={false} axisLine={false} />
-                  <YAxis stroke="var(--muted-foreground)" fontSize={11} tickLine={false} axisLine={false} />
-                  <Tooltip {...tooltipStyle} cursor={{ fill: "var(--muted)" }} />
-                  <Bar dataKey="a" fill="var(--chart-1)" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="b" fill="var(--chart-2)" radius={[4, 4, 0, 0]} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
+                  <XAxis dataKey="x" stroke="#64748b" fontSize={11} tickLine={false} axisLine={false} />
+                  <YAxis stroke="#64748b" fontSize={11} tickLine={false} axisLine={false} />
+                  <Tooltip {...tooltipStyle} cursor={{ fill: "#f1f5f9" }} />
+                  <Bar dataKey="a" fill="#2563eb" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="b" fill="#38bdf8" radius={[4, 4, 0, 0]} />
                 </BarChart>
               ) : (
                 <LineChart data={chartData} margin={{ left: -20, right: 8, top: 8, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
-                  <XAxis dataKey="x" stroke="var(--muted-foreground)" fontSize={11} tickLine={false} axisLine={false} />
-                  <YAxis stroke="var(--muted-foreground)" fontSize={11} tickLine={false} axisLine={false} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
+                  <XAxis dataKey="x" stroke="#64748b" fontSize={11} tickLine={false} axisLine={false} />
+                  <YAxis stroke="#64748b" fontSize={11} tickLine={false} axisLine={false} />
                   <Tooltip {...tooltipStyle} />
-                  <Line type="monotone" dataKey="a" stroke="var(--chart-1)" strokeWidth={2} dot={{ r: 3 }} />
-                  <Line type="monotone" dataKey="b" stroke="var(--chart-2)" strokeWidth={2} dot={{ r: 3 }} />
+                  <Line type="monotone" dataKey="a" stroke="#2563eb" strokeWidth={2} dot={{ r: 3 }} />
+                  <Line type="monotone" dataKey="b" stroke="#38bdf8" strokeWidth={2} dot={{ r: 3 }} />
                 </LineChart>
               )}
             </ResponsiveContainer>
