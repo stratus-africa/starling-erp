@@ -56,6 +56,10 @@ import { Route as InventoryTransfersRouteImport } from './routes/inventory.trans
 import { Route as InventoryLedgerRouteImport } from './routes/inventory.ledger'
 import { Route as InventoryItemsRouteImport } from './routes/inventory.items'
 import { Route as InventoryAdjustmentsRouteImport } from './routes/inventory.adjustments'
+import { Route as DashboardsSalesRouteImport } from './routes/dashboards.sales'
+import { Route as DashboardsProductionRouteImport } from './routes/dashboards.production'
+import { Route as DashboardsProcurementRouteImport } from './routes/dashboards.procurement'
+import { Route as DashboardsLogisticsRouteImport } from './routes/dashboards.logistics'
 import { Route as CrmCustomersRouteImport } from './routes/crm.customers'
 import { Route as AccountingReconciliationRouteImport } from './routes/accounting.reconciliation'
 import { Route as AccountingJournalsRouteImport } from './routes/accounting.journals'
@@ -297,6 +301,26 @@ const InventoryAdjustmentsRoute = InventoryAdjustmentsRouteImport.update({
   path: '/inventory/adjustments',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DashboardsSalesRoute = DashboardsSalesRouteImport.update({
+  id: '/dashboards/sales',
+  path: '/dashboards/sales',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DashboardsProductionRoute = DashboardsProductionRouteImport.update({
+  id: '/dashboards/production',
+  path: '/dashboards/production',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DashboardsProcurementRoute = DashboardsProcurementRouteImport.update({
+  id: '/dashboards/procurement',
+  path: '/dashboards/procurement',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DashboardsLogisticsRoute = DashboardsLogisticsRouteImport.update({
+  id: '/dashboards/logistics',
+  path: '/dashboards/logistics',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CrmCustomersRoute = CrmCustomersRouteImport.update({
   id: '/crm/customers',
   path: '/crm/customers',
@@ -331,6 +355,10 @@ export interface FileRoutesByFullPath {
   '/accounting/journals': typeof AccountingJournalsRoute
   '/accounting/reconciliation': typeof AccountingReconciliationRoute
   '/crm/customers': typeof CrmCustomersRoute
+  '/dashboards/logistics': typeof DashboardsLogisticsRoute
+  '/dashboards/procurement': typeof DashboardsProcurementRoute
+  '/dashboards/production': typeof DashboardsProductionRoute
+  '/dashboards/sales': typeof DashboardsSalesRoute
   '/inventory/adjustments': typeof InventoryAdjustmentsRoute
   '/inventory/items': typeof InventoryItemsRoute
   '/inventory/ledger': typeof InventoryLedgerRoute
@@ -385,6 +413,10 @@ export interface FileRoutesByTo {
   '/accounting/journals': typeof AccountingJournalsRoute
   '/accounting/reconciliation': typeof AccountingReconciliationRoute
   '/crm/customers': typeof CrmCustomersRoute
+  '/dashboards/logistics': typeof DashboardsLogisticsRoute
+  '/dashboards/procurement': typeof DashboardsProcurementRoute
+  '/dashboards/production': typeof DashboardsProductionRoute
+  '/dashboards/sales': typeof DashboardsSalesRoute
   '/inventory/adjustments': typeof InventoryAdjustmentsRoute
   '/inventory/items': typeof InventoryItemsRoute
   '/inventory/ledger': typeof InventoryLedgerRoute
@@ -440,6 +472,10 @@ export interface FileRoutesById {
   '/accounting/journals': typeof AccountingJournalsRoute
   '/accounting/reconciliation': typeof AccountingReconciliationRoute
   '/crm/customers': typeof CrmCustomersRoute
+  '/dashboards/logistics': typeof DashboardsLogisticsRoute
+  '/dashboards/procurement': typeof DashboardsProcurementRoute
+  '/dashboards/production': typeof DashboardsProductionRoute
+  '/dashboards/sales': typeof DashboardsSalesRoute
   '/inventory/adjustments': typeof InventoryAdjustmentsRoute
   '/inventory/items': typeof InventoryItemsRoute
   '/inventory/ledger': typeof InventoryLedgerRoute
@@ -496,6 +532,10 @@ export interface FileRouteTypes {
     | '/accounting/journals'
     | '/accounting/reconciliation'
     | '/crm/customers'
+    | '/dashboards/logistics'
+    | '/dashboards/procurement'
+    | '/dashboards/production'
+    | '/dashboards/sales'
     | '/inventory/adjustments'
     | '/inventory/items'
     | '/inventory/ledger'
@@ -550,6 +590,10 @@ export interface FileRouteTypes {
     | '/accounting/journals'
     | '/accounting/reconciliation'
     | '/crm/customers'
+    | '/dashboards/logistics'
+    | '/dashboards/procurement'
+    | '/dashboards/production'
+    | '/dashboards/sales'
     | '/inventory/adjustments'
     | '/inventory/items'
     | '/inventory/ledger'
@@ -604,6 +648,10 @@ export interface FileRouteTypes {
     | '/accounting/journals'
     | '/accounting/reconciliation'
     | '/crm/customers'
+    | '/dashboards/logistics'
+    | '/dashboards/procurement'
+    | '/dashboards/production'
+    | '/dashboards/sales'
     | '/inventory/adjustments'
     | '/inventory/items'
     | '/inventory/ledger'
@@ -659,6 +707,10 @@ export interface RootRouteChildren {
   AccountingJournalsRoute: typeof AccountingJournalsRoute
   AccountingReconciliationRoute: typeof AccountingReconciliationRoute
   CrmCustomersRoute: typeof CrmCustomersRoute
+  DashboardsLogisticsRoute: typeof DashboardsLogisticsRoute
+  DashboardsProcurementRoute: typeof DashboardsProcurementRoute
+  DashboardsProductionRoute: typeof DashboardsProductionRoute
+  DashboardsSalesRoute: typeof DashboardsSalesRoute
   InventoryAdjustmentsRoute: typeof InventoryAdjustmentsRoute
   InventoryItemsRoute: typeof InventoryItemsRoute
   InventoryLedgerRoute: typeof InventoryLedgerRoute
@@ -1038,6 +1090,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof InventoryAdjustmentsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/dashboards/sales': {
+      id: '/dashboards/sales'
+      path: '/dashboards/sales'
+      fullPath: '/dashboards/sales'
+      preLoaderRoute: typeof DashboardsSalesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dashboards/production': {
+      id: '/dashboards/production'
+      path: '/dashboards/production'
+      fullPath: '/dashboards/production'
+      preLoaderRoute: typeof DashboardsProductionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dashboards/procurement': {
+      id: '/dashboards/procurement'
+      path: '/dashboards/procurement'
+      fullPath: '/dashboards/procurement'
+      preLoaderRoute: typeof DashboardsProcurementRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dashboards/logistics': {
+      id: '/dashboards/logistics'
+      path: '/dashboards/logistics'
+      fullPath: '/dashboards/logistics'
+      preLoaderRoute: typeof DashboardsLogisticsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/crm/customers': {
       id: '/crm/customers'
       path: '/crm/customers'
@@ -1083,6 +1163,10 @@ const rootRouteChildren: RootRouteChildren = {
   AccountingJournalsRoute: AccountingJournalsRoute,
   AccountingReconciliationRoute: AccountingReconciliationRoute,
   CrmCustomersRoute: CrmCustomersRoute,
+  DashboardsLogisticsRoute: DashboardsLogisticsRoute,
+  DashboardsProcurementRoute: DashboardsProcurementRoute,
+  DashboardsProductionRoute: DashboardsProductionRoute,
+  DashboardsSalesRoute: DashboardsSalesRoute,
   InventoryAdjustmentsRoute: InventoryAdjustmentsRoute,
   InventoryItemsRoute: InventoryItemsRoute,
   InventoryLedgerRoute: InventoryLedgerRoute,
@@ -1133,3 +1217,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
