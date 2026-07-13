@@ -10,33 +10,753 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as SuperAdminUsersRouteImport } from './routes/super-admin.users'
+import { Route as SuperAdminTenantsRouteImport } from './routes/super-admin.tenants'
+import { Route as SuperAdminSettingsRouteImport } from './routes/super-admin.settings'
+import { Route as SuperAdminPlansRouteImport } from './routes/super-admin.plans'
+import { Route as SuperAdminAuditRouteImport } from './routes/super-admin.audit'
+import { Route as SettingsWorkflowsRouteImport } from './routes/settings.workflows'
+import { Route as SettingsWarehousesRouteImport } from './routes/settings.warehouses'
+import { Route as SettingsUsersRouteImport } from './routes/settings.users'
+import { Route as SettingsUomRouteImport } from './routes/settings.uom'
+import { Route as SettingsTemplatesRouteImport } from './routes/settings.templates'
+import { Route as SettingsTaxesRouteImport } from './routes/settings.taxes'
+import { Route as SettingsRolesRouteImport } from './routes/settings.roles'
+import { Route as SettingsPaymentTermsRouteImport } from './routes/settings.payment-terms'
+import { Route as SettingsNumberingRouteImport } from './routes/settings.numbering'
+import { Route as SettingsNotificationsRouteImport } from './routes/settings.notifications'
+import { Route as SettingsCurrenciesRouteImport } from './routes/settings.currencies'
+import { Route as SettingsCompanyRouteImport } from './routes/settings.company'
+import { Route as SettingsApiKeysRouteImport } from './routes/settings.api-keys'
+import { Route as SalesShipmentsRouteImport } from './routes/sales.shipments'
+import { Route as SalesQuotesRouteImport } from './routes/sales.quotes'
+import { Route as SalesPaymentsRouteImport } from './routes/sales.payments'
+import { Route as SalesPackagesRouteImport } from './routes/sales.packages'
+import { Route as SalesOrdersRouteImport } from './routes/sales.orders'
+import { Route as SalesInvoicesRouteImport } from './routes/sales.invoices'
+import { Route as SalesCreditNotesRouteImport } from './routes/sales.credit-notes'
+import { Route as ReportsSalesRouteImport } from './routes/reports.sales'
+import { Route as ReportsPurchasesRouteImport } from './routes/reports.purchases'
+import { Route as ReportsManufacturingRouteImport } from './routes/reports.manufacturing'
+import { Route as ReportsInventoryRouteImport } from './routes/reports.inventory'
+import { Route as ReportsFinancialRouteImport } from './routes/reports.financial'
+import { Route as PurchasingSuppliersRouteImport } from './routes/purchasing.suppliers'
+import { Route as PurchasingRequisitionsRouteImport } from './routes/purchasing.requisitions'
+import { Route as PurchasingPaymentsRouteImport } from './routes/purchasing.payments'
+import { Route as PurchasingOrdersRouteImport } from './routes/purchasing.orders'
+import { Route as PurchasingExpensesRouteImport } from './routes/purchasing.expenses'
+import { Route as PurchasingCreditsRouteImport } from './routes/purchasing.credits'
+import { Route as PurchasingBillsRouteImport } from './routes/purchasing.bills'
+import { Route as ManufacturingRunsRouteImport } from './routes/manufacturing.runs'
+import { Route as ManufacturingOrdersRouteImport } from './routes/manufacturing.orders'
+import { Route as ManufacturingItemsRouteImport } from './routes/manufacturing.items'
+import { Route as ManufacturingBomRouteImport } from './routes/manufacturing.bom'
+import { Route as InventoryWarehousesRouteImport } from './routes/inventory.warehouses'
+import { Route as InventoryTransfersRouteImport } from './routes/inventory.transfers'
+import { Route as InventoryLedgerRouteImport } from './routes/inventory.ledger'
+import { Route as InventoryItemsRouteImport } from './routes/inventory.items'
+import { Route as InventoryAdjustmentsRouteImport } from './routes/inventory.adjustments'
+import { Route as DashboardsSalesRouteImport } from './routes/dashboards.sales'
+import { Route as DashboardsProductionRouteImport } from './routes/dashboards.production'
+import { Route as DashboardsProcurementRouteImport } from './routes/dashboards.procurement'
+import { Route as DashboardsLogisticsRouteImport } from './routes/dashboards.logistics'
+import { Route as CrmCustomersRouteImport } from './routes/crm.customers'
+import { Route as AccountingReconciliationRouteImport } from './routes/accounting.reconciliation'
+import { Route as AccountingJournalsRouteImport } from './routes/accounting.journals'
+import { Route as AccountingChartRouteImport } from './routes/accounting.chart'
+import { Route as AccountingBankingRouteImport } from './routes/accounting.banking'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SuperAdminUsersRoute = SuperAdminUsersRouteImport.update({
+  id: '/super-admin/users',
+  path: '/super-admin/users',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SuperAdminTenantsRoute = SuperAdminTenantsRouteImport.update({
+  id: '/super-admin/tenants',
+  path: '/super-admin/tenants',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SuperAdminSettingsRoute = SuperAdminSettingsRouteImport.update({
+  id: '/super-admin/settings',
+  path: '/super-admin/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SuperAdminPlansRoute = SuperAdminPlansRouteImport.update({
+  id: '/super-admin/plans',
+  path: '/super-admin/plans',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SuperAdminAuditRoute = SuperAdminAuditRouteImport.update({
+  id: '/super-admin/audit',
+  path: '/super-admin/audit',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsWorkflowsRoute = SettingsWorkflowsRouteImport.update({
+  id: '/settings/workflows',
+  path: '/settings/workflows',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsWarehousesRoute = SettingsWarehousesRouteImport.update({
+  id: '/settings/warehouses',
+  path: '/settings/warehouses',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsUsersRoute = SettingsUsersRouteImport.update({
+  id: '/settings/users',
+  path: '/settings/users',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsUomRoute = SettingsUomRouteImport.update({
+  id: '/settings/uom',
+  path: '/settings/uom',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsTemplatesRoute = SettingsTemplatesRouteImport.update({
+  id: '/settings/templates',
+  path: '/settings/templates',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsTaxesRoute = SettingsTaxesRouteImport.update({
+  id: '/settings/taxes',
+  path: '/settings/taxes',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsRolesRoute = SettingsRolesRouteImport.update({
+  id: '/settings/roles',
+  path: '/settings/roles',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsPaymentTermsRoute = SettingsPaymentTermsRouteImport.update({
+  id: '/settings/payment-terms',
+  path: '/settings/payment-terms',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsNumberingRoute = SettingsNumberingRouteImport.update({
+  id: '/settings/numbering',
+  path: '/settings/numbering',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsNotificationsRoute = SettingsNotificationsRouteImport.update({
+  id: '/settings/notifications',
+  path: '/settings/notifications',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsCurrenciesRoute = SettingsCurrenciesRouteImport.update({
+  id: '/settings/currencies',
+  path: '/settings/currencies',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsCompanyRoute = SettingsCompanyRouteImport.update({
+  id: '/settings/company',
+  path: '/settings/company',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsApiKeysRoute = SettingsApiKeysRouteImport.update({
+  id: '/settings/api-keys',
+  path: '/settings/api-keys',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SalesShipmentsRoute = SalesShipmentsRouteImport.update({
+  id: '/sales/shipments',
+  path: '/sales/shipments',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SalesQuotesRoute = SalesQuotesRouteImport.update({
+  id: '/sales/quotes',
+  path: '/sales/quotes',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SalesPaymentsRoute = SalesPaymentsRouteImport.update({
+  id: '/sales/payments',
+  path: '/sales/payments',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SalesPackagesRoute = SalesPackagesRouteImport.update({
+  id: '/sales/packages',
+  path: '/sales/packages',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SalesOrdersRoute = SalesOrdersRouteImport.update({
+  id: '/sales/orders',
+  path: '/sales/orders',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SalesInvoicesRoute = SalesInvoicesRouteImport.update({
+  id: '/sales/invoices',
+  path: '/sales/invoices',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SalesCreditNotesRoute = SalesCreditNotesRouteImport.update({
+  id: '/sales/credit-notes',
+  path: '/sales/credit-notes',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReportsSalesRoute = ReportsSalesRouteImport.update({
+  id: '/reports/sales',
+  path: '/reports/sales',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReportsPurchasesRoute = ReportsPurchasesRouteImport.update({
+  id: '/reports/purchases',
+  path: '/reports/purchases',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReportsManufacturingRoute = ReportsManufacturingRouteImport.update({
+  id: '/reports/manufacturing',
+  path: '/reports/manufacturing',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReportsInventoryRoute = ReportsInventoryRouteImport.update({
+  id: '/reports/inventory',
+  path: '/reports/inventory',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReportsFinancialRoute = ReportsFinancialRouteImport.update({
+  id: '/reports/financial',
+  path: '/reports/financial',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PurchasingSuppliersRoute = PurchasingSuppliersRouteImport.update({
+  id: '/purchasing/suppliers',
+  path: '/purchasing/suppliers',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PurchasingRequisitionsRoute = PurchasingRequisitionsRouteImport.update({
+  id: '/purchasing/requisitions',
+  path: '/purchasing/requisitions',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PurchasingPaymentsRoute = PurchasingPaymentsRouteImport.update({
+  id: '/purchasing/payments',
+  path: '/purchasing/payments',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PurchasingOrdersRoute = PurchasingOrdersRouteImport.update({
+  id: '/purchasing/orders',
+  path: '/purchasing/orders',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PurchasingExpensesRoute = PurchasingExpensesRouteImport.update({
+  id: '/purchasing/expenses',
+  path: '/purchasing/expenses',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PurchasingCreditsRoute = PurchasingCreditsRouteImport.update({
+  id: '/purchasing/credits',
+  path: '/purchasing/credits',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PurchasingBillsRoute = PurchasingBillsRouteImport.update({
+  id: '/purchasing/bills',
+  path: '/purchasing/bills',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ManufacturingRunsRoute = ManufacturingRunsRouteImport.update({
+  id: '/manufacturing/runs',
+  path: '/manufacturing/runs',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ManufacturingOrdersRoute = ManufacturingOrdersRouteImport.update({
+  id: '/manufacturing/orders',
+  path: '/manufacturing/orders',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ManufacturingItemsRoute = ManufacturingItemsRouteImport.update({
+  id: '/manufacturing/items',
+  path: '/manufacturing/items',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ManufacturingBomRoute = ManufacturingBomRouteImport.update({
+  id: '/manufacturing/bom',
+  path: '/manufacturing/bom',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InventoryWarehousesRoute = InventoryWarehousesRouteImport.update({
+  id: '/inventory/warehouses',
+  path: '/inventory/warehouses',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InventoryTransfersRoute = InventoryTransfersRouteImport.update({
+  id: '/inventory/transfers',
+  path: '/inventory/transfers',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InventoryLedgerRoute = InventoryLedgerRouteImport.update({
+  id: '/inventory/ledger',
+  path: '/inventory/ledger',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InventoryItemsRoute = InventoryItemsRouteImport.update({
+  id: '/inventory/items',
+  path: '/inventory/items',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InventoryAdjustmentsRoute = InventoryAdjustmentsRouteImport.update({
+  id: '/inventory/adjustments',
+  path: '/inventory/adjustments',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DashboardsSalesRoute = DashboardsSalesRouteImport.update({
+  id: '/dashboards/sales',
+  path: '/dashboards/sales',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DashboardsProductionRoute = DashboardsProductionRouteImport.update({
+  id: '/dashboards/production',
+  path: '/dashboards/production',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DashboardsProcurementRoute = DashboardsProcurementRouteImport.update({
+  id: '/dashboards/procurement',
+  path: '/dashboards/procurement',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DashboardsLogisticsRoute = DashboardsLogisticsRouteImport.update({
+  id: '/dashboards/logistics',
+  path: '/dashboards/logistics',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CrmCustomersRoute = CrmCustomersRouteImport.update({
+  id: '/crm/customers',
+  path: '/crm/customers',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AccountingReconciliationRoute =
+  AccountingReconciliationRouteImport.update({
+    id: '/accounting/reconciliation',
+    path: '/accounting/reconciliation',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const AccountingJournalsRoute = AccountingJournalsRouteImport.update({
+  id: '/accounting/journals',
+  path: '/accounting/journals',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AccountingChartRoute = AccountingChartRouteImport.update({
+  id: '/accounting/chart',
+  path: '/accounting/chart',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AccountingBankingRoute = AccountingBankingRouteImport.update({
+  id: '/accounting/banking',
+  path: '/accounting/banking',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/accounting/banking': typeof AccountingBankingRoute
+  '/accounting/chart': typeof AccountingChartRoute
+  '/accounting/journals': typeof AccountingJournalsRoute
+  '/accounting/reconciliation': typeof AccountingReconciliationRoute
+  '/crm/customers': typeof CrmCustomersRoute
+  '/dashboards/logistics': typeof DashboardsLogisticsRoute
+  '/dashboards/procurement': typeof DashboardsProcurementRoute
+  '/dashboards/production': typeof DashboardsProductionRoute
+  '/dashboards/sales': typeof DashboardsSalesRoute
+  '/inventory/adjustments': typeof InventoryAdjustmentsRoute
+  '/inventory/items': typeof InventoryItemsRoute
+  '/inventory/ledger': typeof InventoryLedgerRoute
+  '/inventory/transfers': typeof InventoryTransfersRoute
+  '/inventory/warehouses': typeof InventoryWarehousesRoute
+  '/manufacturing/bom': typeof ManufacturingBomRoute
+  '/manufacturing/items': typeof ManufacturingItemsRoute
+  '/manufacturing/orders': typeof ManufacturingOrdersRoute
+  '/manufacturing/runs': typeof ManufacturingRunsRoute
+  '/purchasing/bills': typeof PurchasingBillsRoute
+  '/purchasing/credits': typeof PurchasingCreditsRoute
+  '/purchasing/expenses': typeof PurchasingExpensesRoute
+  '/purchasing/orders': typeof PurchasingOrdersRoute
+  '/purchasing/payments': typeof PurchasingPaymentsRoute
+  '/purchasing/requisitions': typeof PurchasingRequisitionsRoute
+  '/purchasing/suppliers': typeof PurchasingSuppliersRoute
+  '/reports/financial': typeof ReportsFinancialRoute
+  '/reports/inventory': typeof ReportsInventoryRoute
+  '/reports/manufacturing': typeof ReportsManufacturingRoute
+  '/reports/purchases': typeof ReportsPurchasesRoute
+  '/reports/sales': typeof ReportsSalesRoute
+  '/sales/credit-notes': typeof SalesCreditNotesRoute
+  '/sales/invoices': typeof SalesInvoicesRoute
+  '/sales/orders': typeof SalesOrdersRoute
+  '/sales/packages': typeof SalesPackagesRoute
+  '/sales/payments': typeof SalesPaymentsRoute
+  '/sales/quotes': typeof SalesQuotesRoute
+  '/sales/shipments': typeof SalesShipmentsRoute
+  '/settings/api-keys': typeof SettingsApiKeysRoute
+  '/settings/company': typeof SettingsCompanyRoute
+  '/settings/currencies': typeof SettingsCurrenciesRoute
+  '/settings/notifications': typeof SettingsNotificationsRoute
+  '/settings/numbering': typeof SettingsNumberingRoute
+  '/settings/payment-terms': typeof SettingsPaymentTermsRoute
+  '/settings/roles': typeof SettingsRolesRoute
+  '/settings/taxes': typeof SettingsTaxesRoute
+  '/settings/templates': typeof SettingsTemplatesRoute
+  '/settings/uom': typeof SettingsUomRoute
+  '/settings/users': typeof SettingsUsersRoute
+  '/settings/warehouses': typeof SettingsWarehousesRoute
+  '/settings/workflows': typeof SettingsWorkflowsRoute
+  '/super-admin/audit': typeof SuperAdminAuditRoute
+  '/super-admin/plans': typeof SuperAdminPlansRoute
+  '/super-admin/settings': typeof SuperAdminSettingsRoute
+  '/super-admin/tenants': typeof SuperAdminTenantsRoute
+  '/super-admin/users': typeof SuperAdminUsersRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/accounting/banking': typeof AccountingBankingRoute
+  '/accounting/chart': typeof AccountingChartRoute
+  '/accounting/journals': typeof AccountingJournalsRoute
+  '/accounting/reconciliation': typeof AccountingReconciliationRoute
+  '/crm/customers': typeof CrmCustomersRoute
+  '/dashboards/logistics': typeof DashboardsLogisticsRoute
+  '/dashboards/procurement': typeof DashboardsProcurementRoute
+  '/dashboards/production': typeof DashboardsProductionRoute
+  '/dashboards/sales': typeof DashboardsSalesRoute
+  '/inventory/adjustments': typeof InventoryAdjustmentsRoute
+  '/inventory/items': typeof InventoryItemsRoute
+  '/inventory/ledger': typeof InventoryLedgerRoute
+  '/inventory/transfers': typeof InventoryTransfersRoute
+  '/inventory/warehouses': typeof InventoryWarehousesRoute
+  '/manufacturing/bom': typeof ManufacturingBomRoute
+  '/manufacturing/items': typeof ManufacturingItemsRoute
+  '/manufacturing/orders': typeof ManufacturingOrdersRoute
+  '/manufacturing/runs': typeof ManufacturingRunsRoute
+  '/purchasing/bills': typeof PurchasingBillsRoute
+  '/purchasing/credits': typeof PurchasingCreditsRoute
+  '/purchasing/expenses': typeof PurchasingExpensesRoute
+  '/purchasing/orders': typeof PurchasingOrdersRoute
+  '/purchasing/payments': typeof PurchasingPaymentsRoute
+  '/purchasing/requisitions': typeof PurchasingRequisitionsRoute
+  '/purchasing/suppliers': typeof PurchasingSuppliersRoute
+  '/reports/financial': typeof ReportsFinancialRoute
+  '/reports/inventory': typeof ReportsInventoryRoute
+  '/reports/manufacturing': typeof ReportsManufacturingRoute
+  '/reports/purchases': typeof ReportsPurchasesRoute
+  '/reports/sales': typeof ReportsSalesRoute
+  '/sales/credit-notes': typeof SalesCreditNotesRoute
+  '/sales/invoices': typeof SalesInvoicesRoute
+  '/sales/orders': typeof SalesOrdersRoute
+  '/sales/packages': typeof SalesPackagesRoute
+  '/sales/payments': typeof SalesPaymentsRoute
+  '/sales/quotes': typeof SalesQuotesRoute
+  '/sales/shipments': typeof SalesShipmentsRoute
+  '/settings/api-keys': typeof SettingsApiKeysRoute
+  '/settings/company': typeof SettingsCompanyRoute
+  '/settings/currencies': typeof SettingsCurrenciesRoute
+  '/settings/notifications': typeof SettingsNotificationsRoute
+  '/settings/numbering': typeof SettingsNumberingRoute
+  '/settings/payment-terms': typeof SettingsPaymentTermsRoute
+  '/settings/roles': typeof SettingsRolesRoute
+  '/settings/taxes': typeof SettingsTaxesRoute
+  '/settings/templates': typeof SettingsTemplatesRoute
+  '/settings/uom': typeof SettingsUomRoute
+  '/settings/users': typeof SettingsUsersRoute
+  '/settings/warehouses': typeof SettingsWarehousesRoute
+  '/settings/workflows': typeof SettingsWorkflowsRoute
+  '/super-admin/audit': typeof SuperAdminAuditRoute
+  '/super-admin/plans': typeof SuperAdminPlansRoute
+  '/super-admin/settings': typeof SuperAdminSettingsRoute
+  '/super-admin/tenants': typeof SuperAdminTenantsRoute
+  '/super-admin/users': typeof SuperAdminUsersRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/accounting/banking': typeof AccountingBankingRoute
+  '/accounting/chart': typeof AccountingChartRoute
+  '/accounting/journals': typeof AccountingJournalsRoute
+  '/accounting/reconciliation': typeof AccountingReconciliationRoute
+  '/crm/customers': typeof CrmCustomersRoute
+  '/dashboards/logistics': typeof DashboardsLogisticsRoute
+  '/dashboards/procurement': typeof DashboardsProcurementRoute
+  '/dashboards/production': typeof DashboardsProductionRoute
+  '/dashboards/sales': typeof DashboardsSalesRoute
+  '/inventory/adjustments': typeof InventoryAdjustmentsRoute
+  '/inventory/items': typeof InventoryItemsRoute
+  '/inventory/ledger': typeof InventoryLedgerRoute
+  '/inventory/transfers': typeof InventoryTransfersRoute
+  '/inventory/warehouses': typeof InventoryWarehousesRoute
+  '/manufacturing/bom': typeof ManufacturingBomRoute
+  '/manufacturing/items': typeof ManufacturingItemsRoute
+  '/manufacturing/orders': typeof ManufacturingOrdersRoute
+  '/manufacturing/runs': typeof ManufacturingRunsRoute
+  '/purchasing/bills': typeof PurchasingBillsRoute
+  '/purchasing/credits': typeof PurchasingCreditsRoute
+  '/purchasing/expenses': typeof PurchasingExpensesRoute
+  '/purchasing/orders': typeof PurchasingOrdersRoute
+  '/purchasing/payments': typeof PurchasingPaymentsRoute
+  '/purchasing/requisitions': typeof PurchasingRequisitionsRoute
+  '/purchasing/suppliers': typeof PurchasingSuppliersRoute
+  '/reports/financial': typeof ReportsFinancialRoute
+  '/reports/inventory': typeof ReportsInventoryRoute
+  '/reports/manufacturing': typeof ReportsManufacturingRoute
+  '/reports/purchases': typeof ReportsPurchasesRoute
+  '/reports/sales': typeof ReportsSalesRoute
+  '/sales/credit-notes': typeof SalesCreditNotesRoute
+  '/sales/invoices': typeof SalesInvoicesRoute
+  '/sales/orders': typeof SalesOrdersRoute
+  '/sales/packages': typeof SalesPackagesRoute
+  '/sales/payments': typeof SalesPaymentsRoute
+  '/sales/quotes': typeof SalesQuotesRoute
+  '/sales/shipments': typeof SalesShipmentsRoute
+  '/settings/api-keys': typeof SettingsApiKeysRoute
+  '/settings/company': typeof SettingsCompanyRoute
+  '/settings/currencies': typeof SettingsCurrenciesRoute
+  '/settings/notifications': typeof SettingsNotificationsRoute
+  '/settings/numbering': typeof SettingsNumberingRoute
+  '/settings/payment-terms': typeof SettingsPaymentTermsRoute
+  '/settings/roles': typeof SettingsRolesRoute
+  '/settings/taxes': typeof SettingsTaxesRoute
+  '/settings/templates': typeof SettingsTemplatesRoute
+  '/settings/uom': typeof SettingsUomRoute
+  '/settings/users': typeof SettingsUsersRoute
+  '/settings/warehouses': typeof SettingsWarehousesRoute
+  '/settings/workflows': typeof SettingsWorkflowsRoute
+  '/super-admin/audit': typeof SuperAdminAuditRoute
+  '/super-admin/plans': typeof SuperAdminPlansRoute
+  '/super-admin/settings': typeof SuperAdminSettingsRoute
+  '/super-admin/tenants': typeof SuperAdminTenantsRoute
+  '/super-admin/users': typeof SuperAdminUsersRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/accounting/banking'
+    | '/accounting/chart'
+    | '/accounting/journals'
+    | '/accounting/reconciliation'
+    | '/crm/customers'
+    | '/dashboards/logistics'
+    | '/dashboards/procurement'
+    | '/dashboards/production'
+    | '/dashboards/sales'
+    | '/inventory/adjustments'
+    | '/inventory/items'
+    | '/inventory/ledger'
+    | '/inventory/transfers'
+    | '/inventory/warehouses'
+    | '/manufacturing/bom'
+    | '/manufacturing/items'
+    | '/manufacturing/orders'
+    | '/manufacturing/runs'
+    | '/purchasing/bills'
+    | '/purchasing/credits'
+    | '/purchasing/expenses'
+    | '/purchasing/orders'
+    | '/purchasing/payments'
+    | '/purchasing/requisitions'
+    | '/purchasing/suppliers'
+    | '/reports/financial'
+    | '/reports/inventory'
+    | '/reports/manufacturing'
+    | '/reports/purchases'
+    | '/reports/sales'
+    | '/sales/credit-notes'
+    | '/sales/invoices'
+    | '/sales/orders'
+    | '/sales/packages'
+    | '/sales/payments'
+    | '/sales/quotes'
+    | '/sales/shipments'
+    | '/settings/api-keys'
+    | '/settings/company'
+    | '/settings/currencies'
+    | '/settings/notifications'
+    | '/settings/numbering'
+    | '/settings/payment-terms'
+    | '/settings/roles'
+    | '/settings/taxes'
+    | '/settings/templates'
+    | '/settings/uom'
+    | '/settings/users'
+    | '/settings/warehouses'
+    | '/settings/workflows'
+    | '/super-admin/audit'
+    | '/super-admin/plans'
+    | '/super-admin/settings'
+    | '/super-admin/tenants'
+    | '/super-admin/users'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/accounting/banking'
+    | '/accounting/chart'
+    | '/accounting/journals'
+    | '/accounting/reconciliation'
+    | '/crm/customers'
+    | '/dashboards/logistics'
+    | '/dashboards/procurement'
+    | '/dashboards/production'
+    | '/dashboards/sales'
+    | '/inventory/adjustments'
+    | '/inventory/items'
+    | '/inventory/ledger'
+    | '/inventory/transfers'
+    | '/inventory/warehouses'
+    | '/manufacturing/bom'
+    | '/manufacturing/items'
+    | '/manufacturing/orders'
+    | '/manufacturing/runs'
+    | '/purchasing/bills'
+    | '/purchasing/credits'
+    | '/purchasing/expenses'
+    | '/purchasing/orders'
+    | '/purchasing/payments'
+    | '/purchasing/requisitions'
+    | '/purchasing/suppliers'
+    | '/reports/financial'
+    | '/reports/inventory'
+    | '/reports/manufacturing'
+    | '/reports/purchases'
+    | '/reports/sales'
+    | '/sales/credit-notes'
+    | '/sales/invoices'
+    | '/sales/orders'
+    | '/sales/packages'
+    | '/sales/payments'
+    | '/sales/quotes'
+    | '/sales/shipments'
+    | '/settings/api-keys'
+    | '/settings/company'
+    | '/settings/currencies'
+    | '/settings/notifications'
+    | '/settings/numbering'
+    | '/settings/payment-terms'
+    | '/settings/roles'
+    | '/settings/taxes'
+    | '/settings/templates'
+    | '/settings/uom'
+    | '/settings/users'
+    | '/settings/warehouses'
+    | '/settings/workflows'
+    | '/super-admin/audit'
+    | '/super-admin/plans'
+    | '/super-admin/settings'
+    | '/super-admin/tenants'
+    | '/super-admin/users'
+  id:
+    | '__root__'
+    | '/'
+    | '/accounting/banking'
+    | '/accounting/chart'
+    | '/accounting/journals'
+    | '/accounting/reconciliation'
+    | '/crm/customers'
+    | '/dashboards/logistics'
+    | '/dashboards/procurement'
+    | '/dashboards/production'
+    | '/dashboards/sales'
+    | '/inventory/adjustments'
+    | '/inventory/items'
+    | '/inventory/ledger'
+    | '/inventory/transfers'
+    | '/inventory/warehouses'
+    | '/manufacturing/bom'
+    | '/manufacturing/items'
+    | '/manufacturing/orders'
+    | '/manufacturing/runs'
+    | '/purchasing/bills'
+    | '/purchasing/credits'
+    | '/purchasing/expenses'
+    | '/purchasing/orders'
+    | '/purchasing/payments'
+    | '/purchasing/requisitions'
+    | '/purchasing/suppliers'
+    | '/reports/financial'
+    | '/reports/inventory'
+    | '/reports/manufacturing'
+    | '/reports/purchases'
+    | '/reports/sales'
+    | '/sales/credit-notes'
+    | '/sales/invoices'
+    | '/sales/orders'
+    | '/sales/packages'
+    | '/sales/payments'
+    | '/sales/quotes'
+    | '/sales/shipments'
+    | '/settings/api-keys'
+    | '/settings/company'
+    | '/settings/currencies'
+    | '/settings/notifications'
+    | '/settings/numbering'
+    | '/settings/payment-terms'
+    | '/settings/roles'
+    | '/settings/taxes'
+    | '/settings/templates'
+    | '/settings/uom'
+    | '/settings/users'
+    | '/settings/warehouses'
+    | '/settings/workflows'
+    | '/super-admin/audit'
+    | '/super-admin/plans'
+    | '/super-admin/settings'
+    | '/super-admin/tenants'
+    | '/super-admin/users'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AccountingBankingRoute: typeof AccountingBankingRoute
+  AccountingChartRoute: typeof AccountingChartRoute
+  AccountingJournalsRoute: typeof AccountingJournalsRoute
+  AccountingReconciliationRoute: typeof AccountingReconciliationRoute
+  CrmCustomersRoute: typeof CrmCustomersRoute
+  DashboardsLogisticsRoute: typeof DashboardsLogisticsRoute
+  DashboardsProcurementRoute: typeof DashboardsProcurementRoute
+  DashboardsProductionRoute: typeof DashboardsProductionRoute
+  DashboardsSalesRoute: typeof DashboardsSalesRoute
+  InventoryAdjustmentsRoute: typeof InventoryAdjustmentsRoute
+  InventoryItemsRoute: typeof InventoryItemsRoute
+  InventoryLedgerRoute: typeof InventoryLedgerRoute
+  InventoryTransfersRoute: typeof InventoryTransfersRoute
+  InventoryWarehousesRoute: typeof InventoryWarehousesRoute
+  ManufacturingBomRoute: typeof ManufacturingBomRoute
+  ManufacturingItemsRoute: typeof ManufacturingItemsRoute
+  ManufacturingOrdersRoute: typeof ManufacturingOrdersRoute
+  ManufacturingRunsRoute: typeof ManufacturingRunsRoute
+  PurchasingBillsRoute: typeof PurchasingBillsRoute
+  PurchasingCreditsRoute: typeof PurchasingCreditsRoute
+  PurchasingExpensesRoute: typeof PurchasingExpensesRoute
+  PurchasingOrdersRoute: typeof PurchasingOrdersRoute
+  PurchasingPaymentsRoute: typeof PurchasingPaymentsRoute
+  PurchasingRequisitionsRoute: typeof PurchasingRequisitionsRoute
+  PurchasingSuppliersRoute: typeof PurchasingSuppliersRoute
+  ReportsFinancialRoute: typeof ReportsFinancialRoute
+  ReportsInventoryRoute: typeof ReportsInventoryRoute
+  ReportsManufacturingRoute: typeof ReportsManufacturingRoute
+  ReportsPurchasesRoute: typeof ReportsPurchasesRoute
+  ReportsSalesRoute: typeof ReportsSalesRoute
+  SalesCreditNotesRoute: typeof SalesCreditNotesRoute
+  SalesInvoicesRoute: typeof SalesInvoicesRoute
+  SalesOrdersRoute: typeof SalesOrdersRoute
+  SalesPackagesRoute: typeof SalesPackagesRoute
+  SalesPaymentsRoute: typeof SalesPaymentsRoute
+  SalesQuotesRoute: typeof SalesQuotesRoute
+  SalesShipmentsRoute: typeof SalesShipmentsRoute
+  SettingsApiKeysRoute: typeof SettingsApiKeysRoute
+  SettingsCompanyRoute: typeof SettingsCompanyRoute
+  SettingsCurrenciesRoute: typeof SettingsCurrenciesRoute
+  SettingsNotificationsRoute: typeof SettingsNotificationsRoute
+  SettingsNumberingRoute: typeof SettingsNumberingRoute
+  SettingsPaymentTermsRoute: typeof SettingsPaymentTermsRoute
+  SettingsRolesRoute: typeof SettingsRolesRoute
+  SettingsTaxesRoute: typeof SettingsTaxesRoute
+  SettingsTemplatesRoute: typeof SettingsTemplatesRoute
+  SettingsUomRoute: typeof SettingsUomRoute
+  SettingsUsersRoute: typeof SettingsUsersRoute
+  SettingsWarehousesRoute: typeof SettingsWarehousesRoute
+  SettingsWorkflowsRoute: typeof SettingsWorkflowsRoute
+  SuperAdminAuditRoute: typeof SuperAdminAuditRoute
+  SuperAdminPlansRoute: typeof SuperAdminPlansRoute
+  SuperAdminSettingsRoute: typeof SuperAdminSettingsRoute
+  SuperAdminTenantsRoute: typeof SuperAdminTenantsRoute
+  SuperAdminUsersRoute: typeof SuperAdminUsersRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,22 +768,452 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/super-admin/users': {
+      id: '/super-admin/users'
+      path: '/super-admin/users'
+      fullPath: '/super-admin/users'
+      preLoaderRoute: typeof SuperAdminUsersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/super-admin/tenants': {
+      id: '/super-admin/tenants'
+      path: '/super-admin/tenants'
+      fullPath: '/super-admin/tenants'
+      preLoaderRoute: typeof SuperAdminTenantsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/super-admin/settings': {
+      id: '/super-admin/settings'
+      path: '/super-admin/settings'
+      fullPath: '/super-admin/settings'
+      preLoaderRoute: typeof SuperAdminSettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/super-admin/plans': {
+      id: '/super-admin/plans'
+      path: '/super-admin/plans'
+      fullPath: '/super-admin/plans'
+      preLoaderRoute: typeof SuperAdminPlansRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/super-admin/audit': {
+      id: '/super-admin/audit'
+      path: '/super-admin/audit'
+      fullPath: '/super-admin/audit'
+      preLoaderRoute: typeof SuperAdminAuditRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings/workflows': {
+      id: '/settings/workflows'
+      path: '/settings/workflows'
+      fullPath: '/settings/workflows'
+      preLoaderRoute: typeof SettingsWorkflowsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings/warehouses': {
+      id: '/settings/warehouses'
+      path: '/settings/warehouses'
+      fullPath: '/settings/warehouses'
+      preLoaderRoute: typeof SettingsWarehousesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings/users': {
+      id: '/settings/users'
+      path: '/settings/users'
+      fullPath: '/settings/users'
+      preLoaderRoute: typeof SettingsUsersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings/uom': {
+      id: '/settings/uom'
+      path: '/settings/uom'
+      fullPath: '/settings/uom'
+      preLoaderRoute: typeof SettingsUomRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings/templates': {
+      id: '/settings/templates'
+      path: '/settings/templates'
+      fullPath: '/settings/templates'
+      preLoaderRoute: typeof SettingsTemplatesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings/taxes': {
+      id: '/settings/taxes'
+      path: '/settings/taxes'
+      fullPath: '/settings/taxes'
+      preLoaderRoute: typeof SettingsTaxesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings/roles': {
+      id: '/settings/roles'
+      path: '/settings/roles'
+      fullPath: '/settings/roles'
+      preLoaderRoute: typeof SettingsRolesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings/payment-terms': {
+      id: '/settings/payment-terms'
+      path: '/settings/payment-terms'
+      fullPath: '/settings/payment-terms'
+      preLoaderRoute: typeof SettingsPaymentTermsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings/numbering': {
+      id: '/settings/numbering'
+      path: '/settings/numbering'
+      fullPath: '/settings/numbering'
+      preLoaderRoute: typeof SettingsNumberingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings/notifications': {
+      id: '/settings/notifications'
+      path: '/settings/notifications'
+      fullPath: '/settings/notifications'
+      preLoaderRoute: typeof SettingsNotificationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings/currencies': {
+      id: '/settings/currencies'
+      path: '/settings/currencies'
+      fullPath: '/settings/currencies'
+      preLoaderRoute: typeof SettingsCurrenciesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings/company': {
+      id: '/settings/company'
+      path: '/settings/company'
+      fullPath: '/settings/company'
+      preLoaderRoute: typeof SettingsCompanyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings/api-keys': {
+      id: '/settings/api-keys'
+      path: '/settings/api-keys'
+      fullPath: '/settings/api-keys'
+      preLoaderRoute: typeof SettingsApiKeysRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sales/shipments': {
+      id: '/sales/shipments'
+      path: '/sales/shipments'
+      fullPath: '/sales/shipments'
+      preLoaderRoute: typeof SalesShipmentsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sales/quotes': {
+      id: '/sales/quotes'
+      path: '/sales/quotes'
+      fullPath: '/sales/quotes'
+      preLoaderRoute: typeof SalesQuotesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sales/payments': {
+      id: '/sales/payments'
+      path: '/sales/payments'
+      fullPath: '/sales/payments'
+      preLoaderRoute: typeof SalesPaymentsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sales/packages': {
+      id: '/sales/packages'
+      path: '/sales/packages'
+      fullPath: '/sales/packages'
+      preLoaderRoute: typeof SalesPackagesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sales/orders': {
+      id: '/sales/orders'
+      path: '/sales/orders'
+      fullPath: '/sales/orders'
+      preLoaderRoute: typeof SalesOrdersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sales/invoices': {
+      id: '/sales/invoices'
+      path: '/sales/invoices'
+      fullPath: '/sales/invoices'
+      preLoaderRoute: typeof SalesInvoicesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sales/credit-notes': {
+      id: '/sales/credit-notes'
+      path: '/sales/credit-notes'
+      fullPath: '/sales/credit-notes'
+      preLoaderRoute: typeof SalesCreditNotesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reports/sales': {
+      id: '/reports/sales'
+      path: '/reports/sales'
+      fullPath: '/reports/sales'
+      preLoaderRoute: typeof ReportsSalesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reports/purchases': {
+      id: '/reports/purchases'
+      path: '/reports/purchases'
+      fullPath: '/reports/purchases'
+      preLoaderRoute: typeof ReportsPurchasesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reports/manufacturing': {
+      id: '/reports/manufacturing'
+      path: '/reports/manufacturing'
+      fullPath: '/reports/manufacturing'
+      preLoaderRoute: typeof ReportsManufacturingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reports/inventory': {
+      id: '/reports/inventory'
+      path: '/reports/inventory'
+      fullPath: '/reports/inventory'
+      preLoaderRoute: typeof ReportsInventoryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reports/financial': {
+      id: '/reports/financial'
+      path: '/reports/financial'
+      fullPath: '/reports/financial'
+      preLoaderRoute: typeof ReportsFinancialRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/purchasing/suppliers': {
+      id: '/purchasing/suppliers'
+      path: '/purchasing/suppliers'
+      fullPath: '/purchasing/suppliers'
+      preLoaderRoute: typeof PurchasingSuppliersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/purchasing/requisitions': {
+      id: '/purchasing/requisitions'
+      path: '/purchasing/requisitions'
+      fullPath: '/purchasing/requisitions'
+      preLoaderRoute: typeof PurchasingRequisitionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/purchasing/payments': {
+      id: '/purchasing/payments'
+      path: '/purchasing/payments'
+      fullPath: '/purchasing/payments'
+      preLoaderRoute: typeof PurchasingPaymentsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/purchasing/orders': {
+      id: '/purchasing/orders'
+      path: '/purchasing/orders'
+      fullPath: '/purchasing/orders'
+      preLoaderRoute: typeof PurchasingOrdersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/purchasing/expenses': {
+      id: '/purchasing/expenses'
+      path: '/purchasing/expenses'
+      fullPath: '/purchasing/expenses'
+      preLoaderRoute: typeof PurchasingExpensesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/purchasing/credits': {
+      id: '/purchasing/credits'
+      path: '/purchasing/credits'
+      fullPath: '/purchasing/credits'
+      preLoaderRoute: typeof PurchasingCreditsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/purchasing/bills': {
+      id: '/purchasing/bills'
+      path: '/purchasing/bills'
+      fullPath: '/purchasing/bills'
+      preLoaderRoute: typeof PurchasingBillsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/manufacturing/runs': {
+      id: '/manufacturing/runs'
+      path: '/manufacturing/runs'
+      fullPath: '/manufacturing/runs'
+      preLoaderRoute: typeof ManufacturingRunsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/manufacturing/orders': {
+      id: '/manufacturing/orders'
+      path: '/manufacturing/orders'
+      fullPath: '/manufacturing/orders'
+      preLoaderRoute: typeof ManufacturingOrdersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/manufacturing/items': {
+      id: '/manufacturing/items'
+      path: '/manufacturing/items'
+      fullPath: '/manufacturing/items'
+      preLoaderRoute: typeof ManufacturingItemsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/manufacturing/bom': {
+      id: '/manufacturing/bom'
+      path: '/manufacturing/bom'
+      fullPath: '/manufacturing/bom'
+      preLoaderRoute: typeof ManufacturingBomRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/inventory/warehouses': {
+      id: '/inventory/warehouses'
+      path: '/inventory/warehouses'
+      fullPath: '/inventory/warehouses'
+      preLoaderRoute: typeof InventoryWarehousesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/inventory/transfers': {
+      id: '/inventory/transfers'
+      path: '/inventory/transfers'
+      fullPath: '/inventory/transfers'
+      preLoaderRoute: typeof InventoryTransfersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/inventory/ledger': {
+      id: '/inventory/ledger'
+      path: '/inventory/ledger'
+      fullPath: '/inventory/ledger'
+      preLoaderRoute: typeof InventoryLedgerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/inventory/items': {
+      id: '/inventory/items'
+      path: '/inventory/items'
+      fullPath: '/inventory/items'
+      preLoaderRoute: typeof InventoryItemsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/inventory/adjustments': {
+      id: '/inventory/adjustments'
+      path: '/inventory/adjustments'
+      fullPath: '/inventory/adjustments'
+      preLoaderRoute: typeof InventoryAdjustmentsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dashboards/sales': {
+      id: '/dashboards/sales'
+      path: '/dashboards/sales'
+      fullPath: '/dashboards/sales'
+      preLoaderRoute: typeof DashboardsSalesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dashboards/production': {
+      id: '/dashboards/production'
+      path: '/dashboards/production'
+      fullPath: '/dashboards/production'
+      preLoaderRoute: typeof DashboardsProductionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dashboards/procurement': {
+      id: '/dashboards/procurement'
+      path: '/dashboards/procurement'
+      fullPath: '/dashboards/procurement'
+      preLoaderRoute: typeof DashboardsProcurementRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dashboards/logistics': {
+      id: '/dashboards/logistics'
+      path: '/dashboards/logistics'
+      fullPath: '/dashboards/logistics'
+      preLoaderRoute: typeof DashboardsLogisticsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/crm/customers': {
+      id: '/crm/customers'
+      path: '/crm/customers'
+      fullPath: '/crm/customers'
+      preLoaderRoute: typeof CrmCustomersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/accounting/reconciliation': {
+      id: '/accounting/reconciliation'
+      path: '/accounting/reconciliation'
+      fullPath: '/accounting/reconciliation'
+      preLoaderRoute: typeof AccountingReconciliationRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/accounting/journals': {
+      id: '/accounting/journals'
+      path: '/accounting/journals'
+      fullPath: '/accounting/journals'
+      preLoaderRoute: typeof AccountingJournalsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/accounting/chart': {
+      id: '/accounting/chart'
+      path: '/accounting/chart'
+      fullPath: '/accounting/chart'
+      preLoaderRoute: typeof AccountingChartRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/accounting/banking': {
+      id: '/accounting/banking'
+      path: '/accounting/banking'
+      fullPath: '/accounting/banking'
+      preLoaderRoute: typeof AccountingBankingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AccountingBankingRoute: AccountingBankingRoute,
+  AccountingChartRoute: AccountingChartRoute,
+  AccountingJournalsRoute: AccountingJournalsRoute,
+  AccountingReconciliationRoute: AccountingReconciliationRoute,
+  CrmCustomersRoute: CrmCustomersRoute,
+  DashboardsLogisticsRoute: DashboardsLogisticsRoute,
+  DashboardsProcurementRoute: DashboardsProcurementRoute,
+  DashboardsProductionRoute: DashboardsProductionRoute,
+  DashboardsSalesRoute: DashboardsSalesRoute,
+  InventoryAdjustmentsRoute: InventoryAdjustmentsRoute,
+  InventoryItemsRoute: InventoryItemsRoute,
+  InventoryLedgerRoute: InventoryLedgerRoute,
+  InventoryTransfersRoute: InventoryTransfersRoute,
+  InventoryWarehousesRoute: InventoryWarehousesRoute,
+  ManufacturingBomRoute: ManufacturingBomRoute,
+  ManufacturingItemsRoute: ManufacturingItemsRoute,
+  ManufacturingOrdersRoute: ManufacturingOrdersRoute,
+  ManufacturingRunsRoute: ManufacturingRunsRoute,
+  PurchasingBillsRoute: PurchasingBillsRoute,
+  PurchasingCreditsRoute: PurchasingCreditsRoute,
+  PurchasingExpensesRoute: PurchasingExpensesRoute,
+  PurchasingOrdersRoute: PurchasingOrdersRoute,
+  PurchasingPaymentsRoute: PurchasingPaymentsRoute,
+  PurchasingRequisitionsRoute: PurchasingRequisitionsRoute,
+  PurchasingSuppliersRoute: PurchasingSuppliersRoute,
+  ReportsFinancialRoute: ReportsFinancialRoute,
+  ReportsInventoryRoute: ReportsInventoryRoute,
+  ReportsManufacturingRoute: ReportsManufacturingRoute,
+  ReportsPurchasesRoute: ReportsPurchasesRoute,
+  ReportsSalesRoute: ReportsSalesRoute,
+  SalesCreditNotesRoute: SalesCreditNotesRoute,
+  SalesInvoicesRoute: SalesInvoicesRoute,
+  SalesOrdersRoute: SalesOrdersRoute,
+  SalesPackagesRoute: SalesPackagesRoute,
+  SalesPaymentsRoute: SalesPaymentsRoute,
+  SalesQuotesRoute: SalesQuotesRoute,
+  SalesShipmentsRoute: SalesShipmentsRoute,
+  SettingsApiKeysRoute: SettingsApiKeysRoute,
+  SettingsCompanyRoute: SettingsCompanyRoute,
+  SettingsCurrenciesRoute: SettingsCurrenciesRoute,
+  SettingsNotificationsRoute: SettingsNotificationsRoute,
+  SettingsNumberingRoute: SettingsNumberingRoute,
+  SettingsPaymentTermsRoute: SettingsPaymentTermsRoute,
+  SettingsRolesRoute: SettingsRolesRoute,
+  SettingsTaxesRoute: SettingsTaxesRoute,
+  SettingsTemplatesRoute: SettingsTemplatesRoute,
+  SettingsUomRoute: SettingsUomRoute,
+  SettingsUsersRoute: SettingsUsersRoute,
+  SettingsWarehousesRoute: SettingsWarehousesRoute,
+  SettingsWorkflowsRoute: SettingsWorkflowsRoute,
+  SuperAdminAuditRoute: SuperAdminAuditRoute,
+  SuperAdminPlansRoute: SuperAdminPlansRoute,
+  SuperAdminSettingsRoute: SuperAdminSettingsRoute,
+  SuperAdminTenantsRoute: SuperAdminTenantsRoute,
+  SuperAdminUsersRoute: SuperAdminUsersRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
