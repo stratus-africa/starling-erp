@@ -1,10 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { ModulePage } from "@/components/module-page";
-import { modules } from "@/lib/modules";
+import { DataModulePage } from "@/components/data-module-page";
+import { salesOrderFields } from "@/lib/module-schemas";
 
-export const Route = createFileRoute("/_authenticated/sales/orders")({
-  component: () => {
-    const m = modules["sales.orders"];
-    return <ModulePage {...m} />;
-  },
+export const Route = createFileRoute("/sales/orders")({
+  component: () => (
+    <DataModulePage
+      title="Sales Orders"
+      description="Confirmed customer orders ready for fulfilment."
+      table="sales_orders"
+      fields={salesOrderFields}
+      entityLabel="Sales Order"
+      attachments={true}
+    />
+  ),
 });

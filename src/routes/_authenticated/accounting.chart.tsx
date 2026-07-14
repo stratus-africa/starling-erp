@@ -1,10 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { ModulePage } from "@/components/module-page";
-import { modules } from "@/lib/modules";
+import { DataModulePage } from "@/components/data-module-page";
+import { chartOfAccountFields } from "@/lib/module-schemas";
 
-export const Route = createFileRoute("/_authenticated/accounting/chart")({
-  component: () => {
-    const m = modules["accounting.chart"];
-    return <ModulePage {...m} />;
-  },
+export const Route = createFileRoute("/accounting/chart")({
+  component: () => (
+    <DataModulePage
+      title="Chart of Accounts"
+      description="General ledger account structure."
+      table="chart_of_accounts"
+      fields={chartOfAccountFields}
+      entityLabel="Account"
+      attachments={false}
+    />
+  ),
 });

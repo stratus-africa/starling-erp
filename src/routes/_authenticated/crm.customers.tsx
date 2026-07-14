@@ -1,10 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { ModulePage } from "@/components/module-page";
-import { modules } from "@/lib/modules";
+import { DataModulePage } from "@/components/data-module-page";
+import { customerFields } from "@/lib/module-schemas";
 
-export const Route = createFileRoute("/_authenticated/crm/customers")({
-  component: () => {
-    const m = modules["crm.customers"];
-    return <ModulePage {...m} />;
-  },
+export const Route = createFileRoute("/crm/customers")({
+  component: () => (
+    <DataModulePage
+      title="Customers"
+      description="Manage customer accounts, contacts and credit terms."
+      table="customers"
+      fields={customerFields}
+      entityLabel="Customer"
+      attachments={false}
+    />
+  ),
 });

@@ -1,10 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { ModulePage } from "@/components/module-page";
-import { modules } from "@/lib/modules";
+import { DataModulePage } from "@/components/data-module-page";
+import { invoiceFields } from "@/lib/module-schemas";
 
-export const Route = createFileRoute("/_authenticated/sales/invoices")({
-  component: () => {
-    const m = modules["sales.invoices"];
-    return <ModulePage {...m} />;
-  },
+export const Route = createFileRoute("/sales/invoices")({
+  component: () => (
+    <DataModulePage
+      title="Invoices"
+      description="Customer invoices, taxes, and payment status."
+      table="invoices"
+      fields={invoiceFields}
+      entityLabel="Invoice"
+      attachments={true}
+    />
+  ),
 });

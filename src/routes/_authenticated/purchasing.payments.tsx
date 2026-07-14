@@ -1,10 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { ModulePage } from "@/components/module-page";
-import { modules } from "@/lib/modules";
+import { DataModulePage } from "@/components/data-module-page";
+import { paymentMadeFields } from "@/lib/module-schemas";
 
-export const Route = createFileRoute("/_authenticated/purchasing/payments")({
-  component: () => {
-    const m = modules["purchasing.payments"];
-    return <ModulePage {...m} />;
-  },
+export const Route = createFileRoute("/purchasing/payments")({
+  component: () => (
+    <DataModulePage
+      title="Payments Made"
+      description="Outgoing payments to suppliers."
+      table="payments_made"
+      fields={paymentMadeFields}
+      entityLabel="Payment"
+      attachments={false}
+    />
+  ),
 });

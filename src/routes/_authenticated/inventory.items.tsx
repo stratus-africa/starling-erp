@@ -1,10 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { ModulePage } from "@/components/module-page";
-import { modules } from "@/lib/modules";
+import { DataModulePage } from "@/components/data-module-page";
+import { itemFields } from "@/lib/module-schemas";
 
-export const Route = createFileRoute("/_authenticated/inventory/items")({
-  component: () => {
-    const m = modules["inventory.items"];
-    return <ModulePage {...m} />;
-  },
+export const Route = createFileRoute("/inventory/items")({
+  component: () => (
+    <DataModulePage
+      title="Items"
+      description="Products, raw materials, assemblies and services."
+      table="items"
+      fields={itemFields}
+      entityLabel="Item"
+      attachments={false}
+    />
+  ),
 });

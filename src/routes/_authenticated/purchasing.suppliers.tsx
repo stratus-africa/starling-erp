@@ -1,10 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { ModulePage } from "@/components/module-page";
-import { modules } from "@/lib/modules";
+import { DataModulePage } from "@/components/data-module-page";
+import { supplierFields } from "@/lib/module-schemas";
 
-export const Route = createFileRoute("/_authenticated/purchasing/suppliers")({
-  component: () => {
-    const m = modules["purchasing.suppliers"];
-    return <ModulePage {...m} />;
-  },
+export const Route = createFileRoute("/purchasing/suppliers")({
+  component: () => (
+    <DataModulePage
+      title="Suppliers"
+      description="Vendor master and payment terms."
+      table="suppliers"
+      fields={supplierFields}
+      entityLabel="Supplier"
+      attachments={false}
+    />
+  ),
 });
