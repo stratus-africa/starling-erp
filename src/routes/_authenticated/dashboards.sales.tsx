@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { RoleDashboard, makeChart } from "@/components/role-dashboard";
 import { TrendingUp, DollarSign, FileText, Receipt, Wallet, Plus, ShoppingCart } from "lucide-react";
 
-export const Route = createFileRoute("/dashboards/sales")({
+export const Route = createFileRoute("/_authenticated/dashboards/sales")({
   component: () => (
     <RoleDashboard
       title="Sales Manager Dashboard"

@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { RoleDashboard, makeChart } from "@/components/role-dashboard";
 import { Factory, Cog, PlayCircle, AlertTriangle, Plus, CheckCircle2 } from "lucide-react";
 
-export const Route = createFileRoute("/dashboards/production")({
+export const Route = createFileRoute("/_authenticated/dashboards/production")({
   component: () => (
     <RoleDashboard
       title="Production Manager Dashboard"
