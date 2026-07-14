@@ -7,9 +7,6 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
-import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
-import { AppSidebar } from "@/components/app-sidebar";
-import { AppTopbar } from "@/components/app-topbar";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 
@@ -89,18 +86,8 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
-        <SidebarProvider>
-          <div className="flex min-h-screen w-full bg-background">
-            <AppSidebar />
-            <SidebarInset className="min-w-0 flex-1">
-              <AppTopbar />
-              <main className="flex-1 min-w-0">
-                <Outlet />
-              </main>
-            </SidebarInset>
-          </div>
-          <Toaster />
-        </SidebarProvider>
+        <Outlet />
+        <Toaster />
       </ThemeProvider>
     </QueryClientProvider>
   );
