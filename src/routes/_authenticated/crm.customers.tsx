@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { DataModulePage } from "@/components/data-module-page";
 import { customerFields } from "@/lib/module-schemas";
 
-export const Route = createFileRoute("/crm/customers")({
+export const Route = createFileRoute("/_authenticated/crm/customers")({
   component: () => (
     <DataModulePage
       title="Customers"

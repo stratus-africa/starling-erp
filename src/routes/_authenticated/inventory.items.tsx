@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { DataModulePage } from "@/components/data-module-page";
 import { itemFields } from "@/lib/module-schemas";
 
-export const Route = createFileRoute("/inventory/items")({
+export const Route = createFileRoute("/_authenticated/inventory/items")({
   component: () => (
     <DataModulePage
       title="Items"
