@@ -1,0 +1,95 @@
+import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import type { Session, User } from "@supabase/supabase-js";
+import { supabase } from "@/integrations/supabase/client";
+import { useQueryClient } from "@tanstack/react-query";
+import { useNavigate, useRouter } from "@tanstack/react-router";
+
+export type AppRole =
+  | "super_admin" | "tenant_admin" | "sales" | "purchasing"
+  | "inventory" | "accounting" | "manufacturing" | "viewer";
+
+export interface Profile { id: string; tenant_id: string | null; email: string | null; full_name: string | null; avatar_url: string | null }
+export interface Tenant { id: string; name: string; slug: string; currency: string; status: string }
+
+interface AuthCtx {
+  user: User | null;
+  session: Session | null;
+  profile: Profile | null;
+  tenant: Tenant | null;
+  roles: AppRole[];
+  loading: boolean;
+  hasRole: (r: AppRole | AppRole[]) => boolean;
+  signOut: () => Promise<void>;
+  refresh: () => Promise<void>;
+}
+
+const Ctx = createContext<AuthCtx | null>(null);
+
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [session, setSession] = useState<Session | null>(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [tenant, setTenant] = useState<Tenant | null>(null);
+  const [roles, setRoles] = useState<AppRole[]>([]);
+  const [loading, setLoading] = useState(true);
+  const qc = useQueryClient();
+  const router = useRouter();
+  const navigate = useNavigate();
+
+  const loadContext = async (uid: string) => {
+    const [{ data: prof }, { data: rls }] = await Promise.all([
+      supabase.from("profiles").select("*").eq("id", uid).maybeSingle(),
+      supabase.from("user_roles").select("role").eq("user_id", uid),
+    ]);
+    setProfile(prof as any);
+    setRoles(((rls ?? []) as any[]).map((r) => r.role));
+    if (prof?.tenant_id) {
+      const { data: t } = await supabase.from("tenants").select("*").eq("id", prof.tenant_id).maybeSingle();
+      setTenant(t as any);
+    } else setTenant(null);
+  };
+
+  useEffect(() => {
+    const { data: sub } = supabase.auth.onAuthStateChange((event, s) => {
+      setSession(s);
+      if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED" && event !== "INITIAL_SESSION") return;
+      if (s?.user) { setTimeout(() => loadContext(s.user.id), 0); }
+      else { setProfile(null); setTenant(null); setRoles([]); }
+      if (event === "SIGNED_IN" || event === "SIGNED_OUT") router.invalidate();
+      if (event !== "SIGNED_OUT" && s?.user) qc.invalidateQueries();
+    });
+    supabase.auth.getSession().then(({ data }) => {
+      setSession(data.session);
+      if (data.session?.user) loadContext(data.session.user.id).finally(() => setLoading(false));
+      else setLoading(false);
+    });
+    return () => sub.subscription.unsubscribe();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const hasRole = (r: AppRole | AppRole[]) => {
+    const arr = Array.isArray(r) ? r : [r];
+    if (roles.includes("super_admin") || roles.includes("tenant_admin")) return true;
+    return arr.some((x) => roles.includes(x));
+  };
+
+  const signOut = async () => {
+    await qc.cancelQueries();
+    qc.clear();
+    await supabase.auth.signOut();
+    navigate({ to: "/auth", replace: true });
+  };
+
+  const refresh = async () => { if (session?.user) await loadContext(session.user.id); };
+
+  return (
+    <Ctx.Provider value={{ user: session?.user ?? null, session, profile, tenant, roles, loading, hasRole, signOut, refresh }}>
+      {children}
+    </Ctx.Provider>
+  );
+}
+
+export function useAuth() {
+  const c = useContext(Ctx);
+  if (!c) throw new Error("useAuth must be used inside AuthProvider");
+  return c;
+}
