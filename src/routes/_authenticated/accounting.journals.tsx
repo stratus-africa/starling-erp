@@ -1,10 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { ModulePage } from "@/components/module-page";
-import { modules } from "@/lib/modules";
+import { DataModulePage } from "@/components/data-module-page";
+import { journalEntryFields } from "@/lib/module-schemas";
 
 export const Route = createFileRoute("/_authenticated/accounting/journals")({
-  component: () => {
-    const m = modules["accounting.journals"];
-    return <ModulePage {...m} />;
-  },
+  component: () => (
+    <DataModulePage title="Manual Journals" description="Post double-entry journals to the general ledger."
+      table="journal_entries" entityLabel="Journal Entry" fields={journalEntryFields}
+      writeRoles={["accounting"]} searchColumn="number" />
+  ),
 });

@@ -21,7 +21,9 @@ interface AuthCtx {
   hasRole: (r: AppRole | AppRole[]) => boolean;
   signOut: () => Promise<void>;
   refresh: () => Promise<void>;
+  switchTenant: (tenantId: string) => Promise<void>;
 }
+
 
 const Ctx = createContext<AuthCtx | null>(null);
 
@@ -81,8 +83,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const refresh = async () => { if (session?.user) await loadContext(session.user.id); };
 
+  const switchTenant = async (tenantId: string) => {
+    const { error } = await supabase.rpc("switch_tenant", { target_tenant: tenantId });
+    if (error) throw error;
+    await qc.cancelQueries();
+    qc.clear();
+    if (session?.user) await loadContext(session.user.id);
+    router.invalidate();
+  };
+
   return (
-    <Ctx.Provider value={{ user: session?.user ?? null, session, profile, tenant, roles, loading, hasRole, signOut, refresh }}>
+    <Ctx.Provider value={{ user: session?.user ?? null, session, profile, tenant, roles, loading, hasRole, signOut, refresh, switchTenant }}>
       {children}
     </Ctx.Provider>
   );

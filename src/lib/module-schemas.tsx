@@ -7,12 +7,11 @@ export const moneyRight = (v: any) => v == null ? "—" : <span className="font-
 export const bold = (v: any) => <span className="font-medium text-foreground">{v}</span>;
 export const dateFmt = (v: any) => !v ? "—" : new Date(v).toLocaleDateString(undefined, { day: "2-digit", month: "short", year: "numeric" });
 
-// Per-module field configs
 export const customerFields: FieldDef[] = [
   { key: "code", label: "Code", render: mono },
   { key: "name", label: "Customer", required: true, render: bold },
-  { key: "email", label: "Email", type: "text" },
-  { key: "phone", label: "Phone", type: "text" },
+  { key: "email", label: "Email" },
+  { key: "phone", label: "Phone" },
   { key: "currency", label: "Currency", type: "select", options: ["USD","EUR","GBP","KES","AED","EGP","INR","ZAR"], defaultValue: "USD" },
   { key: "credit_limit", label: "Credit Limit", type: "number", className: "text-right", render: moneyRight },
   { key: "balance", label: "Balance", type: "number", className: "text-right", render: moneyRight },
@@ -125,4 +124,62 @@ export const chartOfAccountFields: FieldDef[] = [
   { key: "name", label: "Account", required: true, render: bold },
   { key: "type", label: "Type", type: "select", options: ["Asset","Liability","Equity","Income","Expense"], defaultValue: "Asset" },
   { key: "balance", label: "Balance", type: "number", className: "text-right", render: moneyRight },
+];
+
+export const bankAccountFields: FieldDef[] = [
+  { key: "name", label: "Account", required: true, render: bold },
+  { key: "bank", label: "Bank" },
+  { key: "account_number", label: "Number", render: mono },
+  { key: "currency", label: "Currency", type: "select", options: ["USD","EUR","GBP","KES","AED","EGP","INR","ZAR"], defaultValue: "USD" },
+  { key: "balance", label: "Balance", type: "number", className: "text-right", render: moneyRight },
+  { key: "status", label: "Status", type: "select", options: ["Active","Inactive"], defaultValue: "Active" },
+  { key: "notes", label: "Notes", type: "textarea", hideInTable: true },
+];
+
+export const journalEntryFields: FieldDef[] = [
+  { key: "number", label: "Entry #", required: true, render: mono },
+  { key: "date", label: "Date", type: "date", render: dateFmt },
+  { key: "memo", label: "Memo" },
+  { key: "debit", label: "Debit", type: "number", className: "text-right", render: moneyRight },
+  { key: "credit", label: "Credit", type: "number", className: "text-right", render: moneyRight },
+  { key: "status", label: "Status", type: "select", options: ["Draft","Posted","Void"], defaultValue: "Draft" },
+];
+
+export const inventoryAdjustmentFields: FieldDef[] = [
+  { key: "number", label: "Adj #", required: true, render: mono },
+  { key: "date", label: "Date", type: "date", render: dateFmt },
+  { key: "item_id", label: "Item", type: "fk", fkTable: "items", required: true, hideInTable: true },
+  { key: "warehouse_id", label: "Warehouse", type: "fk", fkTable: "warehouses", required: true, hideInTable: true },
+  { key: "quantity", label: "Qty", type: "number", className: "text-right", render: monoRight },
+  { key: "reason", label: "Reason" },
+  { key: "status", label: "Status", type: "select", options: ["Draft","Posted","Void"], defaultValue: "Posted" },
+];
+
+export const inventoryTransferFields: FieldDef[] = [
+  { key: "number", label: "Transfer #", required: true, render: mono },
+  { key: "date", label: "Date", type: "date", render: dateFmt },
+  { key: "item_id", label: "Item", type: "fk", fkTable: "items", required: true, hideInTable: true },
+  { key: "from_warehouse_id", label: "From", type: "fk", fkTable: "warehouses", required: true, hideInTable: true },
+  { key: "to_warehouse_id", label: "To", type: "fk", fkTable: "warehouses", required: true, hideInTable: true },
+  { key: "quantity", label: "Qty", type: "number", className: "text-right", render: monoRight },
+  { key: "status", label: "Status", type: "select", options: ["Draft","In Transit","Completed","Cancelled"], defaultValue: "Draft" },
+  { key: "notes", label: "Notes", type: "textarea", hideInTable: true },
+];
+
+export const bomFields: FieldDef[] = [
+  { key: "code", label: "BOM Code", required: true, render: mono },
+  { key: "product_id", label: "Product", type: "fk", fkTable: "items", required: true, hideInTable: true },
+  { key: "version", label: "Version" },
+  { key: "yield_qty", label: "Yield", type: "number", className: "text-right", render: monoRight },
+  { key: "status", label: "Status", type: "select", options: ["Active","Draft","Archived"], defaultValue: "Active" },
+  { key: "notes", label: "Notes", type: "textarea", hideInTable: true },
+];
+
+export const productionOrderFields: FieldDef[] = [
+  { key: "number", label: "PO #", required: true, render: mono },
+  { key: "date", label: "Date", type: "date", render: dateFmt },
+  { key: "bom_id", label: "BOM", type: "fk", fkTable: "bom_headers", fkLabel: "code", required: true, hideInTable: true },
+  { key: "quantity", label: "Qty", type: "number", className: "text-right", render: monoRight },
+  { key: "status", label: "Status", type: "select", options: ["Planned","In Progress","Completed","Cancelled"], defaultValue: "Planned" },
+  { key: "notes", label: "Notes", type: "textarea", hideInTable: true },
 ];
