@@ -42,9 +42,9 @@ export function GlobalSearch() {
     enabled: q.trim().length >= 2,
     queryFn: async () => {
       const { data, error } = await supabase.rpc("global_search", {
-        q, modules: modules.length ? modules : null,
-        date_from: from || null, date_to: to || null, max_per_module: 8,
-      });
+        q, modules: modules.length ? modules : undefined,
+        date_from: from || undefined, date_to: to || undefined, max_per_module: 8,
+      } as any);
       if (error) throw error;
       return (data ?? []) as { module: string; id: string; title: string; subtitle: string; created_at: string }[];
     },
