@@ -8,12 +8,14 @@ import {
   DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Bell, Moon, Search, Sun, HelpCircle, LogOut, User, Settings, Building2 } from "lucide-react";
+import { Bell, Moon, Sun, HelpCircle, LogOut, User, Settings } from "lucide-react";
 import { useTheme } from "./theme-provider";
 import { useRouterState, Link } from "@tanstack/react-router";
 import { navGroups } from "@/lib/nav";
 import { useMemo } from "react";
 import { useAuth } from "@/hooks/use-auth";
+import { TenantSwitcher } from "./tenant-switcher";
+import { GlobalSearch } from "./global-search";
 
 function useBreadcrumbs() {
   const pathname = useRouterState({ select: (r) => r.location.pathname });
@@ -49,18 +51,9 @@ export function AppTopbar() {
       </nav>
 
       <div className="ml-auto flex items-center gap-2">
-        {tenant && (
-          <div className="hidden md:flex items-center gap-1.5 rounded-md border bg-muted/30 px-2 py-1 text-xs">
-            <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
-            <span className="font-medium">{tenant.name}</span>
-          </div>
-        )}
-        <div className="relative hidden md:block">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-          <Input placeholder="Search customers, invoices, items…"
-            className="h-8 w-72 pl-8 text-sm bg-muted/50 border-transparent focus-visible:bg-background" />
-          <kbd className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 hidden md:inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] text-muted-foreground">⌘K</kbd>
-        </div>
+        <TenantSwitcher />
+        <GlobalSearch />
+
 
         <Button variant="ghost" size="icon" className="h-8 w-8" onClick={toggle}>
           {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}

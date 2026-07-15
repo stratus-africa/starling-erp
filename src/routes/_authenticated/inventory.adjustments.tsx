@@ -1,10 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { ModulePage } from "@/components/module-page";
-import { modules } from "@/lib/modules";
+import { DataModulePage } from "@/components/data-module-page";
+import { inventoryAdjustmentFields } from "@/lib/module-schemas";
 
 export const Route = createFileRoute("/_authenticated/inventory/adjustments")({
-  component: () => {
-    const m = modules["inventory.adjustments"];
-    return <ModulePage {...m} />;
-  },
+  component: () => (
+    <DataModulePage title="Inventory Adjustments" description="Post stock adjustments with a reason."
+      table="inventory_adjustments" entityLabel="Adjustment" fields={inventoryAdjustmentFields}
+      writeRoles={["inventory"]} searchColumn="number" />
+  ),
 });
