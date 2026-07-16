@@ -11,7 +11,16 @@ import { Boxes, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/use-auth";
 
-export const Route = createFileRoute("/auth")({ component: AuthPage });
+import { AuthProvider } from "@/hooks/use-auth";
+
+export const Route = createFileRoute("/auth")({
+  ssr: false,
+  component: () => (
+    <AuthProvider>
+      <AuthPage />
+    </AuthProvider>
+  ),
+});
 
 function AuthPage() {
   const { session, loading } = useAuth();
