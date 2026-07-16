@@ -8,7 +8,7 @@ import {
   DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Bell, Moon, Sun, HelpCircle, LogOut, User, Settings } from "lucide-react";
+import { Bell, Moon, Sun, HelpCircle, LogOut, User, Settings, ShieldCheck } from "lucide-react";
 import { useTheme } from "./theme-provider";
 import { useRouterState, Link } from "@tanstack/react-router";
 import { navGroups } from "@/lib/nav";
@@ -51,6 +51,11 @@ export function AppTopbar() {
       </nav>
 
       <div className="ml-auto flex items-center gap-2">
+        {roles.includes("super_admin") && (
+          <Button asChild variant="outline" size="sm" className="h-8 gap-1.5 border-amber-500/40 bg-amber-500/10 text-amber-700 hover:bg-amber-500/20 dark:text-amber-300">
+            <Link to="/admin/tenants"><ShieldCheck className="h-3.5 w-3.5" /> Platform Console</Link>
+          </Button>
+        )}
         <TenantSwitcher />
         <GlobalSearch />
 

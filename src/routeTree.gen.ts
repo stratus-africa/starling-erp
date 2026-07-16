@@ -11,12 +11,13 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
+import { Route as AdminRouteRouteImport } from './routes/_admin/route'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
-import { Route as AuthenticatedSuperAdminUsersRouteImport } from './routes/_authenticated/super-admin.users'
-import { Route as AuthenticatedSuperAdminTenantsRouteImport } from './routes/_authenticated/super-admin.tenants'
-import { Route as AuthenticatedSuperAdminSettingsRouteImport } from './routes/_authenticated/super-admin.settings'
-import { Route as AuthenticatedSuperAdminPlansRouteImport } from './routes/_authenticated/super-admin.plans'
-import { Route as AuthenticatedSuperAdminAuditRouteImport } from './routes/_authenticated/super-admin.audit'
+import { Route as AdminUsersRouteImport } from './routes/_admin/users'
+import { Route as AdminTenantsRouteImport } from './routes/_admin/tenants'
+import { Route as AdminSettingsRouteImport } from './routes/_admin/settings'
+import { Route as AdminPlansRouteImport } from './routes/_admin/plans'
+import { Route as AdminAuditRouteImport } from './routes/_admin/audit'
 import { Route as AuthenticatedSettingsWorkflowsRouteImport } from './routes/_authenticated/settings.workflows'
 import { Route as AuthenticatedSettingsWarehousesRouteImport } from './routes/_authenticated/settings.warehouses'
 import { Route as AuthenticatedSettingsUsersRouteImport } from './routes/_authenticated/settings.users'
@@ -77,41 +78,40 @@ const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
   id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminRouteRoute = AdminRouteRouteImport.update({
+  id: '/_admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedSuperAdminUsersRoute =
-  AuthenticatedSuperAdminUsersRouteImport.update({
-    id: '/super-admin/users',
-    path: '/super-admin/users',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedSuperAdminTenantsRoute =
-  AuthenticatedSuperAdminTenantsRouteImport.update({
-    id: '/super-admin/tenants',
-    path: '/super-admin/tenants',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedSuperAdminSettingsRoute =
-  AuthenticatedSuperAdminSettingsRouteImport.update({
-    id: '/super-admin/settings',
-    path: '/super-admin/settings',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedSuperAdminPlansRoute =
-  AuthenticatedSuperAdminPlansRouteImport.update({
-    id: '/super-admin/plans',
-    path: '/super-admin/plans',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedSuperAdminAuditRoute =
-  AuthenticatedSuperAdminAuditRouteImport.update({
-    id: '/super-admin/audit',
-    path: '/super-admin/audit',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
+const AdminUsersRoute = AdminUsersRouteImport.update({
+  id: '/users',
+  path: '/users',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminTenantsRoute = AdminTenantsRouteImport.update({
+  id: '/tenants',
+  path: '/tenants',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminSettingsRoute = AdminSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminPlansRoute = AdminPlansRouteImport.update({
+  id: '/plans',
+  path: '/plans',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminAuditRoute = AdminAuditRouteImport.update({
+  id: '/audit',
+  path: '/audit',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
 const AuthenticatedSettingsWorkflowsRoute =
   AuthenticatedSettingsWorkflowsRouteImport.update({
     id: '/settings/workflows',
@@ -416,6 +416,11 @@ const AuthenticatedAccountingBankingRoute =
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
   '/auth': typeof AuthRoute
+  '/audit': typeof AdminAuditRoute
+  '/plans': typeof AdminPlansRoute
+  '/settings': typeof AdminSettingsRoute
+  '/tenants': typeof AdminTenantsRoute
+  '/users': typeof AdminUsersRoute
   '/accounting/banking': typeof AuthenticatedAccountingBankingRoute
   '/accounting/chart': typeof AuthenticatedAccountingChartRoute
   '/accounting/journals': typeof AuthenticatedAccountingJournalsRoute
@@ -466,15 +471,15 @@ export interface FileRoutesByFullPath {
   '/settings/users': typeof AuthenticatedSettingsUsersRoute
   '/settings/warehouses': typeof AuthenticatedSettingsWarehousesRoute
   '/settings/workflows': typeof AuthenticatedSettingsWorkflowsRoute
-  '/super-admin/audit': typeof AuthenticatedSuperAdminAuditRoute
-  '/super-admin/plans': typeof AuthenticatedSuperAdminPlansRoute
-  '/super-admin/settings': typeof AuthenticatedSuperAdminSettingsRoute
-  '/super-admin/tenants': typeof AuthenticatedSuperAdminTenantsRoute
-  '/super-admin/users': typeof AuthenticatedSuperAdminUsersRoute
 }
 export interface FileRoutesByTo {
-  '/auth': typeof AuthRoute
   '/': typeof AuthenticatedIndexRoute
+  '/auth': typeof AuthRoute
+  '/audit': typeof AdminAuditRoute
+  '/plans': typeof AdminPlansRoute
+  '/settings': typeof AdminSettingsRoute
+  '/tenants': typeof AdminTenantsRoute
+  '/users': typeof AdminUsersRoute
   '/accounting/banking': typeof AuthenticatedAccountingBankingRoute
   '/accounting/chart': typeof AuthenticatedAccountingChartRoute
   '/accounting/journals': typeof AuthenticatedAccountingJournalsRoute
@@ -525,16 +530,17 @@ export interface FileRoutesByTo {
   '/settings/users': typeof AuthenticatedSettingsUsersRoute
   '/settings/warehouses': typeof AuthenticatedSettingsWarehousesRoute
   '/settings/workflows': typeof AuthenticatedSettingsWorkflowsRoute
-  '/super-admin/audit': typeof AuthenticatedSuperAdminAuditRoute
-  '/super-admin/plans': typeof AuthenticatedSuperAdminPlansRoute
-  '/super-admin/settings': typeof AuthenticatedSuperAdminSettingsRoute
-  '/super-admin/tenants': typeof AuthenticatedSuperAdminTenantsRoute
-  '/super-admin/users': typeof AuthenticatedSuperAdminUsersRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
+  '/_admin': typeof AdminRouteRouteWithChildren
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
+  '/_admin/audit': typeof AdminAuditRoute
+  '/_admin/plans': typeof AdminPlansRoute
+  '/_admin/settings': typeof AdminSettingsRoute
+  '/_admin/tenants': typeof AdminTenantsRoute
+  '/_admin/users': typeof AdminUsersRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/accounting/banking': typeof AuthenticatedAccountingBankingRoute
   '/_authenticated/accounting/chart': typeof AuthenticatedAccountingChartRoute
@@ -586,17 +592,17 @@ export interface FileRoutesById {
   '/_authenticated/settings/users': typeof AuthenticatedSettingsUsersRoute
   '/_authenticated/settings/warehouses': typeof AuthenticatedSettingsWarehousesRoute
   '/_authenticated/settings/workflows': typeof AuthenticatedSettingsWorkflowsRoute
-  '/_authenticated/super-admin/audit': typeof AuthenticatedSuperAdminAuditRoute
-  '/_authenticated/super-admin/plans': typeof AuthenticatedSuperAdminPlansRoute
-  '/_authenticated/super-admin/settings': typeof AuthenticatedSuperAdminSettingsRoute
-  '/_authenticated/super-admin/tenants': typeof AuthenticatedSuperAdminTenantsRoute
-  '/_authenticated/super-admin/users': typeof AuthenticatedSuperAdminUsersRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
     | '/auth'
+    | '/audit'
+    | '/plans'
+    | '/settings'
+    | '/tenants'
+    | '/users'
     | '/accounting/banking'
     | '/accounting/chart'
     | '/accounting/journals'
@@ -647,15 +653,15 @@ export interface FileRouteTypes {
     | '/settings/users'
     | '/settings/warehouses'
     | '/settings/workflows'
-    | '/super-admin/audit'
-    | '/super-admin/plans'
-    | '/super-admin/settings'
-    | '/super-admin/tenants'
-    | '/super-admin/users'
   fileRoutesByTo: FileRoutesByTo
   to:
-    | '/auth'
     | '/'
+    | '/auth'
+    | '/audit'
+    | '/plans'
+    | '/settings'
+    | '/tenants'
+    | '/users'
     | '/accounting/banking'
     | '/accounting/chart'
     | '/accounting/journals'
@@ -706,15 +712,16 @@ export interface FileRouteTypes {
     | '/settings/users'
     | '/settings/warehouses'
     | '/settings/workflows'
-    | '/super-admin/audit'
-    | '/super-admin/plans'
-    | '/super-admin/settings'
-    | '/super-admin/tenants'
-    | '/super-admin/users'
   id:
     | '__root__'
+    | '/_admin'
     | '/_authenticated'
     | '/auth'
+    | '/_admin/audit'
+    | '/_admin/plans'
+    | '/_admin/settings'
+    | '/_admin/tenants'
+    | '/_admin/users'
     | '/_authenticated/'
     | '/_authenticated/accounting/banking'
     | '/_authenticated/accounting/chart'
@@ -766,14 +773,10 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/users'
     | '/_authenticated/settings/warehouses'
     | '/_authenticated/settings/workflows'
-    | '/_authenticated/super-admin/audit'
-    | '/_authenticated/super-admin/plans'
-    | '/_authenticated/super-admin/settings'
-    | '/_authenticated/super-admin/tenants'
-    | '/_authenticated/super-admin/users'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
+  AdminRouteRoute: typeof AdminRouteRouteWithChildren
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
 }
@@ -794,6 +797,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_admin': {
+      id: '/_admin'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AdminRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/': {
       id: '/_authenticated/'
       path: '/'
@@ -801,40 +811,40 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/super-admin/users': {
-      id: '/_authenticated/super-admin/users'
-      path: '/super-admin/users'
-      fullPath: '/super-admin/users'
-      preLoaderRoute: typeof AuthenticatedSuperAdminUsersRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+    '/_admin/users': {
+      id: '/_admin/users'
+      path: '/users'
+      fullPath: '/users'
+      preLoaderRoute: typeof AdminUsersRouteImport
+      parentRoute: typeof AdminRouteRoute
     }
-    '/_authenticated/super-admin/tenants': {
-      id: '/_authenticated/super-admin/tenants'
-      path: '/super-admin/tenants'
-      fullPath: '/super-admin/tenants'
-      preLoaderRoute: typeof AuthenticatedSuperAdminTenantsRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+    '/_admin/tenants': {
+      id: '/_admin/tenants'
+      path: '/tenants'
+      fullPath: '/tenants'
+      preLoaderRoute: typeof AdminTenantsRouteImport
+      parentRoute: typeof AdminRouteRoute
     }
-    '/_authenticated/super-admin/settings': {
-      id: '/_authenticated/super-admin/settings'
-      path: '/super-admin/settings'
-      fullPath: '/super-admin/settings'
-      preLoaderRoute: typeof AuthenticatedSuperAdminSettingsRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+    '/_admin/settings': {
+      id: '/_admin/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof AdminSettingsRouteImport
+      parentRoute: typeof AdminRouteRoute
     }
-    '/_authenticated/super-admin/plans': {
-      id: '/_authenticated/super-admin/plans'
-      path: '/super-admin/plans'
-      fullPath: '/super-admin/plans'
-      preLoaderRoute: typeof AuthenticatedSuperAdminPlansRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+    '/_admin/plans': {
+      id: '/_admin/plans'
+      path: '/plans'
+      fullPath: '/plans'
+      preLoaderRoute: typeof AdminPlansRouteImport
+      parentRoute: typeof AdminRouteRoute
     }
-    '/_authenticated/super-admin/audit': {
-      id: '/_authenticated/super-admin/audit'
-      path: '/super-admin/audit'
-      fullPath: '/super-admin/audit'
-      preLoaderRoute: typeof AuthenticatedSuperAdminAuditRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+    '/_admin/audit': {
+      id: '/_admin/audit'
+      path: '/audit'
+      fullPath: '/audit'
+      preLoaderRoute: typeof AdminAuditRouteImport
+      parentRoute: typeof AdminRouteRoute
     }
     '/_authenticated/settings/workflows': {
       id: '/_authenticated/settings/workflows'
@@ -1189,6 +1199,26 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AdminRouteRouteChildren {
+  AdminAuditRoute: typeof AdminAuditRoute
+  AdminPlansRoute: typeof AdminPlansRoute
+  AdminSettingsRoute: typeof AdminSettingsRoute
+  AdminTenantsRoute: typeof AdminTenantsRoute
+  AdminUsersRoute: typeof AdminUsersRoute
+}
+
+const AdminRouteRouteChildren: AdminRouteRouteChildren = {
+  AdminAuditRoute: AdminAuditRoute,
+  AdminPlansRoute: AdminPlansRoute,
+  AdminSettingsRoute: AdminSettingsRoute,
+  AdminTenantsRoute: AdminTenantsRoute,
+  AdminUsersRoute: AdminUsersRoute,
+}
+
+const AdminRouteRouteWithChildren = AdminRouteRoute._addFileChildren(
+  AdminRouteRouteChildren,
+)
+
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
   AuthenticatedAccountingBankingRoute: typeof AuthenticatedAccountingBankingRoute
@@ -1241,11 +1271,6 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedSettingsUsersRoute: typeof AuthenticatedSettingsUsersRoute
   AuthenticatedSettingsWarehousesRoute: typeof AuthenticatedSettingsWarehousesRoute
   AuthenticatedSettingsWorkflowsRoute: typeof AuthenticatedSettingsWorkflowsRoute
-  AuthenticatedSuperAdminAuditRoute: typeof AuthenticatedSuperAdminAuditRoute
-  AuthenticatedSuperAdminPlansRoute: typeof AuthenticatedSuperAdminPlansRoute
-  AuthenticatedSuperAdminSettingsRoute: typeof AuthenticatedSuperAdminSettingsRoute
-  AuthenticatedSuperAdminTenantsRoute: typeof AuthenticatedSuperAdminTenantsRoute
-  AuthenticatedSuperAdminUsersRoute: typeof AuthenticatedSuperAdminUsersRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -1308,17 +1333,13 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSettingsUsersRoute: AuthenticatedSettingsUsersRoute,
   AuthenticatedSettingsWarehousesRoute: AuthenticatedSettingsWarehousesRoute,
   AuthenticatedSettingsWorkflowsRoute: AuthenticatedSettingsWorkflowsRoute,
-  AuthenticatedSuperAdminAuditRoute: AuthenticatedSuperAdminAuditRoute,
-  AuthenticatedSuperAdminPlansRoute: AuthenticatedSuperAdminPlansRoute,
-  AuthenticatedSuperAdminSettingsRoute: AuthenticatedSuperAdminSettingsRoute,
-  AuthenticatedSuperAdminTenantsRoute: AuthenticatedSuperAdminTenantsRoute,
-  AuthenticatedSuperAdminUsersRoute: AuthenticatedSuperAdminUsersRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
   AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
+  AdminRouteRoute: AdminRouteRouteWithChildren,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
 }
