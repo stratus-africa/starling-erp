@@ -1,11 +1,11 @@
 import {
-  LayoutDashboard, Building2, Users, CreditCard, ShieldCheck, Activity, Settings2,
-  UserCircle2, FileText, ShoppingCart, Package, Truck, Receipt, Wallet, FileMinus,
-  Store, ClipboardList, ShoppingBag, FileSpreadsheet, Coins, HandCoins, PiggyBank,
-  Boxes, Warehouse, PackagePlus, ArrowLeftRight, BookOpen, Factory, ListTree, Cog,
-  PlayCircle, BookText, Landmark, BookMarked, Scale, BarChart3, LineChart, PieChart,
-  TrendingUp, Wallet2, Gauge, Bell, KeyRound, Layers, Percent, Globe, Ruler,
-  Workflow, Hash, Mail, Truck as TruckIcon, HardHat,
+  LayoutDashboard, Building2, Users, CreditCard, Activity, UserCircle2, FileText,
+  ShoppingCart, Package, Truck, Receipt, Wallet, FileMinus, Store, ClipboardList,
+  ShoppingBag, FileSpreadsheet, Coins, HandCoins, PiggyBank, Boxes, Warehouse,
+  PackagePlus, ArrowLeftRight, BookOpen, Factory, ListTree, Cog, PlayCircle,
+  BookText, Landmark, BookMarked, Scale, BarChart3, LineChart, PieChart, TrendingUp,
+  Wallet2, Gauge, Bell, KeyRound, Layers, Percent, Globe, Ruler, Workflow, Hash,
+  Mail, Truck as TruckIcon, HardHat, ShieldCheck, Settings2,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -90,16 +90,6 @@ export const navGroups: NavGroup[] = [
     ],
   },
   {
-    label: "Super Admin",
-    items: [
-      { title: "Tenants", url: "/super-admin/tenants", icon: Building2 },
-      { title: "Subscription Plans", url: "/super-admin/plans", icon: CreditCard },
-      { title: "Platform Users", url: "/super-admin/users", icon: Users },
-      { title: "Audit Logs", url: "/super-admin/audit", icon: ShieldCheck },
-      { title: "System Settings", url: "/super-admin/settings", icon: Settings2 },
-    ],
-  },
-  {
     label: "Settings",
     items: [
       { title: "Company Profile", url: "/settings/company", icon: Building2 },
@@ -115,6 +105,24 @@ export const navGroups: NavGroup[] = [
       { title: "Users", url: "/settings/users", icon: Users },
       { title: "Roles & Permissions", url: "/settings/roles", icon: Layers },
       { title: "API Keys", url: "/settings/api-keys", icon: KeyRound },
+    ],
+  },
+];
+
+export const adminNavGroups: NavGroup[] = [
+  {
+    label: "Platform",
+    items: [
+      { title: "Tenants", url: "/admin/tenants", icon: Building2 },
+      { title: "Subscription Plans", url: "/admin/plans", icon: CreditCard },
+      { title: "Platform Users", url: "/admin/users", icon: Users },
+    ],
+  },
+  {
+    label: "Operations",
+    items: [
+      { title: "Audit Logs", url: "/admin/audit", icon: ShieldCheck },
+      { title: "System Settings", url: "/admin/settings", icon: Settings2 },
     ],
   },
 ];
