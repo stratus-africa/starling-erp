@@ -18,11 +18,6 @@ import { Route as AdminTenantsRouteImport } from './routes/_admin/tenants'
 import { Route as AdminSettingsRouteImport } from './routes/_admin/settings'
 import { Route as AdminPlansRouteImport } from './routes/_admin/plans'
 import { Route as AdminAuditRouteImport } from './routes/_admin/audit'
-import { Route as AuthenticatedSuperAdminUsersRouteImport } from './routes/_authenticated/super-admin.users'
-import { Route as AuthenticatedSuperAdminTenantsRouteImport } from './routes/_authenticated/super-admin.tenants'
-import { Route as AuthenticatedSuperAdminSettingsRouteImport } from './routes/_authenticated/super-admin.settings'
-import { Route as AuthenticatedSuperAdminPlansRouteImport } from './routes/_authenticated/super-admin.plans'
-import { Route as AuthenticatedSuperAdminAuditRouteImport } from './routes/_authenticated/super-admin.audit'
 import { Route as AuthenticatedSettingsWorkflowsRouteImport } from './routes/_authenticated/settings.workflows'
 import { Route as AuthenticatedSettingsWarehousesRouteImport } from './routes/_authenticated/settings.warehouses'
 import { Route as AuthenticatedSettingsUsersRouteImport } from './routes/_authenticated/settings.users'
@@ -117,36 +112,6 @@ const AdminAuditRoute = AdminAuditRouteImport.update({
   path: '/audit',
   getParentRoute: () => AdminRouteRoute,
 } as any)
-const AuthenticatedSuperAdminUsersRoute =
-  AuthenticatedSuperAdminUsersRouteImport.update({
-    id: '/super-admin/users',
-    path: '/super-admin/users',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedSuperAdminTenantsRoute =
-  AuthenticatedSuperAdminTenantsRouteImport.update({
-    id: '/super-admin/tenants',
-    path: '/super-admin/tenants',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedSuperAdminSettingsRoute =
-  AuthenticatedSuperAdminSettingsRouteImport.update({
-    id: '/super-admin/settings',
-    path: '/super-admin/settings',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedSuperAdminPlansRoute =
-  AuthenticatedSuperAdminPlansRouteImport.update({
-    id: '/super-admin/plans',
-    path: '/super-admin/plans',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedSuperAdminAuditRoute =
-  AuthenticatedSuperAdminAuditRouteImport.update({
-    id: '/super-admin/audit',
-    path: '/super-admin/audit',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
 const AuthenticatedSettingsWorkflowsRoute =
   AuthenticatedSettingsWorkflowsRouteImport.update({
     id: '/settings/workflows',
@@ -506,11 +471,6 @@ export interface FileRoutesByFullPath {
   '/settings/users': typeof AuthenticatedSettingsUsersRoute
   '/settings/warehouses': typeof AuthenticatedSettingsWarehousesRoute
   '/settings/workflows': typeof AuthenticatedSettingsWorkflowsRoute
-  '/super-admin/audit': typeof AuthenticatedSuperAdminAuditRoute
-  '/super-admin/plans': typeof AuthenticatedSuperAdminPlansRoute
-  '/super-admin/settings': typeof AuthenticatedSuperAdminSettingsRoute
-  '/super-admin/tenants': typeof AuthenticatedSuperAdminTenantsRoute
-  '/super-admin/users': typeof AuthenticatedSuperAdminUsersRoute
 }
 export interface FileRoutesByTo {
   '/': typeof AuthenticatedIndexRoute
@@ -570,11 +530,6 @@ export interface FileRoutesByTo {
   '/settings/users': typeof AuthenticatedSettingsUsersRoute
   '/settings/warehouses': typeof AuthenticatedSettingsWarehousesRoute
   '/settings/workflows': typeof AuthenticatedSettingsWorkflowsRoute
-  '/super-admin/audit': typeof AuthenticatedSuperAdminAuditRoute
-  '/super-admin/plans': typeof AuthenticatedSuperAdminPlansRoute
-  '/super-admin/settings': typeof AuthenticatedSuperAdminSettingsRoute
-  '/super-admin/tenants': typeof AuthenticatedSuperAdminTenantsRoute
-  '/super-admin/users': typeof AuthenticatedSuperAdminUsersRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -637,11 +592,6 @@ export interface FileRoutesById {
   '/_authenticated/settings/users': typeof AuthenticatedSettingsUsersRoute
   '/_authenticated/settings/warehouses': typeof AuthenticatedSettingsWarehousesRoute
   '/_authenticated/settings/workflows': typeof AuthenticatedSettingsWorkflowsRoute
-  '/_authenticated/super-admin/audit': typeof AuthenticatedSuperAdminAuditRoute
-  '/_authenticated/super-admin/plans': typeof AuthenticatedSuperAdminPlansRoute
-  '/_authenticated/super-admin/settings': typeof AuthenticatedSuperAdminSettingsRoute
-  '/_authenticated/super-admin/tenants': typeof AuthenticatedSuperAdminTenantsRoute
-  '/_authenticated/super-admin/users': typeof AuthenticatedSuperAdminUsersRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -703,11 +653,6 @@ export interface FileRouteTypes {
     | '/settings/users'
     | '/settings/warehouses'
     | '/settings/workflows'
-    | '/super-admin/audit'
-    | '/super-admin/plans'
-    | '/super-admin/settings'
-    | '/super-admin/tenants'
-    | '/super-admin/users'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -767,11 +712,6 @@ export interface FileRouteTypes {
     | '/settings/users'
     | '/settings/warehouses'
     | '/settings/workflows'
-    | '/super-admin/audit'
-    | '/super-admin/plans'
-    | '/super-admin/settings'
-    | '/super-admin/tenants'
-    | '/super-admin/users'
   id:
     | '__root__'
     | '/_admin'
@@ -833,11 +773,6 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/users'
     | '/_authenticated/settings/warehouses'
     | '/_authenticated/settings/workflows'
-    | '/_authenticated/super-admin/audit'
-    | '/_authenticated/super-admin/plans'
-    | '/_authenticated/super-admin/settings'
-    | '/_authenticated/super-admin/tenants'
-    | '/_authenticated/super-admin/users'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -910,41 +845,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/audit'
       preLoaderRoute: typeof AdminAuditRouteImport
       parentRoute: typeof AdminRouteRoute
-    }
-    '/_authenticated/super-admin/users': {
-      id: '/_authenticated/super-admin/users'
-      path: '/super-admin/users'
-      fullPath: '/super-admin/users'
-      preLoaderRoute: typeof AuthenticatedSuperAdminUsersRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/super-admin/tenants': {
-      id: '/_authenticated/super-admin/tenants'
-      path: '/super-admin/tenants'
-      fullPath: '/super-admin/tenants'
-      preLoaderRoute: typeof AuthenticatedSuperAdminTenantsRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/super-admin/settings': {
-      id: '/_authenticated/super-admin/settings'
-      path: '/super-admin/settings'
-      fullPath: '/super-admin/settings'
-      preLoaderRoute: typeof AuthenticatedSuperAdminSettingsRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/super-admin/plans': {
-      id: '/_authenticated/super-admin/plans'
-      path: '/super-admin/plans'
-      fullPath: '/super-admin/plans'
-      preLoaderRoute: typeof AuthenticatedSuperAdminPlansRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/super-admin/audit': {
-      id: '/_authenticated/super-admin/audit'
-      path: '/super-admin/audit'
-      fullPath: '/super-admin/audit'
-      preLoaderRoute: typeof AuthenticatedSuperAdminAuditRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/settings/workflows': {
       id: '/_authenticated/settings/workflows'
@@ -1371,11 +1271,6 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedSettingsUsersRoute: typeof AuthenticatedSettingsUsersRoute
   AuthenticatedSettingsWarehousesRoute: typeof AuthenticatedSettingsWarehousesRoute
   AuthenticatedSettingsWorkflowsRoute: typeof AuthenticatedSettingsWorkflowsRoute
-  AuthenticatedSuperAdminAuditRoute: typeof AuthenticatedSuperAdminAuditRoute
-  AuthenticatedSuperAdminPlansRoute: typeof AuthenticatedSuperAdminPlansRoute
-  AuthenticatedSuperAdminSettingsRoute: typeof AuthenticatedSuperAdminSettingsRoute
-  AuthenticatedSuperAdminTenantsRoute: typeof AuthenticatedSuperAdminTenantsRoute
-  AuthenticatedSuperAdminUsersRoute: typeof AuthenticatedSuperAdminUsersRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -1438,11 +1333,6 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSettingsUsersRoute: AuthenticatedSettingsUsersRoute,
   AuthenticatedSettingsWarehousesRoute: AuthenticatedSettingsWarehousesRoute,
   AuthenticatedSettingsWorkflowsRoute: AuthenticatedSettingsWorkflowsRoute,
-  AuthenticatedSuperAdminAuditRoute: AuthenticatedSuperAdminAuditRoute,
-  AuthenticatedSuperAdminPlansRoute: AuthenticatedSuperAdminPlansRoute,
-  AuthenticatedSuperAdminSettingsRoute: AuthenticatedSuperAdminSettingsRoute,
-  AuthenticatedSuperAdminTenantsRoute: AuthenticatedSuperAdminTenantsRoute,
-  AuthenticatedSuperAdminUsersRoute: AuthenticatedSuperAdminUsersRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
