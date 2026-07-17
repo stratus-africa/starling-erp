@@ -118,11 +118,13 @@ export function DataModulePage(props: DataModulePageProps) {
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm"><Download className="h-4 w-4 mr-1.5" /> Export</Button>
-          {canWrite && (
+          {canWrite && (createHref ? (
+            <Button asChild size="sm"><Link to={createHref as any}><Plus className="h-4 w-4 mr-1.5" /> New {entityLabel}</Link></Button>
+          ) : (
             <Button size="sm" onClick={() => setCreating(true)}>
               <Plus className="h-4 w-4 mr-1.5" /> New {entityLabel}
             </Button>
-          )}
+          ))}
         </div>
       </div>
 
