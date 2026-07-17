@@ -165,8 +165,11 @@ export function DataModulePage(props: DataModulePageProps) {
                   No records yet. {canWrite && <>Click <span className="font-medium">New {entityLabel}</span> to create one.</>}
                 </TableCell></TableRow>
               )}
-              {rows.map((row) => (
-                <TableRow key={row.id} className="hover:bg-muted/30">
+              {rows.map((row) => {
+                const href = rowHref?.(row);
+                return (
+                <TableRow key={row.id} className={"hover:bg-muted/30 " + (href ? "cursor-pointer" : "")}
+                  onClick={href ? () => navigate({ to: href as any }) : undefined}>
                   {tableFields.map((c) => {
                     const v = row[c.key];
                     const content = c.render ? c.render(v, row)
@@ -175,19 +178,23 @@ export function DataModulePage(props: DataModulePageProps) {
                       ) : v == null || v === "" ? <span className="text-muted-foreground">—</span> : String(v);
                     return <TableCell key={c.key} className={"text-sm " + (c.className ?? "")}>{content}</TableCell>;
                   })}
-                  <TableCell>
+                  <TableCell onClick={(e) => e.stopPropagation()}>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="icon" className="h-7 w-7"><MoreHorizontal className="h-4 w-4" /></Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => setEditing(row)}>{canWrite ? "Edit" : "View"}</DropdownMenuItem>
+                        {href ? (
+                          <DropdownMenuItem onClick={() => navigate({ to: href as any })}>{canWrite ? "Open" : "View"}</DropdownMenuItem>
+                        ) : (
+                          <DropdownMenuItem onClick={() => setEditing(row)}>{canWrite ? "Edit" : "View"}</DropdownMenuItem>
+                        )}
                         {canWrite && <DropdownMenuItem className="text-destructive" onClick={() => setDeletingId(row.id)}>Delete</DropdownMenuItem>}
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
                 </TableRow>
-              ))}
+              );})}
             </TableBody>
           </Table>
         </div>
