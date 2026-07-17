@@ -215,8 +215,8 @@ export function DocumentEditor({ kind, id }: { kind: DocKind; id: string }) {
     },
     onSuccess: (newId, rpc) => {
       qc.invalidateQueries();
-      if (rpc === "convert_quote_to_order") { toast.success("Converted to order"); nav({ to: "/sales/orders/$id" as any, params: { id: newId } }); }
-      else if (rpc === "convert_order_to_invoice") { toast.success("Converted to invoice"); nav({ to: "/sales/invoices/$id" as any, params: { id: newId } }); }
+      if (rpc === "convert_quote_to_order") { toast.success("Converted to order"); nav({ to: `/sales/orders/${newId}` as any }); }
+      else if (rpc === "convert_order_to_invoice") { toast.success("Converted to invoice"); nav({ to: `/sales/invoices/${newId}` as any }); }
       else toast.success("Invoice posted");
     },
     onError: (e: any) => toast.error(e.message ?? "Action failed"),
