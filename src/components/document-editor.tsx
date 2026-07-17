@@ -195,7 +195,10 @@ export function DocumentEditor({ kind, id }: { kind: DocKind; id: string }) {
       toast.success("Saved");
       qc.invalidateQueries({ queryKey: [cfg.table] });
       qc.invalidateQueries({ queryKey: [cfg.lines] });
-      if (isNew && docId) nav({ to: `/sales/${kind === "quote" ? "quotes" : kind === "order" ? "orders" : "invoices"}/$id` as any, params: { id: docId } });
+      if (isNew && docId) {
+        const seg = kind === "quote" ? "quotes" : kind === "order" ? "orders" : "invoices";
+        nav({ to: `/sales/${seg}/${docId}` as any });
+      }
     },
     onError: (e: any) => toast.error(e.message ?? "Save failed"),
   });
