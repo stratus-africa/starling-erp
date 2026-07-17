@@ -11,6 +11,9 @@ export const Route = createFileRoute("/_authenticated/sales/invoices")({
       fields={invoiceFields}
       entityLabel="Invoice"
       attachments={true}
+      searchColumn="number"
+      rowHref={(r) => `/sales/invoices/${r.id}`}
+      createHref="/sales/invoices/new"
     />
   ),
 });

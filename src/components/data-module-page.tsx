@@ -28,6 +28,7 @@ import {
 import { useModuleList, useModuleMutations, useFkOptions } from "@/hooks/use-module-data";
 import { AttachmentsPanel } from "@/components/attachments-panel";
 import { useAuth, type AppRole } from "@/hooks/use-auth";
+import { Link, useNavigate } from "@tanstack/react-router";
 
 export interface FieldDef {
   key: string;
@@ -54,6 +55,8 @@ interface DataModulePageProps {
   writeRoles?: AppRole[];
   searchColumn?: string;
   defaultOrder?: string;
+  rowHref?: (row: any) => string;
+  createHref?: string;
 }
 
 const statusVariant: Record<string, string> = {
@@ -78,9 +81,11 @@ export function DataModulePage(props: DataModulePageProps) {
   const {
     title, description, table, fields, entityLabel, attachments,
     writeRoles = ["tenant_admin"], searchColumn = "name", defaultOrder = "created_at",
+    rowHref, createHref,
   } = props;
 
   const { hasRole } = useAuth();
+  const navigate = useNavigate();
   const canWrite = hasRole(["tenant_admin", "super_admin", ...writeRoles]);
 
   const [search, setSearch] = useState("");
@@ -114,11 +119,13 @@ export function DataModulePage(props: DataModulePageProps) {
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm"><Download className="h-4 w-4 mr-1.5" /> Export</Button>
-          {canWrite && (
+          {canWrite && (createHref ? (
+            <Button asChild size="sm"><Link to={createHref as any}><Plus className="h-4 w-4 mr-1.5" /> New {entityLabel}</Link></Button>
+          ) : (
             <Button size="sm" onClick={() => setCreating(true)}>
               <Plus className="h-4 w-4 mr-1.5" /> New {entityLabel}
             </Button>
-          )}
+          ))}
         </div>
       </div>
 
@@ -159,8 +166,11 @@ export function DataModulePage(props: DataModulePageProps) {
                   No records yet. {canWrite && <>Click <span className="font-medium">New {entityLabel}</span> to create one.</>}
                 </TableCell></TableRow>
               )}
-              {rows.map((row) => (
-                <TableRow key={row.id} className="hover:bg-muted/30">
+              {rows.map((row) => {
+                const href = rowHref?.(row);
+                return (
+                <TableRow key={row.id} className={"hover:bg-muted/30 " + (href ? "cursor-pointer" : "")}
+                  onClick={href ? () => navigate({ to: href as any }) : undefined}>
                   {tableFields.map((c) => {
                     const v = row[c.key];
                     const content = c.render ? c.render(v, row)
@@ -169,19 +179,23 @@ export function DataModulePage(props: DataModulePageProps) {
                       ) : v == null || v === "" ? <span className="text-muted-foreground">—</span> : String(v);
                     return <TableCell key={c.key} className={"text-sm " + (c.className ?? "")}>{content}</TableCell>;
                   })}
-                  <TableCell>
+                  <TableCell onClick={(e) => e.stopPropagation()}>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="icon" className="h-7 w-7"><MoreHorizontal className="h-4 w-4" /></Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => setEditing(row)}>{canWrite ? "Edit" : "View"}</DropdownMenuItem>
+                        {href ? (
+                          <DropdownMenuItem onClick={() => navigate({ to: href as any })}>{canWrite ? "Open" : "View"}</DropdownMenuItem>
+                        ) : (
+                          <DropdownMenuItem onClick={() => setEditing(row)}>{canWrite ? "Edit" : "View"}</DropdownMenuItem>
+                        )}
                         {canWrite && <DropdownMenuItem className="text-destructive" onClick={() => setDeletingId(row.id)}>Delete</DropdownMenuItem>}
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
                 </TableRow>
-              ))}
+              );})}
             </TableBody>
           </Table>
         </div>
