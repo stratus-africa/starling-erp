@@ -80,6 +80,7 @@ export function DataModulePage(props: DataModulePageProps) {
   const {
     title, description, table, fields, entityLabel, attachments,
     writeRoles = ["tenant_admin"], searchColumn = "name", defaultOrder = "created_at",
+    rowHref, createHref,
   } = props;
 
   const { hasRole } = useAuth();
