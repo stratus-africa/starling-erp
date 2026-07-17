@@ -68,6 +68,9 @@ import { Route as AuthenticatedAccountingReconciliationRouteImport } from './rou
 import { Route as AuthenticatedAccountingJournalsRouteImport } from './routes/_authenticated/accounting.journals'
 import { Route as AuthenticatedAccountingChartRouteImport } from './routes/_authenticated/accounting.chart'
 import { Route as AuthenticatedAccountingBankingRouteImport } from './routes/_authenticated/accounting.banking'
+import { Route as AuthenticatedSalesQuotesIdRouteImport } from './routes/_authenticated/sales.quotes.$id'
+import { Route as AuthenticatedSalesOrdersIdRouteImport } from './routes/_authenticated/sales.orders.$id'
+import { Route as AuthenticatedSalesInvoicesIdRouteImport } from './routes/_authenticated/sales.invoices.$id'
 
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
@@ -412,6 +415,24 @@ const AuthenticatedAccountingBankingRoute =
     path: '/accounting/banking',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedSalesQuotesIdRoute =
+  AuthenticatedSalesQuotesIdRouteImport.update({
+    id: '/$id',
+    path: '/$id',
+    getParentRoute: () => AuthenticatedSalesQuotesRoute,
+  } as any)
+const AuthenticatedSalesOrdersIdRoute =
+  AuthenticatedSalesOrdersIdRouteImport.update({
+    id: '/$id',
+    path: '/$id',
+    getParentRoute: () => AuthenticatedSalesOrdersRoute,
+  } as any)
+const AuthenticatedSalesInvoicesIdRoute =
+  AuthenticatedSalesInvoicesIdRouteImport.update({
+    id: '/$id',
+    path: '/$id',
+    getParentRoute: () => AuthenticatedSalesInvoicesRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
@@ -452,11 +473,11 @@ export interface FileRoutesByFullPath {
   '/reports/purchases': typeof AuthenticatedReportsPurchasesRoute
   '/reports/sales': typeof AuthenticatedReportsSalesRoute
   '/sales/credit-notes': typeof AuthenticatedSalesCreditNotesRoute
-  '/sales/invoices': typeof AuthenticatedSalesInvoicesRoute
-  '/sales/orders': typeof AuthenticatedSalesOrdersRoute
+  '/sales/invoices': typeof AuthenticatedSalesInvoicesRouteWithChildren
+  '/sales/orders': typeof AuthenticatedSalesOrdersRouteWithChildren
   '/sales/packages': typeof AuthenticatedSalesPackagesRoute
   '/sales/payments': typeof AuthenticatedSalesPaymentsRoute
-  '/sales/quotes': typeof AuthenticatedSalesQuotesRoute
+  '/sales/quotes': typeof AuthenticatedSalesQuotesRouteWithChildren
   '/sales/shipments': typeof AuthenticatedSalesShipmentsRoute
   '/settings/api-keys': typeof AuthenticatedSettingsApiKeysRoute
   '/settings/company': typeof AuthenticatedSettingsCompanyRoute
@@ -471,6 +492,9 @@ export interface FileRoutesByFullPath {
   '/settings/users': typeof AuthenticatedSettingsUsersRoute
   '/settings/warehouses': typeof AuthenticatedSettingsWarehousesRoute
   '/settings/workflows': typeof AuthenticatedSettingsWorkflowsRoute
+  '/sales/invoices/$id': typeof AuthenticatedSalesInvoicesIdRoute
+  '/sales/orders/$id': typeof AuthenticatedSalesOrdersIdRoute
+  '/sales/quotes/$id': typeof AuthenticatedSalesQuotesIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof AuthenticatedIndexRoute
@@ -511,11 +535,11 @@ export interface FileRoutesByTo {
   '/reports/purchases': typeof AuthenticatedReportsPurchasesRoute
   '/reports/sales': typeof AuthenticatedReportsSalesRoute
   '/sales/credit-notes': typeof AuthenticatedSalesCreditNotesRoute
-  '/sales/invoices': typeof AuthenticatedSalesInvoicesRoute
-  '/sales/orders': typeof AuthenticatedSalesOrdersRoute
+  '/sales/invoices': typeof AuthenticatedSalesInvoicesRouteWithChildren
+  '/sales/orders': typeof AuthenticatedSalesOrdersRouteWithChildren
   '/sales/packages': typeof AuthenticatedSalesPackagesRoute
   '/sales/payments': typeof AuthenticatedSalesPaymentsRoute
-  '/sales/quotes': typeof AuthenticatedSalesQuotesRoute
+  '/sales/quotes': typeof AuthenticatedSalesQuotesRouteWithChildren
   '/sales/shipments': typeof AuthenticatedSalesShipmentsRoute
   '/settings/api-keys': typeof AuthenticatedSettingsApiKeysRoute
   '/settings/company': typeof AuthenticatedSettingsCompanyRoute
@@ -530,6 +554,9 @@ export interface FileRoutesByTo {
   '/settings/users': typeof AuthenticatedSettingsUsersRoute
   '/settings/warehouses': typeof AuthenticatedSettingsWarehousesRoute
   '/settings/workflows': typeof AuthenticatedSettingsWorkflowsRoute
+  '/sales/invoices/$id': typeof AuthenticatedSalesInvoicesIdRoute
+  '/sales/orders/$id': typeof AuthenticatedSalesOrdersIdRoute
+  '/sales/quotes/$id': typeof AuthenticatedSalesQuotesIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -573,11 +600,11 @@ export interface FileRoutesById {
   '/_authenticated/reports/purchases': typeof AuthenticatedReportsPurchasesRoute
   '/_authenticated/reports/sales': typeof AuthenticatedReportsSalesRoute
   '/_authenticated/sales/credit-notes': typeof AuthenticatedSalesCreditNotesRoute
-  '/_authenticated/sales/invoices': typeof AuthenticatedSalesInvoicesRoute
-  '/_authenticated/sales/orders': typeof AuthenticatedSalesOrdersRoute
+  '/_authenticated/sales/invoices': typeof AuthenticatedSalesInvoicesRouteWithChildren
+  '/_authenticated/sales/orders': typeof AuthenticatedSalesOrdersRouteWithChildren
   '/_authenticated/sales/packages': typeof AuthenticatedSalesPackagesRoute
   '/_authenticated/sales/payments': typeof AuthenticatedSalesPaymentsRoute
-  '/_authenticated/sales/quotes': typeof AuthenticatedSalesQuotesRoute
+  '/_authenticated/sales/quotes': typeof AuthenticatedSalesQuotesRouteWithChildren
   '/_authenticated/sales/shipments': typeof AuthenticatedSalesShipmentsRoute
   '/_authenticated/settings/api-keys': typeof AuthenticatedSettingsApiKeysRoute
   '/_authenticated/settings/company': typeof AuthenticatedSettingsCompanyRoute
@@ -592,6 +619,9 @@ export interface FileRoutesById {
   '/_authenticated/settings/users': typeof AuthenticatedSettingsUsersRoute
   '/_authenticated/settings/warehouses': typeof AuthenticatedSettingsWarehousesRoute
   '/_authenticated/settings/workflows': typeof AuthenticatedSettingsWorkflowsRoute
+  '/_authenticated/sales/invoices/$id': typeof AuthenticatedSalesInvoicesIdRoute
+  '/_authenticated/sales/orders/$id': typeof AuthenticatedSalesOrdersIdRoute
+  '/_authenticated/sales/quotes/$id': typeof AuthenticatedSalesQuotesIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -653,6 +683,9 @@ export interface FileRouteTypes {
     | '/settings/users'
     | '/settings/warehouses'
     | '/settings/workflows'
+    | '/sales/invoices/$id'
+    | '/sales/orders/$id'
+    | '/sales/quotes/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -712,6 +745,9 @@ export interface FileRouteTypes {
     | '/settings/users'
     | '/settings/warehouses'
     | '/settings/workflows'
+    | '/sales/invoices/$id'
+    | '/sales/orders/$id'
+    | '/sales/quotes/$id'
   id:
     | '__root__'
     | '/_admin'
@@ -773,6 +809,9 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/users'
     | '/_authenticated/settings/warehouses'
     | '/_authenticated/settings/workflows'
+    | '/_authenticated/sales/invoices/$id'
+    | '/_authenticated/sales/orders/$id'
+    | '/_authenticated/sales/quotes/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -1196,6 +1235,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAccountingBankingRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/sales/quotes/$id': {
+      id: '/_authenticated/sales/quotes/$id'
+      path: '/$id'
+      fullPath: '/sales/quotes/$id'
+      preLoaderRoute: typeof AuthenticatedSalesQuotesIdRouteImport
+      parentRoute: typeof AuthenticatedSalesQuotesRoute
+    }
+    '/_authenticated/sales/orders/$id': {
+      id: '/_authenticated/sales/orders/$id'
+      path: '/$id'
+      fullPath: '/sales/orders/$id'
+      preLoaderRoute: typeof AuthenticatedSalesOrdersIdRouteImport
+      parentRoute: typeof AuthenticatedSalesOrdersRoute
+    }
+    '/_authenticated/sales/invoices/$id': {
+      id: '/_authenticated/sales/invoices/$id'
+      path: '/$id'
+      fullPath: '/sales/invoices/$id'
+      preLoaderRoute: typeof AuthenticatedSalesInvoicesIdRouteImport
+      parentRoute: typeof AuthenticatedSalesInvoicesRoute
+    }
   }
 }
 
@@ -1218,6 +1278,48 @@ const AdminRouteRouteChildren: AdminRouteRouteChildren = {
 const AdminRouteRouteWithChildren = AdminRouteRoute._addFileChildren(
   AdminRouteRouteChildren,
 )
+
+interface AuthenticatedSalesInvoicesRouteChildren {
+  AuthenticatedSalesInvoicesIdRoute: typeof AuthenticatedSalesInvoicesIdRoute
+}
+
+const AuthenticatedSalesInvoicesRouteChildren: AuthenticatedSalesInvoicesRouteChildren =
+  {
+    AuthenticatedSalesInvoicesIdRoute: AuthenticatedSalesInvoicesIdRoute,
+  }
+
+const AuthenticatedSalesInvoicesRouteWithChildren =
+  AuthenticatedSalesInvoicesRoute._addFileChildren(
+    AuthenticatedSalesInvoicesRouteChildren,
+  )
+
+interface AuthenticatedSalesOrdersRouteChildren {
+  AuthenticatedSalesOrdersIdRoute: typeof AuthenticatedSalesOrdersIdRoute
+}
+
+const AuthenticatedSalesOrdersRouteChildren: AuthenticatedSalesOrdersRouteChildren =
+  {
+    AuthenticatedSalesOrdersIdRoute: AuthenticatedSalesOrdersIdRoute,
+  }
+
+const AuthenticatedSalesOrdersRouteWithChildren =
+  AuthenticatedSalesOrdersRoute._addFileChildren(
+    AuthenticatedSalesOrdersRouteChildren,
+  )
+
+interface AuthenticatedSalesQuotesRouteChildren {
+  AuthenticatedSalesQuotesIdRoute: typeof AuthenticatedSalesQuotesIdRoute
+}
+
+const AuthenticatedSalesQuotesRouteChildren: AuthenticatedSalesQuotesRouteChildren =
+  {
+    AuthenticatedSalesQuotesIdRoute: AuthenticatedSalesQuotesIdRoute,
+  }
+
+const AuthenticatedSalesQuotesRouteWithChildren =
+  AuthenticatedSalesQuotesRoute._addFileChildren(
+    AuthenticatedSalesQuotesRouteChildren,
+  )
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
@@ -1252,11 +1354,11 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedReportsPurchasesRoute: typeof AuthenticatedReportsPurchasesRoute
   AuthenticatedReportsSalesRoute: typeof AuthenticatedReportsSalesRoute
   AuthenticatedSalesCreditNotesRoute: typeof AuthenticatedSalesCreditNotesRoute
-  AuthenticatedSalesInvoicesRoute: typeof AuthenticatedSalesInvoicesRoute
-  AuthenticatedSalesOrdersRoute: typeof AuthenticatedSalesOrdersRoute
+  AuthenticatedSalesInvoicesRoute: typeof AuthenticatedSalesInvoicesRouteWithChildren
+  AuthenticatedSalesOrdersRoute: typeof AuthenticatedSalesOrdersRouteWithChildren
   AuthenticatedSalesPackagesRoute: typeof AuthenticatedSalesPackagesRoute
   AuthenticatedSalesPaymentsRoute: typeof AuthenticatedSalesPaymentsRoute
-  AuthenticatedSalesQuotesRoute: typeof AuthenticatedSalesQuotesRoute
+  AuthenticatedSalesQuotesRoute: typeof AuthenticatedSalesQuotesRouteWithChildren
   AuthenticatedSalesShipmentsRoute: typeof AuthenticatedSalesShipmentsRoute
   AuthenticatedSettingsApiKeysRoute: typeof AuthenticatedSettingsApiKeysRoute
   AuthenticatedSettingsCompanyRoute: typeof AuthenticatedSettingsCompanyRoute
@@ -1312,11 +1414,11 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedReportsPurchasesRoute: AuthenticatedReportsPurchasesRoute,
   AuthenticatedReportsSalesRoute: AuthenticatedReportsSalesRoute,
   AuthenticatedSalesCreditNotesRoute: AuthenticatedSalesCreditNotesRoute,
-  AuthenticatedSalesInvoicesRoute: AuthenticatedSalesInvoicesRoute,
-  AuthenticatedSalesOrdersRoute: AuthenticatedSalesOrdersRoute,
+  AuthenticatedSalesInvoicesRoute: AuthenticatedSalesInvoicesRouteWithChildren,
+  AuthenticatedSalesOrdersRoute: AuthenticatedSalesOrdersRouteWithChildren,
   AuthenticatedSalesPackagesRoute: AuthenticatedSalesPackagesRoute,
   AuthenticatedSalesPaymentsRoute: AuthenticatedSalesPaymentsRoute,
-  AuthenticatedSalesQuotesRoute: AuthenticatedSalesQuotesRoute,
+  AuthenticatedSalesQuotesRoute: AuthenticatedSalesQuotesRouteWithChildren,
   AuthenticatedSalesShipmentsRoute: AuthenticatedSalesShipmentsRoute,
   AuthenticatedSettingsApiKeysRoute: AuthenticatedSettingsApiKeysRoute,
   AuthenticatedSettingsCompanyRoute: AuthenticatedSettingsCompanyRoute,

@@ -54,6 +54,8 @@ interface DataModulePageProps {
   writeRoles?: AppRole[];
   searchColumn?: string;
   defaultOrder?: string;
+  rowHref?: (row: any) => string;
+  createHref?: string;
 }
 
 const statusVariant: Record<string, string> = {
