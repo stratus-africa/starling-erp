@@ -28,6 +28,7 @@ import {
 import { useModuleList, useModuleMutations, useFkOptions } from "@/hooks/use-module-data";
 import { AttachmentsPanel } from "@/components/attachments-panel";
 import { useAuth, type AppRole } from "@/hooks/use-auth";
+import { Link, useNavigate } from "@tanstack/react-router";
 
 export interface FieldDef {
   key: string;
