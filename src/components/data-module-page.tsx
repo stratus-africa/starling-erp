@@ -85,6 +85,7 @@ export function DataModulePage(props: DataModulePageProps) {
   } = props;
 
   const { hasRole } = useAuth();
+  const navigate = useNavigate();
   const canWrite = hasRole(["tenant_admin", "super_admin", ...writeRoles]);
 
   const [search, setSearch] = useState("");
