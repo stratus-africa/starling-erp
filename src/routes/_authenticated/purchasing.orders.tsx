@@ -11,6 +11,9 @@ export const Route = createFileRoute("/_authenticated/purchasing/orders")({
       fields={purchaseOrderFields}
       entityLabel="Purchase Order"
       attachments={true}
+      searchColumn="number"
+      rowHref={(r) => `/purchasing/orders/${r.id}`}
+      createHref="/purchasing/orders/new"
     />
   ),
 });

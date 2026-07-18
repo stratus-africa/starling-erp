@@ -11,6 +11,9 @@ export const Route = createFileRoute("/_authenticated/purchasing/bills")({
       fields={billFields}
       entityLabel="Bill"
       attachments={true}
+      searchColumn="number"
+      rowHref={(r) => `/purchasing/bills/${r.id}`}
+      createHref="/purchasing/bills/new"
     />
   ),
 });
