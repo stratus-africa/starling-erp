@@ -71,6 +71,8 @@ import { Route as AuthenticatedAccountingBankingRouteImport } from './routes/_au
 import { Route as AuthenticatedSalesQuotesIdRouteImport } from './routes/_authenticated/sales.quotes.$id'
 import { Route as AuthenticatedSalesOrdersIdRouteImport } from './routes/_authenticated/sales.orders.$id'
 import { Route as AuthenticatedSalesInvoicesIdRouteImport } from './routes/_authenticated/sales.invoices.$id'
+import { Route as AuthenticatedPurchasingOrdersIdRouteImport } from './routes/_authenticated/purchasing.orders.$id'
+import { Route as AuthenticatedPurchasingBillsIdRouteImport } from './routes/_authenticated/purchasing.bills.$id'
 
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
@@ -433,6 +435,18 @@ const AuthenticatedSalesInvoicesIdRoute =
     path: '/$id',
     getParentRoute: () => AuthenticatedSalesInvoicesRoute,
   } as any)
+const AuthenticatedPurchasingOrdersIdRoute =
+  AuthenticatedPurchasingOrdersIdRouteImport.update({
+    id: '/$id',
+    path: '/$id',
+    getParentRoute: () => AuthenticatedPurchasingOrdersRoute,
+  } as any)
+const AuthenticatedPurchasingBillsIdRoute =
+  AuthenticatedPurchasingBillsIdRouteImport.update({
+    id: '/$id',
+    path: '/$id',
+    getParentRoute: () => AuthenticatedPurchasingBillsRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
@@ -460,10 +474,10 @@ export interface FileRoutesByFullPath {
   '/manufacturing/items': typeof AuthenticatedManufacturingItemsRoute
   '/manufacturing/orders': typeof AuthenticatedManufacturingOrdersRoute
   '/manufacturing/runs': typeof AuthenticatedManufacturingRunsRoute
-  '/purchasing/bills': typeof AuthenticatedPurchasingBillsRoute
+  '/purchasing/bills': typeof AuthenticatedPurchasingBillsRouteWithChildren
   '/purchasing/credits': typeof AuthenticatedPurchasingCreditsRoute
   '/purchasing/expenses': typeof AuthenticatedPurchasingExpensesRoute
-  '/purchasing/orders': typeof AuthenticatedPurchasingOrdersRoute
+  '/purchasing/orders': typeof AuthenticatedPurchasingOrdersRouteWithChildren
   '/purchasing/payments': typeof AuthenticatedPurchasingPaymentsRoute
   '/purchasing/requisitions': typeof AuthenticatedPurchasingRequisitionsRoute
   '/purchasing/suppliers': typeof AuthenticatedPurchasingSuppliersRoute
@@ -492,6 +506,8 @@ export interface FileRoutesByFullPath {
   '/settings/users': typeof AuthenticatedSettingsUsersRoute
   '/settings/warehouses': typeof AuthenticatedSettingsWarehousesRoute
   '/settings/workflows': typeof AuthenticatedSettingsWorkflowsRoute
+  '/purchasing/bills/$id': typeof AuthenticatedPurchasingBillsIdRoute
+  '/purchasing/orders/$id': typeof AuthenticatedPurchasingOrdersIdRoute
   '/sales/invoices/$id': typeof AuthenticatedSalesInvoicesIdRoute
   '/sales/orders/$id': typeof AuthenticatedSalesOrdersIdRoute
   '/sales/quotes/$id': typeof AuthenticatedSalesQuotesIdRoute
@@ -522,10 +538,10 @@ export interface FileRoutesByTo {
   '/manufacturing/items': typeof AuthenticatedManufacturingItemsRoute
   '/manufacturing/orders': typeof AuthenticatedManufacturingOrdersRoute
   '/manufacturing/runs': typeof AuthenticatedManufacturingRunsRoute
-  '/purchasing/bills': typeof AuthenticatedPurchasingBillsRoute
+  '/purchasing/bills': typeof AuthenticatedPurchasingBillsRouteWithChildren
   '/purchasing/credits': typeof AuthenticatedPurchasingCreditsRoute
   '/purchasing/expenses': typeof AuthenticatedPurchasingExpensesRoute
-  '/purchasing/orders': typeof AuthenticatedPurchasingOrdersRoute
+  '/purchasing/orders': typeof AuthenticatedPurchasingOrdersRouteWithChildren
   '/purchasing/payments': typeof AuthenticatedPurchasingPaymentsRoute
   '/purchasing/requisitions': typeof AuthenticatedPurchasingRequisitionsRoute
   '/purchasing/suppliers': typeof AuthenticatedPurchasingSuppliersRoute
@@ -554,6 +570,8 @@ export interface FileRoutesByTo {
   '/settings/users': typeof AuthenticatedSettingsUsersRoute
   '/settings/warehouses': typeof AuthenticatedSettingsWarehousesRoute
   '/settings/workflows': typeof AuthenticatedSettingsWorkflowsRoute
+  '/purchasing/bills/$id': typeof AuthenticatedPurchasingBillsIdRoute
+  '/purchasing/orders/$id': typeof AuthenticatedPurchasingOrdersIdRoute
   '/sales/invoices/$id': typeof AuthenticatedSalesInvoicesIdRoute
   '/sales/orders/$id': typeof AuthenticatedSalesOrdersIdRoute
   '/sales/quotes/$id': typeof AuthenticatedSalesQuotesIdRoute
@@ -587,10 +605,10 @@ export interface FileRoutesById {
   '/_authenticated/manufacturing/items': typeof AuthenticatedManufacturingItemsRoute
   '/_authenticated/manufacturing/orders': typeof AuthenticatedManufacturingOrdersRoute
   '/_authenticated/manufacturing/runs': typeof AuthenticatedManufacturingRunsRoute
-  '/_authenticated/purchasing/bills': typeof AuthenticatedPurchasingBillsRoute
+  '/_authenticated/purchasing/bills': typeof AuthenticatedPurchasingBillsRouteWithChildren
   '/_authenticated/purchasing/credits': typeof AuthenticatedPurchasingCreditsRoute
   '/_authenticated/purchasing/expenses': typeof AuthenticatedPurchasingExpensesRoute
-  '/_authenticated/purchasing/orders': typeof AuthenticatedPurchasingOrdersRoute
+  '/_authenticated/purchasing/orders': typeof AuthenticatedPurchasingOrdersRouteWithChildren
   '/_authenticated/purchasing/payments': typeof AuthenticatedPurchasingPaymentsRoute
   '/_authenticated/purchasing/requisitions': typeof AuthenticatedPurchasingRequisitionsRoute
   '/_authenticated/purchasing/suppliers': typeof AuthenticatedPurchasingSuppliersRoute
@@ -619,6 +637,8 @@ export interface FileRoutesById {
   '/_authenticated/settings/users': typeof AuthenticatedSettingsUsersRoute
   '/_authenticated/settings/warehouses': typeof AuthenticatedSettingsWarehousesRoute
   '/_authenticated/settings/workflows': typeof AuthenticatedSettingsWorkflowsRoute
+  '/_authenticated/purchasing/bills/$id': typeof AuthenticatedPurchasingBillsIdRoute
+  '/_authenticated/purchasing/orders/$id': typeof AuthenticatedPurchasingOrdersIdRoute
   '/_authenticated/sales/invoices/$id': typeof AuthenticatedSalesInvoicesIdRoute
   '/_authenticated/sales/orders/$id': typeof AuthenticatedSalesOrdersIdRoute
   '/_authenticated/sales/quotes/$id': typeof AuthenticatedSalesQuotesIdRoute
@@ -683,6 +703,8 @@ export interface FileRouteTypes {
     | '/settings/users'
     | '/settings/warehouses'
     | '/settings/workflows'
+    | '/purchasing/bills/$id'
+    | '/purchasing/orders/$id'
     | '/sales/invoices/$id'
     | '/sales/orders/$id'
     | '/sales/quotes/$id'
@@ -745,6 +767,8 @@ export interface FileRouteTypes {
     | '/settings/users'
     | '/settings/warehouses'
     | '/settings/workflows'
+    | '/purchasing/bills/$id'
+    | '/purchasing/orders/$id'
     | '/sales/invoices/$id'
     | '/sales/orders/$id'
     | '/sales/quotes/$id'
@@ -809,6 +833,8 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/users'
     | '/_authenticated/settings/warehouses'
     | '/_authenticated/settings/workflows'
+    | '/_authenticated/purchasing/bills/$id'
+    | '/_authenticated/purchasing/orders/$id'
     | '/_authenticated/sales/invoices/$id'
     | '/_authenticated/sales/orders/$id'
     | '/_authenticated/sales/quotes/$id'
@@ -1256,6 +1282,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSalesInvoicesIdRouteImport
       parentRoute: typeof AuthenticatedSalesInvoicesRoute
     }
+    '/_authenticated/purchasing/orders/$id': {
+      id: '/_authenticated/purchasing/orders/$id'
+      path: '/$id'
+      fullPath: '/purchasing/orders/$id'
+      preLoaderRoute: typeof AuthenticatedPurchasingOrdersIdRouteImport
+      parentRoute: typeof AuthenticatedPurchasingOrdersRoute
+    }
+    '/_authenticated/purchasing/bills/$id': {
+      id: '/_authenticated/purchasing/bills/$id'
+      path: '/$id'
+      fullPath: '/purchasing/bills/$id'
+      preLoaderRoute: typeof AuthenticatedPurchasingBillsIdRouteImport
+      parentRoute: typeof AuthenticatedPurchasingBillsRoute
+    }
   }
 }
 
@@ -1278,6 +1318,34 @@ const AdminRouteRouteChildren: AdminRouteRouteChildren = {
 const AdminRouteRouteWithChildren = AdminRouteRoute._addFileChildren(
   AdminRouteRouteChildren,
 )
+
+interface AuthenticatedPurchasingBillsRouteChildren {
+  AuthenticatedPurchasingBillsIdRoute: typeof AuthenticatedPurchasingBillsIdRoute
+}
+
+const AuthenticatedPurchasingBillsRouteChildren: AuthenticatedPurchasingBillsRouteChildren =
+  {
+    AuthenticatedPurchasingBillsIdRoute: AuthenticatedPurchasingBillsIdRoute,
+  }
+
+const AuthenticatedPurchasingBillsRouteWithChildren =
+  AuthenticatedPurchasingBillsRoute._addFileChildren(
+    AuthenticatedPurchasingBillsRouteChildren,
+  )
+
+interface AuthenticatedPurchasingOrdersRouteChildren {
+  AuthenticatedPurchasingOrdersIdRoute: typeof AuthenticatedPurchasingOrdersIdRoute
+}
+
+const AuthenticatedPurchasingOrdersRouteChildren: AuthenticatedPurchasingOrdersRouteChildren =
+  {
+    AuthenticatedPurchasingOrdersIdRoute: AuthenticatedPurchasingOrdersIdRoute,
+  }
+
+const AuthenticatedPurchasingOrdersRouteWithChildren =
+  AuthenticatedPurchasingOrdersRoute._addFileChildren(
+    AuthenticatedPurchasingOrdersRouteChildren,
+  )
 
 interface AuthenticatedSalesInvoicesRouteChildren {
   AuthenticatedSalesInvoicesIdRoute: typeof AuthenticatedSalesInvoicesIdRoute
@@ -1341,10 +1409,10 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedManufacturingItemsRoute: typeof AuthenticatedManufacturingItemsRoute
   AuthenticatedManufacturingOrdersRoute: typeof AuthenticatedManufacturingOrdersRoute
   AuthenticatedManufacturingRunsRoute: typeof AuthenticatedManufacturingRunsRoute
-  AuthenticatedPurchasingBillsRoute: typeof AuthenticatedPurchasingBillsRoute
+  AuthenticatedPurchasingBillsRoute: typeof AuthenticatedPurchasingBillsRouteWithChildren
   AuthenticatedPurchasingCreditsRoute: typeof AuthenticatedPurchasingCreditsRoute
   AuthenticatedPurchasingExpensesRoute: typeof AuthenticatedPurchasingExpensesRoute
-  AuthenticatedPurchasingOrdersRoute: typeof AuthenticatedPurchasingOrdersRoute
+  AuthenticatedPurchasingOrdersRoute: typeof AuthenticatedPurchasingOrdersRouteWithChildren
   AuthenticatedPurchasingPaymentsRoute: typeof AuthenticatedPurchasingPaymentsRoute
   AuthenticatedPurchasingRequisitionsRoute: typeof AuthenticatedPurchasingRequisitionsRoute
   AuthenticatedPurchasingSuppliersRoute: typeof AuthenticatedPurchasingSuppliersRoute
@@ -1399,10 +1467,12 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedManufacturingItemsRoute: AuthenticatedManufacturingItemsRoute,
   AuthenticatedManufacturingOrdersRoute: AuthenticatedManufacturingOrdersRoute,
   AuthenticatedManufacturingRunsRoute: AuthenticatedManufacturingRunsRoute,
-  AuthenticatedPurchasingBillsRoute: AuthenticatedPurchasingBillsRoute,
+  AuthenticatedPurchasingBillsRoute:
+    AuthenticatedPurchasingBillsRouteWithChildren,
   AuthenticatedPurchasingCreditsRoute: AuthenticatedPurchasingCreditsRoute,
   AuthenticatedPurchasingExpensesRoute: AuthenticatedPurchasingExpensesRoute,
-  AuthenticatedPurchasingOrdersRoute: AuthenticatedPurchasingOrdersRoute,
+  AuthenticatedPurchasingOrdersRoute:
+    AuthenticatedPurchasingOrdersRouteWithChildren,
   AuthenticatedPurchasingPaymentsRoute: AuthenticatedPurchasingPaymentsRoute,
   AuthenticatedPurchasingRequisitionsRoute:
     AuthenticatedPurchasingRequisitionsRoute,
