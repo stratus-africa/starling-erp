@@ -13,14 +13,32 @@ import { Card } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft, Loader2, Plus, Save, Send, Trash2, FileText, DollarSign } from "lucide-react";
 import { useFkOptions } from "@/hooks/use-module-data";
+import { RecordPaymentDialog } from "@/components/record-payment-dialog";
 
-export type DocKind = "quote" | "order" | "invoice";
+export type DocKind = "quote" | "order" | "invoice" | "po" | "bill";
 
-const CFG = {
-  quote:   { table: "sales_quotes", lines: "sales_quote_lines", label: "Quote",   prefix: "QT",  dateField: "date", extraDate: { field: "expiry",   label: "Valid Until" }, statuses: ["Draft","Sent","Accepted","Rejected","Expired"] },
-  order:   { table: "sales_orders", lines: "sales_order_lines", label: "Sales Order", prefix: "SO", dateField: "date", extraDate: null, statuses: ["Draft","Confirmed","Processing","Packed","Shipped","Delivered","Invoiced","Cancelled"] },
-  invoice: { table: "invoices",     lines: "invoice_lines",     label: "Invoice", prefix: "INV", dateField: "date", extraDate: { field: "due_date", label: "Due Date" }, statuses: ["Draft","Sent","Posted","Paid","Overdue","Cancelled"] },
-} as const;
+type CfgEntry = {
+  table: string;
+  lines: string;
+  label: string;
+  prefix: string;
+  dateField: string;
+  extraDate: { field: string; label: string } | null;
+  statuses: readonly string[];
+  partyField: "customer_id" | "supplier_id";
+  partyTable: "customers" | "suppliers";
+  partyLabel: string;
+  listPath: string;
+  detailBase: string;
+};
+
+const CFG: Record<DocKind, CfgEntry> = {
+  quote:   { table: "sales_quotes",    lines: "sales_quote_lines",    label: "Quote",          prefix: "QT",   dateField: "date", extraDate: { field: "expiry",        label: "Valid Until" }, statuses: ["Draft","Sent","Accepted","Rejected","Expired"], partyField: "customer_id", partyTable: "customers", partyLabel: "Customer", listPath: "/sales/quotes",       detailBase: "/sales/quotes" },
+  order:   { table: "sales_orders",    lines: "sales_order_lines",    label: "Sales Order",    prefix: "SO",   dateField: "date", extraDate: null,                                                statuses: ["Draft","Confirmed","Processing","Packed","Shipped","Delivered","Invoiced","Cancelled"], partyField: "customer_id", partyTable: "customers", partyLabel: "Customer", listPath: "/sales/orders",       detailBase: "/sales/orders" },
+  invoice: { table: "invoices",        lines: "invoice_lines",        label: "Invoice",        prefix: "INV",  dateField: "date", extraDate: { field: "due_date",      label: "Due Date" },    statuses: ["Draft","Sent","Posted","Paid","Overdue","Cancelled"], partyField: "customer_id", partyTable: "customers", partyLabel: "Customer", listPath: "/sales/invoices",     detailBase: "/sales/invoices" },
+  po:      { table: "purchase_orders", lines: "purchase_order_lines", label: "Purchase Order", prefix: "PO",   dateField: "date", extraDate: { field: "expected_date", label: "Expected" },    statuses: ["Draft","Confirmed","Processing","Delivered","Billed","Cancelled"], partyField: "supplier_id", partyTable: "suppliers", partyLabel: "Supplier", listPath: "/purchasing/orders", detailBase: "/purchasing/orders" },
+  bill:    { table: "bills",           lines: "bill_lines",           label: "Bill",           prefix: "BILL", dateField: "date", extraDate: { field: "due_date",      label: "Due Date" },    statuses: ["Pending","Posted","Paid","Overdue","Cancelled"], partyField: "supplier_id", partyTable: "suppliers", partyLabel: "Supplier", listPath: "/purchasing/bills",  detailBase: "/purchasing/bills" },
+};
 
 const money = (n: number) => (n || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
@@ -49,8 +67,10 @@ export function DocumentEditor({ kind, id }: { kind: DocKind; id: string }) {
   const qc = useQueryClient();
   const nav = useNavigate();
   const { tenant, hasRole } = useAuth();
-  const canWrite = hasRole(["tenant_admin", "super_admin"]);
+  const writeRoles: string[] = kind === "po" || kind === "bill" ? ["tenant_admin", "super_admin", "purchasing"] : ["tenant_admin", "super_admin", "sales", "accounting"];
+  const canWrite = hasRole(writeRoles as any);
   const isNew = id === "new";
+  const [payOpen, setPayOpen] = useState(false);
 
   const { data: doc, isLoading } = useQuery({
     queryKey: [cfg.table, id],
@@ -72,11 +92,11 @@ export function DocumentEditor({ kind, id }: { kind: DocKind; id: string }) {
     },
   });
 
-  const { data: customers = [] } = useFkOptions("customers");
+  const { data: parties = [] } = useFkOptions(cfg.partyTable);
   const { data: items = [] } = useQuery({
     queryKey: ["items", "picker"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("items").select("id,name,sku,price").is("deleted_at", null).order("name");
+      const { data, error } = await supabase.from("items").select("id,name,sku,price,cost").is("deleted_at", null).order("name");
       if (error) throw error;
       return data ?? [];
     },
@@ -85,21 +105,17 @@ export function DocumentEditor({ kind, id }: { kind: DocKind; id: string }) {
 
   const [header, setHeader] = useState<any>({
     number: "",
-    customer_id: "",
+    [cfg.partyField]: "",
     [cfg.dateField]: new Date().toISOString().slice(0, 10),
     ...(cfg.extraDate ? { [cfg.extraDate.field]: "" } : {}),
     currency: "USD",
     notes: "",
-    status: "Draft",
+    status: cfg.statuses[0],
   });
   const [lines, setLines] = useState<Line[]>([]);
 
-  useEffect(() => {
-    if (doc) setHeader(doc);
-  }, [doc]);
-  useEffect(() => {
-    if (linesData) setLines(linesData.map((l: any) => ({ ...l })));
-  }, [linesData]);
+  useEffect(() => { if (doc) setHeader(doc); }, [doc]);
+  useEffect(() => { if (linesData) setLines(linesData.map((l: any) => ({ ...l }))); }, [linesData]);
 
   const totals = useMemo(() => {
     let subtotal = 0, discount_total = 0, tax_total = 0, grand_total = 0;
@@ -142,25 +158,19 @@ export function DocumentEditor({ kind, id }: { kind: DocKind; id: string }) {
   const save = useMutation({
     mutationFn: async () => {
       if (!tenant?.id) throw new Error("No tenant");
-      if (!header.customer_id) throw new Error("Please select a customer");
+      if (!header[cfg.partyField]) throw new Error(`Please select a ${cfg.partyLabel.toLowerCase()}`);
 
-      const headerPayload: any = {
-        ...header,
-        ...totals,
-        amount: totals.grand_total,
-        tenant_id: tenant.id,
-      };
-      if (kind === "invoice") {
+      const headerPayload: any = { ...header, ...totals, amount: totals.grand_total, tenant_id: tenant.id };
+      if (kind === "invoice" || kind === "bill") {
         headerPayload.balance_due = totals.grand_total - (header.amount_paid ?? 0);
         headerPayload.balance = headerPayload.balance_due;
       }
-      // strip fields not in table
       delete headerPayload.id;
       delete headerPayload.created_at;
       delete headerPayload.updated_at;
       delete headerPayload.search_vec;
 
-      let docId = isNew ? null : id;
+      let docId: string | null = isNew ? null : id;
       if (isNew) {
         if (!headerPayload.number) headerPayload.number = `${cfg.prefix}-${Date.now().toString().slice(-8)}`;
         const { data, error } = await supabase.from(cfg.table as any).insert(headerPayload).select("id").single();
@@ -171,7 +181,6 @@ export function DocumentEditor({ kind, id }: { kind: DocKind; id: string }) {
         if (error) throw error;
       }
 
-      // Replace all lines: soft-delete existing then insert fresh
       await supabase.from(cfg.lines as any).update({ deleted_at: new Date().toISOString() }).eq("document_id", docId!);
       if (lines.length) {
         const linePayload = lines.map((l, i) => ({
@@ -195,21 +204,20 @@ export function DocumentEditor({ kind, id }: { kind: DocKind; id: string }) {
       toast.success("Saved");
       qc.invalidateQueries({ queryKey: [cfg.table] });
       qc.invalidateQueries({ queryKey: [cfg.lines] });
-      if (isNew && docId) {
-        const seg = kind === "quote" ? "quotes" : kind === "order" ? "orders" : "invoices";
-        nav({ to: `/sales/${seg}/${docId}` as any });
-      }
+      if (isNew && docId) nav({ to: `${cfg.detailBase}/${docId}` as any });
     },
     onError: (e: any) => toast.error(e.message ?? "Save failed"),
   });
 
   const runRpc = useMutation({
-    mutationFn: async (rpc: "convert_quote_to_order" | "convert_order_to_invoice" | "post_invoice") => {
-      const args =
+    mutationFn: async (rpc: "convert_quote_to_order" | "convert_order_to_invoice" | "post_invoice" | "convert_po_to_bill" | "post_bill") => {
+      const args: any =
         rpc === "convert_quote_to_order" ? { _quote_id: id }
         : rpc === "convert_order_to_invoice" ? { _order_id: id }
-        : { _invoice_id: id };
-      const { data, error } = await supabase.rpc(rpc, args as any);
+        : rpc === "post_invoice" ? { _invoice_id: id }
+        : rpc === "convert_po_to_bill" ? { _po_id: id }
+        : { _bill_id: id };
+      const { data, error } = await supabase.rpc(rpc as any, args);
       if (error) throw error;
       return data as string;
     },
@@ -217,6 +225,8 @@ export function DocumentEditor({ kind, id }: { kind: DocKind; id: string }) {
       qc.invalidateQueries();
       if (rpc === "convert_quote_to_order") { toast.success("Converted to order"); nav({ to: `/sales/orders/${newId}` as any }); }
       else if (rpc === "convert_order_to_invoice") { toast.success("Converted to invoice"); nav({ to: `/sales/invoices/${newId}` as any }); }
+      else if (rpc === "convert_po_to_bill") { toast.success("Converted to bill"); nav({ to: `/purchasing/bills/${newId}` as any }); }
+      else if (rpc === "post_bill") toast.success("Bill posted");
       else toast.success("Invoice posted");
     },
     onError: (e: any) => toast.error(e.message ?? "Action failed"),
@@ -226,31 +236,40 @@ export function DocumentEditor({ kind, id }: { kind: DocKind; id: string }) {
     return <div className="p-8 flex items-center gap-2 text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> Loading…</div>;
   }
 
-  const listPath = kind === "quote" ? "/sales/quotes" : kind === "order" ? "/sales/orders" : "/sales/invoices";
+  const showRecordPayment = !isNew && (kind === "invoice" || kind === "bill") && doc?.posted_at && Number(doc?.balance_due ?? doc?.balance ?? 0) > 0.001;
 
   return (
     <div className="flex flex-col gap-4 p-4 md:p-6 max-w-6xl mx-auto w-full">
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-3 min-w-0">
-          <Button variant="ghost" size="sm" onClick={() => nav({ to: listPath as any })}><ArrowLeft className="h-4 w-4 mr-1" /> Back</Button>
+          <Button variant="ghost" size="sm" onClick={() => nav({ to: cfg.listPath as any })}><ArrowLeft className="h-4 w-4 mr-1" /> Back</Button>
           <div className="min-w-0">
             <div className="flex items-center gap-2">
               <FileText className="h-4 w-4 text-muted-foreground" />
               <h1 className="text-xl font-semibold truncate">{isNew ? `New ${cfg.label}` : header.number || cfg.label}</h1>
               {header.status && <Badge variant="secondary">{header.status}</Badge>}
             </div>
-            {!isNew && <p className="text-xs text-muted-foreground mt-0.5">Grand total ${money(totals.grand_total)}</p>}
+            {!isNew && <p className="text-xs text-muted-foreground mt-0.5">Grand total {header.currency ?? "USD"} {money(totals.grand_total)}</p>}
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap justify-end">
           {canWrite && kind === "quote" && !isNew && (
             <Button variant="outline" size="sm" disabled={runRpc.isPending} onClick={() => runRpc.mutate("convert_quote_to_order")}><Send className="h-4 w-4 mr-1.5" /> Convert to Order</Button>
           )}
           {canWrite && kind === "order" && !isNew && (
             <Button variant="outline" size="sm" disabled={runRpc.isPending} onClick={() => runRpc.mutate("convert_order_to_invoice")}><Send className="h-4 w-4 mr-1.5" /> Convert to Invoice</Button>
           )}
+          {canWrite && kind === "po" && !isNew && (
+            <Button variant="outline" size="sm" disabled={runRpc.isPending} onClick={() => runRpc.mutate("convert_po_to_bill")}><Send className="h-4 w-4 mr-1.5" /> Convert to Bill</Button>
+          )}
           {canWrite && kind === "invoice" && !isNew && !doc?.posted_at && (
             <Button variant="default" size="sm" disabled={runRpc.isPending} onClick={() => runRpc.mutate("post_invoice")}><DollarSign className="h-4 w-4 mr-1.5" /> Post Invoice</Button>
+          )}
+          {canWrite && kind === "bill" && !isNew && !doc?.posted_at && (
+            <Button variant="default" size="sm" disabled={runRpc.isPending} onClick={() => runRpc.mutate("post_bill")}><DollarSign className="h-4 w-4 mr-1.5" /> Post Bill</Button>
+          )}
+          {canWrite && showRecordPayment && (
+            <Button variant="secondary" size="sm" onClick={() => setPayOpen(true)}><DollarSign className="h-4 w-4 mr-1.5" /> Record Payment</Button>
           )}
           {canWrite && (
             <Button size="sm" disabled={save.isPending} onClick={() => save.mutate()}>
@@ -266,11 +285,11 @@ export function DocumentEditor({ kind, id }: { kind: DocKind; id: string }) {
           <Input value={header.number ?? ""} onChange={(e) => setHeader({ ...header, number: e.target.value })} placeholder="Auto" disabled={!canWrite} />
         </div>
         <div className="grid gap-1.5">
-          <Label>Customer</Label>
-          <Select value={header.customer_id ?? ""} onValueChange={(v) => setHeader({ ...header, customer_id: v })} disabled={!canWrite}>
-            <SelectTrigger><SelectValue placeholder="Select customer…" /></SelectTrigger>
+          <Label>{cfg.partyLabel}</Label>
+          <Select value={header[cfg.partyField] ?? ""} onValueChange={(v) => setHeader({ ...header, [cfg.partyField]: v })} disabled={!canWrite}>
+            <SelectTrigger><SelectValue placeholder={`Select ${cfg.partyLabel.toLowerCase()}…`} /></SelectTrigger>
             <SelectContent>
-              {customers.map((c: any) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+              {parties.map((c: any) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
             </SelectContent>
           </Select>
         </div>
@@ -293,7 +312,7 @@ export function DocumentEditor({ kind, id }: { kind: DocKind; id: string }) {
         </div>
         <div className="grid gap-1.5">
           <Label>Status</Label>
-          <Select value={header.status ?? "Draft"} onValueChange={(v) => setHeader({ ...header, status: v })} disabled={!canWrite}>
+          <Select value={header.status ?? cfg.statuses[0]} onValueChange={(v) => setHeader({ ...header, status: v })} disabled={!canWrite}>
             <SelectTrigger><SelectValue /></SelectTrigger>
             <SelectContent>{cfg.statuses.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
           </Select>
@@ -334,7 +353,8 @@ export function DocumentEditor({ kind, id }: { kind: DocKind; id: string }) {
                   <td className="px-2 py-1.5">
                     <Select value={l.item_id ?? ""} onValueChange={(v) => {
                       const it = items.find((i: any) => i.id === v);
-                      updateLine(idx, { item_id: v, description: l.description || it?.name || "", unit_price: l.unit_price || Number(it?.price ?? 0) });
+                      const price = kind === "po" || kind === "bill" ? Number(it?.cost ?? 0) : Number(it?.price ?? 0);
+                      updateLine(idx, { item_id: v, description: l.description || it?.name || "", unit_price: l.unit_price || price });
                     }} disabled={!canWrite}>
                       <SelectTrigger className="h-8"><SelectValue placeholder="Pick item…" /></SelectTrigger>
                       <SelectContent>
@@ -365,7 +385,7 @@ export function DocumentEditor({ kind, id }: { kind: DocKind; id: string }) {
               <span>Grand Total</span>
               <span className="font-mono tabular-nums">{header.currency ?? "USD"} {money(totals.grand_total)}</span>
             </div>
-            {kind === "invoice" && doc?.amount_paid > 0 && (
+            {(kind === "invoice" || kind === "bill") && Number(doc?.amount_paid ?? 0) > 0 && (
               <>
                 <Row label="Paid" v={-Number(doc.amount_paid)} />
                 <div className="flex justify-between font-medium"><span>Balance Due</span><span className="font-mono tabular-nums">{money(totals.grand_total - Number(doc.amount_paid || 0))}</span></div>
@@ -374,6 +394,19 @@ export function DocumentEditor({ kind, id }: { kind: DocKind; id: string }) {
           </div>
         </div>
       </Card>
+
+      {showRecordPayment && (
+        <RecordPaymentDialog
+          open={payOpen}
+          onOpenChange={setPayOpen}
+          kind={kind === "invoice" ? "receive" : "pay"}
+          docId={id}
+          docNumber={header.number ?? ""}
+          partyId={header[cfg.partyField]}
+          balanceDue={Number(doc?.balance_due ?? doc?.balance ?? totals.grand_total)}
+          currency={header.currency ?? "USD"}
+        />
+      )}
     </div>
   );
 }
