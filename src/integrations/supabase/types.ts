@@ -151,55 +151,141 @@ export type Database = {
         }
         Relationships: []
       }
+      bill_lines: {
+        Row: {
+          created_at: string
+          deleted_at: string | null
+          description: string | null
+          discount_pct: number
+          document_id: string
+          id: string
+          item_id: string | null
+          line_no: number
+          line_total: number
+          quantity: number
+          tax_pct: number
+          tenant_id: string
+          unit_price: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          deleted_at?: string | null
+          description?: string | null
+          discount_pct?: number
+          document_id: string
+          id?: string
+          item_id?: string | null
+          line_no?: number
+          line_total?: number
+          quantity?: number
+          tax_pct?: number
+          tenant_id: string
+          unit_price?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          deleted_at?: string | null
+          description?: string | null
+          discount_pct?: number
+          document_id?: string
+          id?: string
+          item_id?: string | null
+          line_no?: number
+          line_total?: number
+          quantity?: number
+          tax_pct?: number
+          tenant_id?: string
+          unit_price?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bill_lines_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "bills"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bills: {
         Row: {
           amount: number | null
+          amount_paid: number
           balance: number | null
+          balance_due: number
           created_at: string
           created_by: string | null
+          currency: string
           date: string | null
           deleted_at: string | null
+          discount_total: number
           due_date: string | null
+          grand_total: number
           id: string
           notes: string | null
           number: string | null
+          posted_at: string | null
           search_vec: unknown
+          source_po_id: string | null
           status: string | null
+          subtotal: number
           supplier_id: string | null
+          tax_total: number
           tenant_id: string
           updated_at: string
         }
         Insert: {
           amount?: number | null
+          amount_paid?: number
           balance?: number | null
+          balance_due?: number
           created_at?: string
           created_by?: string | null
+          currency?: string
           date?: string | null
           deleted_at?: string | null
+          discount_total?: number
           due_date?: string | null
+          grand_total?: number
           id?: string
           notes?: string | null
           number?: string | null
+          posted_at?: string | null
           search_vec?: unknown
+          source_po_id?: string | null
           status?: string | null
+          subtotal?: number
           supplier_id?: string | null
+          tax_total?: number
           tenant_id: string
           updated_at?: string
         }
         Update: {
           amount?: number | null
+          amount_paid?: number
           balance?: number | null
+          balance_due?: number
           created_at?: string
           created_by?: string | null
+          currency?: string
           date?: string | null
           deleted_at?: string | null
+          discount_total?: number
           due_date?: string | null
+          grand_total?: number
           id?: string
           notes?: string | null
           number?: string | null
+          posted_at?: string | null
           search_vec?: unknown
+          source_po_id?: string | null
           status?: string | null
+          subtotal?: number
           supplier_id?: string | null
+          tax_total?: number
           tenant_id?: string
           updated_at?: string
         }
@@ -916,6 +1002,48 @@ export type Database = {
           },
         ]
       }
+      payment_made_applications: {
+        Row: {
+          amount: number
+          bill_id: string
+          created_at: string
+          id: string
+          payment_id: string
+          tenant_id: string
+        }
+        Insert: {
+          amount?: number
+          bill_id: string
+          created_at?: string
+          id?: string
+          payment_id: string
+          tenant_id: string
+        }
+        Update: {
+          amount?: number
+          bill_id?: string
+          created_at?: string
+          id?: string
+          payment_id?: string
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_made_applications_bill_id_fkey"
+            columns: ["bill_id"]
+            isOneToOne: false
+            referencedRelation: "bills"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_made_applications_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "payments_made"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payments_made: {
         Row: {
           amount: number | null
@@ -926,6 +1054,7 @@ export type Database = {
           id: string
           mode: string | null
           number: string | null
+          reference: string | null
           supplier_id: string | null
           tenant_id: string
           updated_at: string
@@ -939,6 +1068,7 @@ export type Database = {
           id?: string
           mode?: string | null
           number?: string | null
+          reference?: string | null
           supplier_id?: string | null
           tenant_id: string
           updated_at?: string
@@ -952,6 +1082,7 @@ export type Database = {
           id?: string
           mode?: string | null
           number?: string | null
+          reference?: string | null
           supplier_id?: string | null
           tenant_id?: string
           updated_at?: string
@@ -1127,52 +1258,129 @@ export type Database = {
           },
         ]
       }
+      purchase_order_lines: {
+        Row: {
+          created_at: string
+          deleted_at: string | null
+          description: string | null
+          discount_pct: number
+          document_id: string
+          id: string
+          item_id: string | null
+          line_no: number
+          line_total: number
+          quantity: number
+          tax_pct: number
+          tenant_id: string
+          unit_price: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          deleted_at?: string | null
+          description?: string | null
+          discount_pct?: number
+          document_id: string
+          id?: string
+          item_id?: string | null
+          line_no?: number
+          line_total?: number
+          quantity?: number
+          tax_pct?: number
+          tenant_id: string
+          unit_price?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          deleted_at?: string | null
+          description?: string | null
+          discount_pct?: number
+          document_id?: string
+          id?: string
+          item_id?: string | null
+          line_no?: number
+          line_total?: number
+          quantity?: number
+          tax_pct?: number
+          tenant_id?: string
+          unit_price?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_order_lines_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       purchase_orders: {
         Row: {
           amount: number | null
+          converted_bill_id: string | null
           created_at: string
           created_by: string | null
+          currency: string
           date: string | null
           deleted_at: string | null
+          discount_total: number
           expected_date: string | null
+          grand_total: number
           id: string
           notes: string | null
           number: string | null
           search_vec: unknown
           status: string | null
+          subtotal: number
           supplier_id: string | null
+          tax_total: number
           tenant_id: string
           updated_at: string
         }
         Insert: {
           amount?: number | null
+          converted_bill_id?: string | null
           created_at?: string
           created_by?: string | null
+          currency?: string
           date?: string | null
           deleted_at?: string | null
+          discount_total?: number
           expected_date?: string | null
+          grand_total?: number
           id?: string
           notes?: string | null
           number?: string | null
           search_vec?: unknown
           status?: string | null
+          subtotal?: number
           supplier_id?: string | null
+          tax_total?: number
           tenant_id: string
           updated_at?: string
         }
         Update: {
           amount?: number | null
+          converted_bill_id?: string | null
           created_at?: string
           created_by?: string | null
+          currency?: string
           date?: string | null
           deleted_at?: string | null
+          discount_total?: number
           expected_date?: string | null
+          grand_total?: number
           id?: string
           notes?: string | null
           number?: string | null
           search_vec?: unknown
           status?: string | null
+          subtotal?: number
           supplier_id?: string | null
+          tax_total?: number
           tenant_id?: string
           updated_at?: string
         }
@@ -1768,7 +1976,12 @@ export type Database = {
         Args: { _allocations: Json; _payment_id: string }
         Returns: undefined
       }
+      apply_payment_made: {
+        Args: { _allocations: Json; _payment_id: string }
+        Returns: undefined
+      }
       convert_order_to_invoice: { Args: { _order_id: string }; Returns: string }
+      convert_po_to_bill: { Args: { _po_id: string }; Returns: string }
       convert_quote_to_order: { Args: { _quote_id: string }; Returns: string }
       current_tenant_id: { Args: never; Returns: string }
       global_search: {
@@ -1795,6 +2008,7 @@ export type Database = {
         Returns: boolean
       }
       is_super_admin: { Args: never; Returns: boolean }
+      post_bill: { Args: { _bill_id: string }; Returns: string }
       post_invoice: { Args: { _invoice_id: string }; Returns: string }
       switch_tenant: { Args: { target_tenant: string }; Returns: string }
       tenant_write_ok: {
