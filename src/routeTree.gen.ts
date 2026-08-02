@@ -33,7 +33,6 @@ import { Route as AuthenticatedSettingsCompanyRouteImport } from './routes/_auth
 import { Route as AuthenticatedSettingsApiKeysRouteImport } from './routes/_authenticated/settings.api-keys'
 import { Route as AuthenticatedSalesShipmentsRouteImport } from './routes/_authenticated/sales.shipments'
 import { Route as AuthenticatedSalesPaymentsRouteImport } from './routes/_authenticated/sales.payments'
-import { Route as AuthenticatedSalesPackagesRouteImport } from './routes/_authenticated/sales.packages'
 import { Route as AuthenticatedSalesCreditNotesRouteImport } from './routes/_authenticated/sales.credit-notes'
 import { Route as AuthenticatedReportsSalesRouteImport } from './routes/_authenticated/reports.sales'
 import { Route as AuthenticatedReportsPurchasesRouteImport } from './routes/_authenticated/reports.purchases'
@@ -205,12 +204,6 @@ const AuthenticatedSalesPaymentsRoute =
   AuthenticatedSalesPaymentsRouteImport.update({
     id: '/sales/payments',
     path: '/sales/payments',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedSalesPackagesRoute =
-  AuthenticatedSalesPackagesRouteImport.update({
-    id: '/sales/packages',
-    path: '/sales/packages',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedSalesCreditNotesRoute =
@@ -485,7 +478,6 @@ export interface FileRoutesByFullPath {
   '/reports/purchases': typeof AuthenticatedReportsPurchasesRoute
   '/reports/sales': typeof AuthenticatedReportsSalesRoute
   '/sales/credit-notes': typeof AuthenticatedSalesCreditNotesRoute
-  '/sales/packages': typeof AuthenticatedSalesPackagesRoute
   '/sales/payments': typeof AuthenticatedSalesPaymentsRoute
   '/sales/shipments': typeof AuthenticatedSalesShipmentsRoute
   '/settings/api-keys': typeof AuthenticatedSettingsApiKeysRoute
@@ -549,7 +541,6 @@ export interface FileRoutesByTo {
   '/reports/purchases': typeof AuthenticatedReportsPurchasesRoute
   '/reports/sales': typeof AuthenticatedReportsSalesRoute
   '/sales/credit-notes': typeof AuthenticatedSalesCreditNotesRoute
-  '/sales/packages': typeof AuthenticatedSalesPackagesRoute
   '/sales/payments': typeof AuthenticatedSalesPaymentsRoute
   '/sales/shipments': typeof AuthenticatedSalesShipmentsRoute
   '/settings/api-keys': typeof AuthenticatedSettingsApiKeysRoute
@@ -616,7 +607,6 @@ export interface FileRoutesById {
   '/_authenticated/reports/purchases': typeof AuthenticatedReportsPurchasesRoute
   '/_authenticated/reports/sales': typeof AuthenticatedReportsSalesRoute
   '/_authenticated/sales/credit-notes': typeof AuthenticatedSalesCreditNotesRoute
-  '/_authenticated/sales/packages': typeof AuthenticatedSalesPackagesRoute
   '/_authenticated/sales/payments': typeof AuthenticatedSalesPaymentsRoute
   '/_authenticated/sales/shipments': typeof AuthenticatedSalesShipmentsRoute
   '/_authenticated/settings/api-keys': typeof AuthenticatedSettingsApiKeysRoute
@@ -682,7 +672,6 @@ export interface FileRouteTypes {
     | '/reports/purchases'
     | '/reports/sales'
     | '/sales/credit-notes'
-    | '/sales/packages'
     | '/sales/payments'
     | '/sales/shipments'
     | '/settings/api-keys'
@@ -746,7 +735,6 @@ export interface FileRouteTypes {
     | '/reports/purchases'
     | '/reports/sales'
     | '/sales/credit-notes'
-    | '/sales/packages'
     | '/sales/payments'
     | '/sales/shipments'
     | '/settings/api-keys'
@@ -812,7 +800,6 @@ export interface FileRouteTypes {
     | '/_authenticated/reports/purchases'
     | '/_authenticated/reports/sales'
     | '/_authenticated/sales/credit-notes'
-    | '/_authenticated/sales/packages'
     | '/_authenticated/sales/payments'
     | '/_authenticated/sales/shipments'
     | '/_authenticated/settings/api-keys'
@@ -1014,13 +1001,6 @@ declare module '@tanstack/react-router' {
       path: '/sales/payments'
       fullPath: '/sales/payments'
       preLoaderRoute: typeof AuthenticatedSalesPaymentsRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/sales/packages': {
-      id: '/_authenticated/sales/packages'
-      path: '/sales/packages'
-      fullPath: '/sales/packages'
-      preLoaderRoute: typeof AuthenticatedSalesPackagesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/sales/credit-notes': {
@@ -1350,7 +1330,6 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedReportsPurchasesRoute: typeof AuthenticatedReportsPurchasesRoute
   AuthenticatedReportsSalesRoute: typeof AuthenticatedReportsSalesRoute
   AuthenticatedSalesCreditNotesRoute: typeof AuthenticatedSalesCreditNotesRoute
-  AuthenticatedSalesPackagesRoute: typeof AuthenticatedSalesPackagesRoute
   AuthenticatedSalesPaymentsRoute: typeof AuthenticatedSalesPaymentsRoute
   AuthenticatedSalesShipmentsRoute: typeof AuthenticatedSalesShipmentsRoute
   AuthenticatedSettingsApiKeysRoute: typeof AuthenticatedSettingsApiKeysRoute
@@ -1415,7 +1394,6 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedReportsPurchasesRoute: AuthenticatedReportsPurchasesRoute,
   AuthenticatedReportsSalesRoute: AuthenticatedReportsSalesRoute,
   AuthenticatedSalesCreditNotesRoute: AuthenticatedSalesCreditNotesRoute,
-  AuthenticatedSalesPackagesRoute: AuthenticatedSalesPackagesRoute,
   AuthenticatedSalesPaymentsRoute: AuthenticatedSalesPaymentsRoute,
   AuthenticatedSalesShipmentsRoute: AuthenticatedSalesShipmentsRoute,
   AuthenticatedSettingsApiKeysRoute: AuthenticatedSettingsApiKeysRoute,
