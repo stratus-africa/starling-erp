@@ -63,6 +63,7 @@ import { Route as AuthenticatedAccountingJournalsRouteImport } from './routes/_a
 import { Route as AuthenticatedAccountingChartRouteImport } from './routes/_authenticated/accounting.chart'
 import { Route as AuthenticatedAccountingBankingRouteImport } from './routes/_authenticated/accounting.banking'
 import { Route as AuthenticatedSalesQuotesIndexRouteImport } from './routes/_authenticated/sales.quotes.index'
+import { Route as AuthenticatedSalesPackagesIndexRouteImport } from './routes/_authenticated/sales.packages.index'
 import { Route as AuthenticatedSalesOrdersIndexRouteImport } from './routes/_authenticated/sales.orders.index'
 import { Route as AuthenticatedSalesInvoicesIndexRouteImport } from './routes/_authenticated/sales.invoices.index'
 import { Route as AuthenticatedPurchasingOrdersIndexRouteImport } from './routes/_authenticated/purchasing.orders.index'
@@ -386,6 +387,12 @@ const AuthenticatedSalesQuotesIndexRoute =
     path: '/sales/quotes/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedSalesPackagesIndexRoute =
+  AuthenticatedSalesPackagesIndexRouteImport.update({
+    id: '/sales/packages/',
+    path: '/sales/packages/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedSalesOrdersIndexRoute =
   AuthenticatedSalesOrdersIndexRouteImport.update({
     id: '/sales/orders/',
@@ -502,6 +509,7 @@ export interface FileRoutesByFullPath {
   '/purchasing/orders/': typeof AuthenticatedPurchasingOrdersIndexRoute
   '/sales/invoices/': typeof AuthenticatedSalesInvoicesIndexRoute
   '/sales/orders/': typeof AuthenticatedSalesOrdersIndexRoute
+  '/sales/packages/': typeof AuthenticatedSalesPackagesIndexRoute
   '/sales/quotes/': typeof AuthenticatedSalesQuotesIndexRoute
 }
 export interface FileRoutesByTo {
@@ -565,6 +573,7 @@ export interface FileRoutesByTo {
   '/purchasing/orders': typeof AuthenticatedPurchasingOrdersIndexRoute
   '/sales/invoices': typeof AuthenticatedSalesInvoicesIndexRoute
   '/sales/orders': typeof AuthenticatedSalesOrdersIndexRoute
+  '/sales/packages': typeof AuthenticatedSalesPackagesIndexRoute
   '/sales/quotes': typeof AuthenticatedSalesQuotesIndexRoute
 }
 export interface FileRoutesById {
@@ -631,6 +640,7 @@ export interface FileRoutesById {
   '/_authenticated/purchasing/orders/': typeof AuthenticatedPurchasingOrdersIndexRoute
   '/_authenticated/sales/invoices/': typeof AuthenticatedSalesInvoicesIndexRoute
   '/_authenticated/sales/orders/': typeof AuthenticatedSalesOrdersIndexRoute
+  '/_authenticated/sales/packages/': typeof AuthenticatedSalesPackagesIndexRoute
   '/_authenticated/sales/quotes/': typeof AuthenticatedSalesQuotesIndexRoute
 }
 export interface FileRouteTypes {
@@ -696,6 +706,7 @@ export interface FileRouteTypes {
     | '/purchasing/orders/'
     | '/sales/invoices/'
     | '/sales/orders/'
+    | '/sales/packages/'
     | '/sales/quotes/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -759,6 +770,7 @@ export interface FileRouteTypes {
     | '/purchasing/orders'
     | '/sales/invoices'
     | '/sales/orders'
+    | '/sales/packages'
     | '/sales/quotes'
   id:
     | '__root__'
@@ -824,6 +836,7 @@ export interface FileRouteTypes {
     | '/_authenticated/purchasing/orders/'
     | '/_authenticated/sales/invoices/'
     | '/_authenticated/sales/orders/'
+    | '/_authenticated/sales/packages/'
     | '/_authenticated/sales/quotes/'
   fileRoutesById: FileRoutesById
 }
@@ -1213,6 +1226,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSalesQuotesIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/sales/packages/': {
+      id: '/_authenticated/sales/packages/'
+      path: '/sales/packages'
+      fullPath: '/sales/packages/'
+      preLoaderRoute: typeof AuthenticatedSalesPackagesIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/sales/orders/': {
       id: '/_authenticated/sales/orders/'
       path: '/sales/orders'
@@ -1354,6 +1374,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedPurchasingOrdersIndexRoute: typeof AuthenticatedPurchasingOrdersIndexRoute
   AuthenticatedSalesInvoicesIndexRoute: typeof AuthenticatedSalesInvoicesIndexRoute
   AuthenticatedSalesOrdersIndexRoute: typeof AuthenticatedSalesOrdersIndexRoute
+  AuthenticatedSalesPackagesIndexRoute: typeof AuthenticatedSalesPackagesIndexRoute
   AuthenticatedSalesQuotesIndexRoute: typeof AuthenticatedSalesQuotesIndexRoute
 }
 
@@ -1422,6 +1443,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
     AuthenticatedPurchasingOrdersIndexRoute,
   AuthenticatedSalesInvoicesIndexRoute: AuthenticatedSalesInvoicesIndexRoute,
   AuthenticatedSalesOrdersIndexRoute: AuthenticatedSalesOrdersIndexRoute,
+  AuthenticatedSalesPackagesIndexRoute: AuthenticatedSalesPackagesIndexRoute,
   AuthenticatedSalesQuotesIndexRoute: AuthenticatedSalesQuotesIndexRoute,
 }
 
