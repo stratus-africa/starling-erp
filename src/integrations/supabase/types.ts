@@ -953,6 +953,143 @@ export type Database = {
           },
         ]
       }
+      package_lines: {
+        Row: {
+          created_at: string
+          deleted_at: string | null
+          description: string | null
+          document_id: string
+          id: string
+          item_id: string | null
+          line_no: number
+          quantity: number
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          deleted_at?: string | null
+          description?: string | null
+          document_id: string
+          id?: string
+          item_id?: string | null
+          line_no?: number
+          quantity?: number
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          deleted_at?: string | null
+          description?: string | null
+          document_id?: string
+          id?: string
+          item_id?: string | null
+          line_no?: number
+          quantity?: number
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "package_lines_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "packages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "package_lines_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "package_lines_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      packages: {
+        Row: {
+          carrier: string | null
+          created_at: string
+          created_by: string | null
+          customer_id: string | null
+          date: string | null
+          deleted_at: string | null
+          id: string
+          notes: string | null
+          number: string | null
+          sales_order_id: string | null
+          status: string | null
+          tenant_id: string
+          tracking: string | null
+          updated_at: string
+          weight: number | null
+        }
+        Insert: {
+          carrier?: string | null
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string | null
+          date?: string | null
+          deleted_at?: string | null
+          id?: string
+          notes?: string | null
+          number?: string | null
+          sales_order_id?: string | null
+          status?: string | null
+          tenant_id: string
+          tracking?: string | null
+          updated_at?: string
+          weight?: number | null
+        }
+        Update: {
+          carrier?: string | null
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string | null
+          date?: string | null
+          deleted_at?: string | null
+          id?: string
+          notes?: string | null
+          number?: string | null
+          sales_order_id?: string | null
+          status?: string | null
+          tenant_id?: string
+          tracking?: string | null
+          updated_at?: string
+          weight?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "packages_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "packages_sales_order_id_fkey"
+            columns: ["sales_order_id"]
+            isOneToOne: false
+            referencedRelation: "sales_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "packages_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payment_applications: {
         Row: {
           amount: number
