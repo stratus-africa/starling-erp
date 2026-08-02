@@ -183,3 +183,15 @@ export const productionOrderFields: FieldDef[] = [
   { key: "status", label: "Status", type: "select", options: ["Planned","In Progress","Completed","Cancelled"], defaultValue: "Planned" },
   { key: "notes", label: "Notes", type: "textarea", hideInTable: true },
 ];
+
+export const packageFields: FieldDef[] = [
+  { key: "number", label: "Package #", render: mono },
+  { key: "date", label: "Packed Date", type: "date", render: dateFmt },
+  { key: "sales_order_id", label: "Sales Order", type: "fk", fkTable: "sales_orders", fkLabel: "number", hideInTable: true },
+  { key: "customer_id", label: "Customer", type: "fk", fkTable: "customers", hideInTable: true },
+  { key: "weight", label: "Weight (kg)", type: "number", className: "text-right", render: monoRight },
+  { key: "carrier", label: "Carrier" },
+  { key: "tracking", label: "Tracking", render: mono },
+  { key: "status", label: "Status", type: "select", options: ["Draft","Packed","Shipped","Delivered","Cancelled"], defaultValue: "Draft" },
+  { key: "notes", label: "Notes", type: "textarea", hideInTable: true },
+];
