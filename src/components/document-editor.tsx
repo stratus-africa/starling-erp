@@ -236,6 +236,56 @@ export function DocumentEditor({ kind, id }: { kind: DocKind; id: string }) {
     onError: (e: any) => toast.error(e.message ?? "Action failed"),
   });
 
+  const partyId = header[cfg.partyField] || null;
+  const { data: party } = useQuery({
+    queryKey: [cfg.partyTable, "detail", partyId],
+    enabled: !!partyId,
+    queryFn: async () => {
+      const { data, error } = await supabase.from(cfg.partyTable).select("id,name,email").eq("id", partyId).maybeSingle();
+      if (error) throw error;
+      return data as any;
+    },
+  });
+
+  const { data: packages = [] } = useQuery({
+    queryKey: ["packages", "by-order", id],
+    enabled: kind === "order" && !isNew,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("packages" as any)
+        .select("id,number,date,status,tracking,carrier,posted_at")
+        .eq("sales_order_id", id)
+        .is("deleted_at", null)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as any[];
+    },
+  });
+
+  const buildPdf = (): PdfDocInput => ({
+    title: cfg.label,
+    number: header.number ?? "",
+    companyName: tenant?.name ?? "Company",
+    partyLabel: cfg.partyLabel,
+    partyName: party?.name ?? "—",
+    currency: header.currency ?? "USD",
+    meta: [
+      { label: "Date", value: header[cfg.dateField] ?? "" },
+      ...(cfg.extraDate ? [{ label: cfg.extraDate.label, value: header[cfg.extraDate.field] ?? "" }] : []),
+      { label: "Status", value: header.status ?? "" },
+    ],
+    lines: lines.map((l) => ({
+      description: l.description || "",
+      quantity: l.quantity,
+      unit_price: l.unit_price,
+      discount_pct: l.discount_pct,
+      tax_pct: l.tax_pct,
+      line_total: computeLine(l),
+    })),
+    totals,
+    notes: header.notes ?? null,
+  });
+
   if (!isNew && isLoading) {
     return <div className="p-8 flex items-center gap-2 text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> Loading…</div>;
   }
@@ -243,7 +293,8 @@ export function DocumentEditor({ kind, id }: { kind: DocKind; id: string }) {
   const showRecordPayment = !isNew && (kind === "invoice" || kind === "bill") && doc?.posted_at && Number(doc?.balance_due ?? doc?.balance ?? 0) > 0.001;
 
   return (
-    <div className="flex flex-col gap-4 p-4 md:p-6 max-w-6xl mx-auto w-full">
+    <div className="flex flex-col gap-4 p-4 md:p-6 w-full">
+
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-3 min-w-0">
           <Button variant="ghost" size="sm" onClick={() => nav({ to: cfg.listPath as any })}><ArrowLeft className="h-4 w-4 mr-1" /> Back</Button>
