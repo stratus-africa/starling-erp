@@ -11,9 +11,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Loader2, Plus, Save, Send, Trash2, FileText, DollarSign } from "lucide-react";
+import { ArrowLeft, Loader2, Plus, Save, Send, Trash2, FileText, DollarSign, Printer, Mail, Package as PackageIcon } from "lucide-react";
 import { useFkOptions } from "@/hooks/use-module-data";
 import { RecordPaymentDialog } from "@/components/record-payment-dialog";
+import { EmailDocumentDialog } from "@/components/email-document-dialog";
+import { downloadDocumentPdf, type PdfDocInput } from "@/lib/document-pdf";
+import { Link } from "@tanstack/react-router";
 
 export type DocKind = "quote" | "order" | "invoice" | "po" | "bill";
 
