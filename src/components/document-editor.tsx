@@ -308,7 +308,19 @@ export function DocumentEditor({ kind, id }: { kind: DocKind; id: string }) {
           </div>
         </div>
         <div className="flex items-center gap-2 flex-wrap justify-end">
+          {!isNew && (
+            <>
+              <Button variant="outline" size="sm" onClick={() => downloadDocumentPdf(buildPdf())}><Printer className="h-4 w-4 mr-1.5" /> Print PDF</Button>
+              <Button variant="outline" size="sm" onClick={() => setEmailOpen(true)}><Mail className="h-4 w-4 mr-1.5" /> Email</Button>
+            </>
+          )}
+          {canWrite && kind === "order" && !isNew && (
+            <Button variant="outline" size="sm" asChild>
+              <Link to={"/sales/packages/new" as any} search={{ order: id } as any}><PackageIcon className="h-4 w-4 mr-1.5" /> New Package</Link>
+            </Button>
+          )}
           {canWrite && kind === "quote" && !isNew && (
+
             <Button variant="outline" size="sm" disabled={runRpc.isPending} onClick={() => runRpc.mutate("convert_quote_to_order")}><Send className="h-4 w-4 mr-1.5" /> Convert to Order</Button>
           )}
           {canWrite && kind === "order" && !isNew && (
