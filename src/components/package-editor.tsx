@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "@tanstack/react-router";
+import { useNavigate, useSearch, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
@@ -11,7 +11,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Loader2, Package, Plus, Save, Trash2 } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Loader2, Mail, Package, Plus, Printer, Save, Trash2 } from "lucide-react";
+import { downloadDocumentPdf, type PdfDocInput } from "@/lib/document-pdf";
+import { EmailDocumentDialog } from "@/components/email-document-dialog";
 
 const STATUSES = ["Draft", "Packed", "Shipped", "Delivered", "Cancelled"] as const;
 
@@ -25,9 +27,11 @@ interface Line {
 export function PackageEditor({ id }: { id: string }) {
   const qc = useQueryClient();
   const nav = useNavigate();
+  const search = useSearch({ strict: false }) as { order?: string };
   const { tenant, hasRole } = useAuth();
   const canWrite = hasRole(["tenant_admin", "super_admin", "sales"] as any);
   const isNew = id === "new";
+  const [emailOpen, setEmailOpen] = useState(false);
 
   const { data: doc, isLoading } = useQuery({
     queryKey: ["packages", id],
@@ -62,7 +66,17 @@ export function PackageEditor({ id }: { id: string }) {
   const { data: customers = [] } = useQuery({
     queryKey: ["customers", "picker"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("customers").select("id,name").is("deleted_at", null).order("name");
+      const { data, error } = await supabase.from("customers").select("id,name,email").is("deleted_at", null).order("name");
+      if (error) throw error;
+      return data ?? [];
+    },
+    staleTime: 30_000,
+  });
+
+  const { data: warehouses = [] } = useQuery({
+    queryKey: ["warehouses", "picker"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("warehouses").select("id,name").is("deleted_at", null).order("name");
       if (error) throw error;
       return data ?? [];
     },
@@ -81,8 +95,9 @@ export function PackageEditor({ id }: { id: string }) {
 
   const [header, setHeader] = useState<any>({
     number: "",
-    sales_order_id: "",
+    sales_order_id: search?.order ?? "",
     customer_id: "",
+    warehouse_id: "",
     date: new Date().toISOString().slice(0, 10),
     weight: 0,
     carrier: "",
@@ -95,6 +110,30 @@ export function PackageEditor({ id }: { id: string }) {
   useEffect(() => { if (doc) setHeader(doc); }, [doc]);
   useEffect(() => { if (linesData) setLines(linesData.map((l: any) => ({ line_no: l.line_no, item_id: l.item_id, description: l.description ?? "", quantity: Number(l.quantity) }))); }, [linesData]);
 
+  const sourceOrderId = header.sales_order_id || null;
+
+  // Prefill customer + lines from the originating sales order for a brand-new package
+  const { data: sourceLines } = useQuery({
+    queryKey: ["sales_order_lines", "for-package", sourceOrderId],
+    enabled: isNew && !!sourceOrderId,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("sales_order_lines").select("line_no,item_id,description,quantity").eq("document_id", sourceOrderId!).is("deleted_at", null).order("line_no");
+      if (error) throw error;
+      return (data ?? []) as any[];
+    },
+  });
+
+  useEffect(() => {
+    if (!isNew || !sourceOrderId) return;
+    const so = orders.find((o: any) => o.id === sourceOrderId);
+    if (so?.customer_id) setHeader((h: any) => (h.customer_id ? h : { ...h, customer_id: so.customer_id }));
+  }, [isNew, sourceOrderId, orders]);
+
+  useEffect(() => {
+    if (!isNew || !sourceLines?.length) return;
+    setLines((prev) => (prev.length ? prev : sourceLines.map((l: any, i: number) => ({ line_no: i + 1, item_id: l.item_id, description: l.description ?? "", quantity: Number(l.quantity) }))));
+  }, [isNew, sourceLines]);
+
   const addLine = () => setLines((p) => [...p, { line_no: p.length + 1, item_id: null, description: "", quantity: 1 }]);
   const updateLine = (idx: number, patch: Partial<Line>) =>
     setLines((p) => p.map((l, i) => (i === idx ? { ...l, ...patch } : l)));
@@ -102,6 +141,10 @@ export function PackageEditor({ id }: { id: string }) {
     setLines((p) => p.filter((_, i) => i !== idx).map((l, i) => ({ ...l, line_no: i + 1 })));
 
   const totalQty = lines.reduce((s, l) => s + (Number(l.quantity) || 0), 0);
+  const posted = !!doc?.posted_at;
+  const editable = canWrite && !posted;
+  const customer = customers.find((c: any) => c.id === header.customer_id) as any;
+  const order = orders.find((o: any) => o.id === header.sales_order_id) as any;
 
   const save = useMutation({
     mutationFn: async () => {
@@ -110,10 +153,12 @@ export function PackageEditor({ id }: { id: string }) {
 
       const payload: any = { ...header, tenant_id: tenant.id };
       payload.sales_order_id = header.sales_order_id || null;
+      payload.warehouse_id = header.warehouse_id || null;
       payload.weight = Number(header.weight) || 0;
       delete payload.id;
       delete payload.created_at;
       delete payload.updated_at;
+      delete payload.posted_at;
 
       let docId: string | null = isNew ? null : id;
       if (isNew) {
@@ -151,12 +196,44 @@ export function PackageEditor({ id }: { id: string }) {
     onError: (e: any) => toast.error(e.message ?? "Save failed"),
   });
 
+  const confirmPackage = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.rpc("post_package" as any, { _package_id: id });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Package confirmed — stock and journal entry recorded");
+      qc.invalidateQueries();
+    },
+    onError: (e: any) => toast.error(e.message ?? "Confirm failed"),
+  });
+
+  const buildPdf = (): PdfDocInput => ({
+    title: "Packing Slip",
+    number: header.number ?? "",
+    companyName: tenant?.name ?? "Company",
+    partyLabel: "Ship To",
+    partyName: customer?.name ?? "—",
+    currency: "",
+    meta: [
+      { label: "Date", value: header.date ?? "" },
+      { label: "Sales Order", value: order?.number ?? "—" },
+      { label: "Carrier", value: header.carrier || "—" },
+      { label: "Tracking", value: header.tracking || "—" },
+      { label: "Status", value: posted ? "Confirmed" : header.status ?? "" },
+    ],
+    lines: lines.map((l) => ({ description: l.description || "", quantity: l.quantity })),
+    totals: null,
+    notes: header.notes ?? null,
+    quantityOnly: true,
+  });
+
   if (!isNew && isLoading) {
     return <div className="p-8 flex items-center gap-2 text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> Loading…</div>;
   }
 
   return (
-    <div className="flex flex-col gap-4 p-4 md:p-6 max-w-6xl mx-auto w-full">
+    <div className="flex flex-col gap-4 p-4 md:p-6 w-full">
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-3 min-w-0">
           <Button variant="ghost" size="sm" onClick={() => nav({ to: "/sales/packages" as any })}><ArrowLeft className="h-4 w-4 mr-1" /> Back</Button>
@@ -164,22 +241,38 @@ export function PackageEditor({ id }: { id: string }) {
             <div className="flex items-center gap-2">
               <Package className="h-4 w-4 text-muted-foreground" />
               <h1 className="text-xl font-semibold truncate">{isNew ? "New Package" : header.number || "Package"}</h1>
-              {header.status && <Badge variant="secondary">{header.status}</Badge>}
+              <Badge variant="secondary">{posted ? "Confirmed" : header.status}</Badge>
             </div>
-            <p className="text-xs text-muted-foreground mt-0.5">{lines.length} line{lines.length === 1 ? "" : "s"} · {totalQty} unit{totalQty === 1 ? "" : "s"} packed</p>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {lines.length} line{lines.length === 1 ? "" : "s"} · {totalQty} unit{totalQty === 1 ? "" : "s"} packed
+              {order && <> · from <Link className="underline hover:text-foreground" to={`/sales/orders/${order.id}` as any}>{order.number}</Link></>}
+            </p>
           </div>
         </div>
-        {canWrite && (
-          <Button size="sm" disabled={save.isPending} onClick={() => save.mutate()}>
-            {save.isPending ? <Loader2 className="h-4 w-4 mr-1.5 animate-spin" /> : <Save className="h-4 w-4 mr-1.5" />} Save
-          </Button>
-        )}
+        <div className="flex items-center gap-2 flex-wrap justify-end">
+          {!isNew && (
+            <>
+              <Button variant="outline" size="sm" onClick={() => downloadDocumentPdf(buildPdf())}><Printer className="h-4 w-4 mr-1.5" /> Print PDF</Button>
+              <Button variant="outline" size="sm" onClick={() => setEmailOpen(true)}><Mail className="h-4 w-4 mr-1.5" /> Email</Button>
+            </>
+          )}
+          {canWrite && !isNew && !posted && (
+            <Button variant="default" size="sm" disabled={confirmPackage.isPending} onClick={() => confirmPackage.mutate()}>
+              {confirmPackage.isPending ? <Loader2 className="h-4 w-4 mr-1.5 animate-spin" /> : <CheckCircle2 className="h-4 w-4 mr-1.5" />} Confirm & Post
+            </Button>
+          )}
+          {editable && (
+            <Button size="sm" disabled={save.isPending} onClick={() => save.mutate()}>
+              {save.isPending ? <Loader2 className="h-4 w-4 mr-1.5 animate-spin" /> : <Save className="h-4 w-4 mr-1.5" />} Save
+            </Button>
+          )}
+        </div>
       </div>
 
       <Card className="p-4 grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="grid gap-1.5">
           <Label>Package #</Label>
-          <Input value={header.number ?? ""} onChange={(e) => setHeader({ ...header, number: e.target.value })} placeholder="Auto" disabled={!canWrite} />
+          <Input value={header.number ?? ""} onChange={(e) => setHeader({ ...header, number: e.target.value })} placeholder="Auto" disabled={!editable} />
         </div>
         <div className="grid gap-1.5">
           <Label>Sales Order</Label>
@@ -189,7 +282,7 @@ export function PackageEditor({ id }: { id: string }) {
               const so = orders.find((o: any) => o.id === v);
               setHeader({ ...header, sales_order_id: v, customer_id: header.customer_id || so?.customer_id || "" });
             }}
-            disabled={!canWrite}
+            disabled={!editable}
           >
             <SelectTrigger><SelectValue placeholder="Select order…" /></SelectTrigger>
             <SelectContent>
@@ -199,7 +292,7 @@ export function PackageEditor({ id }: { id: string }) {
         </div>
         <div className="grid gap-1.5">
           <Label>Customer</Label>
-          <Select value={header.customer_id ?? ""} onValueChange={(v) => setHeader({ ...header, customer_id: v })} disabled={!canWrite}>
+          <Select value={header.customer_id ?? ""} onValueChange={(v) => setHeader({ ...header, customer_id: v })} disabled={!editable}>
             <SelectTrigger><SelectValue placeholder="Select customer…" /></SelectTrigger>
             <SelectContent>
               {customers.map((c: any) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
@@ -208,37 +301,46 @@ export function PackageEditor({ id }: { id: string }) {
         </div>
         <div className="grid gap-1.5">
           <Label>Packed Date</Label>
-          <Input type="date" value={header.date ?? ""} onChange={(e) => setHeader({ ...header, date: e.target.value })} disabled={!canWrite} />
+          <Input type="date" value={header.date ?? ""} onChange={(e) => setHeader({ ...header, date: e.target.value })} disabled={!editable} />
+        </div>
+        <div className="grid gap-1.5">
+          <Label>Ship From Warehouse</Label>
+          <Select value={header.warehouse_id ?? ""} onValueChange={(v) => setHeader({ ...header, warehouse_id: v })} disabled={!editable}>
+            <SelectTrigger><SelectValue placeholder="Default warehouse" /></SelectTrigger>
+            <SelectContent>
+              {warehouses.map((w: any) => <SelectItem key={w.id} value={w.id}>{w.name}</SelectItem>)}
+            </SelectContent>
+          </Select>
         </div>
         <div className="grid gap-1.5">
           <Label>Weight (kg)</Label>
-          <Input type="number" step="any" value={header.weight ?? 0} onChange={(e) => setHeader({ ...header, weight: Number(e.target.value) })} disabled={!canWrite} />
+          <Input type="number" step="any" value={header.weight ?? 0} onChange={(e) => setHeader({ ...header, weight: Number(e.target.value) })} disabled={!editable} />
         </div>
         <div className="grid gap-1.5">
           <Label>Carrier</Label>
-          <Input value={header.carrier ?? ""} onChange={(e) => setHeader({ ...header, carrier: e.target.value })} placeholder="DHL, FedEx…" disabled={!canWrite} />
+          <Input value={header.carrier ?? ""} onChange={(e) => setHeader({ ...header, carrier: e.target.value })} placeholder="DHL, FedEx…" disabled={!editable} />
         </div>
         <div className="grid gap-1.5">
           <Label>Tracking #</Label>
-          <Input value={header.tracking ?? ""} onChange={(e) => setHeader({ ...header, tracking: e.target.value })} disabled={!canWrite} />
+          <Input value={header.tracking ?? ""} onChange={(e) => setHeader({ ...header, tracking: e.target.value })} disabled={!editable} />
         </div>
         <div className="grid gap-1.5">
           <Label>Status</Label>
-          <Select value={header.status ?? "Draft"} onValueChange={(v) => setHeader({ ...header, status: v })} disabled={!canWrite}>
+          <Select value={header.status ?? "Draft"} onValueChange={(v) => setHeader({ ...header, status: v })} disabled={!editable}>
             <SelectTrigger><SelectValue /></SelectTrigger>
             <SelectContent>{STATUSES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
           </Select>
         </div>
-        <div className="grid gap-1.5 md:col-span-4">
+        <div className="grid gap-1.5 md:col-span-3">
           <Label>Notes</Label>
-          <Textarea rows={1} value={header.notes ?? ""} onChange={(e) => setHeader({ ...header, notes: e.target.value })} disabled={!canWrite} />
+          <Textarea rows={1} value={header.notes ?? ""} onChange={(e) => setHeader({ ...header, notes: e.target.value })} disabled={!editable} />
         </div>
       </Card>
 
       <Card className="p-0 overflow-hidden">
         <div className="flex items-center justify-between px-4 py-2 border-b bg-muted/30">
           <div className="text-sm font-medium">Packed items</div>
-          {canWrite && <Button size="sm" variant="outline" onClick={addLine}><Plus className="h-3.5 w-3.5 mr-1" /> Add line</Button>}
+          {editable && <Button size="sm" variant="outline" onClick={addLine}><Plus className="h-3.5 w-3.5 mr-1" /> Add line</Button>}
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -253,7 +355,7 @@ export function PackageEditor({ id }: { id: string }) {
             </thead>
             <tbody>
               {lines.length === 0 && (
-                <tr><td colSpan={5} className="text-center text-sm text-muted-foreground py-10">No items packed yet. {canWrite && "Click Add line to begin."}</td></tr>
+                <tr><td colSpan={5} className="text-center text-sm text-muted-foreground py-10">No items packed yet. {editable && "Click Add line to begin."}</td></tr>
               )}
               {lines.map((l, idx) => (
                 <tr key={idx} className="border-b hover:bg-muted/20">
@@ -265,7 +367,7 @@ export function PackageEditor({ id }: { id: string }) {
                         const it = items.find((i: any) => i.id === v);
                         updateLine(idx, { item_id: v, description: l.description || it?.name || "" });
                       }}
-                      disabled={!canWrite}
+                      disabled={!editable}
                     >
                       <SelectTrigger className="h-8"><SelectValue placeholder="Pick item…" /></SelectTrigger>
                       <SelectContent>
@@ -273,10 +375,10 @@ export function PackageEditor({ id }: { id: string }) {
                       </SelectContent>
                     </Select>
                   </td>
-                  <td className="px-2 py-1.5"><Input className="h-8" value={l.description} onChange={(e) => updateLine(idx, { description: e.target.value })} disabled={!canWrite} /></td>
-                  <td className="px-2 py-1.5"><Input className="h-8 text-right" type="number" step="any" value={l.quantity} onChange={(e) => updateLine(idx, { quantity: Number(e.target.value) })} disabled={!canWrite} /></td>
+                  <td className="px-2 py-1.5"><Input className="h-8" value={l.description} onChange={(e) => updateLine(idx, { description: e.target.value })} disabled={!editable} /></td>
+                  <td className="px-2 py-1.5"><Input className="h-8 text-right" type="number" step="any" value={l.quantity} onChange={(e) => updateLine(idx, { quantity: Number(e.target.value) })} disabled={!editable} /></td>
                   <td className="px-2 py-1.5">
-                    {canWrite && <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => removeLine(idx)}><Trash2 className="h-3.5 w-3.5 text-destructive" /></Button>}
+                    {editable && <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => removeLine(idx)}><Trash2 className="h-3.5 w-3.5 text-destructive" /></Button>}
                   </td>
                 </tr>
               ))}
@@ -290,6 +392,17 @@ export function PackageEditor({ id }: { id: string }) {
           </div>
         </div>
       </Card>
+
+      {!isNew && (
+        <EmailDocumentDialog
+          open={emailOpen}
+          onOpenChange={setEmailOpen}
+          defaultTo={customer?.email ?? ""}
+          defaultSubject={`Packing slip ${header.number ?? ""}`}
+          defaultMessage={`Dear ${customer?.name ?? "Customer"},\n\nPlease find attached the packing slip ${header.number ?? ""} for your shipment.\n\nKind regards,\n${tenant?.name ?? ""}`}
+          pdf={buildPdf}
+        />
+      )}
     </div>
   );
 }
