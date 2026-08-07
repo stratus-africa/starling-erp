@@ -75,6 +75,7 @@ import { Route as AuthenticatedSalesOrdersIdRouteImport } from './routes/_authen
 import { Route as AuthenticatedSalesInvoicesIdRouteImport } from './routes/_authenticated/sales.invoices.$id'
 import { Route as AuthenticatedPurchasingOrdersIdRouteImport } from './routes/_authenticated/purchasing.orders.$id'
 import { Route as AuthenticatedPurchasingBillsIdRouteImport } from './routes/_authenticated/purchasing.bills.$id'
+import { Route as AuthenticatedCrmCustomersIdRouteImport } from './routes/_authenticated/crm.customers.$id'
 
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
@@ -461,6 +462,12 @@ const AuthenticatedPurchasingBillsIdRoute =
     path: '/purchasing/bills/$id',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedCrmCustomersIdRoute =
+  AuthenticatedCrmCustomersIdRouteImport.update({
+    id: '/$id',
+    path: '/$id',
+    getParentRoute: () => AuthenticatedCrmCustomersRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
@@ -514,6 +521,7 @@ export interface FileRoutesByFullPath {
   '/settings/users': typeof AuthenticatedSettingsUsersRoute
   '/settings/warehouses': typeof AuthenticatedSettingsWarehousesRoute
   '/settings/workflows': typeof AuthenticatedSettingsWorkflowsRoute
+  '/crm/customers/$id': typeof AuthenticatedCrmCustomersIdRoute
   '/purchasing/bills/$id': typeof AuthenticatedPurchasingBillsIdRoute
   '/purchasing/orders/$id': typeof AuthenticatedPurchasingOrdersIdRoute
   '/sales/invoices/$id': typeof AuthenticatedSalesInvoicesIdRoute
@@ -579,6 +587,7 @@ export interface FileRoutesByTo {
   '/settings/users': typeof AuthenticatedSettingsUsersRoute
   '/settings/warehouses': typeof AuthenticatedSettingsWarehousesRoute
   '/settings/workflows': typeof AuthenticatedSettingsWorkflowsRoute
+  '/crm/customers/$id': typeof AuthenticatedCrmCustomersIdRoute
   '/purchasing/bills/$id': typeof AuthenticatedPurchasingBillsIdRoute
   '/purchasing/orders/$id': typeof AuthenticatedPurchasingOrdersIdRoute
   '/sales/invoices/$id': typeof AuthenticatedSalesInvoicesIdRoute
@@ -648,6 +657,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/users': typeof AuthenticatedSettingsUsersRoute
   '/_authenticated/settings/warehouses': typeof AuthenticatedSettingsWarehousesRoute
   '/_authenticated/settings/workflows': typeof AuthenticatedSettingsWorkflowsRoute
+  '/_authenticated/crm/customers/$id': typeof AuthenticatedCrmCustomersIdRoute
   '/_authenticated/purchasing/bills/$id': typeof AuthenticatedPurchasingBillsIdRoute
   '/_authenticated/purchasing/orders/$id': typeof AuthenticatedPurchasingOrdersIdRoute
   '/_authenticated/sales/invoices/$id': typeof AuthenticatedSalesInvoicesIdRoute
@@ -716,6 +726,7 @@ export interface FileRouteTypes {
     | '/settings/users'
     | '/settings/warehouses'
     | '/settings/workflows'
+    | '/crm/customers/$id'
     | '/purchasing/bills/$id'
     | '/purchasing/orders/$id'
     | '/sales/invoices/$id'
@@ -781,6 +792,7 @@ export interface FileRouteTypes {
     | '/settings/users'
     | '/settings/warehouses'
     | '/settings/workflows'
+    | '/crm/customers/$id'
     | '/purchasing/bills/$id'
     | '/purchasing/orders/$id'
     | '/sales/invoices/$id'
@@ -849,6 +861,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/users'
     | '/_authenticated/settings/warehouses'
     | '/_authenticated/settings/workflows'
+    | '/_authenticated/crm/customers/$id'
     | '/_authenticated/purchasing/bills/$id'
     | '/_authenticated/purchasing/orders/$id'
     | '/_authenticated/sales/invoices/$id'
@@ -1334,6 +1347,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPurchasingBillsIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/crm/customers/$id': {
+      id: '/_authenticated/crm/customers/$id'
+      path: '/$id'
+      fullPath: '/crm/customers/$id'
+      preLoaderRoute: typeof AuthenticatedCrmCustomersIdRouteImport
+      parentRoute: typeof AuthenticatedCrmCustomersRoute
+    }
   }
 }
 
@@ -1358,11 +1378,13 @@ const AdminRouteRouteWithChildren = AdminRouteRoute._addFileChildren(
 )
 
 interface AuthenticatedCrmCustomersRouteChildren {
+  AuthenticatedCrmCustomersIdRoute: typeof AuthenticatedCrmCustomersIdRoute
   AuthenticatedCrmCustomersIndexRoute: typeof AuthenticatedCrmCustomersIndexRoute
 }
 
 const AuthenticatedCrmCustomersRouteChildren: AuthenticatedCrmCustomersRouteChildren =
   {
+    AuthenticatedCrmCustomersIdRoute: AuthenticatedCrmCustomersIdRoute,
     AuthenticatedCrmCustomersIndexRoute: AuthenticatedCrmCustomersIndexRoute,
   }
 
