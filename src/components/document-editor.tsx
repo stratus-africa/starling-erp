@@ -74,6 +74,7 @@ export function DocumentEditor({ kind, id }: { kind: DocKind; id: string }) {
   const canWrite = hasRole(writeRoles as any);
   const isNew = id === "new";
   const [payOpen, setPayOpen] = useState(false);
+  const [emailOpen, setEmailOpen] = useState(false);
 
   const { data: doc, isLoading } = useQuery({
     queryKey: [cfg.table, id],
