@@ -1025,11 +1025,13 @@ export type Database = {
           id: string
           notes: string | null
           number: string | null
+          posted_at: string | null
           sales_order_id: string | null
           status: string | null
           tenant_id: string
           tracking: string | null
           updated_at: string
+          warehouse_id: string | null
           weight: number | null
         }
         Insert: {
@@ -1042,11 +1044,13 @@ export type Database = {
           id?: string
           notes?: string | null
           number?: string | null
+          posted_at?: string | null
           sales_order_id?: string | null
           status?: string | null
           tenant_id: string
           tracking?: string | null
           updated_at?: string
+          warehouse_id?: string | null
           weight?: number | null
         }
         Update: {
@@ -1059,11 +1063,13 @@ export type Database = {
           id?: string
           notes?: string | null
           number?: string | null
+          posted_at?: string | null
           sales_order_id?: string | null
           status?: string | null
           tenant_id?: string
           tracking?: string | null
           updated_at?: string
+          warehouse_id?: string | null
           weight?: number | null
         }
         Relationships: [
@@ -1086,6 +1092,13 @@ export type Database = {
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "packages_warehouse_id_fkey"
+            columns: ["warehouse_id"]
+            isOneToOne: false
+            referencedRelation: "warehouses"
             referencedColumns: ["id"]
           },
         ]
@@ -2147,6 +2160,7 @@ export type Database = {
       is_super_admin: { Args: never; Returns: boolean }
       post_bill: { Args: { _bill_id: string }; Returns: string }
       post_invoice: { Args: { _invoice_id: string }; Returns: string }
+      post_package: { Args: { _package_id: string }; Returns: string }
       switch_tenant: { Args: { target_tenant: string }; Returns: string }
       tenant_write_ok: {
         Args: { _roles: Database["public"]["Enums"]["app_role"][] }
