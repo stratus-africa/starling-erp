@@ -462,6 +462,45 @@ export function DocumentEditor({ kind, id }: { kind: DocKind; id: string }) {
         </div>
       </Card>
 
+      {kind === "order" && !isNew && (
+        <Card className="p-0 overflow-hidden">
+          <div className="flex items-center justify-between px-4 py-2 border-b bg-muted/30">
+            <div className="text-sm font-medium flex items-center gap-2"><PackageIcon className="h-4 w-4 text-muted-foreground" /> Fulfillment · Packages</div>
+            {canWrite && (
+              <Button size="sm" variant="outline" asChild>
+                <Link to={"/sales/packages/new" as any} search={{ order: id } as any}><Plus className="h-3.5 w-3.5 mr-1" /> New Package</Link>
+              </Button>
+            )}
+          </div>
+          {packages.length === 0 ? (
+            <div className="text-center text-sm text-muted-foreground py-8">No packages for this order yet.</div>
+          ) : (
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b bg-muted/10 text-xs uppercase tracking-wide text-muted-foreground">
+                  <th className="text-left px-3 py-2">Package #</th>
+                  <th className="text-left px-3 py-2">Date</th>
+                  <th className="text-left px-3 py-2">Carrier</th>
+                  <th className="text-left px-3 py-2">Tracking</th>
+                  <th className="text-left px-3 py-2">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {packages.map((p: any) => (
+                  <tr key={p.id} className="border-b hover:bg-muted/20 cursor-pointer" onClick={() => nav({ to: `/sales/packages/${p.id}` as any })}>
+                    <td className="px-3 py-2 font-medium">{p.number}</td>
+                    <td className="px-3 py-2">{p.date ?? "—"}</td>
+                    <td className="px-3 py-2">{p.carrier || "—"}</td>
+                    <td className="px-3 py-2 font-mono text-xs">{p.tracking || "—"}</td>
+                    <td className="px-3 py-2"><Badge variant="secondary">{p.posted_at ? "Confirmed" : p.status}</Badge></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </Card>
+      )}
+
       {showRecordPayment && (
         <RecordPaymentDialog
           open={payOpen}
@@ -474,6 +513,18 @@ export function DocumentEditor({ kind, id }: { kind: DocKind; id: string }) {
           currency={header.currency ?? "USD"}
         />
       )}
+
+      {!isNew && (
+        <EmailDocumentDialog
+          open={emailOpen}
+          onOpenChange={setEmailOpen}
+          defaultTo={party?.email ?? ""}
+          defaultSubject={`${cfg.label} ${header.number ?? ""}`}
+          defaultMessage={`Dear ${party?.name ?? "Customer"},\n\nPlease find attached ${cfg.label.toLowerCase()} ${header.number ?? ""} for ${header.currency ?? "USD"} ${money(totals.grand_total)}.\n\nKind regards,\n${tenant?.name ?? ""}`}
+          pdf={buildPdf}
+        />
+      )}
+
     </div>
   );
 }
