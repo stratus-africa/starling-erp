@@ -57,7 +57,6 @@ import { Route as AuthenticatedDashboardsSalesRouteImport } from './routes/_auth
 import { Route as AuthenticatedDashboardsProductionRouteImport } from './routes/_authenticated/dashboards.production'
 import { Route as AuthenticatedDashboardsProcurementRouteImport } from './routes/_authenticated/dashboards.procurement'
 import { Route as AuthenticatedDashboardsLogisticsRouteImport } from './routes/_authenticated/dashboards.logistics'
-import { Route as AuthenticatedCrmCustomersRouteImport } from './routes/_authenticated/crm.customers'
 import { Route as AuthenticatedAccountingReconciliationRouteImport } from './routes/_authenticated/accounting.reconciliation'
 import { Route as AuthenticatedAccountingJournalsRouteImport } from './routes/_authenticated/accounting.journals'
 import { Route as AuthenticatedAccountingChartRouteImport } from './routes/_authenticated/accounting.chart'
@@ -354,12 +353,6 @@ const AuthenticatedDashboardsLogisticsRoute =
     path: '/dashboards/logistics',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedCrmCustomersRoute =
-  AuthenticatedCrmCustomersRouteImport.update({
-    id: '/crm/customers',
-    path: '/crm/customers',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
 const AuthenticatedAccountingReconciliationRoute =
   AuthenticatedAccountingReconciliationRouteImport.update({
     id: '/accounting/reconciliation',
@@ -422,9 +415,9 @@ const AuthenticatedPurchasingBillsIndexRoute =
   } as any)
 const AuthenticatedCrmCustomersIndexRoute =
   AuthenticatedCrmCustomersIndexRouteImport.update({
-    id: '/',
-    path: '/',
-    getParentRoute: () => AuthenticatedCrmCustomersRoute,
+    id: '/crm/customers/',
+    path: '/crm/customers/',
+    getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedSalesQuotesIdRoute =
   AuthenticatedSalesQuotesIdRouteImport.update({
@@ -464,9 +457,9 @@ const AuthenticatedPurchasingBillsIdRoute =
   } as any)
 const AuthenticatedCrmCustomersIdRoute =
   AuthenticatedCrmCustomersIdRouteImport.update({
-    id: '/$id',
-    path: '/$id',
-    getParentRoute: () => AuthenticatedCrmCustomersRoute,
+    id: '/crm/customers/$id',
+    path: '/crm/customers/$id',
+    getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 
 export interface FileRoutesByFullPath {
@@ -481,7 +474,6 @@ export interface FileRoutesByFullPath {
   '/accounting/chart': typeof AuthenticatedAccountingChartRoute
   '/accounting/journals': typeof AuthenticatedAccountingJournalsRoute
   '/accounting/reconciliation': typeof AuthenticatedAccountingReconciliationRoute
-  '/crm/customers': typeof AuthenticatedCrmCustomersRouteWithChildren
   '/dashboards/logistics': typeof AuthenticatedDashboardsLogisticsRoute
   '/dashboards/procurement': typeof AuthenticatedDashboardsProcurementRoute
   '/dashboards/production': typeof AuthenticatedDashboardsProductionRoute
@@ -617,7 +609,6 @@ export interface FileRoutesById {
   '/_authenticated/accounting/chart': typeof AuthenticatedAccountingChartRoute
   '/_authenticated/accounting/journals': typeof AuthenticatedAccountingJournalsRoute
   '/_authenticated/accounting/reconciliation': typeof AuthenticatedAccountingReconciliationRoute
-  '/_authenticated/crm/customers': typeof AuthenticatedCrmCustomersRouteWithChildren
   '/_authenticated/dashboards/logistics': typeof AuthenticatedDashboardsLogisticsRoute
   '/_authenticated/dashboards/procurement': typeof AuthenticatedDashboardsProcurementRoute
   '/_authenticated/dashboards/production': typeof AuthenticatedDashboardsProductionRoute
@@ -686,7 +677,6 @@ export interface FileRouteTypes {
     | '/accounting/chart'
     | '/accounting/journals'
     | '/accounting/reconciliation'
-    | '/crm/customers'
     | '/dashboards/logistics'
     | '/dashboards/procurement'
     | '/dashboards/production'
@@ -821,7 +811,6 @@ export interface FileRouteTypes {
     | '/_authenticated/accounting/chart'
     | '/_authenticated/accounting/journals'
     | '/_authenticated/accounting/reconciliation'
-    | '/_authenticated/crm/customers'
     | '/_authenticated/dashboards/logistics'
     | '/_authenticated/dashboards/procurement'
     | '/_authenticated/dashboards/production'
@@ -1221,13 +1210,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardsLogisticsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/crm/customers': {
-      id: '/_authenticated/crm/customers'
-      path: '/crm/customers'
-      fullPath: '/crm/customers'
-      preLoaderRoute: typeof AuthenticatedCrmCustomersRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/_authenticated/accounting/reconciliation': {
       id: '/_authenticated/accounting/reconciliation'
       path: '/accounting/reconciliation'
@@ -1300,10 +1282,10 @@ declare module '@tanstack/react-router' {
     }
     '/_authenticated/crm/customers/': {
       id: '/_authenticated/crm/customers/'
-      path: '/'
+      path: '/crm/customers'
       fullPath: '/crm/customers/'
       preLoaderRoute: typeof AuthenticatedCrmCustomersIndexRouteImport
-      parentRoute: typeof AuthenticatedCrmCustomersRoute
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/sales/quotes/$id': {
       id: '/_authenticated/sales/quotes/$id'
@@ -1349,10 +1331,10 @@ declare module '@tanstack/react-router' {
     }
     '/_authenticated/crm/customers/$id': {
       id: '/_authenticated/crm/customers/$id'
-      path: '/$id'
+      path: '/crm/customers/$id'
       fullPath: '/crm/customers/$id'
       preLoaderRoute: typeof AuthenticatedCrmCustomersIdRouteImport
-      parentRoute: typeof AuthenticatedCrmCustomersRoute
+      parentRoute: typeof AuthenticatedRouteRoute
     }
   }
 }
@@ -1377,29 +1359,12 @@ const AdminRouteRouteWithChildren = AdminRouteRoute._addFileChildren(
   AdminRouteRouteChildren,
 )
 
-interface AuthenticatedCrmCustomersRouteChildren {
-  AuthenticatedCrmCustomersIdRoute: typeof AuthenticatedCrmCustomersIdRoute
-  AuthenticatedCrmCustomersIndexRoute: typeof AuthenticatedCrmCustomersIndexRoute
-}
-
-const AuthenticatedCrmCustomersRouteChildren: AuthenticatedCrmCustomersRouteChildren =
-  {
-    AuthenticatedCrmCustomersIdRoute: AuthenticatedCrmCustomersIdRoute,
-    AuthenticatedCrmCustomersIndexRoute: AuthenticatedCrmCustomersIndexRoute,
-  }
-
-const AuthenticatedCrmCustomersRouteWithChildren =
-  AuthenticatedCrmCustomersRoute._addFileChildren(
-    AuthenticatedCrmCustomersRouteChildren,
-  )
-
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
   AuthenticatedAccountingBankingRoute: typeof AuthenticatedAccountingBankingRoute
   AuthenticatedAccountingChartRoute: typeof AuthenticatedAccountingChartRoute
   AuthenticatedAccountingJournalsRoute: typeof AuthenticatedAccountingJournalsRoute
   AuthenticatedAccountingReconciliationRoute: typeof AuthenticatedAccountingReconciliationRoute
-  AuthenticatedCrmCustomersRoute: typeof AuthenticatedCrmCustomersRouteWithChildren
   AuthenticatedDashboardsLogisticsRoute: typeof AuthenticatedDashboardsLogisticsRoute
   AuthenticatedDashboardsProcurementRoute: typeof AuthenticatedDashboardsProcurementRoute
   AuthenticatedDashboardsProductionRoute: typeof AuthenticatedDashboardsProductionRoute
@@ -1439,12 +1404,14 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedSettingsUsersRoute: typeof AuthenticatedSettingsUsersRoute
   AuthenticatedSettingsWarehousesRoute: typeof AuthenticatedSettingsWarehousesRoute
   AuthenticatedSettingsWorkflowsRoute: typeof AuthenticatedSettingsWorkflowsRoute
+  AuthenticatedCrmCustomersIdRoute: typeof AuthenticatedCrmCustomersIdRoute
   AuthenticatedPurchasingBillsIdRoute: typeof AuthenticatedPurchasingBillsIdRoute
   AuthenticatedPurchasingOrdersIdRoute: typeof AuthenticatedPurchasingOrdersIdRoute
   AuthenticatedSalesInvoicesIdRoute: typeof AuthenticatedSalesInvoicesIdRoute
   AuthenticatedSalesOrdersIdRoute: typeof AuthenticatedSalesOrdersIdRoute
   AuthenticatedSalesPackagesIdRoute: typeof AuthenticatedSalesPackagesIdRoute
   AuthenticatedSalesQuotesIdRoute: typeof AuthenticatedSalesQuotesIdRoute
+  AuthenticatedCrmCustomersIndexRoute: typeof AuthenticatedCrmCustomersIndexRoute
   AuthenticatedPurchasingBillsIndexRoute: typeof AuthenticatedPurchasingBillsIndexRoute
   AuthenticatedPurchasingOrdersIndexRoute: typeof AuthenticatedPurchasingOrdersIndexRoute
   AuthenticatedSalesInvoicesIndexRoute: typeof AuthenticatedSalesInvoicesIndexRoute
@@ -1460,7 +1427,6 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAccountingJournalsRoute: AuthenticatedAccountingJournalsRoute,
   AuthenticatedAccountingReconciliationRoute:
     AuthenticatedAccountingReconciliationRoute,
-  AuthenticatedCrmCustomersRoute: AuthenticatedCrmCustomersRouteWithChildren,
   AuthenticatedDashboardsLogisticsRoute: AuthenticatedDashboardsLogisticsRoute,
   AuthenticatedDashboardsProcurementRoute:
     AuthenticatedDashboardsProcurementRoute,
@@ -1507,12 +1473,14 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSettingsUsersRoute: AuthenticatedSettingsUsersRoute,
   AuthenticatedSettingsWarehousesRoute: AuthenticatedSettingsWarehousesRoute,
   AuthenticatedSettingsWorkflowsRoute: AuthenticatedSettingsWorkflowsRoute,
+  AuthenticatedCrmCustomersIdRoute: AuthenticatedCrmCustomersIdRoute,
   AuthenticatedPurchasingBillsIdRoute: AuthenticatedPurchasingBillsIdRoute,
   AuthenticatedPurchasingOrdersIdRoute: AuthenticatedPurchasingOrdersIdRoute,
   AuthenticatedSalesInvoicesIdRoute: AuthenticatedSalesInvoicesIdRoute,
   AuthenticatedSalesOrdersIdRoute: AuthenticatedSalesOrdersIdRoute,
   AuthenticatedSalesPackagesIdRoute: AuthenticatedSalesPackagesIdRoute,
   AuthenticatedSalesQuotesIdRoute: AuthenticatedSalesQuotesIdRoute,
+  AuthenticatedCrmCustomersIndexRoute: AuthenticatedCrmCustomersIndexRoute,
   AuthenticatedPurchasingBillsIndexRoute:
     AuthenticatedPurchasingBillsIndexRoute,
   AuthenticatedPurchasingOrdersIndexRoute:
