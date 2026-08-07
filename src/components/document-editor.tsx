@@ -11,9 +11,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Loader2, Plus, Save, Send, Trash2, FileText, DollarSign } from "lucide-react";
+import { ArrowLeft, Loader2, Plus, Save, Send, Trash2, FileText, DollarSign, Printer, Mail, Package as PackageIcon } from "lucide-react";
 import { useFkOptions } from "@/hooks/use-module-data";
 import { RecordPaymentDialog } from "@/components/record-payment-dialog";
+import { EmailDocumentDialog } from "@/components/email-document-dialog";
+import { downloadDocumentPdf, type PdfDocInput } from "@/lib/document-pdf";
+import { Link } from "@tanstack/react-router";
 
 export type DocKind = "quote" | "order" | "invoice" | "po" | "bill";
 
@@ -71,6 +74,7 @@ export function DocumentEditor({ kind, id }: { kind: DocKind; id: string }) {
   const canWrite = hasRole(writeRoles as any);
   const isNew = id === "new";
   const [payOpen, setPayOpen] = useState(false);
+  const [emailOpen, setEmailOpen] = useState(false);
 
   const { data: doc, isLoading } = useQuery({
     queryKey: [cfg.table, id],
@@ -232,6 +236,56 @@ export function DocumentEditor({ kind, id }: { kind: DocKind; id: string }) {
     onError: (e: any) => toast.error(e.message ?? "Action failed"),
   });
 
+  const partyId = header[cfg.partyField] || null;
+  const { data: party } = useQuery({
+    queryKey: [cfg.partyTable, "detail", partyId],
+    enabled: !!partyId,
+    queryFn: async () => {
+      const { data, error } = await supabase.from(cfg.partyTable).select("id,name,email").eq("id", partyId).maybeSingle();
+      if (error) throw error;
+      return data as any;
+    },
+  });
+
+  const { data: packages = [] } = useQuery({
+    queryKey: ["packages", "by-order", id],
+    enabled: kind === "order" && !isNew,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("packages" as any)
+        .select("id,number,date,status,tracking,carrier,posted_at")
+        .eq("sales_order_id", id)
+        .is("deleted_at", null)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as any[];
+    },
+  });
+
+  const buildPdf = (): PdfDocInput => ({
+    title: cfg.label,
+    number: header.number ?? "",
+    companyName: tenant?.name ?? "Company",
+    partyLabel: cfg.partyLabel,
+    partyName: party?.name ?? "—",
+    currency: header.currency ?? "USD",
+    meta: [
+      { label: "Date", value: header[cfg.dateField] ?? "" },
+      ...(cfg.extraDate ? [{ label: cfg.extraDate.label, value: header[cfg.extraDate.field] ?? "" }] : []),
+      { label: "Status", value: header.status ?? "" },
+    ],
+    lines: lines.map((l) => ({
+      description: l.description || "",
+      quantity: l.quantity,
+      unit_price: l.unit_price,
+      discount_pct: l.discount_pct,
+      tax_pct: l.tax_pct,
+      line_total: computeLine(l),
+    })),
+    totals,
+    notes: header.notes ?? null,
+  });
+
   if (!isNew && isLoading) {
     return <div className="p-8 flex items-center gap-2 text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> Loading…</div>;
   }
@@ -239,7 +293,8 @@ export function DocumentEditor({ kind, id }: { kind: DocKind; id: string }) {
   const showRecordPayment = !isNew && (kind === "invoice" || kind === "bill") && doc?.posted_at && Number(doc?.balance_due ?? doc?.balance ?? 0) > 0.001;
 
   return (
-    <div className="flex flex-col gap-4 p-4 md:p-6 max-w-6xl mx-auto w-full">
+    <div className="flex flex-col gap-4 p-4 md:p-6 w-full">
+
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-3 min-w-0">
           <Button variant="ghost" size="sm" onClick={() => nav({ to: cfg.listPath as any })}><ArrowLeft className="h-4 w-4 mr-1" /> Back</Button>
@@ -253,7 +308,19 @@ export function DocumentEditor({ kind, id }: { kind: DocKind; id: string }) {
           </div>
         </div>
         <div className="flex items-center gap-2 flex-wrap justify-end">
+          {!isNew && (
+            <>
+              <Button variant="outline" size="sm" onClick={() => downloadDocumentPdf(buildPdf())}><Printer className="h-4 w-4 mr-1.5" /> Print PDF</Button>
+              <Button variant="outline" size="sm" onClick={() => setEmailOpen(true)}><Mail className="h-4 w-4 mr-1.5" /> Email</Button>
+            </>
+          )}
+          {canWrite && kind === "order" && !isNew && (
+            <Button variant="outline" size="sm" asChild>
+              <Link to={"/sales/packages/new" as any} search={{ order: id } as any}><PackageIcon className="h-4 w-4 mr-1.5" /> New Package</Link>
+            </Button>
+          )}
           {canWrite && kind === "quote" && !isNew && (
+
             <Button variant="outline" size="sm" disabled={runRpc.isPending} onClick={() => runRpc.mutate("convert_quote_to_order")}><Send className="h-4 w-4 mr-1.5" /> Convert to Order</Button>
           )}
           {canWrite && kind === "order" && !isNew && (
@@ -395,6 +462,45 @@ export function DocumentEditor({ kind, id }: { kind: DocKind; id: string }) {
         </div>
       </Card>
 
+      {kind === "order" && !isNew && (
+        <Card className="p-0 overflow-hidden">
+          <div className="flex items-center justify-between px-4 py-2 border-b bg-muted/30">
+            <div className="text-sm font-medium flex items-center gap-2"><PackageIcon className="h-4 w-4 text-muted-foreground" /> Fulfillment · Packages</div>
+            {canWrite && (
+              <Button size="sm" variant="outline" asChild>
+                <Link to={"/sales/packages/new" as any} search={{ order: id } as any}><Plus className="h-3.5 w-3.5 mr-1" /> New Package</Link>
+              </Button>
+            )}
+          </div>
+          {packages.length === 0 ? (
+            <div className="text-center text-sm text-muted-foreground py-8">No packages for this order yet.</div>
+          ) : (
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b bg-muted/10 text-xs uppercase tracking-wide text-muted-foreground">
+                  <th className="text-left px-3 py-2">Package #</th>
+                  <th className="text-left px-3 py-2">Date</th>
+                  <th className="text-left px-3 py-2">Carrier</th>
+                  <th className="text-left px-3 py-2">Tracking</th>
+                  <th className="text-left px-3 py-2">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {packages.map((p: any) => (
+                  <tr key={p.id} className="border-b hover:bg-muted/20 cursor-pointer" onClick={() => nav({ to: `/sales/packages/${p.id}` as any })}>
+                    <td className="px-3 py-2 font-medium">{p.number}</td>
+                    <td className="px-3 py-2">{p.date ?? "—"}</td>
+                    <td className="px-3 py-2">{p.carrier || "—"}</td>
+                    <td className="px-3 py-2 font-mono text-xs">{p.tracking || "—"}</td>
+                    <td className="px-3 py-2"><Badge variant="secondary">{p.posted_at ? "Confirmed" : p.status}</Badge></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </Card>
+      )}
+
       {showRecordPayment && (
         <RecordPaymentDialog
           open={payOpen}
@@ -407,6 +513,18 @@ export function DocumentEditor({ kind, id }: { kind: DocKind; id: string }) {
           currency={header.currency ?? "USD"}
         />
       )}
+
+      {!isNew && (
+        <EmailDocumentDialog
+          open={emailOpen}
+          onOpenChange={setEmailOpen}
+          defaultTo={party?.email ?? ""}
+          defaultSubject={`${cfg.label} ${header.number ?? ""}`}
+          defaultMessage={`Dear ${party?.name ?? "Customer"},\n\nPlease find attached ${cfg.label.toLowerCase()} ${header.number ?? ""} for ${header.currency ?? "USD"} ${money(totals.grand_total)}.\n\nKind regards,\n${tenant?.name ?? ""}`}
+          pdf={buildPdf}
+        />
+      )}
+
     </div>
   );
 }
