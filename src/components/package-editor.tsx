@@ -34,10 +34,13 @@ export function PackageEditor({ id }: { id: string }) {
   const qc = useQueryClient();
   const nav = useNavigate();
   const search = useSearch({ strict: false }) as { order?: string };
-  const { tenant, hasRole } = useAuth();
+  const { tenant, user, profile, hasRole } = useAuth();
   const canWrite = hasRole(["tenant_admin", "super_admin", "sales"] as any);
   const isNew = id === "new";
   const [emailOpen, setEmailOpen] = useState(false);
+  const [postOpen, setPostOpen] = useState(false);
+  const { branding } = useDocumentBranding("package");
+
 
   const { data: doc, isLoading } = useQuery({
     queryKey: ["packages", id],
