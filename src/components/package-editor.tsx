@@ -274,17 +274,22 @@ export function PackageEditor({ id }: { id: string }) {
           </div>
         </div>
         <div className="flex items-center gap-2 flex-wrap justify-end">
+          {!isNew && <EmailStatus entityType="package" entityId={id} />}
           {!isNew && (
             <>
               <Button variant="outline" size="sm" onClick={() => downloadDocumentPdf(buildPdf())}><Printer className="h-4 w-4 mr-1.5" /> Print PDF</Button>
               <Button variant="outline" size="sm" onClick={() => setEmailOpen(true)}><Mail className="h-4 w-4 mr-1.5" /> Email</Button>
             </>
           )}
+          {!isNew && posted && (
+            <Button variant="outline" size="sm" onClick={() => setPostOpen(true)}><Receipt className="h-4 w-4 mr-1.5" /> Post details</Button>
+          )}
           {canWrite && !isNew && !posted && (
             <Button variant="default" size="sm" disabled={confirmPackage.isPending} onClick={() => confirmPackage.mutate()}>
-              {confirmPackage.isPending ? <Loader2 className="h-4 w-4 mr-1.5 animate-spin" /> : <CheckCircle2 className="h-4 w-4 mr-1.5" />} Confirm & Post
+              {confirmPackage.isPending ? <Loader2 className="h-4 w-4 mr-1.5 animate-spin" /> : <CheckCircle2 className="h-4 w-4 mr-1.5" />} Confirm &amp; Post
             </Button>
           )}
+
           {editable && (
             <Button size="sm" disabled={save.isPending} onClick={() => save.mutate()}>
               {save.isPending ? <Loader2 className="h-4 w-4 mr-1.5 animate-spin" /> : <Save className="h-4 w-4 mr-1.5" />} Save
