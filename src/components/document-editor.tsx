@@ -11,14 +11,19 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Loader2, Plus, Save, Send, Trash2, FileText, DollarSign, Printer, Mail, Package as PackageIcon } from "lucide-react";
+import { ArrowLeft, Loader2, Plus, Save, Send, Trash2, FileText, DollarSign, Printer, Mail, Receipt, Package as PackageIcon } from "lucide-react";
 import { useFkOptions } from "@/hooks/use-module-data";
 import { RecordPaymentDialog } from "@/components/record-payment-dialog";
 import { EmailDocumentDialog } from "@/components/email-document-dialog";
+import { EmailStatus } from "@/components/email-status";
+import { DocumentTimeline } from "@/components/document-timeline";
+import { PostingDetailsDrawer } from "@/components/posting-details-drawer";
+import { useDocumentBranding, type DocTemplateKind } from "@/hooks/use-document-branding";
+import { logDocumentEvent } from "@/lib/document-events";
 import { downloadDocumentPdf, type PdfDocInput } from "@/lib/document-pdf";
 import { Link } from "@tanstack/react-router";
 
-export type DocKind = "quote" | "order" | "invoice" | "po" | "bill";
+export type DocKind = "quote" | "order" | "invoice" | "po" | "bill" | "credit_note";
 
 type CfgEntry = {
   table: string;
@@ -41,7 +46,13 @@ const CFG: Record<DocKind, CfgEntry> = {
   invoice: { table: "invoices",        lines: "invoice_lines",        label: "Invoice",        prefix: "INV",  dateField: "date", extraDate: { field: "due_date",      label: "Due Date" },    statuses: ["Draft","Sent","Posted","Paid","Overdue","Cancelled"], partyField: "customer_id", partyTable: "customers", partyLabel: "Customer", listPath: "/sales/invoices",     detailBase: "/sales/invoices" },
   po:      { table: "purchase_orders", lines: "purchase_order_lines", label: "Purchase Order", prefix: "PO",   dateField: "date", extraDate: { field: "expected_date", label: "Expected" },    statuses: ["Draft","Confirmed","Processing","Delivered","Billed","Cancelled"], partyField: "supplier_id", partyTable: "suppliers", partyLabel: "Supplier", listPath: "/purchasing/orders", detailBase: "/purchasing/orders" },
   bill:    { table: "bills",           lines: "bill_lines",           label: "Bill",           prefix: "BILL", dateField: "date", extraDate: { field: "due_date",      label: "Due Date" },    statuses: ["Pending","Posted","Paid","Overdue","Cancelled"], partyField: "supplier_id", partyTable: "suppliers", partyLabel: "Supplier", listPath: "/purchasing/bills",  detailBase: "/purchasing/bills" },
+  credit_note: { table: "credit_notes", lines: "credit_note_lines",   label: "Credit Note",    prefix: "CN",   dateField: "date", extraDate: null,                                                statuses: ["Draft","Issued","Applied","Void"], partyField: "customer_id", partyTable: "customers", partyLabel: "Customer", listPath: "/sales/credit-notes", detailBase: "/sales/credit-notes" },
 };
+
+const TEMPLATE_KIND: Record<DocKind, DocTemplateKind> = {
+  quote: "quote", order: "order", invoice: "invoice", po: "order", bill: "invoice", credit_note: "credit_note",
+};
+
 
 const money = (n: number) => (n || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
@@ -69,12 +80,15 @@ export function DocumentEditor({ kind, id }: { kind: DocKind; id: string }) {
   const cfg = CFG[kind];
   const qc = useQueryClient();
   const nav = useNavigate();
-  const { tenant, hasRole } = useAuth();
+  const { tenant, user, profile, hasRole } = useAuth();
   const writeRoles: string[] = kind === "po" || kind === "bill" ? ["tenant_admin", "super_admin", "purchasing"] : ["tenant_admin", "super_admin", "sales", "accounting"];
   const canWrite = hasRole(writeRoles as any);
   const isNew = id === "new";
   const [payOpen, setPayOpen] = useState(false);
   const [emailOpen, setEmailOpen] = useState(false);
+  const [postOpen, setPostOpen] = useState(false);
+  const { branding } = useDocumentBranding(TEMPLATE_KIND[kind]);
+
 
   const { data: doc, isLoading } = useQuery({
     queryKey: [cfg.table, id],
@@ -283,7 +297,9 @@ export function DocumentEditor({ kind, id }: { kind: DocKind; id: string }) {
       line_total: computeLine(l),
     })),
     totals,
+    branding,
     notes: header.notes ?? null,
+
   });
 
   if (!isNew && isLoading) {
@@ -308,12 +324,17 @@ export function DocumentEditor({ kind, id }: { kind: DocKind; id: string }) {
           </div>
         </div>
         <div className="flex items-center gap-2 flex-wrap justify-end">
+          {!isNew && <EmailStatus entityType={kind} entityId={id} />}
           {!isNew && (
             <>
               <Button variant="outline" size="sm" onClick={() => downloadDocumentPdf(buildPdf())}><Printer className="h-4 w-4 mr-1.5" /> Print PDF</Button>
               <Button variant="outline" size="sm" onClick={() => setEmailOpen(true)}><Mail className="h-4 w-4 mr-1.5" /> Email</Button>
             </>
           )}
+          {!isNew && doc?.posted_at && (
+            <Button variant="outline" size="sm" onClick={() => setPostOpen(true)}><Receipt className="h-4 w-4 mr-1.5" /> Post details</Button>
+          )}
+
           {canWrite && kind === "order" && !isNew && (
             <Button variant="outline" size="sm" asChild>
               <Link to={"/sales/packages/new" as any} search={{ order: id } as any}><PackageIcon className="h-4 w-4 mr-1.5" /> New Package</Link>
@@ -515,6 +536,25 @@ export function DocumentEditor({ kind, id }: { kind: DocKind; id: string }) {
       )}
 
       {!isNew && (
+        <DocumentTimeline
+          entityType={kind}
+          entityId={id}
+          stages={[...cfg.statuses]}
+          currentStage={header.status ?? null}
+        />
+      )}
+
+      {!isNew && (
+        <PostingDetailsDrawer
+          open={postOpen}
+          onOpenChange={setPostOpen}
+          refType={kind}
+          refId={id}
+          title={`${cfg.label.toLowerCase()} ${header.number ?? ""}`}
+        />
+      )}
+
+      {!isNew && (
         <EmailDocumentDialog
           open={emailOpen}
           onOpenChange={setEmailOpen}
@@ -522,8 +562,11 @@ export function DocumentEditor({ kind, id }: { kind: DocKind; id: string }) {
           defaultSubject={`${cfg.label} ${header.number ?? ""}`}
           defaultMessage={`Dear ${party?.name ?? "Customer"},\n\nPlease find attached ${cfg.label.toLowerCase()} ${header.number ?? ""} for ${header.currency ?? "USD"} ${money(totals.grand_total)}.\n\nKind regards,\n${tenant?.name ?? ""}`}
           pdf={buildPdf}
+          entityType={kind}
+          entityId={id}
         />
       )}
+
 
     </div>
   );

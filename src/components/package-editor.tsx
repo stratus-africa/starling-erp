@@ -11,9 +11,15 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, CheckCircle2, Loader2, Mail, Package, Plus, Printer, Save, Trash2 } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Loader2, Mail, Package, Plus, Printer, Receipt, Save, Trash2 } from "lucide-react";
 import { downloadDocumentPdf, type PdfDocInput } from "@/lib/document-pdf";
 import { EmailDocumentDialog } from "@/components/email-document-dialog";
+import { EmailStatus } from "@/components/email-status";
+import { DocumentTimeline } from "@/components/document-timeline";
+import { PostingDetailsDrawer } from "@/components/posting-details-drawer";
+import { useDocumentBranding } from "@/hooks/use-document-branding";
+import { logDocumentEvent } from "@/lib/document-events";
+
 
 const STATUSES = ["Draft", "Packed", "Shipped", "Delivered", "Cancelled"] as const;
 
@@ -28,10 +34,13 @@ export function PackageEditor({ id }: { id: string }) {
   const qc = useQueryClient();
   const nav = useNavigate();
   const search = useSearch({ strict: false }) as { order?: string };
-  const { tenant, hasRole } = useAuth();
+  const { tenant, user, profile, hasRole } = useAuth();
   const canWrite = hasRole(["tenant_admin", "super_admin", "sales"] as any);
   const isNew = id === "new";
   const [emailOpen, setEmailOpen] = useState(false);
+  const [postOpen, setPostOpen] = useState(false);
+  const { branding } = useDocumentBranding("package");
+
 
   const { data: doc, isLoading } = useQuery({
     queryKey: ["packages", id],
@@ -185,12 +194,24 @@ export function PackageEditor({ id }: { id: string }) {
         );
         if (error) throw error;
       }
+      if (tenant?.id && docId) {
+        await logDocumentEvent({
+          tenantId: tenant.id,
+          entityType: "package",
+          entityId: docId,
+          status: isNew ? "Draft" : header.status || "Draft",
+          note: isNew ? "Package created" : `Saved as ${header.status || "Draft"}`,
+          actorId: user?.id ?? null,
+          actorEmail: profile?.email ?? null,
+        });
+      }
       return docId;
     },
     onSuccess: (docId) => {
       toast.success("Saved");
       qc.invalidateQueries({ queryKey: ["packages"] });
       qc.invalidateQueries({ queryKey: ["package_lines"] });
+      qc.invalidateQueries({ queryKey: ["document_events"] });
       if (isNew && docId) nav({ to: `/sales/packages/${docId}` as any });
     },
     onError: (e: any) => toast.error(e.message ?? "Save failed"),
@@ -204,6 +225,7 @@ export function PackageEditor({ id }: { id: string }) {
     onSuccess: () => {
       toast.success("Package confirmed — stock and journal entry recorded");
       qc.invalidateQueries();
+      setPostOpen(true);
     },
     onError: (e: any) => toast.error(e.message ?? "Confirm failed"),
   });
@@ -226,7 +248,9 @@ export function PackageEditor({ id }: { id: string }) {
     totals: null,
     notes: header.notes ?? null,
     quantityOnly: true,
+    branding,
   });
+
 
   if (!isNew && isLoading) {
     return <div className="p-8 flex items-center gap-2 text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> Loading…</div>;
@@ -250,17 +274,22 @@ export function PackageEditor({ id }: { id: string }) {
           </div>
         </div>
         <div className="flex items-center gap-2 flex-wrap justify-end">
+          {!isNew && <EmailStatus entityType="package" entityId={id} />}
           {!isNew && (
             <>
               <Button variant="outline" size="sm" onClick={() => downloadDocumentPdf(buildPdf())}><Printer className="h-4 w-4 mr-1.5" /> Print PDF</Button>
               <Button variant="outline" size="sm" onClick={() => setEmailOpen(true)}><Mail className="h-4 w-4 mr-1.5" /> Email</Button>
             </>
           )}
+          {!isNew && posted && (
+            <Button variant="outline" size="sm" onClick={() => setPostOpen(true)}><Receipt className="h-4 w-4 mr-1.5" /> Post details</Button>
+          )}
           {canWrite && !isNew && !posted && (
             <Button variant="default" size="sm" disabled={confirmPackage.isPending} onClick={() => confirmPackage.mutate()}>
-              {confirmPackage.isPending ? <Loader2 className="h-4 w-4 mr-1.5 animate-spin" /> : <CheckCircle2 className="h-4 w-4 mr-1.5" />} Confirm & Post
+              {confirmPackage.isPending ? <Loader2 className="h-4 w-4 mr-1.5 animate-spin" /> : <CheckCircle2 className="h-4 w-4 mr-1.5" />} Confirm &amp; Post
             </Button>
           )}
+
           {editable && (
             <Button size="sm" disabled={save.isPending} onClick={() => save.mutate()}>
               {save.isPending ? <Loader2 className="h-4 w-4 mr-1.5 animate-spin" /> : <Save className="h-4 w-4 mr-1.5" />} Save
@@ -394,6 +423,25 @@ export function PackageEditor({ id }: { id: string }) {
       </Card>
 
       {!isNew && (
+        <DocumentTimeline
+          entityType="package"
+          entityId={id}
+          stages={["Draft", "Confirmed", "Posted"]}
+          currentStage={posted ? "Posted" : header.status === "Draft" ? "Draft" : "Confirmed"}
+        />
+      )}
+
+      {!isNew && (
+        <PostingDetailsDrawer
+          open={postOpen}
+          onOpenChange={setPostOpen}
+          refType="package"
+          refId={id}
+          title={`package ${header.number ?? ""}`}
+        />
+      )}
+
+      {!isNew && (
         <EmailDocumentDialog
           open={emailOpen}
           onOpenChange={setEmailOpen}
@@ -401,8 +449,11 @@ export function PackageEditor({ id }: { id: string }) {
           defaultSubject={`Packing slip ${header.number ?? ""}`}
           defaultMessage={`Dear ${customer?.name ?? "Customer"},\n\nPlease find attached the packing slip ${header.number ?? ""} for your shipment.\n\nKind regards,\n${tenant?.name ?? ""}`}
           pdf={buildPdf}
+          entityType="package"
+          entityId={id}
         />
       )}
+
     </div>
   );
 }
