@@ -423,6 +423,25 @@ export function PackageEditor({ id }: { id: string }) {
       </Card>
 
       {!isNew && (
+        <DocumentTimeline
+          entityType="package"
+          entityId={id}
+          stages={["Draft", "Confirmed", "Posted"]}
+          currentStage={posted ? "Posted" : header.status === "Draft" ? "Draft" : "Confirmed"}
+        />
+      )}
+
+      {!isNew && (
+        <PostingDetailsDrawer
+          open={postOpen}
+          onOpenChange={setPostOpen}
+          refType="package"
+          refId={id}
+          title={`package ${header.number ?? ""}`}
+        />
+      )}
+
+      {!isNew && (
         <EmailDocumentDialog
           open={emailOpen}
           onOpenChange={setEmailOpen}
@@ -430,8 +449,11 @@ export function PackageEditor({ id }: { id: string }) {
           defaultSubject={`Packing slip ${header.number ?? ""}`}
           defaultMessage={`Dear ${customer?.name ?? "Customer"},\n\nPlease find attached the packing slip ${header.number ?? ""} for your shipment.\n\nKind regards,\n${tenant?.name ?? ""}`}
           pdf={buildPdf}
+          entityType="package"
+          entityId={id}
         />
       )}
+
     </div>
   );
 }
