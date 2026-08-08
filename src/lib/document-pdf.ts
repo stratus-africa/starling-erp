@@ -10,6 +10,15 @@ export interface PdfLine {
   line_total?: number;
 }
 
+export interface PdfBranding {
+  accentColor?: string | null;
+  logoUrl?: string | null;
+  showLogo?: boolean;
+  companyAddress?: string | null;
+  footerText?: string | null;
+  terms?: string | null;
+}
+
 export interface PdfDocInput {
   title: string;
   number: string;
@@ -23,25 +32,62 @@ export interface PdfDocInput {
   notes?: string | null;
   /** quantity-only documents such as packages */
   quantityOnly?: boolean;
+  branding?: PdfBranding | null;
 }
 
 const fmt = (n: number) =>
   (n || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
+function hexToRgb(hex?: string | null): [number, number, number] {
+  const fallback: [number, number, number] = [30, 41, 59];
+  if (!hex) return fallback;
+  const h = hex.replace("#", "").trim();
+  if (h.length !== 6) return fallback;
+  const n = parseInt(h, 16);
+  if (Number.isNaN(n)) return fallback;
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+}
+
 export function buildDocumentPdf(input: PdfDocInput): jsPDF {
   const doc = new jsPDF({ unit: "pt", format: "a4" });
   const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
   const margin = 40;
+  const brand = input.branding ?? {};
+  const accent = hexToRgb(brand.accentColor);
+
+  doc.setFillColor(accent[0], accent[1], accent[2]);
+  doc.rect(0, 0, pageWidth, 8, "F");
+
+  let headerLeft = margin;
+  if (brand.showLogo !== false && brand.logoUrl && brand.logoUrl.startsWith("data:image")) {
+    try {
+      doc.addImage(brand.logoUrl, "PNG", margin, 26, 90, 34);
+      headerLeft = margin + 102;
+    } catch { /* ignore malformed logo */ }
+  }
 
   doc.setFont("helvetica", "bold");
   doc.setFontSize(18);
-  doc.text(input.companyName, margin, 54);
+  doc.setTextColor(accent[0], accent[1], accent[2]);
+  doc.text(input.companyName, headerLeft, 54);
+  doc.setTextColor(20);
 
+  if (brand.companyAddress) {
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    doc.setTextColor(120);
+    doc.text(doc.splitTextToSize(brand.companyAddress, 240), headerLeft, 66);
+    doc.setTextColor(20);
+  }
+
+  doc.setFont("helvetica", "bold");
   doc.setFontSize(20);
   doc.text(input.title.toUpperCase(), pageWidth - margin, 54, { align: "right" });
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10);
   doc.text(input.number || "—", pageWidth - margin, 70, { align: "right" });
+
 
   doc.setDrawColor(210);
   doc.line(margin, 84, pageWidth - margin, 84);
