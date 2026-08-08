@@ -297,7 +297,9 @@ export function DocumentEditor({ kind, id }: { kind: DocKind; id: string }) {
       line_total: computeLine(l),
     })),
     totals,
+    branding,
     notes: header.notes ?? null,
+
   });
 
   if (!isNew && isLoading) {
