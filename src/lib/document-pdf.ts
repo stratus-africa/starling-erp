@@ -119,7 +119,8 @@ export function buildDocumentPdf(input: PdfDocInput): jsPDF {
       head: [["#", "Description", "Qty"]],
       body: input.lines.map((l, i) => [String(i + 1), l.description || "—", String(l.quantity ?? 0)]),
       styles: { fontSize: 9, cellPadding: 6 },
-      headStyles: { fillColor: [30, 41, 59], textColor: 255 },
+      headStyles: { fillColor: accent, textColor: 255 },
+
       columnStyles: { 0: { cellWidth: 28 }, 2: { halign: "right", cellWidth: 70 } },
       margin: { left: margin, right: margin },
     });
@@ -137,7 +138,7 @@ export function buildDocumentPdf(input: PdfDocInput): jsPDF {
         fmt(l.line_total ?? 0),
       ]),
       styles: { fontSize: 9, cellPadding: 6 },
-      headStyles: { fillColor: [30, 41, 59], textColor: 255 },
+      headStyles: { fillColor: accent, textColor: 255 },
       columnStyles: {
         0: { cellWidth: 24 },
         2: { halign: "right", cellWidth: 44 },
@@ -182,11 +183,31 @@ export function buildDocumentPdf(input: PdfDocInput): jsPDF {
     doc.setTextColor(120);
     doc.text("Notes", margin, cursor);
     doc.setTextColor(40);
-    doc.text(doc.splitTextToSize(input.notes, pageWidth - margin * 2), margin, cursor + 14);
+    const wrapped = doc.splitTextToSize(input.notes, pageWidth - margin * 2);
+    doc.text(wrapped, margin, cursor + 14);
+    cursor += 14 + wrapped.length * 11 + 12;
   }
+
+  if (brand.terms) {
+    doc.setFontSize(9);
+    doc.setTextColor(120);
+    doc.text("Terms & Conditions", margin, cursor);
+    doc.setTextColor(60);
+    doc.setFontSize(8);
+    doc.text(doc.splitTextToSize(brand.terms, pageWidth - margin * 2), margin, cursor + 13);
+  }
+
+  if (brand.footerText) {
+    doc.setFontSize(8);
+    doc.setTextColor(140);
+    doc.text(doc.splitTextToSize(brand.footerText, pageWidth - margin * 2), pageWidth / 2, pageHeight - 30, { align: "center" });
+  }
+  doc.setFillColor(accent[0], accent[1], accent[2]);
+  doc.rect(0, pageHeight - 6, pageWidth, 6, "F");
 
   return doc;
 }
+
 
 export function downloadDocumentPdf(input: PdfDocInput) {
   const doc = buildDocumentPdf(input);
