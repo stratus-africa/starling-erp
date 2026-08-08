@@ -11,9 +11,15 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, CheckCircle2, Loader2, Mail, Package, Plus, Printer, Save, Trash2 } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Loader2, Mail, Package, Plus, Printer, Receipt, Save, Trash2 } from "lucide-react";
 import { downloadDocumentPdf, type PdfDocInput } from "@/lib/document-pdf";
 import { EmailDocumentDialog } from "@/components/email-document-dialog";
+import { EmailStatus } from "@/components/email-status";
+import { DocumentTimeline } from "@/components/document-timeline";
+import { PostingDetailsDrawer } from "@/components/posting-details-drawer";
+import { useDocumentBranding } from "@/hooks/use-document-branding";
+import { logDocumentEvent } from "@/lib/document-events";
+
 
 const STATUSES = ["Draft", "Packed", "Shipped", "Delivered", "Cancelled"] as const;
 
