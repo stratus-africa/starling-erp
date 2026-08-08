@@ -536,6 +536,25 @@ export function DocumentEditor({ kind, id }: { kind: DocKind; id: string }) {
       )}
 
       {!isNew && (
+        <DocumentTimeline
+          entityType={kind}
+          entityId={id}
+          stages={[...cfg.statuses]}
+          currentStage={header.status ?? null}
+        />
+      )}
+
+      {!isNew && (
+        <PostingDetailsDrawer
+          open={postOpen}
+          onOpenChange={setPostOpen}
+          refType={kind}
+          refId={id}
+          title={`${cfg.label.toLowerCase()} ${header.number ?? ""}`}
+        />
+      )}
+
+      {!isNew && (
         <EmailDocumentDialog
           open={emailOpen}
           onOpenChange={setEmailOpen}
@@ -543,8 +562,11 @@ export function DocumentEditor({ kind, id }: { kind: DocKind; id: string }) {
           defaultSubject={`${cfg.label} ${header.number ?? ""}`}
           defaultMessage={`Dear ${party?.name ?? "Customer"},\n\nPlease find attached ${cfg.label.toLowerCase()} ${header.number ?? ""} for ${header.currency ?? "USD"} ${money(totals.grand_total)}.\n\nKind regards,\n${tenant?.name ?? ""}`}
           pdf={buildPdf}
+          entityType={kind}
+          entityId={id}
         />
       )}
+
 
     </div>
   );
