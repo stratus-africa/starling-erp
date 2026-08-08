@@ -1184,12 +1184,12 @@ export type Database = {
           created_at: string
           created_by: string | null
           credit: number | null
-          date: string
           debit: number | null
           deleted_at: string | null
+          entry_date: string
           id: string
           memo: string | null
-          number: string
+          number: string | null
           source_ref_id: string | null
           source_ref_type: string | null
           status: string | null
@@ -1202,12 +1202,12 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           credit?: number | null
-          date?: string
           debit?: number | null
           deleted_at?: string | null
+          entry_date?: string
           id?: string
           memo?: string | null
-          number: string
+          number?: string | null
           source_ref_id?: string | null
           source_ref_type?: string | null
           status?: string | null
@@ -1220,12 +1220,12 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           credit?: number | null
-          date?: string
           debit?: number | null
           deleted_at?: string | null
+          entry_date?: string
           id?: string
           memo?: string | null
-          number?: string
+          number?: string | null
           source_ref_id?: string | null
           source_ref_type?: string | null
           status?: string | null
