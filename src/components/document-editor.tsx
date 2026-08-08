@@ -80,12 +80,15 @@ export function DocumentEditor({ kind, id }: { kind: DocKind; id: string }) {
   const cfg = CFG[kind];
   const qc = useQueryClient();
   const nav = useNavigate();
-  const { tenant, hasRole } = useAuth();
+  const { tenant, user, profile, hasRole } = useAuth();
   const writeRoles: string[] = kind === "po" || kind === "bill" ? ["tenant_admin", "super_admin", "purchasing"] : ["tenant_admin", "super_admin", "sales", "accounting"];
   const canWrite = hasRole(writeRoles as any);
   const isNew = id === "new";
   const [payOpen, setPayOpen] = useState(false);
   const [emailOpen, setEmailOpen] = useState(false);
+  const [postOpen, setPostOpen] = useState(false);
+  const { branding } = useDocumentBranding(TEMPLATE_KIND[kind]);
+
 
   const { data: doc, isLoading } = useQuery({
     queryKey: [cfg.table, id],
