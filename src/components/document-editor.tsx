@@ -11,14 +11,19 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Loader2, Plus, Save, Send, Trash2, FileText, DollarSign, Printer, Mail, Package as PackageIcon } from "lucide-react";
+import { ArrowLeft, Loader2, Plus, Save, Send, Trash2, FileText, DollarSign, Printer, Mail, Receipt, Package as PackageIcon } from "lucide-react";
 import { useFkOptions } from "@/hooks/use-module-data";
 import { RecordPaymentDialog } from "@/components/record-payment-dialog";
 import { EmailDocumentDialog } from "@/components/email-document-dialog";
+import { EmailStatus } from "@/components/email-status";
+import { DocumentTimeline } from "@/components/document-timeline";
+import { PostingDetailsDrawer } from "@/components/posting-details-drawer";
+import { useDocumentBranding, type DocTemplateKind } from "@/hooks/use-document-branding";
+import { logDocumentEvent } from "@/lib/document-events";
 import { downloadDocumentPdf, type PdfDocInput } from "@/lib/document-pdf";
 import { Link } from "@tanstack/react-router";
 
-export type DocKind = "quote" | "order" | "invoice" | "po" | "bill";
+export type DocKind = "quote" | "order" | "invoice" | "po" | "bill" | "credit_note";
 
 type CfgEntry = {
   table: string;
@@ -41,7 +46,13 @@ const CFG: Record<DocKind, CfgEntry> = {
   invoice: { table: "invoices",        lines: "invoice_lines",        label: "Invoice",        prefix: "INV",  dateField: "date", extraDate: { field: "due_date",      label: "Due Date" },    statuses: ["Draft","Sent","Posted","Paid","Overdue","Cancelled"], partyField: "customer_id", partyTable: "customers", partyLabel: "Customer", listPath: "/sales/invoices",     detailBase: "/sales/invoices" },
   po:      { table: "purchase_orders", lines: "purchase_order_lines", label: "Purchase Order", prefix: "PO",   dateField: "date", extraDate: { field: "expected_date", label: "Expected" },    statuses: ["Draft","Confirmed","Processing","Delivered","Billed","Cancelled"], partyField: "supplier_id", partyTable: "suppliers", partyLabel: "Supplier", listPath: "/purchasing/orders", detailBase: "/purchasing/orders" },
   bill:    { table: "bills",           lines: "bill_lines",           label: "Bill",           prefix: "BILL", dateField: "date", extraDate: { field: "due_date",      label: "Due Date" },    statuses: ["Pending","Posted","Paid","Overdue","Cancelled"], partyField: "supplier_id", partyTable: "suppliers", partyLabel: "Supplier", listPath: "/purchasing/bills",  detailBase: "/purchasing/bills" },
+  credit_note: { table: "credit_notes", lines: "credit_note_lines",   label: "Credit Note",    prefix: "CN",   dateField: "date", extraDate: null,                                                statuses: ["Draft","Issued","Applied","Void"], partyField: "customer_id", partyTable: "customers", partyLabel: "Customer", listPath: "/sales/credit-notes", detailBase: "/sales/credit-notes" },
 };
+
+const TEMPLATE_KIND: Record<DocKind, DocTemplateKind> = {
+  quote: "quote", order: "order", invoice: "invoice", po: "order", bill: "invoice", credit_note: "credit_note",
+};
+
 
 const money = (n: number) => (n || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
