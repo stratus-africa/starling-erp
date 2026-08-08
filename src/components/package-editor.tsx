@@ -194,12 +194,24 @@ export function PackageEditor({ id }: { id: string }) {
         );
         if (error) throw error;
       }
+      if (tenant?.id && docId) {
+        await logDocumentEvent({
+          tenantId: tenant.id,
+          entityType: "package",
+          entityId: docId,
+          status: isNew ? "Draft" : header.status || "Draft",
+          note: isNew ? "Package created" : `Saved as ${header.status || "Draft"}`,
+          actorId: user?.id ?? null,
+          actorEmail: profile?.email ?? null,
+        });
+      }
       return docId;
     },
     onSuccess: (docId) => {
       toast.success("Saved");
       qc.invalidateQueries({ queryKey: ["packages"] });
       qc.invalidateQueries({ queryKey: ["package_lines"] });
+      qc.invalidateQueries({ queryKey: ["document_events"] });
       if (isNew && docId) nav({ to: `/sales/packages/${docId}` as any });
     },
     onError: (e: any) => toast.error(e.message ?? "Save failed"),
@@ -213,6 +225,7 @@ export function PackageEditor({ id }: { id: string }) {
     onSuccess: () => {
       toast.success("Package confirmed — stock and journal entry recorded");
       qc.invalidateQueries();
+      setPostOpen(true);
     },
     onError: (e: any) => toast.error(e.message ?? "Confirm failed"),
   });
@@ -235,7 +248,9 @@ export function PackageEditor({ id }: { id: string }) {
     totals: null,
     notes: header.notes ?? null,
     quantityOnly: true,
+    branding,
   });
+
 
   if (!isNew && isLoading) {
     return <div className="p-8 flex items-center gap-2 text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> Loading…</div>;
