@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Loader2, Plus, Save, Send, Trash2, FileText, DollarSign, Printer, Mail, Receipt, Package as PackageIcon } from "lucide-react";
+import { ArrowLeft, Loader2, Plus, Save, Send, Trash2, FileText, DollarSign, Printer, Mail, Receipt, Truck, Package as PackageIcon } from "lucide-react";
 import { useFkOptions } from "@/hooks/use-module-data";
 import { RecordPaymentDialog } from "@/components/record-payment-dialog";
 import { EmailDocumentDialog } from "@/components/email-document-dialog";
@@ -23,7 +23,7 @@ import { logDocumentEvent } from "@/lib/document-events";
 import { downloadDocumentPdf, type PdfDocInput } from "@/lib/document-pdf";
 import { Link } from "@tanstack/react-router";
 
-export type DocKind = "quote" | "order" | "invoice" | "po" | "bill" | "credit_note";
+export type DocKind = "quote" | "order" | "invoice" | "po" | "bill" | "credit_note" | "requisition";
 
 type CfgEntry = {
   table: string;
@@ -36,6 +36,8 @@ type CfgEntry = {
   partyField: "customer_id" | "supplier_id";
   partyTable: "customers" | "suppliers";
   partyLabel: string;
+  partyRequired?: boolean;
+  linkFk?: { field: string; table: string; label: string; labelKey: string };
   listPath: string;
   detailBase: string;
 };
@@ -46,12 +48,14 @@ const CFG: Record<DocKind, CfgEntry> = {
   invoice: { table: "invoices",        lines: "invoice_lines",        label: "Invoice",        prefix: "INV",  dateField: "date", extraDate: { field: "due_date",      label: "Due Date" },    statuses: ["Draft","Sent","Posted","Paid","Overdue","Cancelled"], partyField: "customer_id", partyTable: "customers", partyLabel: "Customer", listPath: "/sales/invoices",     detailBase: "/sales/invoices" },
   po:      { table: "purchase_orders", lines: "purchase_order_lines", label: "Purchase Order", prefix: "PO",   dateField: "date", extraDate: { field: "expected_date", label: "Expected" },    statuses: ["Draft","Confirmed","Processing","Delivered","Billed","Cancelled"], partyField: "supplier_id", partyTable: "suppliers", partyLabel: "Supplier", listPath: "/purchasing/orders", detailBase: "/purchasing/orders" },
   bill:    { table: "bills",           lines: "bill_lines",           label: "Bill",           prefix: "BILL", dateField: "date", extraDate: { field: "due_date",      label: "Due Date" },    statuses: ["Pending","Posted","Paid","Overdue","Cancelled"], partyField: "supplier_id", partyTable: "suppliers", partyLabel: "Supplier", listPath: "/purchasing/bills",  detailBase: "/purchasing/bills" },
-  credit_note: { table: "credit_notes", lines: "credit_note_lines",   label: "Credit Note",    prefix: "CN",   dateField: "date", extraDate: null,                                                statuses: ["Draft","Issued","Applied","Void"], partyField: "customer_id", partyTable: "customers", partyLabel: "Customer", listPath: "/sales/credit-notes", detailBase: "/sales/credit-notes" },
+  credit_note: { table: "credit_notes", lines: "credit_note_lines",   label: "Credit Note",    prefix: "CN",   dateField: "date", extraDate: null,                                                statuses: ["Draft","Issued","Applied","Void"], partyField: "customer_id", partyTable: "customers", partyLabel: "Customer", linkFk: { field: "invoice_id", table: "invoices", label: "Against Invoice", labelKey: "number" }, listPath: "/sales/credit-notes", detailBase: "/sales/credit-notes" },
+  requisition: { table: "purchase_requisitions", lines: "purchase_requisition_lines", label: "Requisition", prefix: "REQ", dateField: "date", extraDate: { field: "required_date", label: "Required By" }, statuses: ["Draft","Submitted","Approved","Rejected","Ordered","Cancelled"], partyField: "supplier_id", partyTable: "suppliers", partyLabel: "Preferred Supplier", partyRequired: false, listPath: "/purchasing/requisitions", detailBase: "/purchasing/requisitions" },
 };
 
 const TEMPLATE_KIND: Record<DocKind, DocTemplateKind> = {
-  quote: "quote", order: "order", invoice: "invoice", po: "order", bill: "invoice", credit_note: "credit_note",
+  quote: "quote", order: "order", invoice: "invoice", po: "order", bill: "invoice", credit_note: "credit_note", requisition: "order",
 };
+
 
 
 const money = (n: number) => (n || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -81,7 +85,7 @@ export function DocumentEditor({ kind, id }: { kind: DocKind; id: string }) {
   const qc = useQueryClient();
   const nav = useNavigate();
   const { tenant, user, profile, hasRole } = useAuth();
-  const writeRoles: string[] = kind === "po" || kind === "bill" ? ["tenant_admin", "super_admin", "purchasing"] : ["tenant_admin", "super_admin", "sales", "accounting"];
+  const writeRoles: string[] = kind === "po" || kind === "bill" || kind === "requisition" ? ["tenant_admin", "super_admin", "purchasing"] : ["tenant_admin", "super_admin", "sales", "accounting"];
   const canWrite = hasRole(writeRoles as any);
   const isNew = id === "new";
   const [payOpen, setPayOpen] = useState(false);
@@ -176,7 +180,7 @@ export function DocumentEditor({ kind, id }: { kind: DocKind; id: string }) {
   const save = useMutation({
     mutationFn: async () => {
       if (!tenant?.id) throw new Error("No tenant");
-      if (!header[cfg.partyField]) throw new Error(`Please select a ${cfg.partyLabel.toLowerCase()}`);
+      if (cfg.partyRequired !== false && !header[cfg.partyField]) throw new Error(`Please select a ${cfg.partyLabel.toLowerCase()}`);
 
       const headerPayload: any = { ...header, ...totals, amount: totals.grand_total, tenant_id: tenant.id };
       if (kind === "invoice" || kind === "bill") {
@@ -228,12 +232,13 @@ export function DocumentEditor({ kind, id }: { kind: DocKind; id: string }) {
   });
 
   const runRpc = useMutation({
-    mutationFn: async (rpc: "convert_quote_to_order" | "convert_order_to_invoice" | "post_invoice" | "convert_po_to_bill" | "post_bill") => {
+    mutationFn: async (rpc: "convert_quote_to_order" | "convert_order_to_invoice" | "post_invoice" | "convert_po_to_bill" | "post_bill" | "post_credit_note") => {
       const args: any =
         rpc === "convert_quote_to_order" ? { _quote_id: id }
         : rpc === "convert_order_to_invoice" ? { _order_id: id }
         : rpc === "post_invoice" ? { _invoice_id: id }
         : rpc === "convert_po_to_bill" ? { _po_id: id }
+        : rpc === "post_credit_note" ? { _credit_note_id: id }
         : { _bill_id: id };
       const { data, error } = await supabase.rpc(rpc as any, args);
       if (error) throw error;
@@ -245,6 +250,7 @@ export function DocumentEditor({ kind, id }: { kind: DocKind; id: string }) {
       else if (rpc === "convert_order_to_invoice") { toast.success("Converted to invoice"); nav({ to: `/sales/invoices/${newId}` as any }); }
       else if (rpc === "convert_po_to_bill") { toast.success("Converted to bill"); nav({ to: `/purchasing/bills/${newId}` as any }); }
       else if (rpc === "post_bill") toast.success("Bill posted");
+      else if (rpc === "post_credit_note") toast.success("Credit note issued");
       else toast.success("Invoice posted");
     },
     onError: (e: any) => toast.error(e.message ?? "Action failed"),
@@ -275,6 +281,35 @@ export function DocumentEditor({ kind, id }: { kind: DocKind; id: string }) {
       return (data ?? []) as any[];
     },
   });
+
+  const { data: shipments = [] } = useQuery({
+    queryKey: ["shipments", "by-order", id],
+    enabled: kind === "order" && !isNew,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("shipments" as any)
+        .select("id,number,ship_date,delivery_date,status,tracking,carrier,posted_at")
+        .eq("sales_order_id", id)
+        .is("deleted_at", null)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as any[];
+    },
+  });
+
+  const { data: linkOptions = [] } = useQuery({
+    queryKey: [cfg.linkFk?.table, "link-options", header[cfg.partyField]],
+    enabled: !!cfg.linkFk,
+    queryFn: async () => {
+      let q = supabase.from(cfg.linkFk!.table as any).select(`id, ${cfg.linkFk!.labelKey}`).is("deleted_at", null);
+      if (header[cfg.partyField]) q = q.eq(cfg.partyField, header[cfg.partyField]);
+      const { data, error } = await q.order("created_at", { ascending: false }).limit(200);
+      if (error) throw error;
+      return (data ?? []) as any[];
+    },
+  });
+
+
 
   const buildPdf = (): PdfDocInput => ({
     title: cfg.label,
@@ -356,6 +391,9 @@ export function DocumentEditor({ kind, id }: { kind: DocKind; id: string }) {
           {canWrite && kind === "bill" && !isNew && !doc?.posted_at && (
             <Button variant="default" size="sm" disabled={runRpc.isPending} onClick={() => runRpc.mutate("post_bill")}><DollarSign className="h-4 w-4 mr-1.5" /> Post Bill</Button>
           )}
+          {canWrite && kind === "credit_note" && !isNew && !doc?.posted_at && (
+            <Button variant="default" size="sm" disabled={runRpc.isPending} onClick={() => runRpc.mutate("post_credit_note")}><DollarSign className="h-4 w-4 mr-1.5" /> Post Credit Note</Button>
+          )}
           {canWrite && showRecordPayment && (
             <Button variant="secondary" size="sm" onClick={() => setPayOpen(true)}><DollarSign className="h-4 w-4 mr-1.5" /> Record Payment</Button>
           )}
@@ -389,6 +427,17 @@ export function DocumentEditor({ kind, id }: { kind: DocKind; id: string }) {
           <div className="grid gap-1.5">
             <Label>{cfg.extraDate.label}</Label>
             <Input type="date" value={header[cfg.extraDate.field] ?? ""} onChange={(e) => setHeader({ ...header, [cfg.extraDate!.field]: e.target.value })} disabled={!canWrite} />
+          </div>
+        )}
+        {cfg.linkFk && (
+          <div className="grid gap-1.5">
+            <Label>{cfg.linkFk.label}</Label>
+            <Select value={header[cfg.linkFk.field] ?? ""} onValueChange={(v) => setHeader({ ...header, [cfg.linkFk!.field]: v })} disabled={!canWrite}>
+              <SelectTrigger><SelectValue placeholder="Select invoice…" /></SelectTrigger>
+              <SelectContent>
+                {linkOptions.map((o: any) => <SelectItem key={o.id} value={o.id}>{o[cfg.linkFk!.labelKey] ?? o.id.slice(0, 8)}</SelectItem>)}
+              </SelectContent>
+            </Select>
           </div>
         )}
         <div className="grid gap-1.5">
@@ -521,6 +570,49 @@ export function DocumentEditor({ kind, id }: { kind: DocKind; id: string }) {
           )}
         </Card>
       )}
+
+      {kind === "order" && !isNew && (
+        <Card className="p-0 overflow-hidden">
+          <div className="flex items-center justify-between px-4 py-2 border-b bg-muted/30">
+            <div className="text-sm font-medium flex items-center gap-2"><Truck className="h-4 w-4 text-muted-foreground" /> Fulfillment · Shipments</div>
+            {canWrite && (
+              <Button size="sm" variant="outline" asChild>
+                <Link to={"/sales/shipments/new" as any} search={{ order: id } as any}><Plus className="h-3.5 w-3.5 mr-1" /> New Shipment</Link>
+              </Button>
+            )}
+          </div>
+          {shipments.length === 0 ? (
+            <div className="text-center text-sm text-muted-foreground py-8">No shipments for this order yet.</div>
+          ) : (
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b bg-muted/10 text-xs uppercase tracking-wide text-muted-foreground">
+                  <th className="text-left px-3 py-2">Shipment #</th>
+                  <th className="text-left px-3 py-2">Ship Date</th>
+                  <th className="text-left px-3 py-2">Carrier</th>
+                  <th className="text-left px-3 py-2">Tracking</th>
+                  <th className="text-left px-3 py-2">Delivered</th>
+                  <th className="text-left px-3 py-2">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {shipments.map((s: any) => (
+                  <tr key={s.id} className="border-b hover:bg-muted/20 cursor-pointer" onClick={() => nav({ to: `/sales/shipments/${s.id}` as any })}>
+                    <td className="px-3 py-2 font-medium">{s.number}</td>
+                    <td className="px-3 py-2">{s.ship_date ?? "—"}</td>
+                    <td className="px-3 py-2">{s.carrier || "—"}</td>
+                    <td className="px-3 py-2 font-mono text-xs">{s.tracking || "—"}</td>
+                    <td className="px-3 py-2">{s.delivery_date ?? "—"}</td>
+                    <td className="px-3 py-2"><Badge variant="secondary">{s.posted_at ? "Confirmed" : s.status}</Badge></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </Card>
+      )}
+
+
 
       {showRecordPayment && (
         <RecordPaymentDialog

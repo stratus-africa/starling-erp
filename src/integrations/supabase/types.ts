@@ -1889,6 +1889,166 @@ export type Database = {
           },
         ]
       }
+      purchase_requisition_lines: {
+        Row: {
+          created_at: string
+          deleted_at: string | null
+          description: string | null
+          discount_pct: number
+          document_id: string
+          id: string
+          item_id: string | null
+          line_no: number
+          line_total: number
+          quantity: number
+          tax_pct: number
+          tenant_id: string
+          unit_price: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          deleted_at?: string | null
+          description?: string | null
+          discount_pct?: number
+          document_id: string
+          id?: string
+          item_id?: string | null
+          line_no: number
+          line_total?: number
+          quantity?: number
+          tax_pct?: number
+          tenant_id: string
+          unit_price?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          deleted_at?: string | null
+          description?: string | null
+          discount_pct?: number
+          document_id?: string
+          id?: string
+          item_id?: string | null
+          line_no?: number
+          line_total?: number
+          quantity?: number
+          tax_pct?: number
+          tenant_id?: string
+          unit_price?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_requisition_lines_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_requisitions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_requisition_lines_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_requisition_lines_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      purchase_requisitions: {
+        Row: {
+          amount: number | null
+          converted_po_id: string | null
+          created_at: string
+          created_by: string | null
+          currency: string
+          date: string | null
+          deleted_at: string | null
+          department: string | null
+          discount_total: number
+          grand_total: number
+          id: string
+          notes: string | null
+          number: string | null
+          requested_by: string | null
+          required_date: string | null
+          status: string | null
+          subtotal: number
+          supplier_id: string | null
+          tax_total: number
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          amount?: number | null
+          converted_po_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          date?: string | null
+          deleted_at?: string | null
+          department?: string | null
+          discount_total?: number
+          grand_total?: number
+          id?: string
+          notes?: string | null
+          number?: string | null
+          requested_by?: string | null
+          required_date?: string | null
+          status?: string | null
+          subtotal?: number
+          supplier_id?: string | null
+          tax_total?: number
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number | null
+          converted_po_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          date?: string | null
+          deleted_at?: string | null
+          department?: string | null
+          discount_total?: number
+          grand_total?: number
+          id?: string
+          notes?: string | null
+          number?: string | null
+          requested_by?: string | null
+          required_date?: string | null
+          status?: string | null
+          subtotal?: number
+          supplier_id?: string | null
+          tax_total?: number
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_requisitions_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_requisitions_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sales_order_lines: {
         Row: {
           created_at: string
@@ -2219,6 +2379,7 @@ export type Database = {
           notes: string | null
           number: string | null
           package_id: string | null
+          posted_at: string | null
           sales_order_id: string | null
           service_level: string | null
           ship_date: string | null
@@ -2239,6 +2400,7 @@ export type Database = {
           notes?: string | null
           number?: string | null
           package_id?: string | null
+          posted_at?: string | null
           sales_order_id?: string | null
           service_level?: string | null
           ship_date?: string | null
@@ -2259,6 +2421,7 @@ export type Database = {
           notes?: string | null
           number?: string | null
           package_id?: string | null
+          posted_at?: string | null
           sales_order_id?: string | null
           service_level?: string | null
           ship_date?: string | null
@@ -2589,8 +2752,10 @@ export type Database = {
       }
       is_super_admin: { Args: never; Returns: boolean }
       post_bill: { Args: { _bill_id: string }; Returns: string }
+      post_credit_note: { Args: { _credit_note_id: string }; Returns: string }
       post_invoice: { Args: { _invoice_id: string }; Returns: string }
       post_package: { Args: { _package_id: string }; Returns: string }
+      post_shipment: { Args: { _shipment_id: string }; Returns: string }
       switch_tenant: { Args: { target_tenant: string }; Returns: string }
       tenant_write_ok: {
         Args: { _roles: Database["public"]["Enums"]["app_role"][] }

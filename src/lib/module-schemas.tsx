@@ -221,3 +221,14 @@ export const shipmentFields: FieldDef[] = [
   { key: "status", label: "Status", type: "select", options: ["Draft","In Transit","Delivered","Cancelled"], defaultValue: "Draft" },
   { key: "notes", label: "Notes", type: "textarea", hideInTable: true },
 ];
+
+export const requisitionFields: FieldDef[] = [
+  { key: "number", label: "Requisition #", render: mono },
+  { key: "date", label: "Date", type: "date", render: dateFmt },
+  { key: "required_date", label: "Required By", type: "date", render: dateFmt },
+  { key: "supplier_id", label: "Preferred Supplier", type: "fk", fkTable: "suppliers", hideInTable: true },
+  { key: "department", label: "Department" },
+  { key: "grand_total", label: "Est. Total", type: "number", className: "text-right", render: moneyRight },
+  { key: "status", label: "Status", type: "select", options: ["Draft","Submitted","Approved","Rejected","Ordered","Cancelled"], defaultValue: "Draft" },
+  { key: "notes", label: "Notes", type: "textarea", hideInTable: true },
+];
