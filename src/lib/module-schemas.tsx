@@ -195,3 +195,29 @@ export const packageFields: FieldDef[] = [
   { key: "status", label: "Status", type: "select", options: ["Draft","Packed","Shipped","Delivered","Cancelled"], defaultValue: "Draft" },
   { key: "notes", label: "Notes", type: "textarea", hideInTable: true },
 ];
+
+export const creditNoteFields: FieldDef[] = [
+  { key: "number", label: "Credit Note #", render: mono },
+  { key: "date", label: "Date", type: "date", render: dateFmt },
+  { key: "customer_id", label: "Customer", type: "fk", fkTable: "customers", required: true, hideInTable: true },
+  { key: "invoice_id", label: "Against Invoice", type: "fk", fkTable: "invoices", fkLabel: "number", hideInTable: true },
+  { key: "reason", label: "Reason" },
+  { key: "grand_total", label: "Total", type: "number", className: "text-right", render: moneyRight },
+  { key: "status", label: "Status", type: "select", options: ["Draft","Issued","Applied","Void"], defaultValue: "Draft" },
+  { key: "notes", label: "Notes", type: "textarea", hideInTable: true },
+];
+
+export const shipmentFields: FieldDef[] = [
+  { key: "number", label: "Shipment #", render: mono },
+  { key: "ship_date", label: "Ship Date", type: "date", render: dateFmt },
+  { key: "package_id", label: "Package", type: "fk", fkTable: "packages", fkLabel: "number", hideInTable: true },
+  { key: "sales_order_id", label: "Sales Order", type: "fk", fkTable: "sales_orders", fkLabel: "number", hideInTable: true },
+  { key: "customer_id", label: "Customer", type: "fk", fkTable: "customers", hideInTable: true },
+  { key: "carrier", label: "Carrier" },
+  { key: "service_level", label: "Service" },
+  { key: "tracking", label: "Tracking", render: mono },
+  { key: "delivery_date", label: "Delivered", type: "date", render: dateFmt },
+  { key: "cost", label: "Cost", type: "number", className: "text-right", render: moneyRight },
+  { key: "status", label: "Status", type: "select", options: ["Draft","In Transit","Delivered","Cancelled"], defaultValue: "Draft" },
+  { key: "notes", label: "Notes", type: "textarea", hideInTable: true },
+];
