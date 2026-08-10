@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Loader2, Plus, Save, Send, Trash2, FileText, DollarSign, Printer, Mail, Receipt, Truck, Package as PackageIcon } from "lucide-react";
+import { ArrowLeft, Loader2, Plus, Save, Send, Trash2, FileText, DollarSign, Printer, Mail, Receipt, Truck, Package as PackageIcon, CheckCircle2 } from "lucide-react";
 import { useFkOptions } from "@/hooks/use-module-data";
 import { RecordPaymentDialog } from "@/components/record-payment-dialog";
 import { EmailDocumentDialog } from "@/components/email-document-dialog";
@@ -267,6 +267,86 @@ export function DocumentEditor({ kind, id }: { kind: DocKind; id: string }) {
     onError: (e: any) => toast.error(e.message ?? "Action failed"),
   });
 
+  const isReq = kind === "requisition";
+  const canApprove = hasRole(["tenant_admin", "super_admin", "purchasing"] as any);
+  const reqApproved = header.status === "Approved" || header.status === "Ordered";
+
+  const setReqStatus = useMutation({
+    mutationFn: async ({ status, note }: { status: string; note: string }) => {
+      const { error } = await supabase.from(cfg.table as any).update({ status }).eq("id", id);
+      if (error) throw error;
+      if (tenant?.id) {
+        await logDocumentEvent({
+          tenantId: tenant.id, entityType: kind, entityId: id, status, note,
+          actorId: user?.id ?? null, actorEmail: profile?.email ?? null,
+        });
+      }
+      return status;
+    },
+    onSuccess: (status) => {
+      setHeader((h: any) => ({ ...h, status }));
+      toast.success(`Requisition ${status.toLowerCase()}`);
+      qc.invalidateQueries();
+    },
+    onError: (e: any) => toast.error(e.message ?? "Update failed"),
+  });
+
+  const convertReqToPo = useMutation({
+    mutationFn: async () => {
+      if (!tenant?.id) throw new Error("No tenant");
+      if (!reqApproved) throw new Error("Requisition must be approved first");
+      if (!header.supplier_id) throw new Error("Select a preferred supplier before converting");
+      const number = `PO-${Date.now().toString().slice(-8)}`;
+      const { data: po, error } = await supabase.from("purchase_orders").insert({
+        tenant_id: tenant.id,
+        number,
+        supplier_id: header.supplier_id,
+        date: new Date().toISOString().slice(0, 10),
+        expected_date: header.required_date || null,
+        status: "Draft",
+        currency: header.currency ?? "USD",
+        subtotal: totals.subtotal,
+        discount_total: totals.discount_total,
+        tax_total: totals.tax_total,
+        grand_total: totals.grand_total,
+        amount: totals.grand_total,
+        notes: header.notes || null,
+      } as any).select("id").single();
+      if (error) throw error;
+      const poId = (po as any).id as string;
+      if (lines.length) {
+        const { error: le } = await supabase.from("purchase_order_lines").insert(
+          lines.map((l, i) => ({
+            tenant_id: tenant.id,
+            document_id: poId,
+            line_no: i + 1,
+            item_id: l.item_id || null,
+            description: l.description,
+            quantity: l.quantity,
+            unit_price: l.unit_price,
+            discount_pct: l.discount_pct || 0,
+            tax_pct: l.tax_pct || 0,
+            line_total: computeLine(l),
+          })) as any,
+        );
+        if (le) throw le;
+      }
+      await supabase.from("purchase_requisitions").update({ status: "Ordered", converted_po_id: poId } as any).eq("id", id);
+      await logDocumentEvent({
+        tenantId: tenant.id, entityType: kind, entityId: id, status: "Ordered",
+        note: `Converted to purchase order ${number}`,
+        actorId: user?.id ?? null, actorEmail: profile?.email ?? null,
+      });
+      return poId;
+    },
+    onSuccess: (poId) => {
+      toast.success("Converted to purchase order");
+      qc.invalidateQueries();
+      nav({ to: `/purchasing/orders/${poId}` as any });
+    },
+    onError: (e: any) => toast.error(e.message ?? "Conversion failed"),
+  });
+
   const partyId = header[cfg.partyField] || null;
   const { data: party } = useQuery({
     queryKey: [cfg.partyTable, "detail", partyId],
@@ -394,6 +474,26 @@ export function DocumentEditor({ kind, id }: { kind: DocKind; id: string }) {
           )}
           {canWrite && kind === "order" && !isNew && (
             <Button variant="outline" size="sm" disabled={runRpc.isPending} onClick={() => runRpc.mutate("convert_order_to_invoice")}><Send className="h-4 w-4 mr-1.5" /> Convert to Invoice</Button>
+          )}
+          {isReq && !isNew && canWrite && header.status === "Draft" && (
+            <Button variant="outline" size="sm" disabled={setReqStatus.isPending} onClick={() => setReqStatus.mutate({ status: "Submitted", note: "Submitted for approval" })}>
+              <Send className="h-4 w-4 mr-1.5" /> Submit for Approval
+            </Button>
+          )}
+          {isReq && !isNew && canApprove && header.status === "Submitted" && (
+            <>
+              <Button variant="outline" size="sm" disabled={setReqStatus.isPending} onClick={() => setReqStatus.mutate({ status: "Rejected", note: "Rejected by approver" })}>
+                Reject
+              </Button>
+              <Button variant="default" size="sm" disabled={setReqStatus.isPending} onClick={() => setReqStatus.mutate({ status: "Approved", note: "Approved" })}>
+                <CheckCircle2 className="h-4 w-4 mr-1.5" /> Approve
+              </Button>
+            </>
+          )}
+          {isReq && !isNew && canWrite && (
+            <Button variant="outline" size="sm" disabled={!reqApproved || convertReqToPo.isPending} title={reqApproved ? undefined : "Requires approval"} onClick={() => convertReqToPo.mutate()}>
+              <Send className="h-4 w-4 mr-1.5" /> Convert to PO
+            </Button>
           )}
           {canWrite && kind === "po" && !isNew && (
             <Button variant="outline" size="sm" disabled={runRpc.isPending} onClick={() => runRpc.mutate("convert_po_to_bill")}><Send className="h-4 w-4 mr-1.5" /> Convert to Bill</Button>
