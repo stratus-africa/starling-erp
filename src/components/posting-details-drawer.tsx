@@ -82,7 +82,20 @@ export function PostingDetailsDrawer({
           <div className="flex items-center gap-2 text-muted-foreground py-10 justify-center"><Loader2 className="h-4 w-4 animate-spin" /> Loading…</div>
         ) : (
           <div className="mt-4 space-y-6">
+            {sources.length > 0 && (
+              <section>
+                <div className="flex items-center gap-2 text-sm font-medium mb-2"><ExternalLink className="h-4 w-4 text-muted-foreground" /> Originating documents</div>
+                <div className="flex flex-wrap gap-2">
+                  {sources.map((s) => (
+                    <Link key={s.to} to={s.to as any} className="rounded-md border px-2.5 py-1 text-xs hover:bg-muted/50">
+                      {s.label}
+                    </Link>
+                  ))}
+                </div>
+              </section>
+            )}
             <section>
+
               <div className="flex items-center gap-2 text-sm font-medium mb-2"><BookMarked className="h-4 w-4 text-muted-foreground" /> Journal entries</div>
               {!data?.entries.length ? (
                 <p className="text-sm text-muted-foreground">No journal entry was generated.</p>
