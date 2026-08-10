@@ -11,13 +11,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Loader2, Plus, Save, Send, Trash2, FileText, DollarSign, Printer, Mail, Receipt, Truck, Package as PackageIcon } from "lucide-react";
+import { ArrowLeft, Loader2, Plus, Save, Send, Trash2, FileText, DollarSign, Printer, Mail, Receipt, Truck, Package as PackageIcon, CheckCircle2 } from "lucide-react";
 import { useFkOptions } from "@/hooks/use-module-data";
 import { RecordPaymentDialog } from "@/components/record-payment-dialog";
 import { EmailDocumentDialog } from "@/components/email-document-dialog";
 import { EmailStatus } from "@/components/email-status";
 import { DocumentTimeline } from "@/components/document-timeline";
 import { PostingDetailsDrawer } from "@/components/posting-details-drawer";
+import { FulfillmentTimeline } from "@/components/fulfillment-timeline";
 import { useDocumentBranding, type DocTemplateKind } from "@/hooks/use-document-branding";
 import { logDocumentEvent } from "@/lib/document-events";
 import { downloadDocumentPdf, type PdfDocInput } from "@/lib/document-pdf";
@@ -37,6 +38,7 @@ type CfgEntry = {
   partyTable: "customers" | "suppliers";
   partyLabel: string;
   partyRequired?: boolean;
+  timelineStages?: string[];
   linkFk?: { field: string; table: string; label: string; labelKey: string };
   listPath: string;
   detailBase: string;
@@ -48,7 +50,7 @@ const CFG: Record<DocKind, CfgEntry> = {
   invoice: { table: "invoices",        lines: "invoice_lines",        label: "Invoice",        prefix: "INV",  dateField: "date", extraDate: { field: "due_date",      label: "Due Date" },    statuses: ["Draft","Sent","Posted","Paid","Overdue","Cancelled"], partyField: "customer_id", partyTable: "customers", partyLabel: "Customer", listPath: "/sales/invoices",     detailBase: "/sales/invoices" },
   po:      { table: "purchase_orders", lines: "purchase_order_lines", label: "Purchase Order", prefix: "PO",   dateField: "date", extraDate: { field: "expected_date", label: "Expected" },    statuses: ["Draft","Confirmed","Processing","Delivered","Billed","Cancelled"], partyField: "supplier_id", partyTable: "suppliers", partyLabel: "Supplier", listPath: "/purchasing/orders", detailBase: "/purchasing/orders" },
   bill:    { table: "bills",           lines: "bill_lines",           label: "Bill",           prefix: "BILL", dateField: "date", extraDate: { field: "due_date",      label: "Due Date" },    statuses: ["Pending","Posted","Paid","Overdue","Cancelled"], partyField: "supplier_id", partyTable: "suppliers", partyLabel: "Supplier", listPath: "/purchasing/bills",  detailBase: "/purchasing/bills" },
-  credit_note: { table: "credit_notes", lines: "credit_note_lines",   label: "Credit Note",    prefix: "CN",   dateField: "date", extraDate: null,                                                statuses: ["Draft","Issued","Applied","Void"], partyField: "customer_id", partyTable: "customers", partyLabel: "Customer", linkFk: { field: "invoice_id", table: "invoices", label: "Against Invoice", labelKey: "number" }, listPath: "/sales/credit-notes", detailBase: "/sales/credit-notes" },
+  credit_note: { table: "credit_notes", lines: "credit_note_lines",   label: "Credit Note",    prefix: "CN",   dateField: "date", extraDate: null,                                                statuses: ["Draft","Issued","Applied","Void"], partyField: "customer_id", partyTable: "customers", partyLabel: "Customer", timelineStages: ["Draft","Confirmed","Posted"], linkFk: { field: "invoice_id", table: "invoices", label: "Against Invoice", labelKey: "number" }, listPath: "/sales/credit-notes", detailBase: "/sales/credit-notes" },
   requisition: { table: "purchase_requisitions", lines: "purchase_requisition_lines", label: "Requisition", prefix: "REQ", dateField: "date", extraDate: { field: "required_date", label: "Required By" }, statuses: ["Draft","Submitted","Approved","Rejected","Ordered","Cancelled"], partyField: "supplier_id", partyTable: "suppliers", partyLabel: "Preferred Supplier", partyRequired: false, listPath: "/purchasing/requisitions", detailBase: "/purchasing/requisitions" },
 };
 
@@ -250,10 +252,99 @@ export function DocumentEditor({ kind, id }: { kind: DocKind; id: string }) {
       else if (rpc === "convert_order_to_invoice") { toast.success("Converted to invoice"); nav({ to: `/sales/invoices/${newId}` as any }); }
       else if (rpc === "convert_po_to_bill") { toast.success("Converted to bill"); nav({ to: `/purchasing/bills/${newId}` as any }); }
       else if (rpc === "post_bill") toast.success("Bill posted");
-      else if (rpc === "post_credit_note") toast.success("Credit note issued");
+      else if (rpc === "post_credit_note") {
+        toast.success("Credit note issued");
+        if (tenant?.id) {
+          void logDocumentEvent({
+            tenantId: tenant.id, entityType: "credit_note", entityId: id, status: "Posted",
+            note: "Journal entry and inventory returns recorded",
+            actorId: user?.id ?? null, actorEmail: profile?.email ?? null,
+          });
+        }
+      }
       else toast.success("Invoice posted");
     },
     onError: (e: any) => toast.error(e.message ?? "Action failed"),
+  });
+
+  const isReq = kind === "requisition";
+  const canApprove = hasRole(["tenant_admin", "super_admin", "purchasing"] as any);
+  const reqApproved = header.status === "Approved" || header.status === "Ordered";
+
+  const setReqStatus = useMutation({
+    mutationFn: async ({ status, note }: { status: string; note: string }) => {
+      const { error } = await supabase.from(cfg.table as any).update({ status }).eq("id", id);
+      if (error) throw error;
+      if (tenant?.id) {
+        await logDocumentEvent({
+          tenantId: tenant.id, entityType: kind, entityId: id, status, note,
+          actorId: user?.id ?? null, actorEmail: profile?.email ?? null,
+        });
+      }
+      return status;
+    },
+    onSuccess: (status) => {
+      setHeader((h: any) => ({ ...h, status }));
+      toast.success(`Requisition ${status.toLowerCase()}`);
+      qc.invalidateQueries();
+    },
+    onError: (e: any) => toast.error(e.message ?? "Update failed"),
+  });
+
+  const convertReqToPo = useMutation({
+    mutationFn: async () => {
+      if (!tenant?.id) throw new Error("No tenant");
+      if (!reqApproved) throw new Error("Requisition must be approved first");
+      if (!header.supplier_id) throw new Error("Select a preferred supplier before converting");
+      const number = `PO-${Date.now().toString().slice(-8)}`;
+      const { data: po, error } = await supabase.from("purchase_orders").insert({
+        tenant_id: tenant.id,
+        number,
+        supplier_id: header.supplier_id,
+        date: new Date().toISOString().slice(0, 10),
+        expected_date: header.required_date || null,
+        status: "Draft",
+        currency: header.currency ?? "USD",
+        subtotal: totals.subtotal,
+        discount_total: totals.discount_total,
+        tax_total: totals.tax_total,
+        grand_total: totals.grand_total,
+        amount: totals.grand_total,
+        notes: header.notes || null,
+      } as any).select("id").single();
+      if (error) throw error;
+      const poId = (po as any).id as string;
+      if (lines.length) {
+        const { error: le } = await supabase.from("purchase_order_lines").insert(
+          lines.map((l, i) => ({
+            tenant_id: tenant.id,
+            document_id: poId,
+            line_no: i + 1,
+            item_id: l.item_id || null,
+            description: l.description,
+            quantity: l.quantity,
+            unit_price: l.unit_price,
+            discount_pct: l.discount_pct || 0,
+            tax_pct: l.tax_pct || 0,
+            line_total: computeLine(l),
+          })) as any,
+        );
+        if (le) throw le;
+      }
+      await supabase.from("purchase_requisitions").update({ status: "Ordered", converted_po_id: poId } as any).eq("id", id);
+      await logDocumentEvent({
+        tenantId: tenant.id, entityType: kind, entityId: id, status: "Ordered",
+        note: `Converted to purchase order ${number}`,
+        actorId: user?.id ?? null, actorEmail: profile?.email ?? null,
+      });
+      return poId;
+    },
+    onSuccess: (poId) => {
+      toast.success("Converted to purchase order");
+      qc.invalidateQueries();
+      nav({ to: `/purchasing/orders/${poId}` as any });
+    },
+    onError: (e: any) => toast.error(e.message ?? "Conversion failed"),
   });
 
   const partyId = header[cfg.partyField] || null;
@@ -366,8 +457,10 @@ export function DocumentEditor({ kind, id }: { kind: DocKind; id: string }) {
               <Button variant="outline" size="sm" onClick={() => setEmailOpen(true)}><Mail className="h-4 w-4 mr-1.5" /> Email</Button>
             </>
           )}
-          {!isNew && doc?.posted_at && (
-            <Button variant="outline" size="sm" onClick={() => setPostOpen(true)}><Receipt className="h-4 w-4 mr-1.5" /> Post details</Button>
+          {!isNew && (doc?.posted_at || kind === "credit_note") && (
+            <Button variant="outline" size="sm" onClick={() => setPostOpen(true)}>
+              <Receipt className="h-4 w-4 mr-1.5" /> {kind === "credit_note" ? "Inventory movements" : "Post details"}
+            </Button>
           )}
 
           {canWrite && kind === "order" && !isNew && (
@@ -381,6 +474,26 @@ export function DocumentEditor({ kind, id }: { kind: DocKind; id: string }) {
           )}
           {canWrite && kind === "order" && !isNew && (
             <Button variant="outline" size="sm" disabled={runRpc.isPending} onClick={() => runRpc.mutate("convert_order_to_invoice")}><Send className="h-4 w-4 mr-1.5" /> Convert to Invoice</Button>
+          )}
+          {isReq && !isNew && canWrite && header.status === "Draft" && (
+            <Button variant="outline" size="sm" disabled={setReqStatus.isPending} onClick={() => setReqStatus.mutate({ status: "Submitted", note: "Submitted for approval" })}>
+              <Send className="h-4 w-4 mr-1.5" /> Submit for Approval
+            </Button>
+          )}
+          {isReq && !isNew && canApprove && header.status === "Submitted" && (
+            <>
+              <Button variant="outline" size="sm" disabled={setReqStatus.isPending} onClick={() => setReqStatus.mutate({ status: "Rejected", note: "Rejected by approver" })}>
+                Reject
+              </Button>
+              <Button variant="default" size="sm" disabled={setReqStatus.isPending} onClick={() => setReqStatus.mutate({ status: "Approved", note: "Approved" })}>
+                <CheckCircle2 className="h-4 w-4 mr-1.5" /> Approve
+              </Button>
+            </>
+          )}
+          {isReq && !isNew && canWrite && (
+            <Button variant="outline" size="sm" disabled={!reqApproved || convertReqToPo.isPending} title={reqApproved ? undefined : "Requires approval"} onClick={() => convertReqToPo.mutate()}>
+              <Send className="h-4 w-4 mr-1.5" /> Convert to PO
+            </Button>
           )}
           {canWrite && kind === "po" && !isNew && (
             <Button variant="outline" size="sm" disabled={runRpc.isPending} onClick={() => runRpc.mutate("convert_po_to_bill")}><Send className="h-4 w-4 mr-1.5" /> Convert to Bill</Button>
@@ -451,7 +564,7 @@ export function DocumentEditor({ kind, id }: { kind: DocKind; id: string }) {
           <Label>Status</Label>
           <Select value={header.status ?? cfg.statuses[0]} onValueChange={(v) => setHeader({ ...header, status: v })} disabled={!canWrite}>
             <SelectTrigger><SelectValue /></SelectTrigger>
-            <SelectContent>{cfg.statuses.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
+            <SelectContent>{cfg.statuses.filter(s => !(isReq && !canApprove && (s === "Approved" || s === "Rejected"))).map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
           </Select>
         </div>
         <div className="grid gap-1.5 md:col-span-2">
@@ -614,6 +727,8 @@ export function DocumentEditor({ kind, id }: { kind: DocKind; id: string }) {
 
 
 
+      {kind === "order" && !isNew && <FulfillmentTimeline orderId={id} />}
+
       {showRecordPayment && (
         <RecordPaymentDialog
           open={payOpen}
@@ -631,8 +746,12 @@ export function DocumentEditor({ kind, id }: { kind: DocKind; id: string }) {
         <DocumentTimeline
           entityType={kind}
           entityId={id}
-          stages={[...cfg.statuses]}
-          currentStage={header.status ?? null}
+          stages={cfg.timelineStages ?? [...cfg.statuses]}
+          currentStage={
+            cfg.timelineStages
+              ? doc?.posted_at ? "Posted" : (header.status ?? "Draft") === "Draft" ? "Draft" : "Confirmed"
+              : header.status ?? null
+          }
         />
       )}
 
@@ -643,6 +762,11 @@ export function DocumentEditor({ kind, id }: { kind: DocKind; id: string }) {
           refType={kind}
           refId={id}
           title={`${cfg.label.toLowerCase()} ${header.number ?? ""}`}
+          sources={
+            kind === "credit_note" && header.invoice_id
+              ? [{ label: `Invoice ${linkOptions.find((o: any) => o.id === header.invoice_id)?.number ?? ""}`, to: `/sales/invoices/${header.invoice_id}` }]
+              : []
+          }
         />
       )}
 

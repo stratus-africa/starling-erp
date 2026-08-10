@@ -18,13 +18,16 @@ import { EmailStatus } from "@/components/email-status";
 import { DocumentTimeline } from "@/components/document-timeline";
 import { PostingDetailsDrawer } from "@/components/posting-details-drawer";
 import { useDocumentBranding } from "@/hooks/use-document-branding";
+import { logDocumentEvent } from "@/lib/document-events";
 
 const STATUSES = ["Draft", "In Transit", "Delivered", "Cancelled"] as const;
+const FULFILLMENT_STAGES = ["Draft", "Confirmed", "Posted"];
+
 
 export function ShipmentEditor({ id }: { id: string }) {
   const qc = useQueryClient();
   const nav = useNavigate();
-  const { tenant, hasRole } = useAuth();
+  const { tenant, user, profile, hasRole } = useAuth();
   const canWrite = hasRole(["tenant_admin", "super_admin", "sales", "inventory"] as any);
   const isNew = id === "new";
   const search = useSearch({ strict: false }) as { order?: string; package?: string };
@@ -137,6 +140,17 @@ export function ShipmentEditor({ id }: { id: string }) {
     mutationFn: async () => {
       const { error } = await supabase.rpc("post_shipment" as any, { _shipment_id: id });
       if (error) throw error;
+      if (tenant?.id) {
+        await logDocumentEvent({
+          tenantId: tenant.id,
+          entityType: "shipment",
+          entityId: id,
+          status: "Posted",
+          note: "Inventory movements and journal entry recorded",
+          actorId: user?.id ?? null,
+          actorEmail: profile?.email ?? null,
+        });
+      }
     },
     onSuccess: () => {
       toast.success("Shipment confirmed");
@@ -144,6 +158,7 @@ export function ShipmentEditor({ id }: { id: string }) {
     },
     onError: (e: any) => toast.error(e.message ?? "Confirm failed"),
   });
+
 
   const buildPdf = (): PdfDocInput => ({
     title: "Shipment",
@@ -195,9 +210,10 @@ export function ShipmentEditor({ id }: { id: string }) {
               <Button variant="outline" size="sm" onClick={() => setEmailOpen(true)}><Mail className="h-4 w-4 mr-1.5" /> Email</Button>
             </>
           )}
-          {!isNew && doc?.posted_at && (
-            <Button variant="outline" size="sm" onClick={() => setPostOpen(true)}><Receipt className="h-4 w-4 mr-1.5" /> Post details</Button>
+          {!isNew && (
+            <Button variant="outline" size="sm" onClick={() => setPostOpen(true)}><Receipt className="h-4 w-4 mr-1.5" /> Inventory movements</Button>
           )}
+
           {canWrite && !isNew && !doc?.posted_at && (
             <Button size="sm" disabled={post.isPending} onClick={() => post.mutate()}>
               {post.isPending ? <Loader2 className="h-4 w-4 mr-1.5 animate-spin" /> : <CheckCircle2 className="h-4 w-4 mr-1.5" />} Confirm Shipment
@@ -279,12 +295,23 @@ export function ShipmentEditor({ id }: { id: string }) {
       </Card>
 
       {!isNew && (
-        <DocumentTimeline entityType="shipment" entityId={id} stages={[...STATUSES]} currentStage={doc?.posted_at ? "In Transit" : header.status} />
+        <DocumentTimeline entityType="shipment" entityId={id} stages={FULFILLMENT_STAGES} currentStage={doc?.posted_at ? "Posted" : header.status === "Draft" ? "Draft" : "Confirmed"} />
       )}
 
       {!isNew && (
-        <PostingDetailsDrawer open={postOpen} onOpenChange={setPostOpen} refType="package" refId={header.package_id ?? ""} title={`shipment ${header.number ?? ""}`} />
+        <PostingDetailsDrawer
+          open={postOpen}
+          onOpenChange={setPostOpen}
+          refType="shipment"
+          refIds={[id, header.package_id]}
+          title={`shipment ${header.number ?? ""}`}
+          sources={[
+            ...(order ? [{ label: `Sales Order ${order.number}`, to: `/sales/orders/${order.id}` }] : []),
+            ...(pkg ? [{ label: `Package ${pkg.number}`, to: `/sales/packages/${pkg.id}` }] : []),
+          ]}
+        />
       )}
+
 
       {!isNew && (
         <EmailDocumentDialog

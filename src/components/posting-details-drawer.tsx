@@ -1,45 +1,52 @@
 import { useQuery } from "@tanstack/react-query";
+import { Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, BookMarked, Boxes } from "lucide-react";
+import { Loader2, BookMarked, Boxes, ExternalLink } from "lucide-react";
 
 const money = (n: any) => Number(n ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
+export interface PostingSourceLink { label: string; to: string }
+
 /** Shows the journal entries and stock movements produced when a document was posted. */
 export function PostingDetailsDrawer({
-  open, onOpenChange, refType, refId, title,
+  open, onOpenChange, refType, refId, refIds, title, sources = [],
 }: {
   open: boolean;
   onOpenChange: (o: boolean) => void;
   refType: string;
-  refId: string;
+  refId?: string;
+  refIds?: (string | null | undefined)[];
   title: string;
+  sources?: PostingSourceLink[];
 }) {
+  const ids = [...new Set([refId, ...(refIds ?? [])].filter(Boolean))] as string[];
+
   const { data, isLoading } = useQuery({
-    queryKey: ["posting-details", refType, refId],
-    enabled: open && !!refId,
+    queryKey: ["posting-details", refType, ids],
+    enabled: open && ids.length > 0,
     queryFn: async () => {
       const [{ data: entries }, { data: movements }] = await Promise.all([
         supabase
           .from("journal_entries" as any)
           .select("id,number,entry_date,memo,total_debit,total_credit,source_ref_type")
-          .eq("source_ref_id", refId)
+          .in("source_ref_id", ids)
           .order("created_at"),
         supabase
           .from("stock_movements" as any)
-          .select("id,quantity,unit_cost,note,created_at,item_id,warehouse_id")
-          .eq("ref_id", refId)
+          .select("id,quantity,unit_cost,note,created_at,item_id,warehouse_id,ref_type")
+          .in("ref_id", ids)
           .order("created_at"),
       ]);
 
-      const ids = ((entries ?? []) as any[]).map((e) => e.id);
+      const journalIds = ((entries ?? []) as any[]).map((e) => e.id);
       let lines: any[] = [];
-      if (ids.length) {
+      if (journalIds.length) {
         const { data: jl } = await supabase
           .from("journal_lines" as any)
           .select("id,journal_id,debit,credit,memo,account_id")
-          .in("journal_id", ids);
+          .in("journal_id", journalIds);
         lines = (jl ?? []) as any[];
       }
 
@@ -75,7 +82,20 @@ export function PostingDetailsDrawer({
           <div className="flex items-center gap-2 text-muted-foreground py-10 justify-center"><Loader2 className="h-4 w-4 animate-spin" /> Loading…</div>
         ) : (
           <div className="mt-4 space-y-6">
+            {sources.length > 0 && (
+              <section>
+                <div className="flex items-center gap-2 text-sm font-medium mb-2"><ExternalLink className="h-4 w-4 text-muted-foreground" /> Originating documents</div>
+                <div className="flex flex-wrap gap-2">
+                  {sources.map((s) => (
+                    <Link key={s.to} to={s.to as any} className="rounded-md border px-2.5 py-1 text-xs hover:bg-muted/50">
+                      {s.label}
+                    </Link>
+                  ))}
+                </div>
+              </section>
+            )}
             <section>
+
               <div className="flex items-center gap-2 text-sm font-medium mb-2"><BookMarked className="h-4 w-4 text-muted-foreground" /> Journal entries</div>
               {!data?.entries.length ? (
                 <p className="text-sm text-muted-foreground">No journal entry was generated.</p>

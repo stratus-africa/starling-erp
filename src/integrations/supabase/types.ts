@@ -809,6 +809,110 @@ export type Database = {
           },
         ]
       }
+      expenses: {
+        Row: {
+          account_id: string | null
+          amount: number
+          bank_account_id: string | null
+          billable: boolean
+          category: string | null
+          created_at: string
+          created_by: string | null
+          currency: string
+          date: string
+          deleted_at: string | null
+          id: string
+          mode: string | null
+          notes: string | null
+          number: string | null
+          posted_at: string | null
+          reference: string | null
+          status: string
+          supplier_id: string | null
+          tax_amount: number
+          tenant_id: string
+          total: number
+          updated_at: string
+        }
+        Insert: {
+          account_id?: string | null
+          amount?: number
+          bank_account_id?: string | null
+          billable?: boolean
+          category?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          date?: string
+          deleted_at?: string | null
+          id?: string
+          mode?: string | null
+          notes?: string | null
+          number?: string | null
+          posted_at?: string | null
+          reference?: string | null
+          status?: string
+          supplier_id?: string | null
+          tax_amount?: number
+          tenant_id: string
+          total?: number
+          updated_at?: string
+        }
+        Update: {
+          account_id?: string | null
+          amount?: number
+          bank_account_id?: string | null
+          billable?: boolean
+          category?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          date?: string
+          deleted_at?: string | null
+          id?: string
+          mode?: string | null
+          notes?: string | null
+          number?: string | null
+          posted_at?: string | null
+          reference?: string | null
+          status?: string
+          supplier_id?: string | null
+          tax_amount?: number
+          tenant_id?: string
+          total?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expenses_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "chart_of_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expenses_bank_account_id_fkey"
+            columns: ["bank_account_id"]
+            isOneToOne: false
+            referencedRelation: "bank_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expenses_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expenses_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       inventory_adjustments: {
         Row: {
           created_at: string

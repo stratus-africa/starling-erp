@@ -232,3 +232,20 @@ export const requisitionFields: FieldDef[] = [
   { key: "status", label: "Status", type: "select", options: ["Draft","Submitted","Approved","Rejected","Ordered","Cancelled"], defaultValue: "Draft" },
   { key: "notes", label: "Notes", type: "textarea", hideInTable: true },
 ];
+
+export const expenseFields: FieldDef[] = [
+  { key: "number", label: "Expense #", render: mono },
+  { key: "date", label: "Date", type: "date", render: dateFmt },
+  { key: "category", label: "Category", type: "select", options: ["Travel","Meals","Office Supplies","Utilities","Rent","Software","Marketing","Freight","Repairs","Other"], defaultValue: "Other" },
+  { key: "supplier_id", label: "Supplier", type: "fk", fkTable: "suppliers", hideInTable: true },
+  { key: "account_id", label: "Expense Account", type: "fk", fkTable: "chart_of_accounts", hideInTable: true },
+  { key: "bank_account_id", label: "Paid Through", type: "fk", fkTable: "bank_accounts", hideInTable: true },
+  { key: "mode", label: "Payment Mode", type: "select", options: ["Cash","Bank Transfer","Card","Cheque","Mobile Money"], defaultValue: "Cash" },
+  { key: "reference", label: "Reference", hideInTable: true },
+  { key: "amount", label: "Amount", type: "number", className: "text-right", render: moneyRight },
+  { key: "tax_amount", label: "Tax", type: "number", className: "text-right", render: moneyRight, hideInTable: true },
+  { key: "total", label: "Total", type: "number", className: "text-right", render: moneyRight },
+  { key: "currency", label: "Currency", type: "select", options: ["USD","EUR","GBP","KES","AED","EGP","INR","ZAR"], defaultValue: "USD", hideInTable: true },
+  { key: "status", label: "Status", type: "select", options: ["Unbilled","Billed","Reimbursed","Rejected"], defaultValue: "Unbilled" },
+  { key: "notes", label: "Notes", type: "textarea", hideInTable: true },
+];
