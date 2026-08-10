@@ -139,6 +139,17 @@ export function ShipmentEditor({ id }: { id: string }) {
     mutationFn: async () => {
       const { error } = await supabase.rpc("post_shipment" as any, { _shipment_id: id });
       if (error) throw error;
+      if (tenant?.id) {
+        await logDocumentEvent({
+          tenantId: tenant.id,
+          entityType: "shipment",
+          entityId: id,
+          status: "Posted",
+          note: "Inventory movements and journal entry recorded",
+          actorId: user?.id ?? null,
+          actorEmail: profile?.email ?? null,
+        });
+      }
     },
     onSuccess: () => {
       toast.success("Shipment confirmed");
@@ -146,6 +157,7 @@ export function ShipmentEditor({ id }: { id: string }) {
     },
     onError: (e: any) => toast.error(e.message ?? "Confirm failed"),
   });
+
 
   const buildPdf = (): PdfDocInput => ({
     title: "Shipment",
