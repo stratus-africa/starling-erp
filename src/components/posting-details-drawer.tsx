@@ -40,13 +40,13 @@ export function PostingDetailsDrawer({
           .order("created_at"),
       ]);
 
-      const ids = ((entries ?? []) as any[]).map((e) => e.id);
+      const journalIds = ((entries ?? []) as any[]).map((e) => e.id);
       let lines: any[] = [];
-      if (ids.length) {
+      if (journalIds.length) {
         const { data: jl } = await supabase
           .from("journal_lines" as any)
           .select("id,journal_id,debit,credit,memo,account_id")
-          .in("journal_id", ids);
+          .in("journal_id", journalIds);
         lines = (jl ?? []) as any[];
       }
 
