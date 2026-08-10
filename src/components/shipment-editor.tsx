@@ -20,6 +20,8 @@ import { PostingDetailsDrawer } from "@/components/posting-details-drawer";
 import { useDocumentBranding } from "@/hooks/use-document-branding";
 
 const STATUSES = ["Draft", "In Transit", "Delivered", "Cancelled"] as const;
+const FULFILLMENT_STAGES = ["Draft", "Confirmed", "Posted"];
+
 
 export function ShipmentEditor({ id }: { id: string }) {
   const qc = useQueryClient();
@@ -195,9 +197,10 @@ export function ShipmentEditor({ id }: { id: string }) {
               <Button variant="outline" size="sm" onClick={() => setEmailOpen(true)}><Mail className="h-4 w-4 mr-1.5" /> Email</Button>
             </>
           )}
-          {!isNew && doc?.posted_at && (
-            <Button variant="outline" size="sm" onClick={() => setPostOpen(true)}><Receipt className="h-4 w-4 mr-1.5" /> Post details</Button>
+          {!isNew && (
+            <Button variant="outline" size="sm" onClick={() => setPostOpen(true)}><Receipt className="h-4 w-4 mr-1.5" /> Inventory movements</Button>
           )}
+
           {canWrite && !isNew && !doc?.posted_at && (
             <Button size="sm" disabled={post.isPending} onClick={() => post.mutate()}>
               {post.isPending ? <Loader2 className="h-4 w-4 mr-1.5 animate-spin" /> : <CheckCircle2 className="h-4 w-4 mr-1.5" />} Confirm Shipment
