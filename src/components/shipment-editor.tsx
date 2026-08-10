@@ -18,6 +18,7 @@ import { EmailStatus } from "@/components/email-status";
 import { DocumentTimeline } from "@/components/document-timeline";
 import { PostingDetailsDrawer } from "@/components/posting-details-drawer";
 import { useDocumentBranding } from "@/hooks/use-document-branding";
+import { logDocumentEvent } from "@/lib/document-events";
 
 const STATUSES = ["Draft", "In Transit", "Delivered", "Cancelled"] as const;
 const FULFILLMENT_STAGES = ["Draft", "Confirmed", "Posted"];
@@ -26,7 +27,7 @@ const FULFILLMENT_STAGES = ["Draft", "Confirmed", "Posted"];
 export function ShipmentEditor({ id }: { id: string }) {
   const qc = useQueryClient();
   const nav = useNavigate();
-  const { tenant, hasRole } = useAuth();
+  const { tenant, user, profile, hasRole } = useAuth();
   const canWrite = hasRole(["tenant_admin", "super_admin", "sales", "inventory"] as any);
   const isNew = id === "new";
   const search = useSearch({ strict: false }) as { order?: string; package?: string };
