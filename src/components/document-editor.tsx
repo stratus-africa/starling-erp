@@ -18,6 +18,7 @@ import { EmailDocumentDialog } from "@/components/email-document-dialog";
 import { EmailStatus } from "@/components/email-status";
 import { DocumentTimeline } from "@/components/document-timeline";
 import { PostingDetailsDrawer } from "@/components/posting-details-drawer";
+import { FulfillmentTimeline } from "@/components/fulfillment-timeline";
 import { useDocumentBranding, type DocTemplateKind } from "@/hooks/use-document-branding";
 import { logDocumentEvent } from "@/lib/document-events";
 import { downloadDocumentPdf, type PdfDocInput } from "@/lib/document-pdf";
@@ -37,6 +38,7 @@ type CfgEntry = {
   partyTable: "customers" | "suppliers";
   partyLabel: string;
   partyRequired?: boolean;
+  timelineStages?: string[];
   linkFk?: { field: string; table: string; label: string; labelKey: string };
   listPath: string;
   detailBase: string;
@@ -48,7 +50,7 @@ const CFG: Record<DocKind, CfgEntry> = {
   invoice: { table: "invoices",        lines: "invoice_lines",        label: "Invoice",        prefix: "INV",  dateField: "date", extraDate: { field: "due_date",      label: "Due Date" },    statuses: ["Draft","Sent","Posted","Paid","Overdue","Cancelled"], partyField: "customer_id", partyTable: "customers", partyLabel: "Customer", listPath: "/sales/invoices",     detailBase: "/sales/invoices" },
   po:      { table: "purchase_orders", lines: "purchase_order_lines", label: "Purchase Order", prefix: "PO",   dateField: "date", extraDate: { field: "expected_date", label: "Expected" },    statuses: ["Draft","Confirmed","Processing","Delivered","Billed","Cancelled"], partyField: "supplier_id", partyTable: "suppliers", partyLabel: "Supplier", listPath: "/purchasing/orders", detailBase: "/purchasing/orders" },
   bill:    { table: "bills",           lines: "bill_lines",           label: "Bill",           prefix: "BILL", dateField: "date", extraDate: { field: "due_date",      label: "Due Date" },    statuses: ["Pending","Posted","Paid","Overdue","Cancelled"], partyField: "supplier_id", partyTable: "suppliers", partyLabel: "Supplier", listPath: "/purchasing/bills",  detailBase: "/purchasing/bills" },
-  credit_note: { table: "credit_notes", lines: "credit_note_lines",   label: "Credit Note",    prefix: "CN",   dateField: "date", extraDate: null,                                                statuses: ["Draft","Issued","Applied","Void"], partyField: "customer_id", partyTable: "customers", partyLabel: "Customer", linkFk: { field: "invoice_id", table: "invoices", label: "Against Invoice", labelKey: "number" }, listPath: "/sales/credit-notes", detailBase: "/sales/credit-notes" },
+  credit_note: { table: "credit_notes", lines: "credit_note_lines",   label: "Credit Note",    prefix: "CN",   dateField: "date", extraDate: null,                                                statuses: ["Draft","Issued","Applied","Void"], partyField: "customer_id", partyTable: "customers", partyLabel: "Customer", timelineStages: ["Draft","Confirmed","Posted"], linkFk: { field: "invoice_id", table: "invoices", label: "Against Invoice", labelKey: "number" }, listPath: "/sales/credit-notes", detailBase: "/sales/credit-notes" },
   requisition: { table: "purchase_requisitions", lines: "purchase_requisition_lines", label: "Requisition", prefix: "REQ", dateField: "date", extraDate: { field: "required_date", label: "Required By" }, statuses: ["Draft","Submitted","Approved","Rejected","Ordered","Cancelled"], partyField: "supplier_id", partyTable: "suppliers", partyLabel: "Preferred Supplier", partyRequired: false, listPath: "/purchasing/requisitions", detailBase: "/purchasing/requisitions" },
 };
 
@@ -250,7 +252,16 @@ export function DocumentEditor({ kind, id }: { kind: DocKind; id: string }) {
       else if (rpc === "convert_order_to_invoice") { toast.success("Converted to invoice"); nav({ to: `/sales/invoices/${newId}` as any }); }
       else if (rpc === "convert_po_to_bill") { toast.success("Converted to bill"); nav({ to: `/purchasing/bills/${newId}` as any }); }
       else if (rpc === "post_bill") toast.success("Bill posted");
-      else if (rpc === "post_credit_note") toast.success("Credit note issued");
+      else if (rpc === "post_credit_note") {
+        toast.success("Credit note issued");
+        if (tenant?.id) {
+          void logDocumentEvent({
+            tenantId: tenant.id, entityType: "credit_note", entityId: id, status: "Posted",
+            note: "Journal entry and inventory returns recorded",
+            actorId: user?.id ?? null, actorEmail: profile?.email ?? null,
+          });
+        }
+      }
       else toast.success("Invoice posted");
     },
     onError: (e: any) => toast.error(e.message ?? "Action failed"),
@@ -366,8 +377,10 @@ export function DocumentEditor({ kind, id }: { kind: DocKind; id: string }) {
               <Button variant="outline" size="sm" onClick={() => setEmailOpen(true)}><Mail className="h-4 w-4 mr-1.5" /> Email</Button>
             </>
           )}
-          {!isNew && doc?.posted_at && (
-            <Button variant="outline" size="sm" onClick={() => setPostOpen(true)}><Receipt className="h-4 w-4 mr-1.5" /> Post details</Button>
+          {!isNew && (doc?.posted_at || kind === "credit_note") && (
+            <Button variant="outline" size="sm" onClick={() => setPostOpen(true)}>
+              <Receipt className="h-4 w-4 mr-1.5" /> {kind === "credit_note" ? "Inventory movements" : "Post details"}
+            </Button>
           )}
 
           {canWrite && kind === "order" && !isNew && (
@@ -614,6 +627,8 @@ export function DocumentEditor({ kind, id }: { kind: DocKind; id: string }) {
 
 
 
+      {kind === "order" && !isNew && <FulfillmentTimeline orderId={id} />}
+
       {showRecordPayment && (
         <RecordPaymentDialog
           open={payOpen}
@@ -631,8 +646,12 @@ export function DocumentEditor({ kind, id }: { kind: DocKind; id: string }) {
         <DocumentTimeline
           entityType={kind}
           entityId={id}
-          stages={[...cfg.statuses]}
-          currentStage={header.status ?? null}
+          stages={cfg.timelineStages ?? [...cfg.statuses]}
+          currentStage={
+            cfg.timelineStages
+              ? doc?.posted_at ? "Posted" : (header.status ?? "Draft") === "Draft" ? "Draft" : "Confirmed"
+              : header.status ?? null
+          }
         />
       )}
 
@@ -643,6 +662,11 @@ export function DocumentEditor({ kind, id }: { kind: DocKind; id: string }) {
           refType={kind}
           refId={id}
           title={`${cfg.label.toLowerCase()} ${header.number ?? ""}`}
+          sources={
+            kind === "credit_note" && header.invoice_id
+              ? [{ label: `Invoice ${linkOptions.find((o: any) => o.id === header.invoice_id)?.number ?? ""}`, to: `/sales/invoices/${header.invoice_id}` }]
+              : []
+          }
         />
       )}
 
