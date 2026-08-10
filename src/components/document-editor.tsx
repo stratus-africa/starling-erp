@@ -564,7 +564,7 @@ export function DocumentEditor({ kind, id }: { kind: DocKind; id: string }) {
           <Label>Status</Label>
           <Select value={header.status ?? cfg.statuses[0]} onValueChange={(v) => setHeader({ ...header, status: v })} disabled={!canWrite}>
             <SelectTrigger><SelectValue /></SelectTrigger>
-            <SelectContent>{cfg.statuses.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
+            <SelectContent>{cfg.statuses.filter(s => !(isReq && !canApprove && (s === "Approved" || s === "Rejected"))).map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
           </Select>
         </div>
         <div className="grid gap-1.5 md:col-span-2">
