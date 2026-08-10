@@ -37,7 +37,6 @@ import { Route as AuthenticatedReportsPurchasesRouteImport } from './routes/_aut
 import { Route as AuthenticatedReportsManufacturingRouteImport } from './routes/_authenticated/reports.manufacturing'
 import { Route as AuthenticatedReportsInventoryRouteImport } from './routes/_authenticated/reports.inventory'
 import { Route as AuthenticatedReportsFinancialRouteImport } from './routes/_authenticated/reports.financial'
-import { Route as AuthenticatedPurchasingSuppliersRouteImport } from './routes/_authenticated/purchasing.suppliers'
 import { Route as AuthenticatedPurchasingPaymentsRouteImport } from './routes/_authenticated/purchasing.payments'
 import { Route as AuthenticatedPurchasingExpensesRouteImport } from './routes/_authenticated/purchasing.expenses'
 import { Route as AuthenticatedPurchasingCreditsRouteImport } from './routes/_authenticated/purchasing.credits'
@@ -234,12 +233,6 @@ const AuthenticatedReportsFinancialRoute =
   AuthenticatedReportsFinancialRouteImport.update({
     id: '/reports/financial',
     path: '/reports/financial',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedPurchasingSuppliersRoute =
-  AuthenticatedPurchasingSuppliersRouteImport.update({
-    id: '/purchasing/suppliers',
-    path: '/purchasing/suppliers',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedPurchasingPaymentsRoute =
@@ -511,7 +504,6 @@ export interface FileRoutesByFullPath {
   '/purchasing/credits': typeof AuthenticatedPurchasingCreditsRoute
   '/purchasing/expenses': typeof AuthenticatedPurchasingExpensesRoute
   '/purchasing/payments': typeof AuthenticatedPurchasingPaymentsRoute
-  '/purchasing/suppliers': typeof AuthenticatedPurchasingSuppliersRoute
   '/reports/financial': typeof AuthenticatedReportsFinancialRoute
   '/reports/inventory': typeof AuthenticatedReportsInventoryRoute
   '/reports/manufacturing': typeof AuthenticatedReportsManufacturingRoute
@@ -580,7 +572,6 @@ export interface FileRoutesByTo {
   '/purchasing/credits': typeof AuthenticatedPurchasingCreditsRoute
   '/purchasing/expenses': typeof AuthenticatedPurchasingExpensesRoute
   '/purchasing/payments': typeof AuthenticatedPurchasingPaymentsRoute
-  '/purchasing/suppliers': typeof AuthenticatedPurchasingSuppliersRoute
   '/reports/financial': typeof AuthenticatedReportsFinancialRoute
   '/reports/inventory': typeof AuthenticatedReportsInventoryRoute
   '/reports/manufacturing': typeof AuthenticatedReportsManufacturingRoute
@@ -652,7 +643,6 @@ export interface FileRoutesById {
   '/_authenticated/purchasing/credits': typeof AuthenticatedPurchasingCreditsRoute
   '/_authenticated/purchasing/expenses': typeof AuthenticatedPurchasingExpensesRoute
   '/_authenticated/purchasing/payments': typeof AuthenticatedPurchasingPaymentsRoute
-  '/_authenticated/purchasing/suppliers': typeof AuthenticatedPurchasingSuppliersRoute
   '/_authenticated/reports/financial': typeof AuthenticatedReportsFinancialRoute
   '/_authenticated/reports/inventory': typeof AuthenticatedReportsInventoryRoute
   '/_authenticated/reports/manufacturing': typeof AuthenticatedReportsManufacturingRoute
@@ -723,7 +713,6 @@ export interface FileRouteTypes {
     | '/purchasing/credits'
     | '/purchasing/expenses'
     | '/purchasing/payments'
-    | '/purchasing/suppliers'
     | '/reports/financial'
     | '/reports/inventory'
     | '/reports/manufacturing'
@@ -792,7 +781,6 @@ export interface FileRouteTypes {
     | '/purchasing/credits'
     | '/purchasing/expenses'
     | '/purchasing/payments'
-    | '/purchasing/suppliers'
     | '/reports/financial'
     | '/reports/inventory'
     | '/reports/manufacturing'
@@ -863,7 +851,6 @@ export interface FileRouteTypes {
     | '/_authenticated/purchasing/credits'
     | '/_authenticated/purchasing/expenses'
     | '/_authenticated/purchasing/payments'
-    | '/_authenticated/purchasing/suppliers'
     | '/_authenticated/reports/financial'
     | '/_authenticated/reports/inventory'
     | '/_authenticated/reports/manufacturing'
@@ -1107,13 +1094,6 @@ declare module '@tanstack/react-router' {
       path: '/reports/financial'
       fullPath: '/reports/financial'
       preLoaderRoute: typeof AuthenticatedReportsFinancialRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/purchasing/suppliers': {
-      id: '/_authenticated/purchasing/suppliers'
-      path: '/purchasing/suppliers'
-      fullPath: '/purchasing/suppliers'
-      preLoaderRoute: typeof AuthenticatedPurchasingSuppliersRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/purchasing/payments': {
@@ -1441,7 +1421,6 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedPurchasingCreditsRoute: typeof AuthenticatedPurchasingCreditsRoute
   AuthenticatedPurchasingExpensesRoute: typeof AuthenticatedPurchasingExpensesRoute
   AuthenticatedPurchasingPaymentsRoute: typeof AuthenticatedPurchasingPaymentsRoute
-  AuthenticatedPurchasingSuppliersRoute: typeof AuthenticatedPurchasingSuppliersRoute
   AuthenticatedReportsFinancialRoute: typeof AuthenticatedReportsFinancialRoute
   AuthenticatedReportsInventoryRoute: typeof AuthenticatedReportsInventoryRoute
   AuthenticatedReportsManufacturingRoute: typeof AuthenticatedReportsManufacturingRoute
@@ -1509,7 +1488,6 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedPurchasingCreditsRoute: AuthenticatedPurchasingCreditsRoute,
   AuthenticatedPurchasingExpensesRoute: AuthenticatedPurchasingExpensesRoute,
   AuthenticatedPurchasingPaymentsRoute: AuthenticatedPurchasingPaymentsRoute,
-  AuthenticatedPurchasingSuppliersRoute: AuthenticatedPurchasingSuppliersRoute,
   AuthenticatedReportsFinancialRoute: AuthenticatedReportsFinancialRoute,
   AuthenticatedReportsInventoryRoute: AuthenticatedReportsInventoryRoute,
   AuthenticatedReportsManufacturingRoute:
@@ -1570,13 +1548,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
