@@ -1,35 +1,42 @@
 import { useQuery } from "@tanstack/react-query";
+import { Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, BookMarked, Boxes } from "lucide-react";
+import { Loader2, BookMarked, Boxes, ExternalLink } from "lucide-react";
 
 const money = (n: any) => Number(n ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
+export interface PostingSourceLink { label: string; to: string }
+
 /** Shows the journal entries and stock movements produced when a document was posted. */
 export function PostingDetailsDrawer({
-  open, onOpenChange, refType, refId, title,
+  open, onOpenChange, refType, refId, refIds, title, sources = [],
 }: {
   open: boolean;
   onOpenChange: (o: boolean) => void;
   refType: string;
-  refId: string;
+  refId?: string;
+  refIds?: (string | null | undefined)[];
   title: string;
+  sources?: PostingSourceLink[];
 }) {
+  const ids = [...new Set([refId, ...(refIds ?? [])].filter(Boolean))] as string[];
+
   const { data, isLoading } = useQuery({
-    queryKey: ["posting-details", refType, refId],
-    enabled: open && !!refId,
+    queryKey: ["posting-details", refType, ids],
+    enabled: open && ids.length > 0,
     queryFn: async () => {
       const [{ data: entries }, { data: movements }] = await Promise.all([
         supabase
           .from("journal_entries" as any)
           .select("id,number,entry_date,memo,total_debit,total_credit,source_ref_type")
-          .eq("source_ref_id", refId)
+          .in("source_ref_id", ids)
           .order("created_at"),
         supabase
           .from("stock_movements" as any)
-          .select("id,quantity,unit_cost,note,created_at,item_id,warehouse_id")
-          .eq("ref_id", refId)
+          .select("id,quantity,unit_cost,note,created_at,item_id,warehouse_id,ref_type")
+          .in("ref_id", ids)
           .order("created_at"),
       ]);
 
