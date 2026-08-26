@@ -110,7 +110,7 @@ export function DataModulePage(props: DataModulePageProps) {
 
   const post = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.rpc(postAction!.rpc, { [postAction!.paramName]: id } as any);
+      const { error } = await (supabase as any).rpc(postAction!.rpc, { [postAction!.paramName]: id });
       if (error) throw error;
     },
     onSuccess: () => { toast.success("Posted"); qc.invalidateQueries({ queryKey: [table, "list"] }); qc.invalidateQueries({ queryKey: [table] }); },
