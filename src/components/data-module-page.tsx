@@ -26,6 +26,9 @@ import {
   ChevronLeft, ChevronRight,
 } from "lucide-react";
 import { useModuleList, useModuleMutations, useFkOptions } from "@/hooks/use-module-data";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import { AttachmentsPanel } from "@/components/attachments-panel";
 import { useAuth, type AppRole } from "@/hooks/use-auth";
 import { Link, useNavigate } from "@tanstack/react-router";
@@ -57,6 +60,12 @@ interface DataModulePageProps {
   defaultOrder?: string;
   rowHref?: (row: any) => string;
   createHref?: string;
+  postAction?: {
+    rpc: string;
+    paramName: string;
+    label: string;
+    showWhen?: (row: any) => boolean;
+  };
 }
 
 const statusVariant: Record<string, string> = {
@@ -67,6 +76,7 @@ const statusVariant: Record<string, string> = {
   Paid: "bg-success/15 text-success",
   Delivered: "bg-success/15 text-success",
   Completed: "bg-success/15 text-success",
+  Posted: "bg-success/15 text-success",
   Active: "bg-success/15 text-success",
   Confirmed: "bg-info/15 text-info",
   Processing: "bg-info/15 text-info",
@@ -81,11 +91,12 @@ export function DataModulePage(props: DataModulePageProps) {
   const {
     title, description, table, fields, entityLabel, attachments,
     writeRoles = ["tenant_admin"], searchColumn = "name", defaultOrder = "created_at",
-    rowHref, createHref,
+    rowHref, createHref, postAction,
   } = props;
 
   const { hasRole } = useAuth();
   const navigate = useNavigate();
+  const qc = useQueryClient();
   const canWrite = hasRole(["tenant_admin", "super_admin", ...writeRoles]);
 
   const [search, setSearch] = useState("");
@@ -96,6 +107,15 @@ export function DataModulePage(props: DataModulePageProps) {
 
   const { data, isLoading } = useModuleList(table, { search, searchColumn, page, pageSize, orderBy, orderAsc });
   const { create, update, remove } = useModuleMutations(table);
+
+  const post = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await (supabase as any).rpc(postAction!.rpc, { [postAction!.paramName]: id });
+      if (error) throw error;
+    },
+    onSuccess: () => { toast.success("Posted"); qc.invalidateQueries({ queryKey: [table, "list"] }); qc.invalidateQueries({ queryKey: [table] }); },
+    onError: (e: any) => toast.error(e.message ?? "Post failed"),
+  });
 
   const [editing, setEditing] = useState<any | null>(null);
   const [creating, setCreating] = useState(false);
@@ -190,6 +210,12 @@ export function DataModulePage(props: DataModulePageProps) {
                         ) : (
                           <DropdownMenuItem onClick={() => setEditing(row)}>{canWrite ? "Edit" : "View"}</DropdownMenuItem>
                         )}
+                        {postAction && (!postAction.showWhen || postAction.showWhen(row)) && (
+                          <DropdownMenuItem onClick={() => post.mutate(row.id)} disabled={post.isPending}>
+                            {post.isPending && post.variables === row.id ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : null}
+                            {postAction.label}
+                          </DropdownMenuItem>
+                        )}
                         {canWrite && <DropdownMenuItem className="text-destructive" onClick={() => setDeletingId(row.id)}>Delete</DropdownMenuItem>}
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -224,6 +250,9 @@ export function DataModulePage(props: DataModulePageProps) {
           setCreating(false); setEditing(null);
         }}
         busy={create.isPending || update.isPending}
+        postAction={postAction}
+        onPost={postAction && editing ? async () => { await post.mutateAsync(editing.id); setEditing(null); } : undefined}
+        postBusy={post.isPending}
       />
 
       <AlertDialog open={!!deletingId} onOpenChange={(o) => !o && setDeletingId(null)}>
@@ -244,11 +273,15 @@ export function DataModulePage(props: DataModulePageProps) {
 
 function RecordSheet({
   open, onOpenChange, fields, row, entityLabel, entityType, attachments, canWrite, onSubmit, busy,
+  postAction, onPost, postBusy,
 }: {
   open: boolean; onOpenChange: (o: boolean) => void;
   fields: FieldDef[]; row: any | null;
   entityLabel: string; entityType: string; attachments?: boolean;
   canWrite: boolean; onSubmit: (v: Record<string, any>) => Promise<void>; busy: boolean;
+  postAction?: { rpc: string; paramName: string; label: string; showWhen?: (row: any) => boolean };
+  onPost?: () => Promise<void>;
+  postBusy?: boolean;
 }) {
   const [values, setValues] = useState<Record<string, any>>({});
 
@@ -288,6 +321,12 @@ function RecordSheet({
             <Button type="submit" disabled={!canWrite || busy}>
               {busy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}{row ? "Save changes" : "Create"}
             </Button>
+            {postAction && row && (!postAction.showWhen || postAction.showWhen(row)) && onPost && (
+              <Button type="button" variant="secondary" onClick={onPost} disabled={postBusy}>
+                {postBusy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {postAction.label}
+              </Button>
+            )}
           </SheetFooter>
         </form>
 

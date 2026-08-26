@@ -1,10 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { ModulePage } from "@/components/module-page";
-import { modules } from "@/lib/modules";
+import { DataModulePage } from "@/components/data-module-page";
+import { itemFields } from "@/lib/module-schemas";
 
 export const Route = createFileRoute("/_authenticated/manufacturing/items")({
-  component: () => {
-    const m = modules["manufacturing.items"];
-    return <ModulePage {...m} />;
-  },
+  component: () => (
+    <DataModulePage title="Production Items" description="Finished goods and sub-assemblies produced in-house."
+      table="items" entityLabel="Item" fields={itemFields}
+      writeRoles={["manufacturing"]} searchColumn="name" attachments={false} />
+  ),
 });

@@ -152,7 +152,7 @@ export const inventoryAdjustmentFields: FieldDef[] = [
   { key: "warehouse_id", label: "Warehouse", type: "fk", fkTable: "warehouses", required: true, hideInTable: true },
   { key: "quantity", label: "Qty", type: "number", className: "text-right", render: monoRight },
   { key: "reason", label: "Reason" },
-  { key: "status", label: "Status", type: "select", options: ["Draft","Posted","Void"], defaultValue: "Posted" },
+  { key: "status", label: "Status", type: "select", options: ["Draft","Posted","Void"], defaultValue: "Draft" },
 ];
 
 export const inventoryTransferFields: FieldDef[] = [
@@ -176,9 +176,10 @@ export const bomFields: FieldDef[] = [
 ];
 
 export const productionOrderFields: FieldDef[] = [
-  { key: "number", label: "PO #", required: true, render: mono },
+  { key: "number", label: "MO #", required: true, render: mono },
   { key: "date", label: "Date", type: "date", render: dateFmt },
   { key: "bom_id", label: "BOM", type: "fk", fkTable: "bom_headers", fkLabel: "code", required: true, hideInTable: true },
+  { key: "warehouse_id", label: "Output Warehouse", type: "fk", fkTable: "warehouses", hideInTable: true },
   { key: "quantity", label: "Qty", type: "number", className: "text-right", render: monoRight },
   { key: "status", label: "Status", type: "select", options: ["Planned","In Progress","Completed","Cancelled"], defaultValue: "Planned" },
   { key: "notes", label: "Notes", type: "textarea", hideInTable: true },

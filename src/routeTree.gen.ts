@@ -42,7 +42,6 @@ import { Route as AuthenticatedPurchasingCreditsRouteImport } from './routes/_au
 import { Route as AuthenticatedManufacturingRunsRouteImport } from './routes/_authenticated/manufacturing.runs'
 import { Route as AuthenticatedManufacturingOrdersRouteImport } from './routes/_authenticated/manufacturing.orders'
 import { Route as AuthenticatedManufacturingItemsRouteImport } from './routes/_authenticated/manufacturing.items'
-import { Route as AuthenticatedManufacturingBomRouteImport } from './routes/_authenticated/manufacturing.bom'
 import { Route as AuthenticatedInventoryWarehousesRouteImport } from './routes/_authenticated/inventory.warehouses'
 import { Route as AuthenticatedInventoryTransfersRouteImport } from './routes/_authenticated/inventory.transfers'
 import { Route as AuthenticatedInventoryLedgerRouteImport } from './routes/_authenticated/inventory.ledger'
@@ -67,6 +66,7 @@ import { Route as AuthenticatedPurchasingRequisitionsIndexRouteImport } from './
 import { Route as AuthenticatedPurchasingOrdersIndexRouteImport } from './routes/_authenticated/purchasing.orders.index'
 import { Route as AuthenticatedPurchasingExpensesIndexRouteImport } from './routes/_authenticated/purchasing.expenses.index'
 import { Route as AuthenticatedPurchasingBillsIndexRouteImport } from './routes/_authenticated/purchasing.bills.index'
+import { Route as AuthenticatedManufacturingBomIndexRouteImport } from './routes/_authenticated/manufacturing.bom.index'
 import { Route as AuthenticatedCrmCustomersIndexRouteImport } from './routes/_authenticated/crm.customers.index'
 import { Route as AuthenticatedSalesShipmentsIdRouteImport } from './routes/_authenticated/sales.shipments.$id'
 import { Route as AuthenticatedSalesQuotesIdRouteImport } from './routes/_authenticated/sales.quotes.$id'
@@ -79,6 +79,7 @@ import { Route as AuthenticatedPurchasingRequisitionsIdRouteImport } from './rou
 import { Route as AuthenticatedPurchasingOrdersIdRouteImport } from './routes/_authenticated/purchasing.orders.$id'
 import { Route as AuthenticatedPurchasingExpensesIdRouteImport } from './routes/_authenticated/purchasing.expenses.$id'
 import { Route as AuthenticatedPurchasingBillsIdRouteImport } from './routes/_authenticated/purchasing.bills.$id'
+import { Route as AuthenticatedManufacturingBomIdRouteImport } from './routes/_authenticated/manufacturing.bom.$id'
 import { Route as AuthenticatedCrmCustomersIdRouteImport } from './routes/_authenticated/crm.customers.$id'
 
 const AuthRoute = AuthRouteImport.update({
@@ -268,12 +269,6 @@ const AuthenticatedManufacturingItemsRoute =
     path: '/manufacturing/items',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedManufacturingBomRoute =
-  AuthenticatedManufacturingBomRouteImport.update({
-    id: '/manufacturing/bom',
-    path: '/manufacturing/bom',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
 const AuthenticatedInventoryWarehousesRoute =
   AuthenticatedInventoryWarehousesRouteImport.update({
     id: '/inventory/warehouses',
@@ -418,6 +413,12 @@ const AuthenticatedPurchasingBillsIndexRoute =
     path: '/purchasing/bills/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedManufacturingBomIndexRoute =
+  AuthenticatedManufacturingBomIndexRouteImport.update({
+    id: '/manufacturing/bom/',
+    path: '/manufacturing/bom/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedCrmCustomersIndexRoute =
   AuthenticatedCrmCustomersIndexRouteImport.update({
     id: '/crm/customers/',
@@ -490,6 +491,12 @@ const AuthenticatedPurchasingBillsIdRoute =
     path: '/purchasing/bills/$id',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedManufacturingBomIdRoute =
+  AuthenticatedManufacturingBomIdRouteImport.update({
+    id: '/manufacturing/bom/$id',
+    path: '/manufacturing/bom/$id',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedCrmCustomersIdRoute =
   AuthenticatedCrmCustomersIdRouteImport.update({
     id: '/crm/customers/$id',
@@ -518,7 +525,6 @@ export interface FileRoutesByFullPath {
   '/inventory/ledger': typeof AuthenticatedInventoryLedgerRoute
   '/inventory/transfers': typeof AuthenticatedInventoryTransfersRoute
   '/inventory/warehouses': typeof AuthenticatedInventoryWarehousesRoute
-  '/manufacturing/bom': typeof AuthenticatedManufacturingBomRoute
   '/manufacturing/items': typeof AuthenticatedManufacturingItemsRoute
   '/manufacturing/orders': typeof AuthenticatedManufacturingOrdersRoute
   '/manufacturing/runs': typeof AuthenticatedManufacturingRunsRoute
@@ -544,6 +550,7 @@ export interface FileRoutesByFullPath {
   '/settings/warehouses': typeof AuthenticatedSettingsWarehousesRoute
   '/settings/workflows': typeof AuthenticatedSettingsWorkflowsRoute
   '/crm/customers/$id': typeof AuthenticatedCrmCustomersIdRoute
+  '/manufacturing/bom/$id': typeof AuthenticatedManufacturingBomIdRoute
   '/purchasing/bills/$id': typeof AuthenticatedPurchasingBillsIdRoute
   '/purchasing/expenses/$id': typeof AuthenticatedPurchasingExpensesIdRoute
   '/purchasing/orders/$id': typeof AuthenticatedPurchasingOrdersIdRoute
@@ -556,6 +563,7 @@ export interface FileRoutesByFullPath {
   '/sales/quotes/$id': typeof AuthenticatedSalesQuotesIdRoute
   '/sales/shipments/$id': typeof AuthenticatedSalesShipmentsIdRoute
   '/crm/customers/': typeof AuthenticatedCrmCustomersIndexRoute
+  '/manufacturing/bom/': typeof AuthenticatedManufacturingBomIndexRoute
   '/purchasing/bills/': typeof AuthenticatedPurchasingBillsIndexRoute
   '/purchasing/expenses/': typeof AuthenticatedPurchasingExpensesIndexRoute
   '/purchasing/orders/': typeof AuthenticatedPurchasingOrdersIndexRoute
@@ -589,7 +597,6 @@ export interface FileRoutesByTo {
   '/inventory/ledger': typeof AuthenticatedInventoryLedgerRoute
   '/inventory/transfers': typeof AuthenticatedInventoryTransfersRoute
   '/inventory/warehouses': typeof AuthenticatedInventoryWarehousesRoute
-  '/manufacturing/bom': typeof AuthenticatedManufacturingBomRoute
   '/manufacturing/items': typeof AuthenticatedManufacturingItemsRoute
   '/manufacturing/orders': typeof AuthenticatedManufacturingOrdersRoute
   '/manufacturing/runs': typeof AuthenticatedManufacturingRunsRoute
@@ -615,6 +622,7 @@ export interface FileRoutesByTo {
   '/settings/warehouses': typeof AuthenticatedSettingsWarehousesRoute
   '/settings/workflows': typeof AuthenticatedSettingsWorkflowsRoute
   '/crm/customers/$id': typeof AuthenticatedCrmCustomersIdRoute
+  '/manufacturing/bom/$id': typeof AuthenticatedManufacturingBomIdRoute
   '/purchasing/bills/$id': typeof AuthenticatedPurchasingBillsIdRoute
   '/purchasing/expenses/$id': typeof AuthenticatedPurchasingExpensesIdRoute
   '/purchasing/orders/$id': typeof AuthenticatedPurchasingOrdersIdRoute
@@ -627,6 +635,7 @@ export interface FileRoutesByTo {
   '/sales/quotes/$id': typeof AuthenticatedSalesQuotesIdRoute
   '/sales/shipments/$id': typeof AuthenticatedSalesShipmentsIdRoute
   '/crm/customers': typeof AuthenticatedCrmCustomersIndexRoute
+  '/manufacturing/bom': typeof AuthenticatedManufacturingBomIndexRoute
   '/purchasing/bills': typeof AuthenticatedPurchasingBillsIndexRoute
   '/purchasing/expenses': typeof AuthenticatedPurchasingExpensesIndexRoute
   '/purchasing/orders': typeof AuthenticatedPurchasingOrdersIndexRoute
@@ -663,7 +672,6 @@ export interface FileRoutesById {
   '/_authenticated/inventory/ledger': typeof AuthenticatedInventoryLedgerRoute
   '/_authenticated/inventory/transfers': typeof AuthenticatedInventoryTransfersRoute
   '/_authenticated/inventory/warehouses': typeof AuthenticatedInventoryWarehousesRoute
-  '/_authenticated/manufacturing/bom': typeof AuthenticatedManufacturingBomRoute
   '/_authenticated/manufacturing/items': typeof AuthenticatedManufacturingItemsRoute
   '/_authenticated/manufacturing/orders': typeof AuthenticatedManufacturingOrdersRoute
   '/_authenticated/manufacturing/runs': typeof AuthenticatedManufacturingRunsRoute
@@ -689,6 +697,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/warehouses': typeof AuthenticatedSettingsWarehousesRoute
   '/_authenticated/settings/workflows': typeof AuthenticatedSettingsWorkflowsRoute
   '/_authenticated/crm/customers/$id': typeof AuthenticatedCrmCustomersIdRoute
+  '/_authenticated/manufacturing/bom/$id': typeof AuthenticatedManufacturingBomIdRoute
   '/_authenticated/purchasing/bills/$id': typeof AuthenticatedPurchasingBillsIdRoute
   '/_authenticated/purchasing/expenses/$id': typeof AuthenticatedPurchasingExpensesIdRoute
   '/_authenticated/purchasing/orders/$id': typeof AuthenticatedPurchasingOrdersIdRoute
@@ -701,6 +710,7 @@ export interface FileRoutesById {
   '/_authenticated/sales/quotes/$id': typeof AuthenticatedSalesQuotesIdRoute
   '/_authenticated/sales/shipments/$id': typeof AuthenticatedSalesShipmentsIdRoute
   '/_authenticated/crm/customers/': typeof AuthenticatedCrmCustomersIndexRoute
+  '/_authenticated/manufacturing/bom/': typeof AuthenticatedManufacturingBomIndexRoute
   '/_authenticated/purchasing/bills/': typeof AuthenticatedPurchasingBillsIndexRoute
   '/_authenticated/purchasing/expenses/': typeof AuthenticatedPurchasingExpensesIndexRoute
   '/_authenticated/purchasing/orders/': typeof AuthenticatedPurchasingOrdersIndexRoute
@@ -736,7 +746,6 @@ export interface FileRouteTypes {
     | '/inventory/ledger'
     | '/inventory/transfers'
     | '/inventory/warehouses'
-    | '/manufacturing/bom'
     | '/manufacturing/items'
     | '/manufacturing/orders'
     | '/manufacturing/runs'
@@ -762,6 +771,7 @@ export interface FileRouteTypes {
     | '/settings/warehouses'
     | '/settings/workflows'
     | '/crm/customers/$id'
+    | '/manufacturing/bom/$id'
     | '/purchasing/bills/$id'
     | '/purchasing/expenses/$id'
     | '/purchasing/orders/$id'
@@ -774,6 +784,7 @@ export interface FileRouteTypes {
     | '/sales/quotes/$id'
     | '/sales/shipments/$id'
     | '/crm/customers/'
+    | '/manufacturing/bom/'
     | '/purchasing/bills/'
     | '/purchasing/expenses/'
     | '/purchasing/orders/'
@@ -807,7 +818,6 @@ export interface FileRouteTypes {
     | '/inventory/ledger'
     | '/inventory/transfers'
     | '/inventory/warehouses'
-    | '/manufacturing/bom'
     | '/manufacturing/items'
     | '/manufacturing/orders'
     | '/manufacturing/runs'
@@ -833,6 +843,7 @@ export interface FileRouteTypes {
     | '/settings/warehouses'
     | '/settings/workflows'
     | '/crm/customers/$id'
+    | '/manufacturing/bom/$id'
     | '/purchasing/bills/$id'
     | '/purchasing/expenses/$id'
     | '/purchasing/orders/$id'
@@ -845,6 +856,7 @@ export interface FileRouteTypes {
     | '/sales/quotes/$id'
     | '/sales/shipments/$id'
     | '/crm/customers'
+    | '/manufacturing/bom'
     | '/purchasing/bills'
     | '/purchasing/expenses'
     | '/purchasing/orders'
@@ -880,7 +892,6 @@ export interface FileRouteTypes {
     | '/_authenticated/inventory/ledger'
     | '/_authenticated/inventory/transfers'
     | '/_authenticated/inventory/warehouses'
-    | '/_authenticated/manufacturing/bom'
     | '/_authenticated/manufacturing/items'
     | '/_authenticated/manufacturing/orders'
     | '/_authenticated/manufacturing/runs'
@@ -906,6 +917,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/warehouses'
     | '/_authenticated/settings/workflows'
     | '/_authenticated/crm/customers/$id'
+    | '/_authenticated/manufacturing/bom/$id'
     | '/_authenticated/purchasing/bills/$id'
     | '/_authenticated/purchasing/expenses/$id'
     | '/_authenticated/purchasing/orders/$id'
@@ -918,6 +930,7 @@ export interface FileRouteTypes {
     | '/_authenticated/sales/quotes/$id'
     | '/_authenticated/sales/shipments/$id'
     | '/_authenticated/crm/customers/'
+    | '/_authenticated/manufacturing/bom/'
     | '/_authenticated/purchasing/bills/'
     | '/_authenticated/purchasing/expenses/'
     | '/_authenticated/purchasing/orders/'
@@ -1170,13 +1183,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedManufacturingItemsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/manufacturing/bom': {
-      id: '/_authenticated/manufacturing/bom'
-      path: '/manufacturing/bom'
-      fullPath: '/manufacturing/bom'
-      preLoaderRoute: typeof AuthenticatedManufacturingBomRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/_authenticated/inventory/warehouses': {
       id: '/_authenticated/inventory/warehouses'
       path: '/inventory/warehouses'
@@ -1345,6 +1351,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPurchasingBillsIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/manufacturing/bom/': {
+      id: '/_authenticated/manufacturing/bom/'
+      path: '/manufacturing/bom'
+      fullPath: '/manufacturing/bom/'
+      preLoaderRoute: typeof AuthenticatedManufacturingBomIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/crm/customers/': {
       id: '/_authenticated/crm/customers/'
       path: '/crm/customers'
@@ -1429,6 +1442,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPurchasingBillsIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/manufacturing/bom/$id': {
+      id: '/_authenticated/manufacturing/bom/$id'
+      path: '/manufacturing/bom/$id'
+      fullPath: '/manufacturing/bom/$id'
+      preLoaderRoute: typeof AuthenticatedManufacturingBomIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/crm/customers/$id': {
       id: '/_authenticated/crm/customers/$id'
       path: '/crm/customers/$id'
@@ -1474,7 +1494,6 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedInventoryLedgerRoute: typeof AuthenticatedInventoryLedgerRoute
   AuthenticatedInventoryTransfersRoute: typeof AuthenticatedInventoryTransfersRoute
   AuthenticatedInventoryWarehousesRoute: typeof AuthenticatedInventoryWarehousesRoute
-  AuthenticatedManufacturingBomRoute: typeof AuthenticatedManufacturingBomRoute
   AuthenticatedManufacturingItemsRoute: typeof AuthenticatedManufacturingItemsRoute
   AuthenticatedManufacturingOrdersRoute: typeof AuthenticatedManufacturingOrdersRoute
   AuthenticatedManufacturingRunsRoute: typeof AuthenticatedManufacturingRunsRoute
@@ -1500,6 +1519,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedSettingsWarehousesRoute: typeof AuthenticatedSettingsWarehousesRoute
   AuthenticatedSettingsWorkflowsRoute: typeof AuthenticatedSettingsWorkflowsRoute
   AuthenticatedCrmCustomersIdRoute: typeof AuthenticatedCrmCustomersIdRoute
+  AuthenticatedManufacturingBomIdRoute: typeof AuthenticatedManufacturingBomIdRoute
   AuthenticatedPurchasingBillsIdRoute: typeof AuthenticatedPurchasingBillsIdRoute
   AuthenticatedPurchasingExpensesIdRoute: typeof AuthenticatedPurchasingExpensesIdRoute
   AuthenticatedPurchasingOrdersIdRoute: typeof AuthenticatedPurchasingOrdersIdRoute
@@ -1512,6 +1532,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedSalesQuotesIdRoute: typeof AuthenticatedSalesQuotesIdRoute
   AuthenticatedSalesShipmentsIdRoute: typeof AuthenticatedSalesShipmentsIdRoute
   AuthenticatedCrmCustomersIndexRoute: typeof AuthenticatedCrmCustomersIndexRoute
+  AuthenticatedManufacturingBomIndexRoute: typeof AuthenticatedManufacturingBomIndexRoute
   AuthenticatedPurchasingBillsIndexRoute: typeof AuthenticatedPurchasingBillsIndexRoute
   AuthenticatedPurchasingExpensesIndexRoute: typeof AuthenticatedPurchasingExpensesIndexRoute
   AuthenticatedPurchasingOrdersIndexRoute: typeof AuthenticatedPurchasingOrdersIndexRoute
@@ -1544,7 +1565,6 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedInventoryLedgerRoute: AuthenticatedInventoryLedgerRoute,
   AuthenticatedInventoryTransfersRoute: AuthenticatedInventoryTransfersRoute,
   AuthenticatedInventoryWarehousesRoute: AuthenticatedInventoryWarehousesRoute,
-  AuthenticatedManufacturingBomRoute: AuthenticatedManufacturingBomRoute,
   AuthenticatedManufacturingItemsRoute: AuthenticatedManufacturingItemsRoute,
   AuthenticatedManufacturingOrdersRoute: AuthenticatedManufacturingOrdersRoute,
   AuthenticatedManufacturingRunsRoute: AuthenticatedManufacturingRunsRoute,
@@ -1573,6 +1593,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSettingsWarehousesRoute: AuthenticatedSettingsWarehousesRoute,
   AuthenticatedSettingsWorkflowsRoute: AuthenticatedSettingsWorkflowsRoute,
   AuthenticatedCrmCustomersIdRoute: AuthenticatedCrmCustomersIdRoute,
+  AuthenticatedManufacturingBomIdRoute: AuthenticatedManufacturingBomIdRoute,
   AuthenticatedPurchasingBillsIdRoute: AuthenticatedPurchasingBillsIdRoute,
   AuthenticatedPurchasingExpensesIdRoute:
     AuthenticatedPurchasingExpensesIdRoute,
@@ -1588,6 +1609,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSalesQuotesIdRoute: AuthenticatedSalesQuotesIdRoute,
   AuthenticatedSalesShipmentsIdRoute: AuthenticatedSalesShipmentsIdRoute,
   AuthenticatedCrmCustomersIndexRoute: AuthenticatedCrmCustomersIndexRoute,
+  AuthenticatedManufacturingBomIndexRoute:
+    AuthenticatedManufacturingBomIndexRoute,
   AuthenticatedPurchasingBillsIndexRoute:
     AuthenticatedPurchasingBillsIndexRoute,
   AuthenticatedPurchasingExpensesIndexRoute:
