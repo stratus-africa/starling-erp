@@ -359,6 +359,70 @@ export type Database = {
           },
         ]
       }
+      bom_lines: {
+        Row: {
+          bom_id: string
+          created_at: string
+          deleted_at: string | null
+          id: string
+          item_id: string | null
+          line_no: number
+          line_total: number
+          quantity: number
+          tenant_id: string
+          unit_cost: number
+          updated_at: string
+        }
+        Insert: {
+          bom_id: string
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          item_id?: string | null
+          line_no?: number
+          line_total?: number
+          quantity?: number
+          tenant_id: string
+          unit_cost?: number
+          updated_at?: string
+        }
+        Update: {
+          bom_id?: string
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          item_id?: string | null
+          line_no?: number
+          line_total?: number
+          quantity?: number
+          tenant_id?: string
+          unit_cost?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bom_lines_bom_id_fkey"
+            columns: ["bom_id"]
+            isOneToOne: false
+            referencedRelation: "bom_headers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bom_lines_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bom_lines_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       chart_of_accounts: {
         Row: {
           balance: number | null
@@ -922,6 +986,7 @@ export type Database = {
           id: string
           item_id: string | null
           number: string
+          posted_at: string | null
           quantity: number
           reason: string | null
           status: string | null
@@ -937,6 +1002,7 @@ export type Database = {
           id?: string
           item_id?: string | null
           number: string
+          posted_at?: string | null
           quantity?: number
           reason?: string | null
           status?: string | null
@@ -952,6 +1018,7 @@ export type Database = {
           id?: string
           item_id?: string | null
           number?: string
+          posted_at?: string | null
           quantity?: number
           reason?: string | null
           status?: string | null
@@ -987,6 +1054,7 @@ export type Database = {
           item_id: string | null
           notes: string | null
           number: string
+          posted_at: string | null
           quantity: number
           status: string | null
           tenant_id: string
@@ -1003,6 +1071,7 @@ export type Database = {
           item_id?: string | null
           notes?: string | null
           number: string
+          posted_at?: string | null
           quantity?: number
           status?: string | null
           tenant_id: string
@@ -1019,6 +1088,7 @@ export type Database = {
           item_id?: string | null
           notes?: string | null
           number?: string
+          posted_at?: string | null
           quantity?: number
           status?: string | null
           tenant_id?: string
@@ -1766,10 +1836,12 @@ export type Database = {
           id: string
           notes: string | null
           number: string
+          posted_at: string | null
           quantity: number
           status: string | null
           tenant_id: string
           updated_at: string
+          warehouse_id: string | null
         }
         Insert: {
           bom_id?: string | null
@@ -1780,10 +1852,12 @@ export type Database = {
           id?: string
           notes?: string | null
           number: string
+          posted_at?: string | null
           quantity?: number
           status?: string | null
           tenant_id: string
           updated_at?: string
+          warehouse_id?: string | null
         }
         Update: {
           bom_id?: string | null
@@ -1794,10 +1868,12 @@ export type Database = {
           id?: string
           notes?: string | null
           number?: string
+          posted_at?: string | null
           quantity?: number
           status?: string | null
           tenant_id?: string
           updated_at?: string
+          warehouse_id?: string | null
         }
         Relationships: [
           {
@@ -1805,6 +1881,13 @@ export type Database = {
             columns: ["bom_id"]
             isOneToOne: false
             referencedRelation: "bom_headers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "production_orders_warehouse_id_fkey"
+            columns: ["warehouse_id"]
+            isOneToOne: false
+            referencedRelation: "warehouses"
             referencedColumns: ["id"]
           },
         ]
@@ -2855,11 +2938,14 @@ export type Database = {
         Returns: boolean
       }
       is_super_admin: { Args: never; Returns: boolean }
+      post_adjustment: { Args: { _adjustment_id: string }; Returns: string }
       post_bill: { Args: { _bill_id: string }; Returns: string }
       post_credit_note: { Args: { _credit_note_id: string }; Returns: string }
       post_invoice: { Args: { _invoice_id: string }; Returns: string }
       post_package: { Args: { _package_id: string }; Returns: string }
+      post_production_order: { Args: { _order_id: string }; Returns: string }
       post_shipment: { Args: { _shipment_id: string }; Returns: string }
+      post_transfer: { Args: { _transfer_id: string }; Returns: string }
       switch_tenant: { Args: { target_tenant: string }; Returns: string }
       tenant_write_ok: {
         Args: { _roles: Database["public"]["Enums"]["app_role"][] }
