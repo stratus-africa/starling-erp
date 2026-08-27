@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Search, Loader2, Boxes, ChevronLeft, ChevronRight } from "lucide-react";
+import { InventoryStockTools } from "@/components/inventory-stock-tools";
 
 const REF_LABELS: Record<string, string> = {
   bill: "Purchase In", invoice: "Sale", package: "Package", shipment: "Shipment",
@@ -74,6 +75,8 @@ function InventoryLedgerPage() {
         </h1>
         <p className="text-sm text-muted-foreground mt-0.5">Complete stock movement history across all items and warehouses.</p>
       </div>
+
+      <InventoryStockTools />
 
       <Card className="overflow-hidden border shadow-sm p-0">
         <div className="flex items-center gap-2 border-b px-3 py-2 bg-muted/30">
