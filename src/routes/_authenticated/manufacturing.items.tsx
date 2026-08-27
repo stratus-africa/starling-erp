@@ -13,6 +13,8 @@ export const Route = createFileRoute("/_authenticated/manufacturing/items")({
       writeRoles={["manufacturing"]}
       searchColumn="name"
       attachments={false}
+      rowHref={(r) => `/manufacturing/items/${r.id}`}
+      createHref="/manufacturing/items/new"
     />
   ),
 });
