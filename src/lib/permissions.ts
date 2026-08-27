@@ -45,6 +45,11 @@ export const PERMISSIONS = {
   reportsExport: "reports.export",
   settingsUsers: "settings.users",
   settingsRoles: "settings.roles",
+  approvalsRead: "approvals.read",
+  approvalsRequest: "approvals.request",
+  approvalsApprove: "approvals.approve",
+  approvalsReject: "approvals.reject",
+  approvalsManage: "approvals.manage",
 } as const;
 
 export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
