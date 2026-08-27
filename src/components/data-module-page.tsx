@@ -44,7 +44,7 @@ import { AttachmentsPanel } from "@/components/attachments-panel";
 import { useAuth, type AppRole } from "@/hooks/use-auth";
 import { Link, useNavigate } from "@tanstack/react-router";
 import type { Permission } from "@/lib/permissions";
-import { schemaByTable, formatZodError } from "@/lib/module-schemas";
+import { schemaByTable, formatZodError } from "@/lib/module-field-definitions";
 
 export interface FieldDef {
   key: string;
