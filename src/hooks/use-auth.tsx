@@ -3,33 +3,11 @@ import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useRouter } from "@tanstack/react-router";
-import type { Permission, PermissionAction, PermissionModule, PermissionKey } from "@/lib/permissions";
+import type { Permission } from "@/lib/permissions";
+import type { AppRole } from "@/lib/db-types";
 
-export type AppRole =
-  | "super_admin"
-  | "tenant_admin"
-  | "sales"
-  | "purchasing"
-  | "inventory"
-  | "accounting"
-  | "manufacturing"
-  | "viewer"
-  | "cashier";
-
-export interface Profile {
-  id: string;
-  tenant_id: string | null;
-  email: string | null;
-  full_name: string | null;
-  avatar_url: string | null;
-}
-export interface Tenant {
-  id: string;
-  name: string;
-  slug: string;
-  currency: string;
-  status: string;
-}
+export type Profile = import("@/integrations/supabase/types").Tables<"profiles">;
+export type Tenant = import("@/integrations/supabase/types").Tables<"tenants">;
 
 interface AuthCtx {
   user: User | null;
@@ -40,10 +18,7 @@ interface AuthCtx {
   permissions: string[];
   loading: boolean;
   hasRole: (r: AppRole | AppRole[]) => boolean;
-  can: (module: PermissionModule, action: PermissionAction) => boolean;
-  canAny: (module: PermissionModule, actions: PermissionAction[]) => boolean;
-  canAll: (module: PermissionModule, actions: PermissionAction[]) => boolean;
-  hasPermission: (permission: Permission | PermissionKey | string) => boolean;
+  can: (permission: Permission | string | Array<Permission | string>) => boolean;
   signOut: () => Promise<void>;
   refresh: () => Promise<void>;
   switchTenant: (tenantId: string) => Promise<void>;
@@ -68,12 +43,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       supabase.from("user_roles").select("role").eq("user_id", uid),
       supabase.rpc("get_my_permissions"),
     ]);
-    setProfile(prof as any);
-    setRoles(((rls ?? []) as any[]).map((r) => r.role as AppRole));
+    setProfile(prof);
+    setRoles((rls ?? []).map((r) => r.role));
     setPermissions((perms ?? []) as string[]);
     if (prof?.tenant_id) {
       const { data: t } = await supabase.from("tenants").select("*").eq("id", prof.tenant_id).maybeSingle();
-      setTenant(t as any);
+      setTenant(t);
     } else setTenant(null);
   };
 
@@ -108,18 +83,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return arr.some((x) => roles.includes(x));
   };
 
-  const isAdmin = roles.includes("super_admin") || roles.includes("tenant_admin");
-
-  const hasPermission = (permission: Permission | PermissionKey | string) =>
-    isAdmin || permissions.includes(permission);
-
-  const can = (module: PermissionModule, action: PermissionAction) => hasPermission(`${module}.${action}`);
-
-  const canAny = (module: PermissionModule, actions: PermissionAction[]) =>
-    isAdmin || actions.some((action) => permissions.includes(`${module}.${action}`));
-
-  const canAll = (module: PermissionModule, actions: PermissionAction[]) =>
-    isAdmin || actions.every((action) => permissions.includes(`${module}.${action}`));
+  const can = (permission: Permission | string | Array<Permission | string>) => {
+    const required = Array.isArray(permission) ? permission : [permission];
+    if (roles.includes("super_admin") || roles.includes("tenant_admin")) return true;
+    return required.some((p) => permissions.includes(p));
+  };
 
   const signOut = async () => {
     await qc.cancelQueries();
@@ -153,9 +121,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         loading,
         hasRole,
         can,
-        canAny,
-        canAll,
-        hasPermission,
         signOut,
         refresh,
         switchTenant,
