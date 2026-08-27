@@ -211,23 +211,22 @@ export function DocumentEditor({
   const cfg = CFG[kind];
   const qc = useQueryClient();
   const nav = useNavigate();
-  const { tenant, user, profile, hasRole, can } = useAuth();
+  const { tenant, user, profile, can, canAny } = useAuth();
   const writeRoles: string[] =
     kind === "po" || kind === "bill" || kind === "requisition"
       ? ["tenant_admin", "super_admin", "purchasing"]
       : ["tenant_admin", "super_admin", "sales", "accounting"];
   const permissionModule = kind === "po" || kind === "bill" || kind === "requisition" ? "purchasing" : "sales";
-  const canWrite = can([
-    `${permissionModule}.create`,
-    `${permissionModule}.update`,
-    ...(permissionModule === "sales" ? ["accounting.create", "accounting.update"] : []),
-  ]) || hasRole(writeRoles as any);
-  const canPost = kind === "invoice" || kind === "credit_note"
-    ? can("sales.accounting_post")
-    : kind === "bill"
-      ? can(["purchasing.post", "accounting.post"])
-      : false;
-  const canRecordPayment = can(["payments.create", "payments.post"]);
+  const canWrite =
+    canAny(permissionModule as any, ["create", "update"]) ||
+    (permissionModule === "sales" && canAny("accounting", ["create", "update"]));
+  const canPost =
+    kind === "invoice" || kind === "credit_note"
+      ? can("sales", "accounting_post")
+      : kind === "bill"
+        ? can("purchasing", "post") || can("accounting", "post")
+        : false;
+  const canRecordPayment = can("payments", "create") || can("payments", "post");
   const isNew = id === "new";
   const [payOpen, setPayOpen] = useState(false);
   const [emailOpen, setEmailOpen] = useState(false);
@@ -495,7 +494,7 @@ export function DocumentEditor({
   });
 
   const isReq = kind === "requisition";
-  const canApprove = hasRole(["tenant_admin", "super_admin", "purchasing"] as any);
+  const canApprove = can("purchasing", "post");
   const reqApproved = header.status === "Approved" || header.status === "Ordered";
 
   const setReqStatus = useMutation({
