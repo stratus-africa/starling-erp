@@ -2968,6 +2968,8 @@ export type Database = {
         }
         Returns: boolean
       }
+      get_my_permissions: { Args: never; Returns: string[] }
+      has_permission: { Args: { _permission: string; _user_id?: string }; Returns: boolean }
       is_super_admin: { Args: never; Returns: boolean }
       post_adjustment: { Args: { _adjustment_id: string }; Returns: string }
       post_bill: { Args: { _bill_id: string }; Returns: string }
@@ -2993,6 +2995,7 @@ export type Database = {
         | "accounting"
         | "manufacturing"
         | "viewer"
+        | "cashier"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -3129,6 +3132,7 @@ export const Constants = {
         "accounting",
         "manufacturing",
         "viewer",
+        "cashier",
       ],
     },
   },
