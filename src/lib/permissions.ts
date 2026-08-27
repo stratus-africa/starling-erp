@@ -14,27 +14,33 @@ export const PERMISSIONS = {
   paymentsCreate: "payments.create",
   paymentsUpdate: "payments.update",
   paymentsPost: "payments.post",
+  paymentsVoid: "payments.void",
   inventoryRead: "inventory.read",
   inventoryCreate: "inventory.create",
   inventoryUpdate: "inventory.update",
   inventoryAdjust: "inventory.adjust",
   inventoryTransfer: "inventory.transfer",
+  inventoryVoid: "inventory.void",
   purchasingRead: "purchasing.read",
   purchasingCreate: "purchasing.create",
   purchasingUpdate: "purchasing.update",
   purchasingPost: "purchasing.post",
+  purchasingVoid: "purchasing.void",
   accountingRead: "accounting.read",
   accountingCreate: "accounting.create",
   accountingUpdate: "accounting.update",
   accountingPost: "accounting.post",
+  accountingReverse: "accounting.reverse",
   bankingRead: "banking.read",
   bankingCreate: "banking.create",
   bankingUpdate: "banking.update",
   bankingReconcile: "banking.reconcile",
+  bankingVoid: "banking.void",
   manufacturingRead: "manufacturing.read",
   manufacturingCreate: "manufacturing.create",
   manufacturingUpdate: "manufacturing.update",
   manufacturingPost: "manufacturing.post",
+  manufacturingVoid: "manufacturing.void",
   reportsRead: "reports.read",
   reportsExport: "reports.export",
   settingsUsers: "settings.users",
@@ -42,37 +48,3 @@ export const PERMISSIONS = {
 } as const;
 
 export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
-
-export type PermissionModule =
-  | "crm"
-  | "sales"
-  | "payments"
-  | "inventory"
-  | "purchasing"
-  | "accounting"
-  | "banking"
-  | "manufacturing"
-  | "reports"
-  | "settings";
-
-export type PermissionAction =
-  | "read"
-  | "create"
-  | "update"
-  | "delete"
-  | "post"
-  | "accounting_post"
-  | "void"
-  | "adjust"
-  | "transfer"
-  | "reconcile"
-  | "export"
-  | "users"
-  | "roles";
-
-export type PermissionKey = `${PermissionModule}.${PermissionAction}`;
-
-export const permission = <M extends PermissionModule, A extends PermissionAction>(
-  module: M,
-  action: A,
-): PermissionKey => `${module}.${action}`;
