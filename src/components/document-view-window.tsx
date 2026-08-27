@@ -48,7 +48,10 @@ export function DocumentViewWindow({
   filters?: { key: string; label: string; options: string[] }[];
 }) {
   const { can } = useAuth();
-  const canWrite = can("sales", "update") || can("accounting", "update");
+  const permissionModule = kind === "bill" ? "purchasing" : "sales";
+  const canWrite = can([`${permissionModule}.create`, `${permissionModule}.update`]);
+  const canVoid =
+    kind === "invoice" || kind === "credit_note" ? can("sales.void") : kind === "bill" ? can("purchasing.void") : false;
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [selectedId, setSelectedId] = useState<string | null>(null);
