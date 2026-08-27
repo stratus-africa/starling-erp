@@ -1,10 +1,12 @@
 import { z } from "zod";
 
-export const CustomerSchema = z.object({
-  name: z.string().trim().min(1, "Customer name is required"),
-  email: z.string().trim().email("Invalid email address").optional().or(z.literal("")),
-  phone: z.string().trim().optional(),
-});
+export const CustomerSchema = z
+  .object({
+    name: z.string().trim().min(1, "Customer name is required"),
+    email: z.string().trim().email("Invalid email address").optional().or(z.literal("")),
+    phone: z.string().trim().optional(),
+  })
+  .passthrough();
 
 export const InvoiceSchema = z.object({
   customer_id: z.string().min(1, "Customer is required"),
