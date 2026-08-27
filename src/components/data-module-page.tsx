@@ -45,6 +45,10 @@ export interface FieldDef {
   hideInTable?: boolean;
   render?: (value: any, row: any) => ReactNode;
   className?: string;
+  /** Section heading used to group fields in full-page editors. */
+  group?: string;
+  /** Return an error message when the value is invalid, otherwise null. */
+  validate?: (value: any, values: Record<string, any>) => string | null;
 }
 
 interface DataModulePageProps {
