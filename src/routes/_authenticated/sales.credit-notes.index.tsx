@@ -14,6 +14,7 @@ export const Route = createFileRoute("/_authenticated/sales/credit-notes/")({
       searchColumn="number"
       rowHref={(r) => `/sales/credit-notes/${r.id}`}
       createHref="/sales/credit-notes/new"
+      voidAction={{ entityType: "credit_note", permission: "sales.void" }}
     />
   ),
 });
