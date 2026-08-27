@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
-export interface NavItem { title: string; url: string; icon: LucideIcon }
+export interface NavItem { title: string; url: string; icon: LucideIcon; feature?: string }
 export interface NavGroup { label: string; items: NavItem[] }
 
 export const navGroups: NavGroup[] = [
@@ -19,13 +19,13 @@ export const navGroups: NavGroup[] = [
       { title: "Dashboard", url: "/", icon: LayoutDashboard },
       { title: "Sales", url: "/dashboards/sales", icon: TrendingUp },
       { title: "Logistics", url: "/dashboards/logistics", icon: TruckIcon },
-      { title: "Production", url: "/dashboards/production", icon: HardHat },
+      { title: "Production", url: "/dashboards/production", icon: HardHat, feature: "manufacturing" },
       { title: "Procurement", url: "/dashboards/procurement", icon: Gauge },
     ],
   },
   {
     label: "CRM",
-    items: [{ title: "Customers", url: "/crm/customers", icon: UserCircle2 }],
+    items: [{ title: "Customers", url: "/crm/customers", icon: UserCircle2, feature: "crm" }],
   },
   {
     label: "Sales",
@@ -57,26 +57,26 @@ export const navGroups: NavGroup[] = [
       { title: "Items", url: "/inventory/items", icon: Boxes },
       { title: "Warehouses", url: "/inventory/warehouses", icon: Warehouse },
       { title: "Adjustments", url: "/inventory/adjustments", icon: PackagePlus },
-      { title: "Stock Transfers", url: "/inventory/transfers", icon: ArrowLeftRight },
+      { title: "Stock Transfers", url: "/inventory/transfers", icon: ArrowLeftRight, feature: "multi_location" },
       { title: "Inventory Ledger", url: "/inventory/ledger", icon: BookOpen },
     ],
   },
   {
     label: "Manufacturing",
     items: [
-      { title: "Production Items", url: "/manufacturing/items", icon: Factory },
-      { title: "Bill of Materials", url: "/manufacturing/bom", icon: ListTree },
-      { title: "Production Orders", url: "/manufacturing/orders", icon: Cog },
-      { title: "Production Runs", url: "/manufacturing/runs", icon: PlayCircle },
+      { title: "Production Items", url: "/manufacturing/items", icon: Factory, feature: "manufacturing" },
+      { title: "Bill of Materials", url: "/manufacturing/bom", icon: ListTree, feature: "manufacturing" },
+      { title: "Production Orders", url: "/manufacturing/orders", icon: Cog, feature: "manufacturing" },
+      { title: "Production Runs", url: "/manufacturing/runs", icon: PlayCircle, feature: "manufacturing" },
     ],
   },
   {
     label: "Accounting",
     items: [
       { title: "Chart of Accounts", url: "/accounting/chart", icon: BookText },
-      { title: "Banking", url: "/accounting/banking", icon: Landmark },
+      { title: "Banking", url: "/accounting/banking", icon: Landmark, feature: "banking" },
       { title: "Manual Journals", url: "/accounting/journals", icon: BookMarked },
-      { title: "Bank Reconciliation", url: "/accounting/reconciliation", icon: Scale },
+      { title: "Bank Reconciliation", url: "/accounting/reconciliation", icon: Scale, feature: "banking" },
     ],
   },
   {
@@ -85,7 +85,7 @@ export const navGroups: NavGroup[] = [
       { title: "Sales Reports", url: "/reports/sales", icon: BarChart3 },
       { title: "Purchase Reports", url: "/reports/purchases", icon: LineChart },
       { title: "Inventory Reports", url: "/reports/inventory", icon: PieChart },
-      { title: "Manufacturing Reports", url: "/reports/manufacturing", icon: Activity },
+      { title: "Manufacturing Reports", url: "/reports/manufacturing", icon: Activity, feature: "manufacturing" },
       { title: "Financial Reports", url: "/reports/financial", icon: Wallet2 },
     ],
   },

@@ -43,6 +43,7 @@ export const PERMISSIONS = {
   manufacturingVoid: "manufacturing.void",
   reportsRead: "reports.read",
   reportsExport: "reports.export",
+  settingsFeaturesManage: "settings.features.manage",
   settingsUsers: "settings.users",
   settingsRoles: "settings.roles",
   approvalsRead: "approvals.read",
