@@ -1,10 +1,28 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
-export interface DashboardMetric { key: string; label: string; value: number; href: string; }
-export interface DashboardPoint { x: string; a: number; b: number; }
-export interface DashboardListItem { primary: string; secondary: string; status: string; tone?: "success" | "warning" | "info" | "destructive"; }
-export interface SalesDashboardData { metrics: DashboardMetric[]; trend: DashboardPoint[]; top_products: DashboardListItem[]; }
+export interface DashboardMetric {
+  key: string;
+  label: string;
+  value: number;
+  href: string;
+}
+export interface DashboardPoint {
+  x: string;
+  a: number;
+  b: number;
+}
+export interface DashboardListItem {
+  primary: string;
+  secondary: string;
+  status: string;
+  tone?: "success" | "warning" | "info" | "destructive";
+}
+export interface SalesDashboardData {
+  metrics: DashboardMetric[];
+  trend: DashboardPoint[];
+  top_products: DashboardListItem[];
+}
 
 export function useSalesDashboard() {
   return useQuery({
