@@ -13,6 +13,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AdminRouteRouteImport } from './routes/_admin/route'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
+import { Route as AuthenticatedAuditEventsRouteImport } from './routes/_authenticated/audit-events'
 import { Route as AdminUsersRouteImport } from './routes/_admin/users'
 import { Route as AdminTenantsRouteImport } from './routes/_admin/tenants'
 import { Route as AdminSettingsRouteImport } from './routes/_admin/settings'
@@ -100,6 +101,12 @@ const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedAuditEventsRoute =
+  AuthenticatedAuditEventsRouteImport.update({
+    id: '/audit-events',
+    path: '/audit-events',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AdminUsersRoute = AdminUsersRouteImport.update({
   id: '/users',
   path: '/users',
@@ -512,6 +519,7 @@ export interface FileRoutesByFullPath {
   '/settings': typeof AdminSettingsRoute
   '/tenants': typeof AdminTenantsRoute
   '/users': typeof AdminUsersRoute
+  '/audit-events': typeof AuthenticatedAuditEventsRoute
   '/accounting/banking': typeof AuthenticatedAccountingBankingRoute
   '/accounting/chart': typeof AuthenticatedAccountingChartRoute
   '/accounting/journals': typeof AuthenticatedAccountingJournalsRoute
@@ -584,6 +592,7 @@ export interface FileRoutesByTo {
   '/settings': typeof AdminSettingsRoute
   '/tenants': typeof AdminTenantsRoute
   '/users': typeof AdminUsersRoute
+  '/audit-events': typeof AuthenticatedAuditEventsRoute
   '/accounting/banking': typeof AuthenticatedAccountingBankingRoute
   '/accounting/chart': typeof AuthenticatedAccountingChartRoute
   '/accounting/journals': typeof AuthenticatedAccountingJournalsRoute
@@ -658,6 +667,7 @@ export interface FileRoutesById {
   '/_admin/settings': typeof AdminSettingsRoute
   '/_admin/tenants': typeof AdminTenantsRoute
   '/_admin/users': typeof AdminUsersRoute
+  '/_authenticated/audit-events': typeof AuthenticatedAuditEventsRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/accounting/banking': typeof AuthenticatedAccountingBankingRoute
   '/_authenticated/accounting/chart': typeof AuthenticatedAccountingChartRoute
@@ -733,6 +743,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/tenants'
     | '/users'
+    | '/audit-events'
     | '/accounting/banking'
     | '/accounting/chart'
     | '/accounting/journals'
@@ -805,6 +816,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/tenants'
     | '/users'
+    | '/audit-events'
     | '/accounting/banking'
     | '/accounting/chart'
     | '/accounting/journals'
@@ -878,6 +890,7 @@ export interface FileRouteTypes {
     | '/_admin/settings'
     | '/_admin/tenants'
     | '/_admin/users'
+    | '/_authenticated/audit-events'
     | '/_authenticated/'
     | '/_authenticated/accounting/banking'
     | '/_authenticated/accounting/chart'
@@ -978,6 +991,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof AuthenticatedIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/audit-events': {
+      id: '/_authenticated/audit-events'
+      path: '/audit-events'
+      fullPath: '/audit-events'
+      preLoaderRoute: typeof AuthenticatedAuditEventsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_admin/users': {
@@ -1480,6 +1500,7 @@ const AdminRouteRouteWithChildren = AdminRouteRoute._addFileChildren(
 )
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedAuditEventsRoute: typeof AuthenticatedAuditEventsRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
   AuthenticatedAccountingBankingRoute: typeof AuthenticatedAccountingBankingRoute
   AuthenticatedAccountingChartRoute: typeof AuthenticatedAccountingChartRoute
@@ -1547,6 +1568,7 @@ interface AuthenticatedRouteRouteChildren {
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedAuditEventsRoute: AuthenticatedAuditEventsRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
   AuthenticatedAccountingBankingRoute: AuthenticatedAccountingBankingRoute,
   AuthenticatedAccountingChartRoute: AuthenticatedAccountingChartRoute,
