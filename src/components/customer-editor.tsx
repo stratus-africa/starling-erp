@@ -438,7 +438,16 @@ export function CustomerEditor({ id, fields }: { id: string; fields: FieldDef[] 
         <TabsContent value="transactions" className="mt-4">
           {!isNew && (
             <Card className="overflow-hidden p-0">
-              <Accordion type="multiple" defaultValue={["invoices"]}>
+              <Accordion type="multiple" defaultValue={["quotes"]}>
+                <TransactionAccordion
+                  value="quotes"
+                  title="Quotes"
+                  table="sales_quotes"
+                  customerId={id}
+                  amountKey="grand_total"
+                  dateKey="date"
+                  currency={currency}
+                />
                 <TransactionAccordion
                   value="orders"
                   title="Sales Orders"
@@ -454,6 +463,15 @@ export function CustomerEditor({ id, fields }: { id: string; fields: FieldDef[] 
                   table="invoices"
                   customerId={id}
                   amountKey="grand_total"
+                  dateKey="date"
+                  currency={currency}
+                />
+                <TransactionAccordion
+                  value="payments-received"
+                  title="Payments Received"
+                  table="payments_received"
+                  customerId={id}
+                  amountKey="amount"
                   dateKey="date"
                   currency={currency}
                 />
