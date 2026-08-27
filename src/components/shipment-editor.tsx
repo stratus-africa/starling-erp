@@ -19,6 +19,8 @@ import { DocumentTimeline } from "@/components/document-timeline";
 import { PostingDetailsDrawer } from "@/components/posting-details-drawer";
 import { useDocumentBranding } from "@/hooks/use-document-branding";
 import { logDocumentEvent } from "@/lib/document-events";
+import { fetchRow, insertRow, updateRow } from "@/lib/typed-db";
+import type { ShipmentInsert } from "@/lib/db-types";
 
 const STATUSES = ["Draft", "In Transit", "Delivered", "Cancelled"] as const;
 const FULFILLMENT_STAGES = ["Draft", "Confirmed", "Posted"];
@@ -27,7 +29,7 @@ export function ShipmentEditor({ id }: { id: string }) {
   const qc = useQueryClient();
   const nav = useNavigate();
   const { tenant, user, profile, can } = useAuth();
-  const canWrite = can("sales", "create") || can("sales", "update") || can("inventory", "update");
+  const canWrite = can(["sales.create", "sales.update", "inventory.create", "inventory.update"]);
   const isNew = id === "new";
   const search = useSearch({ strict: false }) as { order?: string; package?: string };
   const [emailOpen, setEmailOpen] = useState(false);
@@ -38,13 +40,7 @@ export function ShipmentEditor({ id }: { id: string }) {
     queryKey: ["shipments", "record", id],
     enabled: !isNew,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("shipments" as any)
-        .select("*")
-        .eq("id", id)
-        .maybeSingle();
-      if (error) throw error;
-      return data as any;
+      return fetchRow("shipments", id);
     },
   });
 
@@ -65,12 +61,12 @@ export function ShipmentEditor({ id }: { id: string }) {
     queryKey: ["packages", "picker"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("packages" as any)
+        .from("packages")
         .select("id,number,sales_order_id,customer_id")
         .is("deleted_at", null)
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return (data ?? []) as any[];
+      return data ?? [];
     },
   });
 
@@ -87,7 +83,7 @@ export function ShipmentEditor({ id }: { id: string }) {
     },
   });
 
-  const [header, setHeader] = useState<any>({
+  const [header, setHeader] = useState<ShipmentInsert>({
     number: "",
     sales_order_id: search?.order ?? "",
     package_id: search?.package ?? "",
@@ -109,25 +105,21 @@ export function ShipmentEditor({ id }: { id: string }) {
   // Prefill customer from the originating order/package on a brand-new shipment
   useEffect(() => {
     if (!isNew) return;
-    const pk = packages.find((p: any) => p.id === header.package_id);
-    const so = orders.find((o: any) => o.id === (header.sales_order_id || pk?.sales_order_id));
+    const pk = packages.find((p) => p.id === header.package_id);
+    const so = orders.find((o) => o.id === (header.sales_order_id || pk?.sales_order_id));
     const customer = so?.customer_id ?? pk?.customer_id;
     if (customer && !header.customer_id)
-      setHeader((h: any) => ({
-        ...h,
-        customer_id: customer,
-        sales_order_id: h.sales_order_id || pk?.sales_order_id || "",
-      }));
+      setHeader((h) => ({ ...h, customer_id: customer, sales_order_id: h.sales_order_id || pk?.sales_order_id || "" }));
   }, [isNew, packages, orders, header.package_id, header.sales_order_id, header.customer_id]);
 
-  const customer = customers.find((c: any) => c.id === header.customer_id) as any;
-  const order = orders.find((o: any) => o.id === header.sales_order_id) as any;
-  const pkg = packages.find((p: any) => p.id === header.package_id) as any;
+  const customer = customers.find((c) => c.id === header.customer_id);
+  const order = orders.find((o) => o.id === header.sales_order_id);
+  const pkg = packages.find((p) => p.id === header.package_id);
 
   const save = useMutation({
     mutationFn: async () => {
       if (!tenant?.id) throw new Error("No workspace");
-      const payload: any = {
+      const payload: ShipmentInsert = {
         number: header.number || `SHP-${Date.now().toString().slice(-8)}`,
         sales_order_id: header.sales_order_id || null,
         package_id: header.package_id || null,
@@ -142,32 +134,23 @@ export function ShipmentEditor({ id }: { id: string }) {
         notes: header.notes || null,
       };
       if (isNew) {
-        const { data, error } = await supabase
-          .from("shipments" as any)
-          .insert({ ...payload, tenant_id: tenant.id })
-          .select("id")
-          .single();
-        if (error) throw error;
-        return (data as any).id as string;
+        const data = await insertRow("shipments", { ...payload, tenant_id: tenant.id });
+        return data.id;
       }
-      const { error } = await supabase
-        .from("shipments" as any)
-        .update(payload)
-        .eq("id", id);
-      if (error) throw error;
+      await updateRow("shipments", id, payload);
       return id;
     },
     onSuccess: (newId) => {
       toast.success("Saved");
       qc.invalidateQueries({ queryKey: ["shipments"] });
-      if (isNew) nav({ to: `/sales/shipments/${newId}` as any });
+      if (isNew) nav({ to: `/sales/shipments/${newId}` as never });
     },
-    onError: (e: any) => toast.error(e.message ?? "Save failed"),
+    onError: (e: Error) => toast.error(e.message ?? "Save failed"),
   });
 
   const post = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.rpc("post_shipment" as any, { _shipment_id: id });
+      const { error } = await supabase.rpc("post_shipment", { _shipment_id: id });
       if (error) throw error;
       if (tenant?.id) {
         await logDocumentEvent({
@@ -185,7 +168,7 @@ export function ShipmentEditor({ id }: { id: string }) {
       toast.success("Shipment confirmed");
       qc.invalidateQueries();
     },
-    onError: (e: any) => toast.error(e.message ?? "Confirm failed"),
+    onError: (e: Error) => toast.error(e.message ?? "Confirm failed"),
   });
 
   const buildPdf = (): PdfDocInput => ({
@@ -222,7 +205,7 @@ export function ShipmentEditor({ id }: { id: string }) {
     <div className="flex flex-col gap-4 p-4 md:p-6 w-full">
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-3 min-w-0">
-          <Button variant="ghost" size="sm" onClick={() => nav({ to: "/sales/shipments" as any })}>
+          <Button variant="ghost" size="sm" onClick={() => nav({ to: "/sales/shipments" as never })}>
             <ArrowLeft className="h-4 w-4 mr-1" /> Back
           </Button>
           <div className="min-w-0">
@@ -235,7 +218,7 @@ export function ShipmentEditor({ id }: { id: string }) {
               {order ? (
                 <>
                   Fulfilling{" "}
-                  <Link className="underline hover:text-foreground" to={`/sales/orders/${order.id}` as any}>
+                  <Link className="underline hover:text-foreground" to={`/sales/orders/${order.id}` as never}>
                     {order.number}
                   </Link>
                 </>
@@ -312,7 +295,7 @@ export function ShipmentEditor({ id }: { id: string }) {
               <SelectValue placeholder="Select order…" />
             </SelectTrigger>
             <SelectContent>
-              {orders.map((o: any) => (
+              {orders.map((o) => (
                 <SelectItem key={o.id} value={o.id}>
                   {o.number}
                 </SelectItem>
@@ -332,8 +315,8 @@ export function ShipmentEditor({ id }: { id: string }) {
             </SelectTrigger>
             <SelectContent>
               {packages
-                .filter((p: any) => !header.sales_order_id || p.sales_order_id === header.sales_order_id)
-                .map((p: any) => (
+                .filter((p) => !header.sales_order_id || p.sales_order_id === header.sales_order_id)
+                .map((p) => (
                   <SelectItem key={p.id} value={p.id}>
                     {p.number}
                   </SelectItem>
@@ -352,7 +335,7 @@ export function ShipmentEditor({ id }: { id: string }) {
               <SelectValue placeholder="Select customer…" />
             </SelectTrigger>
             <SelectContent>
-              {customers.map((c: any) => (
+              {customers.map((c) => (
                 <SelectItem key={c.id} value={c.id}>
                   {c.name}
                 </SelectItem>
