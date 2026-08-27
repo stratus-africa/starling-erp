@@ -11,6 +11,7 @@ export const Route = createFileRoute("/_authenticated/purchasing/payments")({
       fields={paymentMadeFields}
       entityLabel="Payment"
       attachments={false}
+      voidAction={{ entityType: "payment_made", permission: "payments.void" }}
     />
   ),
 });
