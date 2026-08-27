@@ -163,7 +163,29 @@ export function DataModulePage(props: DataModulePageProps) {
               onChange={(e) => { setSearch(e.target.value); setPage(1); }}
               className="h-8 pl-8 text-sm bg-background" />
           </div>
-          <Button variant="outline" size="sm" className="h-8"><Filter className="h-3.5 w-3.5 mr-1.5" /> Filters</Button>
+          {filterFields.length === 0 ? (
+            <Button variant="outline" size="sm" className="h-8"><Filter className="h-3.5 w-3.5 mr-1.5" /> Filters</Button>
+          ) : (
+            <div className="flex items-center gap-2">
+              <Filter className="h-3.5 w-3.5 text-muted-foreground" />
+              {filterFields.map((f) => (
+                <Select
+                  key={f.key}
+                  value={filters[f.key] ?? "all"}
+                  onValueChange={(v) => { setFilters((p) => ({ ...p, [f.key]: v })); setPage(1); }}
+                >
+                  <SelectTrigger className="h-8 w-[150px] bg-background text-xs"><SelectValue placeholder={f.label} /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All {f.label}</SelectItem>
+                    {f.options.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              ))}
+              {Object.values(filters).some((v) => v && v !== "all") && (
+                <Button variant="ghost" size="sm" className="h-8 text-xs" onClick={() => setFilters({})}>Clear</Button>
+              )}
+            </div>
+          )}
           <div className="ml-auto text-xs text-muted-foreground">{total} record{total === 1 ? "" : "s"}</div>
         </div>
 
