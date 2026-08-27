@@ -1,14 +1,13 @@
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
   DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Bell, Moon, Sun, HelpCircle, LogOut, User, Settings, ShieldCheck } from "lucide-react";
+import { Moon, Sun, HelpCircle, LogOut, User, Settings, ShieldCheck } from "lucide-react";
 import { useTheme } from "./theme-provider";
 import { useRouterState, Link } from "@tanstack/react-router";
 import { navGroups } from "@/lib/nav";
@@ -16,6 +15,7 @@ import { useMemo } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { TenantSwitcher } from "./tenant-switcher";
 import { GlobalSearch } from "./global-search";
+import { NotificationCenter } from "./notification-center";
 
 function useBreadcrumbs() {
   const pathname = useRouterState({ select: (r) => r.location.pathname });
@@ -64,10 +64,7 @@ export function AppTopbar() {
           {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
         </Button>
         <Button variant="ghost" size="icon" className="h-8 w-8"><HelpCircle className="h-4 w-4" /></Button>
-        <Button variant="ghost" size="icon" className="h-8 w-8 relative">
-          <Bell className="h-4 w-4" />
-          <Badge className="absolute -top-0.5 -right-0.5 h-4 min-w-4 px-1 text-[10px] bg-destructive text-destructive-foreground">3</Badge>
-        </Button>
+        <NotificationCenter />
 
         <Separator orientation="vertical" className="h-6" />
 
