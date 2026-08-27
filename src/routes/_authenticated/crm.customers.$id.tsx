@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { CustomerEditor } from "@/components/customer-editor";
-import { customerFields } from "@/lib/module-schemas";
+import { customerFields } from "@/lib/module-validation-schemas";
 
 export const Route = createFileRoute("/_authenticated/crm/customers/$id")({
   component: () => {

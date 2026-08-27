@@ -53,7 +53,7 @@ import { fetchRow, insertRow, updateRow } from "@/lib/typed-db";
 import { callRpc } from "@/lib/db-rpc";
 import type { TableName } from "@/lib/typed-db";
 import type { TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
-import { InvoiceSchema, InvoiceLineSchema, PurchaseOrderSchema, formatZodError } from "@/lib/module-schemas";
+import { InvoiceSchema, InvoiceLineSchema, PurchaseOrderSchema, formatZodError } from "@/lib/module-validation-schemas";
 
 export type DocKind = "quote" | "order" | "invoice" | "po" | "bill" | "credit_note" | "requisition";
 
