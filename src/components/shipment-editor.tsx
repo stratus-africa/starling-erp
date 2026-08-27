@@ -23,12 +23,11 @@ import { logDocumentEvent } from "@/lib/document-events";
 const STATUSES = ["Draft", "In Transit", "Delivered", "Cancelled"] as const;
 const FULFILLMENT_STAGES = ["Draft", "Confirmed", "Posted"];
 
-
 export function ShipmentEditor({ id }: { id: string }) {
   const qc = useQueryClient();
   const nav = useNavigate();
-  const { tenant, user, profile, hasRole } = useAuth();
-  const canWrite = hasRole(["tenant_admin", "super_admin", "sales", "inventory"] as any);
+  const { tenant, user, profile, can } = useAuth();
+  const canWrite = can("sales", "create") || can("sales", "update") || can("inventory", "update");
   const isNew = id === "new";
   const search = useSearch({ strict: false }) as { order?: string; package?: string };
   const [emailOpen, setEmailOpen] = useState(false);
@@ -39,7 +38,11 @@ export function ShipmentEditor({ id }: { id: string }) {
     queryKey: ["shipments", "record", id],
     enabled: !isNew,
     queryFn: async () => {
-      const { data, error } = await supabase.from("shipments" as any).select("*").eq("id", id).maybeSingle();
+      const { data, error } = await supabase
+        .from("shipments" as any)
+        .select("*")
+        .eq("id", id)
+        .maybeSingle();
       if (error) throw error;
       return data as any;
     },
@@ -48,7 +51,11 @@ export function ShipmentEditor({ id }: { id: string }) {
   const { data: orders = [] } = useQuery({
     queryKey: ["sales_orders", "picker"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("sales_orders").select("id,number,customer_id").is("deleted_at", null).order("created_at", { ascending: false });
+      const { data, error } = await supabase
+        .from("sales_orders")
+        .select("id,number,customer_id")
+        .is("deleted_at", null)
+        .order("created_at", { ascending: false });
       if (error) throw error;
       return data ?? [];
     },
@@ -57,7 +64,11 @@ export function ShipmentEditor({ id }: { id: string }) {
   const { data: packages = [] } = useQuery({
     queryKey: ["packages", "picker"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("packages" as any).select("id,number,sales_order_id,customer_id").is("deleted_at", null).order("created_at", { ascending: false });
+      const { data, error } = await supabase
+        .from("packages" as any)
+        .select("id,number,sales_order_id,customer_id")
+        .is("deleted_at", null)
+        .order("created_at", { ascending: false });
       if (error) throw error;
       return (data ?? []) as any[];
     },
@@ -66,7 +77,11 @@ export function ShipmentEditor({ id }: { id: string }) {
   const { data: customers = [] } = useQuery({
     queryKey: ["customers", "picker"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("customers").select("id,name,email").is("deleted_at", null).order("name");
+      const { data, error } = await supabase
+        .from("customers")
+        .select("id,name,email")
+        .is("deleted_at", null)
+        .order("name");
       if (error) throw error;
       return data ?? [];
     },
@@ -87,7 +102,9 @@ export function ShipmentEditor({ id }: { id: string }) {
     notes: "",
   });
 
-  useEffect(() => { if (doc) setHeader(doc); }, [doc]);
+  useEffect(() => {
+    if (doc) setHeader(doc);
+  }, [doc]);
 
   // Prefill customer from the originating order/package on a brand-new shipment
   useEffect(() => {
@@ -95,7 +112,12 @@ export function ShipmentEditor({ id }: { id: string }) {
     const pk = packages.find((p: any) => p.id === header.package_id);
     const so = orders.find((o: any) => o.id === (header.sales_order_id || pk?.sales_order_id));
     const customer = so?.customer_id ?? pk?.customer_id;
-    if (customer && !header.customer_id) setHeader((h: any) => ({ ...h, customer_id: customer, sales_order_id: h.sales_order_id || pk?.sales_order_id || "" }));
+    if (customer && !header.customer_id)
+      setHeader((h: any) => ({
+        ...h,
+        customer_id: customer,
+        sales_order_id: h.sales_order_id || pk?.sales_order_id || "",
+      }));
   }, [isNew, packages, orders, header.package_id, header.sales_order_id, header.customer_id]);
 
   const customer = customers.find((c: any) => c.id === header.customer_id) as any;
@@ -120,11 +142,18 @@ export function ShipmentEditor({ id }: { id: string }) {
         notes: header.notes || null,
       };
       if (isNew) {
-        const { data, error } = await supabase.from("shipments" as any).insert({ ...payload, tenant_id: tenant.id }).select("id").single();
+        const { data, error } = await supabase
+          .from("shipments" as any)
+          .insert({ ...payload, tenant_id: tenant.id })
+          .select("id")
+          .single();
         if (error) throw error;
         return (data as any).id as string;
       }
-      const { error } = await supabase.from("shipments" as any).update(payload).eq("id", id);
+      const { error } = await supabase
+        .from("shipments" as any)
+        .update(payload)
+        .eq("id", id);
       if (error) throw error;
       return id;
     },
@@ -159,7 +188,6 @@ export function ShipmentEditor({ id }: { id: string }) {
     onError: (e: any) => toast.error(e.message ?? "Confirm failed"),
   });
 
-
   const buildPdf = (): PdfDocInput => ({
     title: "Shipment",
     number: header.number ?? "",
@@ -183,14 +211,20 @@ export function ShipmentEditor({ id }: { id: string }) {
   });
 
   if (!isNew && isLoading) {
-    return <div className="p-8 flex items-center gap-2 text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> Loading…</div>;
+    return (
+      <div className="p-8 flex items-center gap-2 text-muted-foreground">
+        <Loader2 className="h-4 w-4 animate-spin" /> Loading…
+      </div>
+    );
   }
 
   return (
     <div className="flex flex-col gap-4 p-4 md:p-6 w-full">
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-3 min-w-0">
-          <Button variant="ghost" size="sm" onClick={() => nav({ to: "/sales/shipments" as any })}><ArrowLeft className="h-4 w-4 mr-1" /> Back</Button>
+          <Button variant="ghost" size="sm" onClick={() => nav({ to: "/sales/shipments" as any })}>
+            <ArrowLeft className="h-4 w-4 mr-1" /> Back
+          </Button>
           <div className="min-w-0">
             <div className="flex items-center gap-2">
               <Truck className="h-4 w-4 text-muted-foreground" />
@@ -198,7 +232,16 @@ export function ShipmentEditor({ id }: { id: string }) {
               <Badge variant="secondary">{doc?.posted_at ? "Confirmed" : header.status}</Badge>
             </div>
             <p className="text-xs text-muted-foreground mt-0.5">
-              {order ? <>Fulfilling <Link className="underline hover:text-foreground" to={`/sales/orders/${order.id}` as any}>{order.number}</Link></> : "Not linked to a sales order"}
+              {order ? (
+                <>
+                  Fulfilling{" "}
+                  <Link className="underline hover:text-foreground" to={`/sales/orders/${order.id}` as any}>
+                    {order.number}
+                  </Link>
+                </>
+              ) : (
+                "Not linked to a sales order"
+              )}
             </p>
           </div>
         </div>
@@ -206,22 +249,43 @@ export function ShipmentEditor({ id }: { id: string }) {
           {!isNew && <EmailStatus entityType="shipment" entityId={id} />}
           {!isNew && (
             <>
-              <Button variant="outline" size="sm" onClick={() => downloadDocumentPdf(buildPdf())}><Printer className="h-4 w-4 mr-1.5" /> Print PDF</Button>
-              <Button variant="outline" size="sm" onClick={() => setEmailOpen(true)}><Mail className="h-4 w-4 mr-1.5" /> Email</Button>
+              <Button variant="outline" size="sm" onClick={() => downloadDocumentPdf(buildPdf())}>
+                <Printer className="h-4 w-4 mr-1.5" /> Print PDF
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => setEmailOpen(true)}>
+                <Mail className="h-4 w-4 mr-1.5" /> Email
+              </Button>
             </>
           )}
           {!isNew && (
-            <Button variant="outline" size="sm" onClick={() => setPostOpen(true)}><Receipt className="h-4 w-4 mr-1.5" /> Inventory movements</Button>
+            <Button variant="outline" size="sm" onClick={() => setPostOpen(true)}>
+              <Receipt className="h-4 w-4 mr-1.5" /> Inventory movements
+            </Button>
           )}
 
           {canWrite && !isNew && !doc?.posted_at && (
             <Button size="sm" disabled={post.isPending} onClick={() => post.mutate()}>
-              {post.isPending ? <Loader2 className="h-4 w-4 mr-1.5 animate-spin" /> : <CheckCircle2 className="h-4 w-4 mr-1.5" />} Confirm Shipment
+              {post.isPending ? (
+                <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
+              ) : (
+                <CheckCircle2 className="h-4 w-4 mr-1.5" />
+              )}{" "}
+              Confirm Shipment
             </Button>
           )}
           {canWrite && (
-            <Button size="sm" variant={doc?.posted_at ? "default" : "secondary"} disabled={save.isPending} onClick={() => save.mutate()}>
-              {save.isPending ? <Loader2 className="h-4 w-4 mr-1.5 animate-spin" /> : <Save className="h-4 w-4 mr-1.5" />} Save
+            <Button
+              size="sm"
+              variant={doc?.posted_at ? "default" : "secondary"}
+              disabled={save.isPending}
+              onClick={() => save.mutate()}
+            >
+              {save.isPending ? (
+                <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
+              ) : (
+                <Save className="h-4 w-4 mr-1.5" />
+              )}{" "}
+              Save
             </Button>
           )}
         </div>
@@ -230,72 +294,161 @@ export function ShipmentEditor({ id }: { id: string }) {
       <Card className="p-4 grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="grid gap-1.5">
           <Label>Shipment #</Label>
-          <Input value={header.number ?? ""} onChange={(e) => setHeader({ ...header, number: e.target.value })} placeholder="Auto" disabled={!canWrite} />
+          <Input
+            value={header.number ?? ""}
+            onChange={(e) => setHeader({ ...header, number: e.target.value })}
+            placeholder="Auto"
+            disabled={!canWrite}
+          />
         </div>
         <div className="grid gap-1.5">
           <Label>Sales Order</Label>
-          <Select value={header.sales_order_id ?? ""} onValueChange={(v) => setHeader({ ...header, sales_order_id: v })} disabled={!canWrite}>
-            <SelectTrigger><SelectValue placeholder="Select order…" /></SelectTrigger>
-            <SelectContent>{orders.map((o: any) => <SelectItem key={o.id} value={o.id}>{o.number}</SelectItem>)}</SelectContent>
+          <Select
+            value={header.sales_order_id ?? ""}
+            onValueChange={(v) => setHeader({ ...header, sales_order_id: v })}
+            disabled={!canWrite}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select order…" />
+            </SelectTrigger>
+            <SelectContent>
+              {orders.map((o: any) => (
+                <SelectItem key={o.id} value={o.id}>
+                  {o.number}
+                </SelectItem>
+              ))}
+            </SelectContent>
           </Select>
         </div>
         <div className="grid gap-1.5">
           <Label>Package</Label>
-          <Select value={header.package_id ?? ""} onValueChange={(v) => setHeader({ ...header, package_id: v })} disabled={!canWrite}>
-            <SelectTrigger><SelectValue placeholder="Select package…" /></SelectTrigger>
+          <Select
+            value={header.package_id ?? ""}
+            onValueChange={(v) => setHeader({ ...header, package_id: v })}
+            disabled={!canWrite}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select package…" />
+            </SelectTrigger>
             <SelectContent>
               {packages
                 .filter((p: any) => !header.sales_order_id || p.sales_order_id === header.sales_order_id)
-                .map((p: any) => <SelectItem key={p.id} value={p.id}>{p.number}</SelectItem>)}
+                .map((p: any) => (
+                  <SelectItem key={p.id} value={p.id}>
+                    {p.number}
+                  </SelectItem>
+                ))}
             </SelectContent>
           </Select>
         </div>
         <div className="grid gap-1.5">
           <Label>Customer</Label>
-          <Select value={header.customer_id ?? ""} onValueChange={(v) => setHeader({ ...header, customer_id: v })} disabled={!canWrite}>
-            <SelectTrigger><SelectValue placeholder="Select customer…" /></SelectTrigger>
-            <SelectContent>{customers.map((c: any) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
+          <Select
+            value={header.customer_id ?? ""}
+            onValueChange={(v) => setHeader({ ...header, customer_id: v })}
+            disabled={!canWrite}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select customer…" />
+            </SelectTrigger>
+            <SelectContent>
+              {customers.map((c: any) => (
+                <SelectItem key={c.id} value={c.id}>
+                  {c.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
           </Select>
         </div>
         <div className="grid gap-1.5">
           <Label>Ship Date</Label>
-          <Input type="date" value={header.ship_date ?? ""} onChange={(e) => setHeader({ ...header, ship_date: e.target.value })} disabled={!canWrite} />
+          <Input
+            type="date"
+            value={header.ship_date ?? ""}
+            onChange={(e) => setHeader({ ...header, ship_date: e.target.value })}
+            disabled={!canWrite}
+          />
         </div>
         <div className="grid gap-1.5">
           <Label>Delivery Date</Label>
-          <Input type="date" value={header.delivery_date ?? ""} onChange={(e) => setHeader({ ...header, delivery_date: e.target.value })} disabled={!canWrite} />
+          <Input
+            type="date"
+            value={header.delivery_date ?? ""}
+            onChange={(e) => setHeader({ ...header, delivery_date: e.target.value })}
+            disabled={!canWrite}
+          />
         </div>
         <div className="grid gap-1.5">
           <Label>Carrier</Label>
-          <Input value={header.carrier ?? ""} onChange={(e) => setHeader({ ...header, carrier: e.target.value })} disabled={!canWrite} />
+          <Input
+            value={header.carrier ?? ""}
+            onChange={(e) => setHeader({ ...header, carrier: e.target.value })}
+            disabled={!canWrite}
+          />
         </div>
         <div className="grid gap-1.5">
           <Label>Service Level</Label>
-          <Input value={header.service_level ?? ""} onChange={(e) => setHeader({ ...header, service_level: e.target.value })} disabled={!canWrite} />
+          <Input
+            value={header.service_level ?? ""}
+            onChange={(e) => setHeader({ ...header, service_level: e.target.value })}
+            disabled={!canWrite}
+          />
         </div>
         <div className="grid gap-1.5">
           <Label>Tracking</Label>
-          <Input value={header.tracking ?? ""} onChange={(e) => setHeader({ ...header, tracking: e.target.value })} disabled={!canWrite} />
+          <Input
+            value={header.tracking ?? ""}
+            onChange={(e) => setHeader({ ...header, tracking: e.target.value })}
+            disabled={!canWrite}
+          />
         </div>
         <div className="grid gap-1.5">
           <Label>Cost</Label>
-          <Input type="number" step="any" value={header.cost ?? 0} onChange={(e) => setHeader({ ...header, cost: e.target.value })} disabled={!canWrite} />
+          <Input
+            type="number"
+            step="any"
+            value={header.cost ?? 0}
+            onChange={(e) => setHeader({ ...header, cost: e.target.value })}
+            disabled={!canWrite}
+          />
         </div>
         <div className="grid gap-1.5">
           <Label>Status</Label>
-          <Select value={header.status ?? "Draft"} onValueChange={(v) => setHeader({ ...header, status: v })} disabled={!canWrite}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
-            <SelectContent>{STATUSES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
+          <Select
+            value={header.status ?? "Draft"}
+            onValueChange={(v) => setHeader({ ...header, status: v })}
+            disabled={!canWrite}
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {STATUSES.map((s) => (
+                <SelectItem key={s} value={s}>
+                  {s}
+                </SelectItem>
+              ))}
+            </SelectContent>
           </Select>
         </div>
         <div className="grid gap-1.5">
           <Label>Notes</Label>
-          <Textarea rows={1} value={header.notes ?? ""} onChange={(e) => setHeader({ ...header, notes: e.target.value })} disabled={!canWrite} />
+          <Textarea
+            rows={1}
+            value={header.notes ?? ""}
+            onChange={(e) => setHeader({ ...header, notes: e.target.value })}
+            disabled={!canWrite}
+          />
         </div>
       </Card>
 
       {!isNew && (
-        <DocumentTimeline entityType="shipment" entityId={id} stages={FULFILLMENT_STAGES} currentStage={doc?.posted_at ? "Posted" : header.status === "Draft" ? "Draft" : "Confirmed"} />
+        <DocumentTimeline
+          entityType="shipment"
+          entityId={id}
+          stages={FULFILLMENT_STAGES}
+          currentStage={doc?.posted_at ? "Posted" : header.status === "Draft" ? "Draft" : "Confirmed"}
+        />
       )}
 
       {!isNew && (
@@ -311,7 +464,6 @@ export function ShipmentEditor({ id }: { id: string }) {
           ]}
         />
       )}
-
 
       {!isNew && (
         <EmailDocumentDialog
