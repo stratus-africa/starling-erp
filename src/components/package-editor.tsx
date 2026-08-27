@@ -19,6 +19,8 @@ import { DocumentTimeline } from "@/components/document-timeline";
 import { PostingDetailsDrawer } from "@/components/posting-details-drawer";
 import { useDocumentBranding } from "@/hooks/use-document-branding";
 import { logDocumentEvent } from "@/lib/document-events";
+import { fetchRow, insertRow, updateRow } from "@/lib/typed-db";
+import type { Package, PackageInsert, PackageLine, PackageLineInsert, SalesOrder, Customer } from "@/lib/db-types";
 
 const STATUSES = ["Draft", "Packed", "Shipped", "Delivered", "Cancelled"] as const;
 
@@ -34,7 +36,7 @@ export function PackageEditor({ id }: { id: string }) {
   const nav = useNavigate();
   const search = useSearch({ strict: false }) as { order?: string };
   const { tenant, user, profile, can } = useAuth();
-  const canWrite = can("sales", "create") || can("sales", "update");
+  const canWrite = can(["sales.create", "sales.update"]);
   const isNew = id === "new";
   const [emailOpen, setEmailOpen] = useState(false);
   const [postOpen, setPostOpen] = useState(false);
@@ -44,13 +46,7 @@ export function PackageEditor({ id }: { id: string }) {
     queryKey: ["packages", id],
     enabled: !isNew,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("packages" as any)
-        .select("*")
-        .eq("id", id)
-        .maybeSingle();
-      if (error) throw error;
-      return data as any;
+      return fetchRow("packages", id);
     },
   });
 
@@ -59,13 +55,13 @@ export function PackageEditor({ id }: { id: string }) {
     enabled: !isNew,
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("package_lines" as any)
+        .from("package_lines")
         .select("*")
         .eq("document_id", id)
         .is("deleted_at", null)
         .order("line_no");
       if (error) throw error;
-      return (data ?? []) as any[];
+      return data ?? [];
     },
   });
 
@@ -117,7 +113,7 @@ export function PackageEditor({ id }: { id: string }) {
     staleTime: 30_000,
   });
 
-  const [header, setHeader] = useState<any>({
+  const [header, setHeader] = useState<PackageInsert>({
     number: "",
     sales_order_id: search?.order ?? "",
     customer_id: "",
@@ -137,7 +133,7 @@ export function PackageEditor({ id }: { id: string }) {
   useEffect(() => {
     if (linesData)
       setLines(
-        linesData.map((l: any) => ({
+        linesData.map((l) => ({
           line_no: l.line_no,
           item_id: l.item_id,
           description: l.description ?? "",
@@ -160,14 +156,14 @@ export function PackageEditor({ id }: { id: string }) {
         .is("deleted_at", null)
         .order("line_no");
       if (error) throw error;
-      return (data ?? []) as any[];
+      return data ?? [];
     },
   });
 
   useEffect(() => {
     if (!isNew || !sourceOrderId) return;
-    const so = orders.find((o: any) => o.id === sourceOrderId);
-    if (so?.customer_id) setHeader((h: any) => (h.customer_id ? h : { ...h, customer_id: so.customer_id }));
+    const so = orders.find((o) => o.id === sourceOrderId);
+    if (so?.customer_id) setHeader((h) => (h.customer_id ? h : { ...h, customer_id: so.customer_id }));
   }, [isNew, sourceOrderId, orders]);
 
   useEffect(() => {
@@ -175,7 +171,7 @@ export function PackageEditor({ id }: { id: string }) {
     setLines((prev) =>
       prev.length
         ? prev
-        : sourceLines.map((l: any, i: number) => ({
+        : sourceLines.map((l, i) => ({
             line_no: i + 1,
             item_id: l.item_id,
             description: l.description ?? "",
@@ -193,55 +189,48 @@ export function PackageEditor({ id }: { id: string }) {
   const totalQty = lines.reduce((s, l) => s + (Number(l.quantity) || 0), 0);
   const posted = !!doc?.posted_at;
   const editable = canWrite && !posted;
-  const customer = customers.find((c: any) => c.id === header.customer_id) as any;
-  const order = orders.find((o: any) => o.id === header.sales_order_id) as any;
+  const customer = customers.find((c) => c.id === header.customer_id);
+  const order = orders.find((o) => o.id === header.sales_order_id);
 
   const save = useMutation({
     mutationFn: async () => {
       if (!tenant?.id) throw new Error("No tenant");
       if (!header.customer_id) throw new Error("Please select a customer");
 
-      const payload: any = { ...header, tenant_id: tenant.id };
+      const payload: PackageInsert = { ...header, tenant_id: tenant.id };
       payload.sales_order_id = header.sales_order_id || null;
       payload.warehouse_id = header.warehouse_id || null;
       payload.weight = Number(header.weight) || 0;
-      delete payload.id;
-      delete payload.created_at;
-      delete payload.updated_at;
-      delete payload.posted_at;
+      const {
+        id: _id,
+        created_at: _createdAt,
+        updated_at: _updatedAt,
+        posted_at: _postedAt,
+        ...editablePayload
+      } = payload;
 
       let docId: string | null = isNew ? null : id;
       if (isNew) {
         if (!payload.number) payload.number = `PKG-${Date.now().toString().slice(-8)}`;
-        const { data, error } = await supabase
-          .from("packages" as any)
-          .insert(payload)
-          .select("id")
-          .single();
-        if (error) throw error;
-        docId = (data as any).id;
+        const data = await insertRow("packages", editablePayload);
+        docId = data.id;
       } else {
-        const { error } = await supabase
-          .from("packages" as any)
-          .update(payload)
-          .eq("id", id);
-        if (error) throw error;
+        await updateRow("packages", id, editablePayload);
       }
 
-      await supabase
-        .from("package_lines" as any)
-        .update({ deleted_at: new Date().toISOString() })
-        .eq("document_id", docId!);
+      await updateRow("package_lines", docId!, { deleted_at: new Date().toISOString() });
       if (lines.length) {
-        const { error } = await supabase.from("package_lines" as any).insert(
-          lines.map((l, i) => ({
-            tenant_id: tenant.id,
-            document_id: docId,
-            line_no: i + 1,
-            item_id: l.item_id || null,
-            description: l.description,
-            quantity: Number(l.quantity) || 0,
-          })),
+        const { error } = await supabase.from("package_lines").insert(
+          lines.map(
+            (l, i): PackageLineInsert => ({
+              tenant_id: tenant.id,
+              document_id: docId,
+              line_no: i + 1,
+              item_id: l.item_id || null,
+              description: l.description,
+              quantity: Number(l.quantity) || 0,
+            }),
+          ),
         );
         if (error) throw error;
       }
@@ -263,14 +252,14 @@ export function PackageEditor({ id }: { id: string }) {
       qc.invalidateQueries({ queryKey: ["packages"] });
       qc.invalidateQueries({ queryKey: ["package_lines"] });
       qc.invalidateQueries({ queryKey: ["document_events"] });
-      if (isNew && docId) nav({ to: `/sales/packages/${docId}` as any });
+      if (isNew && docId) nav({ to: `/sales/packages/${docId}` as never });
     },
-    onError: (e: any) => toast.error(e.message ?? "Save failed"),
+    onError: (e: Error) => toast.error(e.message ?? "Save failed"),
   });
 
   const confirmPackage = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.rpc("post_package" as any, { _package_id: id });
+      const { error } = await supabase.rpc("post_package", { _package_id: id });
       if (error) throw error;
     },
     onSuccess: () => {
@@ -278,7 +267,7 @@ export function PackageEditor({ id }: { id: string }) {
       qc.invalidateQueries();
       setPostOpen(true);
     },
-    onError: (e: any) => toast.error(e.message ?? "Confirm failed"),
+    onError: (e: Error) => toast.error(e.message ?? "Confirm failed"),
   });
 
   const buildPdf = (): PdfDocInput => ({
@@ -314,7 +303,7 @@ export function PackageEditor({ id }: { id: string }) {
     <div className="flex flex-col gap-4 p-4 md:p-6 w-full">
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-3 min-w-0">
-          <Button variant="ghost" size="sm" onClick={() => nav({ to: "/sales/packages" as any })}>
+          <Button variant="ghost" size="sm" onClick={() => nav({ to: "/sales/packages" as never })}>
             <ArrowLeft className="h-4 w-4 mr-1" /> Back
           </Button>
           <div className="min-w-0">
@@ -329,7 +318,7 @@ export function PackageEditor({ id }: { id: string }) {
                 <>
                   {" "}
                   · from{" "}
-                  <Link className="underline hover:text-foreground" to={`/sales/orders/${order.id}` as any}>
+                  <Link className="underline hover:text-foreground" to={`/sales/orders/${order.id}` as never}>
                     {order.number}
                   </Link>
                 </>
@@ -398,7 +387,7 @@ export function PackageEditor({ id }: { id: string }) {
           <Select
             value={header.sales_order_id ?? ""}
             onValueChange={(v) => {
-              const so = orders.find((o: any) => o.id === v);
+              const so = orders.find((o) => o.id === v);
               setHeader({ ...header, sales_order_id: v, customer_id: header.customer_id || so?.customer_id || "" });
             }}
             disabled={!editable}
@@ -407,7 +396,7 @@ export function PackageEditor({ id }: { id: string }) {
               <SelectValue placeholder="Select order…" />
             </SelectTrigger>
             <SelectContent>
-              {orders.map((o: any) => (
+              {orders.map((o) => (
                 <SelectItem key={o.id} value={o.id}>
                   {o.number}
                 </SelectItem>
@@ -426,7 +415,7 @@ export function PackageEditor({ id }: { id: string }) {
               <SelectValue placeholder="Select customer…" />
             </SelectTrigger>
             <SelectContent>
-              {customers.map((c: any) => (
+              {customers.map((c) => (
                 <SelectItem key={c.id} value={c.id}>
                   {c.name}
                 </SelectItem>
@@ -454,7 +443,7 @@ export function PackageEditor({ id }: { id: string }) {
               <SelectValue placeholder="Default warehouse" />
             </SelectTrigger>
             <SelectContent>
-              {warehouses.map((w: any) => (
+              {warehouses.map((w) => (
                 <SelectItem key={w.id} value={w.id}>
                   {w.name}
                 </SelectItem>
@@ -554,7 +543,7 @@ export function PackageEditor({ id }: { id: string }) {
                     <Select
                       value={l.item_id ?? ""}
                       onValueChange={(v) => {
-                        const it = items.find((i: any) => i.id === v);
+                        const it = items.find((i) => i.id === v);
                         updateLine(idx, { item_id: v, description: l.description || it?.name || "" });
                       }}
                       disabled={!editable}
@@ -563,7 +552,7 @@ export function PackageEditor({ id }: { id: string }) {
                         <SelectValue placeholder="Pick item…" />
                       </SelectTrigger>
                       <SelectContent>
-                        {items.map((i: any) => (
+                        {items.map((i) => (
                           <SelectItem key={i.id} value={i.id}>
                             {i.sku ? `${i.sku} — ` : ""}
                             {i.name}
