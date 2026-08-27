@@ -225,8 +225,8 @@ function AuditTrail({ customerId }: { customerId: string }) {
 export function CustomerEditor({ id, fields }: { id: string; fields: FieldDef[] }) {
   const qc = useQueryClient();
   const nav = useNavigate();
-  const { tenant, hasRole } = useAuth();
-  const canWrite = hasRole(["tenant_admin", "super_admin", "sales"]);
+  const { tenant, can } = useAuth();
+  const canWrite = can("crm", "create") || can("crm", "update");
   const isNew = id === "new";
 
   const { data: record, isLoading } = useQuery({
