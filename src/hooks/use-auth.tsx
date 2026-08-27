@@ -3,10 +3,11 @@ import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useRouter } from "@tanstack/react-router";
+import type { Permission } from "@/lib/permissions";
 
 export type AppRole =
   | "super_admin" | "tenant_admin" | "sales" | "purchasing"
-  | "inventory" | "accounting" | "manufacturing" | "viewer";
+  | "inventory" | "accounting" | "manufacturing" | "viewer" | "cashier";
 
 export interface Profile { id: string; tenant_id: string | null; email: string | null; full_name: string | null; avatar_url: string | null }
 export interface Tenant { id: string; name: string; slug: string; currency: string; status: string }
@@ -17,8 +18,10 @@ interface AuthCtx {
   profile: Profile | null;
   tenant: Tenant | null;
   roles: AppRole[];
+  permissions: string[];
   loading: boolean;
   hasRole: (r: AppRole | AppRole[]) => boolean;
+  can: (permission: Permission | string | Array<Permission | string>) => boolean;
   signOut: () => Promise<void>;
   refresh: () => Promise<void>;
   switchTenant: (tenantId: string) => Promise<void>;
@@ -32,18 +35,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [tenant, setTenant] = useState<Tenant | null>(null);
   const [roles, setRoles] = useState<AppRole[]>([]);
+  const [permissions, setPermissions] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const qc = useQueryClient();
   const router = useRouter();
   const navigate = useNavigate();
 
   const loadContext = async (uid: string) => {
-    const [{ data: prof }, { data: rls }] = await Promise.all([
+    const [{ data: prof }, { data: rls }, { data: perms }] = await Promise.all([
       supabase.from("profiles").select("*").eq("id", uid).maybeSingle(),
       supabase.from("user_roles").select("role").eq("user_id", uid),
+      supabase.rpc("get_my_permissions"),
     ]);
     setProfile(prof as any);
-    setRoles(((rls ?? []) as any[]).map((r) => r.role));
+    setRoles(((rls ?? []) as any[]).map((r) => r.role as AppRole));
+    setPermissions((perms ?? []) as string[]);
     if (prof?.tenant_id) {
       const { data: t } = await supabase.from("tenants").select("*").eq("id", prof.tenant_id).maybeSingle();
       setTenant(t as any);
@@ -55,7 +61,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSession(s);
       if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED" && event !== "INITIAL_SESSION") return;
       if (s?.user) { setTimeout(() => loadContext(s.user.id), 0); }
-      else { setProfile(null); setTenant(null); setRoles([]); }
+      else { setProfile(null); setTenant(null); setRoles([]); setPermissions([]); }
       if (event === "SIGNED_IN" || event === "SIGNED_OUT") router.invalidate();
       if (event !== "SIGNED_OUT" && s?.user) qc.invalidateQueries();
     });
@@ -72,6 +78,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const arr = Array.isArray(r) ? r : [r];
     if (roles.includes("super_admin") || roles.includes("tenant_admin")) return true;
     return arr.some((x) => roles.includes(x));
+  };
+
+  const can = (permission: Permission | string | Array<Permission | string>) => {
+    const required = Array.isArray(permission) ? permission : [permission];
+    if (roles.includes("super_admin") || roles.includes("tenant_admin")) return true;
+    return required.some((p) => permissions.includes(p));
   };
 
   const signOut = async () => {
@@ -93,7 +105,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <Ctx.Provider value={{ user: session?.user ?? null, session, profile, tenant, roles, loading, hasRole, signOut, refresh, switchTenant }}>
+    <Ctx.Provider value={{ user: session?.user ?? null, session, profile, tenant, roles, permissions, loading, hasRole, can, signOut, refresh, switchTenant }}>
       {children}
     </Ctx.Provider>
   );
