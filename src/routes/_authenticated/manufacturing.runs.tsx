@@ -10,9 +10,9 @@ import { Loader2, CheckCircle2, Factory } from "lucide-react";
 import { toast } from "sonner";
 
 function ProductionRunsPage() {
-  const { tenant, hasRole } = useAuth();
+  const { tenant, can } = useAuth();
   const qc = useQueryClient();
-  const canWrite = hasRole(["manufacturing", "tenant_admin", "super_admin"]);
+  const canWrite = can("manufacturing", "create") || can("manufacturing", "update");
 
   const { data, isLoading } = useQuery({
     queryKey: ["production_orders", "active"],
@@ -82,9 +82,19 @@ function ProductionRunsPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {isLoading && <TableRow><TableCell colSpan={7} className="text-center py-8"><Loader2 className="h-4 w-4 animate-spin mx-auto text-muted-foreground" /></TableCell></TableRow>}
+            {isLoading && (
+              <TableRow>
+                <TableCell colSpan={7} className="text-center py-8">
+                  <Loader2 className="h-4 w-4 animate-spin mx-auto text-muted-foreground" />
+                </TableCell>
+              </TableRow>
+            )}
             {!isLoading && (!data || data.length === 0) && (
-              <TableRow><TableCell colSpan={7} className="text-center text-sm text-muted-foreground py-8">No active production orders. Create one from the Production Orders page.</TableCell></TableRow>
+              <TableRow>
+                <TableCell colSpan={7} className="text-center text-sm text-muted-foreground py-8">
+                  No active production orders. Create one from the Production Orders page.
+                </TableCell>
+              </TableRow>
             )}
             {data?.map((o: any) => (
               <TableRow key={o.id}>
@@ -93,11 +103,22 @@ function ProductionRunsPage() {
                 <TableCell className="font-medium">{o.product?.name ?? "—"}</TableCell>
                 <TableCell className="text-right font-mono tabular-nums">{o.quantity}</TableCell>
                 <TableCell className="font-mono text-xs">{o.bom?.code ?? "—"}</TableCell>
-                <TableCell><Badge variant="secondary">{o.status}</Badge></TableCell>
+                <TableCell>
+                  <Badge variant="secondary">{o.status}</Badge>
+                </TableCell>
                 <TableCell className="text-right">
                   {canWrite && (
-                    <Button size="sm" variant="outline" onClick={() => complete.mutate(o.id)} disabled={complete.isPending}>
-                      {complete.isPending && complete.variables === o.id ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <CheckCircle2 className="h-3.5 w-3.5 mr-1" />}
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => complete.mutate(o.id)}
+                      disabled={complete.isPending}
+                    >
+                      {complete.isPending && complete.variables === o.id ? (
+                        <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                      ) : (
+                        <CheckCircle2 className="h-3.5 w-3.5 mr-1" />
+                      )}
                       Complete
                     </Button>
                   )}
