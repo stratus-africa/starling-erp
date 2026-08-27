@@ -1,4 +1,5 @@
 import { useState, type ReactNode } from "react";
+import type { ZodTypeAny } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -43,6 +44,7 @@ import { AttachmentsPanel } from "@/components/attachments-panel";
 import { useAuth, type AppRole } from "@/hooks/use-auth";
 import { Link, useNavigate } from "@tanstack/react-router";
 import type { Permission } from "@/lib/permissions";
+import { schemaByTable, formatZodError } from "@/lib/module-schemas";
 
 export interface FieldDef {
   key: string;
@@ -132,7 +134,7 @@ export function DataModulePage(props: DataModulePageProps) {
     postPermission,
   } = props;
 
-  const { hasRole, can } = useAuth();
+  const { hasRole, can, tenant } = useAuth();
   const navigate = useNavigate();
   const qc = useQueryClient();
   const inferredPermissionModule: Record<string, string> = {
@@ -481,6 +483,8 @@ export function DataModulePage(props: DataModulePageProps) {
         }}
         fields={fields}
         row={editing}
+        schema={schemaByTable[table as keyof typeof schemaByTable]}
+        tenantId={tenant?.id}
         entityLabel={entityLabel}
         entityType={props.entityType ?? table}
         attachments={attachments}
@@ -567,6 +571,8 @@ function RecordSheet({
   postAction,
   onPost,
   postBusy,
+  schema,
+  tenantId,
 }: {
   open: boolean;
   onOpenChange: (o: boolean) => void;
@@ -581,6 +587,8 @@ function RecordSheet({
   postAction?: { rpc: string; paramName: string; label: string; showWhen?: (row: any) => boolean };
   onPost?: () => Promise<void>;
   postBusy?: boolean;
+  schema?: ZodTypeAny;
+  tenantId?: string;
 }) {
   const [values, setValues] = useState<Record<string, any>>({});
 
@@ -611,6 +619,17 @@ function RecordSheet({
                 if (raw != null && raw !== "") v[f.key] = f.type === "number" ? Number(raw) : raw;
               }
             });
+            if (schema) {
+              if (!tenantId) {
+                toast.error("No workspace selected");
+                return;
+              }
+              const result = schema.safeParse({ ...v, tenant_id: tenantId });
+              if (!result.success) {
+                toast.error(formatZodError(result.error));
+                return;
+              }
+            }
             await onSubmit(v);
           }}
         >
