@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { DocumentViewWindow } from "@/components/document-view-window";
-import { salesQuoteFields } from "@/lib/module-validation-schemas";
+import { salesQuoteFields } from "@/lib/module-field-definitions";
 
 export const Route = createFileRoute("/_authenticated/sales/quotes/")({
   component: () => (

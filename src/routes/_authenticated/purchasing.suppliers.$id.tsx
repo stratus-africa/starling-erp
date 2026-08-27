@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { RecordEditor } from "@/components/record-editor";
-import { supplierFields } from "@/lib/module-validation-schemas";
+import { supplierFields } from "@/lib/module-field-definitions";
 
 export const Route = createFileRoute("/_authenticated/purchasing/suppliers/$id")({
   component: () => {

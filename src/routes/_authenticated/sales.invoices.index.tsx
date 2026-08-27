@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { DocumentViewWindow } from "@/components/document-view-window";
-import { invoiceFields } from "@/lib/module-validation-schemas";
+import { invoiceFields } from "@/lib/module-field-definitions";
 
 export const Route = createFileRoute("/_authenticated/sales/invoices/")({
   component: () => (

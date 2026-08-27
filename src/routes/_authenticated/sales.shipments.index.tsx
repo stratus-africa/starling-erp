@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { DataModulePage } from "@/components/data-module-page";
-import { shipmentFields } from "@/lib/module-validation-schemas";
+import { shipmentFields } from "@/lib/module-field-definitions";
 
 export const Route = createFileRoute("/_authenticated/sales/shipments/")({
   component: () => (

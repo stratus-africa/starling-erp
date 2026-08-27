@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { DataModulePage } from "@/components/data-module-page";
-import { inventoryAdjustmentFields } from "@/lib/module-validation-schemas";
+import { inventoryAdjustmentFields } from "@/lib/module-field-definitions";
 
 export const Route = createFileRoute("/_authenticated/inventory/adjustments")({
   component: () => (
