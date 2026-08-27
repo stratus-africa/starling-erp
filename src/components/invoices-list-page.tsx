@@ -70,7 +70,8 @@ function getDueStatus(dueDate: string | null, status: string | null): { label: s
 
 // ─── Payment Summary Bar ──────────────────────────────────────────────────────
 
-function PaymentSummaryBar({ rows, currency }: { rows: any[]; currency: string }) {
+function PaymentSummaryBar({ rows, currency, kind }: { rows: any[]; currency: string; kind: InvoiceKind }) {
+  const isBill = kind === "bill";
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
@@ -81,7 +82,8 @@ function PaymentSummaryBar({ rows, currency }: { rows: any[]; currency: string }
   const dueToday = unpaid
     .filter((r) => {
       if (!r.due_date) return false;
-      const d = new Date(r.due_date); d.setHours(0, 0, 0, 0);
+      const d = new Date(r.due_date);
+      d.setHours(0, 0, 0, 0);
       return d.getTime() === today.getTime();
     })
     .reduce((s, r) => s + Number(r.balance_due ?? 0), 0);
@@ -89,7 +91,8 @@ function PaymentSummaryBar({ rows, currency }: { rows: any[]; currency: string }
   const dueIn30 = unpaid
     .filter((r) => {
       if (!r.due_date) return false;
-      const d = new Date(r.due_date); d.setHours(0, 0, 0, 0);
+      const d = new Date(r.due_date);
+      d.setHours(0, 0, 0, 0);
       const diff = Math.round((d.getTime() - today.getTime()) / 86_400_000);
       return diff > 0 && diff <= 30;
     })
@@ -98,15 +101,14 @@ function PaymentSummaryBar({ rows, currency }: { rows: any[]; currency: string }
   const overdue = unpaid
     .filter((r) => {
       if (!r.due_date) return false;
-      const d = new Date(r.due_date); d.setHours(0, 0, 0, 0);
+      const d = new Date(r.due_date);
+      d.setHours(0, 0, 0, 0);
       return d.getTime() < today.getTime();
     })
     .reduce((s, r) => s + Number(r.balance_due ?? 0), 0);
 
-  // Avg days to get paid — from paid invoices with posted_at and due_date
-  const paidWithDates = rows.filter(
-    (r) => r.status === "Paid" && r.due_date && r.updated_at
-  );
+  // Avg days to pay (bills) / avg days to get paid (invoices)
+  const paidWithDates = rows.filter((r) => r.status === "Paid" && r.due_date && r.updated_at);
   const avgDays =
     paidWithDates.length > 0
       ? Math.round(
@@ -114,31 +116,97 @@ function PaymentSummaryBar({ rows, currency }: { rows: any[]; currency: string }
             const paid = new Date(r.updated_at);
             const due = new Date(r.due_date);
             return s + Math.max(0, Math.round((paid.getTime() - due.getTime()) / 86_400_000));
-          }, 0) / paidWithDates.length
+          }, 0) / paidWithDates.length,
         )
       : null;
 
-  const stats = [
-    { label: "Total Outstanding Receivables", value: summaryMoney(totalOutstanding, currency), highlight: false, bold: true },
-    { label: "Due Today", value: summaryMoney(dueToday, currency), highlight: dueToday > 0, bold: false },
-    { label: "Due Within 30 Days", value: summaryMoney(dueIn30, currency), highlight: false, bold: false },
-    { label: "Overdue Invoice", value: summaryMoney(overdue, currency), highlight: false, bold: false },
-    { label: "Average No. of Days for Getting Paid", value: avgDays != null ? `${avgDays} Days` : "—", highlight: false, bold: true },
-  ];
+  const stats = isBill
+    ? [
+        {
+          label: "Total Outstanding Payables",
+          value: summaryMoney(totalOutstanding, currency),
+          highlight: false,
+          bold: true,
+          accent: "",
+        },
+        {
+          label: "Due Today",
+          value: summaryMoney(dueToday, currency),
+          highlight: dueToday > 0,
+          bold: false,
+          accent: dueToday > 0 ? "text-amber-500" : "",
+        },
+        {
+          label: "Due Within 30 Days",
+          value: summaryMoney(dueIn30, currency),
+          highlight: false,
+          bold: false,
+          accent: "",
+        },
+        {
+          label: "Overdue Bills",
+          value: summaryMoney(overdue, currency),
+          highlight: overdue > 0,
+          bold: false,
+          accent: overdue > 0 ? "text-destructive" : "",
+        },
+        {
+          label: "Avg. No. of Days to Pay",
+          value: avgDays != null ? `${avgDays} Days` : "—",
+          highlight: false,
+          bold: true,
+          accent: "",
+        },
+      ]
+    : [
+        {
+          label: "Total Outstanding Receivables",
+          value: summaryMoney(totalOutstanding, currency),
+          highlight: false,
+          bold: true,
+          accent: "",
+        },
+        {
+          label: "Due Today",
+          value: summaryMoney(dueToday, currency),
+          highlight: dueToday > 0,
+          bold: false,
+          accent: dueToday > 0 ? "text-amber-500" : "",
+        },
+        {
+          label: "Due Within 30 Days",
+          value: summaryMoney(dueIn30, currency),
+          highlight: false,
+          bold: false,
+          accent: "",
+        },
+        {
+          label: "Overdue Invoice",
+          value: summaryMoney(overdue, currency),
+          highlight: overdue > 0,
+          bold: false,
+          accent: overdue > 0 ? "text-destructive" : "",
+        },
+        {
+          label: "Average No. of Days for Getting Paid",
+          value: avgDays != null ? `${avgDays} Days` : "—",
+          highlight: false,
+          bold: true,
+          accent: "",
+        },
+      ];
 
   return (
     <div className="mx-6 mt-3 mb-1 rounded-lg border bg-muted/30 px-5 py-3">
-      <p className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-        Payment Summary
-      </p>
-      <div className="flex flex-wrap items-start gap-x-10 gap-y-2">
+      <p className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Payment Summary</p>
+      <div className="flex items-start justify-between gap-4">
         {stats.map((s, i) => (
-          <div key={i} className="flex flex-col gap-0.5">
-            <span className="text-[11px] text-muted-foreground">{s.label}</span>
+          <div key={i} className="flex flex-1 flex-col gap-0.5 min-w-0">
+            <span className="text-[11px] text-muted-foreground whitespace-nowrap">{s.label}</span>
             <span
               className={`font-mono text-sm tabular-nums ${
                 s.bold ? "font-semibold text-foreground" : ""
-              } ${s.highlight ? "text-amber-500 font-semibold" : ""}`}
+              } ${s.accent || ""}`}
             >
               {s.value}
             </span>
@@ -148,7 +216,6 @@ function PaymentSummaryBar({ rows, currency }: { rows: any[]; currency: string }
     </div>
   );
 }
-
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 interface InvoicesListPageProps {
@@ -229,28 +296,27 @@ export function InvoicesListPage({ kind }: InvoicesListPageProps) {
   // ── Batch-fetch party names ──
   const partyIds = useMemo(
     () => Array.from(new Set(rows.map((r: any) => r[partyField]).filter(Boolean))),
-    [rows, partyField]
+    [rows, partyField],
   );
   const { data: parties = [] } = useQuery({
     queryKey: [partyTable, "names", partyIds],
     enabled: partyIds.length > 0,
     queryFn: async () => {
       const { data, error } = await supabase
-        .from(partyTable as any).select("id,name").in("id", partyIds as string[]);
+        .from(partyTable as any)
+        .select("id,name")
+        .in("id", partyIds as string[]);
       if (error) throw error;
       return (data ?? []) as { id: string; name: string }[];
     },
     staleTime: 60_000,
   });
-  const partyMap = useMemo(
-    () => Object.fromEntries(parties.map((p) => [p.id, p.name])),
-    [parties]
-  );
+  const partyMap = useMemo(() => Object.fromEntries(parties.map((p) => [p.id, p.name])), [parties]);
 
   // ── Batch-fetch source order/PO numbers ──
   const sourceIds = useMemo(
     () => Array.from(new Set(rows.map((r: any) => r[sourceField]).filter(Boolean))),
-    [rows, sourceField]
+    [rows, sourceField],
   );
   const sourceTable = isInvoice ? "sales_orders" : "purchase_orders";
   const { data: sourceOrders = [] } = useQuery({
@@ -258,37 +324,46 @@ export function InvoicesListPage({ kind }: InvoicesListPageProps) {
     enabled: sourceIds.length > 0,
     queryFn: async () => {
       const { data, error } = await supabase
-        .from(sourceTable as any).select("id,number").in("id", sourceIds as string[]);
+        .from(sourceTable as any)
+        .select("id,number")
+        .in("id", sourceIds as string[]);
       if (error) throw error;
       return (data ?? []) as { id: string; number: string }[];
     },
     staleTime: 60_000,
   });
-  const sourceMap = useMemo(
-    () => Object.fromEntries(sourceOrders.map((o) => [o.id, o.number])),
-    [sourceOrders]
-  );
+  const sourceMap = useMemo(() => Object.fromEntries(sourceOrders.map((o) => [o.id, o.number])), [sourceOrders]);
 
   // ── Selection ──
   const allOnPageSelected = rows.length > 0 && rows.every((r: any) => selected.has(r.id));
   const toggleAll = () => {
     if (allOnPageSelected) {
-      setSelected((s) => { const n = new Set(s); rows.forEach((r: any) => n.delete(r.id)); return n; });
+      setSelected((s) => {
+        const n = new Set(s);
+        rows.forEach((r: any) => n.delete(r.id));
+        return n;
+      });
     } else {
-      setSelected((s) => { const n = new Set(s); rows.forEach((r: any) => n.add(r.id)); return n; });
+      setSelected((s) => {
+        const n = new Set(s);
+        rows.forEach((r: any) => n.add(r.id));
+        return n;
+      });
     }
   };
   const toggleRow = (id: string) =>
-    setSelected((s) => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
+    setSelected((s) => {
+      const n = new Set(s);
+      n.has(id) ? n.delete(id) : n.add(id);
+      return n;
+    });
 
-  const openDetail = (id: string) =>
-    navigate({ to: `${detailBase}/$id` as any, params: { id } });
+  const openDetail = (id: string) => navigate({ to: `${detailBase}/$id` as any, params: { id } });
 
   // ─── Render ───────────────────────────────────────────────────────────────
 
   return (
     <div className="flex h-full flex-col bg-background">
-
       {/* ── Header ── */}
       <div className="flex shrink-0 items-center justify-between gap-3 border-b px-6 py-3">
         <h1 className="flex items-center gap-1.5 text-base font-semibold tracking-tight">
@@ -303,17 +378,28 @@ export function InvoicesListPage({ kind }: InvoicesListPageProps) {
               className="h-8 w-48 pl-8 text-xs"
               placeholder={`Search ${isInvoice ? "invoice" : "bill"} #…`}
               value={search}
-              onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setPage(1);
+              }}
             />
           </div>
-          <Select value={statusFilter} onValueChange={(v) => { setStatusFilter(v); setPage(1); }}>
+          <Select
+            value={statusFilter}
+            onValueChange={(v) => {
+              setStatusFilter(v);
+              setPage(1);
+            }}
+          >
             <SelectTrigger className="h-8 w-36 text-xs">
               <SelectValue placeholder="All Statuses" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Statuses</SelectItem>
               {allStatuses.map((s) => (
-                <SelectItem key={s} value={s}>{s}</SelectItem>
+                <SelectItem key={s} value={s}>
+                  {s}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -329,7 +415,13 @@ export function InvoicesListPage({ kind }: InvoicesListPageProps) {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => { setSearch(""); setStatusFilter("all"); setPage(1); }}>
+              <DropdownMenuItem
+                onClick={() => {
+                  setSearch("");
+                  setStatusFilter("all");
+                  setPage(1);
+                }}
+              >
                 Clear filters
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -338,7 +430,7 @@ export function InvoicesListPage({ kind }: InvoicesListPageProps) {
       </div>
 
       {/* ── Payment Summary ── */}
-      <PaymentSummaryBar rows={allUnpaid} currency={dominantCurrency} />
+      <PaymentSummaryBar rows={allUnpaid} currency={dominantCurrency} kind={kind} />
 
       {/* ── Table ── */}
       <div className="min-h-0 flex-1 overflow-auto">
@@ -375,7 +467,9 @@ export function InvoicesListPage({ kind }: InvoicesListPageProps) {
             )}
             {rows.map((row: any) => {
               const partyName = row[partyField] ? (partyMap[row[partyField]] ?? "—") : "—";
-              const sourceNumber = row[sourceField] ? (sourceMap[row[sourceField]] ?? row.notes ?? "—") : (row.notes ?? "—");
+              const sourceNumber = row[sourceField]
+                ? (sourceMap[row[sourceField]] ?? row.notes ?? "—")
+                : (row.notes ?? "—");
               const { label: dueLabel, color: dueColor } = getDueStatus(row.due_date, row.status);
               const balance = row.balance_due ?? row.balance ?? 0;
 
@@ -398,15 +492,11 @@ export function InvoicesListPage({ kind }: InvoicesListPageProps) {
                   </td>
 
                   {/* Date */}
-                  <td className="px-3 py-2.5 text-xs text-muted-foreground whitespace-nowrap">
-                    {fmt(row.date)}
-                  </td>
+                  <td className="px-3 py-2.5 text-xs text-muted-foreground whitespace-nowrap">{fmt(row.date)}</td>
 
                   {/* Invoice / Bill number */}
                   <td className="px-3 py-2.5 whitespace-nowrap">
-                    <span className="font-mono text-xs font-semibold text-primary">
-                      {row.number ?? "—"}
-                    </span>
+                    <span className="font-mono text-xs font-semibold text-primary">{row.number ?? "—"}</span>
                   </td>
 
                   {/* Source order number */}
@@ -416,22 +506,20 @@ export function InvoicesListPage({ kind }: InvoicesListPageProps) {
 
                   {/* Party name */}
                   <td className="px-3 py-2.5 max-w-[240px]">
-                    <span className={`text-sm leading-snug ${balance > 0 && row.due_date && new Date(row.due_date) < new Date() ? "text-destructive font-medium" : ""}`}>
+                    <span
+                      className={`text-sm leading-snug ${balance > 0 && row.due_date && new Date(row.due_date) < new Date() ? "text-destructive font-medium" : ""}`}
+                    >
                       {partyName}
                     </span>
                   </td>
 
                   {/* Due status */}
                   <td className="px-3 py-2.5 whitespace-nowrap">
-                    <span className={`text-[11px] font-semibold tracking-wide ${dueColor}`}>
-                      {dueLabel}
-                    </span>
+                    <span className={`text-[11px] font-semibold tracking-wide ${dueColor}`}>{dueLabel}</span>
                   </td>
 
                   {/* Due date */}
-                  <td className="px-3 py-2.5 text-xs text-muted-foreground whitespace-nowrap">
-                    {fmt(row.due_date)}
-                  </td>
+                  <td className="px-3 py-2.5 text-xs text-muted-foreground whitespace-nowrap">{fmt(row.due_date)}</td>
 
                   {/* Invoice amount */}
                   <td className="px-3 py-2.5 text-right font-mono text-xs tabular-nums whitespace-nowrap">
@@ -439,7 +527,9 @@ export function InvoicesListPage({ kind }: InvoicesListPageProps) {
                   </td>
 
                   {/* Balance due */}
-                  <td className={`px-3 py-2.5 text-right font-mono text-xs tabular-nums whitespace-nowrap ${balance > 0 ? "font-semibold" : "text-muted-foreground"}`}>
+                  <td
+                    className={`px-3 py-2.5 text-right font-mono text-xs tabular-nums whitespace-nowrap ${balance > 0 ? "font-semibold" : "text-muted-foreground"}`}
+                  >
                     {moneyFmt(balance, row.currency)}
                   </td>
                 </tr>
@@ -453,14 +543,27 @@ export function InvoicesListPage({ kind }: InvoicesListPageProps) {
       <div className="flex shrink-0 items-center justify-between border-t px-6 py-2 text-xs text-muted-foreground">
         <span>
           {selected.size > 0 ? `${selected.size} selected · ` : ""}
-          {total} {isInvoice ? "invoice" : "bill"}{total !== 1 ? "s" : ""}
+          {total} {isInvoice ? "invoice" : "bill"}
+          {total !== 1 ? "s" : ""}
           {total > 0 ? ` · page ${page} of ${totalPages}` : ""}
         </span>
         <div className="flex items-center gap-1">
-          <Button variant="outline" size="sm" className="h-7 px-2" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-7 px-2"
+            disabled={page <= 1}
+            onClick={() => setPage((p) => p - 1)}
+          >
             <ChevronLeft className="h-3.5 w-3.5" />
           </Button>
-          <Button variant="outline" size="sm" className="h-7 px-2" disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)}>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-7 px-2"
+            disabled={page >= totalPages}
+            onClick={() => setPage((p) => p + 1)}
+          >
             <ChevronRight className="h-3.5 w-3.5" />
           </Button>
         </div>
