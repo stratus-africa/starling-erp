@@ -20,19 +20,40 @@ import { ArrowLeft, History, Loader2, Save, User2 } from "lucide-react";
 import type { FieldDef } from "@/components/data-module-page";
 
 const money = (v: any, currency = "USD") =>
-  v == null ? "—" : `${currency} ${Number(v).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-const dateFmt = (v: any) => (!v ? "—" : new Date(v).toLocaleDateString(undefined, { day: "2-digit", month: "short", year: "numeric" }));
+  v == null
+    ? "—"
+    : `${currency} ${Number(v).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+const dateFmt = (v: any) =>
+  !v ? "—" : new Date(v).toLocaleDateString(undefined, { day: "2-digit", month: "short", year: "numeric" });
 const dateTimeFmt = (v: any) => (!v ? "—" : new Date(v).toLocaleString());
 
-function FkField({ field, value, onChange, disabled }: { field: FieldDef; value: any; onChange: (v: string) => void; disabled?: boolean }) {
+function FkField({
+  field,
+  value,
+  onChange,
+  disabled,
+}: {
+  field: FieldDef;
+  value: any;
+  onChange: (v: string) => void;
+  disabled?: boolean;
+}) {
   const { data: options = [] } = useFkOptions(field.fkTable!, field.fkLabel ?? "name");
   return (
     <Select value={value ?? ""} onValueChange={onChange} disabled={disabled}>
-      <SelectTrigger><SelectValue placeholder={`Select ${field.label.toLowerCase()}…`} /></SelectTrigger>
+      <SelectTrigger>
+        <SelectValue placeholder={`Select ${field.label.toLowerCase()}…`} />
+      </SelectTrigger>
       <SelectContent>
-        {options.length === 0 && <SelectItem value="__none" disabled>No options available</SelectItem>}
+        {options.length === 0 && (
+          <SelectItem value="__none" disabled>
+            No options available
+          </SelectItem>
+        )}
         {options.map((o: any) => (
-          <SelectItem key={o.id} value={o.id}>{o[field.fkLabel ?? "name"] ?? "Unnamed"}</SelectItem>
+          <SelectItem key={o.id} value={o.id}>
+            {o[field.fkLabel ?? "name"] ?? "Unnamed"}
+          </SelectItem>
         ))}
       </SelectContent>
     </Select>
@@ -40,8 +61,22 @@ function FkField({ field, value, onChange, disabled }: { field: FieldDef; value:
 }
 
 function TransactionAccordion({
-  value, title, table, customerId, amountKey, dateKey, currency,
-}: { value: string; title: string; table: string; customerId: string; amountKey: string; dateKey: string; currency: string }) {
+  value,
+  title,
+  table,
+  customerId,
+  amountKey,
+  dateKey,
+  currency,
+}: {
+  value: string;
+  title: string;
+  table: string;
+  customerId: string;
+  amountKey: string;
+  dateKey: string;
+  currency: string;
+}) {
   const { data: rows = [], isLoading } = useQuery({
     queryKey: [table, "by-customer", customerId],
     queryFn: async () => {
@@ -65,7 +100,9 @@ function TransactionAccordion({
         <div className="flex w-full items-center justify-between pr-3">
           <span className="font-medium">{title}</span>
           <span className="text-xs text-muted-foreground">
-            {isLoading ? "Loading…" : `${rows.length} record${rows.length === 1 ? "" : "s"} · ${money(total, currency)}`}
+            {isLoading
+              ? "Loading…"
+              : `${rows.length} record${rows.length === 1 ? "" : "s"} · ${money(total, currency)}`}
           </span>
         </div>
       </AccordionTrigger>
@@ -81,17 +118,29 @@ function TransactionAccordion({
           </TableHeader>
           <TableBody>
             {isLoading && (
-              <TableRow><TableCell colSpan={4} className="py-8 text-center"><Loader2 className="mx-auto h-4 w-4 animate-spin text-muted-foreground" /></TableCell></TableRow>
+              <TableRow>
+                <TableCell colSpan={4} className="py-8 text-center">
+                  <Loader2 className="mx-auto h-4 w-4 animate-spin text-muted-foreground" />
+                </TableCell>
+              </TableRow>
             )}
             {!isLoading && rows.length === 0 && (
-              <TableRow><TableCell colSpan={4} className="py-8 text-center text-sm text-muted-foreground">No {title.toLowerCase()} for this customer yet.</TableCell></TableRow>
+              <TableRow>
+                <TableCell colSpan={4} className="py-8 text-center text-sm text-muted-foreground">
+                  No {title.toLowerCase()} for this customer yet.
+                </TableCell>
+              </TableRow>
             )}
             {rows.map((r) => (
               <TableRow key={r.id}>
                 <TableCell className="font-mono text-xs">{r.number ?? "—"}</TableCell>
                 <TableCell className="text-sm">{dateFmt(r[dateKey])}</TableCell>
-                <TableCell><Badge variant="secondary">{r.status ?? "Draft"}</Badge></TableCell>
-                <TableCell className="text-right font-mono tabular-nums text-sm">{money(r[amountKey], currency)}</TableCell>
+                <TableCell>
+                  <Badge variant="secondary">{r.status ?? "Draft"}</Badge>
+                </TableCell>
+                <TableCell className="text-right font-mono tabular-nums text-sm">
+                  {money(r[amountKey], currency)}
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>
@@ -127,7 +176,11 @@ function AuditTrail({ customerId }: { customerId: string }) {
   };
 
   if (isLoading) {
-    return <div className="flex items-center gap-2 p-6 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> Loading audit trail…</div>;
+    return (
+      <div className="flex items-center gap-2 p-6 text-sm text-muted-foreground">
+        <Loader2 className="h-4 w-4 animate-spin" /> Loading audit trail…
+      </div>
+    );
   }
   if (logs.length === 0) {
     return <div className="p-6 text-sm text-muted-foreground">No changes recorded for this customer yet.</div>;
@@ -152,7 +205,8 @@ function AuditTrail({ customerId }: { customerId: string }) {
                 <ul className="mt-2 space-y-1 text-xs text-muted-foreground">
                   {changes.map((c) => (
                     <li key={c.key}>
-                      <span className="font-medium text-foreground">{c.key.replace(/_/g, " ")}</span>{": "}
+                      <span className="font-medium text-foreground">{c.key.replace(/_/g, " ")}</span>
+                      {": "}
                       <span className="line-through">{c.from == null || c.from === "" ? "empty" : String(c.from)}</span>
                       {" → "}
                       <span className="text-foreground">{c.to == null || c.to === "" ? "empty" : String(c.to)}</span>
@@ -190,11 +244,17 @@ export function CustomerEditor({ id, fields }: { id: string; fields: FieldDef[] 
   );
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  useEffect(() => { if (record) setValues(record); }, [record]);
+  useEffect(() => {
+    if (record) setValues(record);
+  }, [record]);
 
   const set = (k: string, v: any) => {
     setValues((p) => ({ ...p, [k]: v }));
-    setErrors((p) => { const n = { ...p }; delete n[k]; return n; });
+    setErrors((p) => {
+      const n = { ...p };
+      delete n[k];
+      return n;
+    });
   };
 
   const groups = useMemo(() => {
@@ -233,11 +293,18 @@ export function CustomerEditor({ id, fields }: { id: string; fields: FieldDef[] 
         payload[f.key] = v;
       }
       if (isNew) {
-        const { data, error } = await supabase.from("customers").insert({ ...payload, tenant_id: tenant.id } as any).select("id").single();
+        const { data, error } = await supabase
+          .from("customers")
+          .insert({ ...payload, tenant_id: tenant.id } as any)
+          .select("id")
+          .single();
         if (error) throw error;
         return (data as any).id as string;
       }
-      const { error } = await supabase.from("customers").update(payload as any).eq("id", id);
+      const { error } = await supabase
+        .from("customers")
+        .update(payload as any)
+        .eq("id", id);
       if (error) throw error;
       return id;
     },
@@ -250,23 +317,43 @@ export function CustomerEditor({ id, fields }: { id: string; fields: FieldDef[] 
   });
 
   if (!isNew && isLoading) {
-    return <div className="flex items-center gap-2 p-8 text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> Loading customer…</div>;
+    return (
+      <div className="flex items-center gap-2 p-8 text-muted-foreground">
+        <Loader2 className="h-4 w-4 animate-spin" /> Loading customer…
+      </div>
+    );
   }
 
   const currency = values.currency ?? "USD";
 
   const renderField = (f: FieldDef) => (
     <div key={f.key} className={"grid gap-1.5 " + (f.type === "textarea" ? "md:col-span-3" : "")}>
-      <Label>{f.label}{f.required && <span className="text-destructive"> *</span>}</Label>
+      <Label>
+        {f.label}
+        {f.required && <span className="text-destructive"> *</span>}
+      </Label>
       {f.type === "select" ? (
         <Select value={values[f.key] ?? ""} onValueChange={(v) => set(f.key, v)} disabled={!canWrite}>
-          <SelectTrigger><SelectValue placeholder="Select…" /></SelectTrigger>
-          <SelectContent>{(f.options ?? []).map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}</SelectContent>
+          <SelectTrigger>
+            <SelectValue placeholder="Select…" />
+          </SelectTrigger>
+          <SelectContent>
+            {(f.options ?? []).map((o) => (
+              <SelectItem key={o} value={o}>
+                {o}
+              </SelectItem>
+            ))}
+          </SelectContent>
         </Select>
       ) : f.type === "fk" ? (
         <FkField field={f} value={values[f.key]} onChange={(v) => set(f.key, v)} disabled={!canWrite} />
       ) : f.type === "textarea" ? (
-        <Textarea rows={3} value={values[f.key] ?? ""} onChange={(e) => set(f.key, e.target.value)} disabled={!canWrite} />
+        <Textarea
+          rows={3}
+          value={values[f.key] ?? ""}
+          onChange={(e) => set(f.key, e.target.value)}
+          disabled={!canWrite}
+        />
       ) : (
         <Input
           type={f.type === "number" ? "number" : "text"}
@@ -285,7 +372,9 @@ export function CustomerEditor({ id, fields }: { id: string; fields: FieldDef[] 
     <div className="flex w-full flex-col gap-4 p-4 md:p-6">
       <div className="flex items-center justify-between gap-3">
         <div className="flex min-w-0 items-center gap-3">
-          <Button variant="ghost" size="sm" onClick={() => nav({ to: "/crm/customers" })}><ArrowLeft className="mr-1 h-4 w-4" /> Back</Button>
+          <Button variant="ghost" size="sm" onClick={() => nav({ to: "/crm/customers" })}>
+            <ArrowLeft className="mr-1 h-4 w-4" /> Back
+          </Button>
           <div className="flex min-w-0 items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary">
               <User2 className="h-5 w-5" />
@@ -296,14 +385,17 @@ export function CustomerEditor({ id, fields }: { id: string; fields: FieldDef[] 
                 {values.status && <Badge variant="secondary">{values.status}</Badge>}
               </div>
               <p className="mt-0.5 text-xs text-muted-foreground">
-                {isNew ? "Create a new customer account" : [values.code, values.email, values.phone].filter(Boolean).join(" · ") || "Customer details"}
+                {isNew
+                  ? "Create a new customer account"
+                  : [values.code, values.email, values.phone].filter(Boolean).join(" · ") || "Customer details"}
               </p>
             </div>
           </div>
         </div>
         {canWrite && (
           <Button size="sm" disabled={save.isPending} onClick={() => save.mutate()}>
-            {save.isPending ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : <Save className="mr-1.5 h-4 w-4" />} Save
+            {save.isPending ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : <Save className="mr-1.5 h-4 w-4" />}{" "}
+            Save
           </Button>
         )}
       </div>
@@ -327,8 +419,12 @@ export function CustomerEditor({ id, fields }: { id: string; fields: FieldDef[] 
       <Tabs defaultValue="details">
         <TabsList>
           <TabsTrigger value="details">Details</TabsTrigger>
-          <TabsTrigger value="transactions" disabled={isNew}>Transactions</TabsTrigger>
-          <TabsTrigger value="audit" disabled={isNew}>Audit Trail</TabsTrigger>
+          <TabsTrigger value="transactions" disabled={isNew}>
+            Transactions
+          </TabsTrigger>
+          <TabsTrigger value="audit" disabled={isNew}>
+            Audit Trail
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="details" className="mt-4 flex flex-col gap-4">
@@ -345,16 +441,44 @@ export function CustomerEditor({ id, fields }: { id: string; fields: FieldDef[] 
           {!isNew && (
             <Card className="overflow-hidden p-0">
               <Accordion type="multiple" defaultValue={["invoices"]}>
-                <TransactionAccordion value="orders" title="Sales Orders" table="sales_orders" customerId={id} amountKey="grand_total" dateKey="date" currency={currency} />
-                <TransactionAccordion value="invoices" title="Invoices" table="invoices" customerId={id} amountKey="grand_total" dateKey="date" currency={currency} />
-                <TransactionAccordion value="credit-notes" title="Credit Notes" table="credit_notes" customerId={id} amountKey="grand_total" dateKey="date" currency={currency} />
+                <TransactionAccordion
+                  value="orders"
+                  title="Sales Orders"
+                  table="sales_orders"
+                  customerId={id}
+                  amountKey="grand_total"
+                  dateKey="date"
+                  currency={currency}
+                />
+                <TransactionAccordion
+                  value="invoices"
+                  title="Invoices"
+                  table="invoices"
+                  customerId={id}
+                  amountKey="grand_total"
+                  dateKey="date"
+                  currency={currency}
+                />
+                <TransactionAccordion
+                  value="credit-notes"
+                  title="Credit Notes"
+                  table="credit_notes"
+                  customerId={id}
+                  amountKey="grand_total"
+                  dateKey="date"
+                  currency={currency}
+                />
               </Accordion>
             </Card>
           )}
         </TabsContent>
 
         <TabsContent value="audit" className="mt-4">
-          {!isNew && <Card className="overflow-hidden p-0"><AuditTrail customerId={id} /></Card>}
+          {!isNew && (
+            <Card className="overflow-hidden p-0">
+              <AuditTrail customerId={id} />
+            </Card>
+          )}
         </TabsContent>
       </Tabs>
     </div>
