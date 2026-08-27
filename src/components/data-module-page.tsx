@@ -45,6 +45,10 @@ export interface FieldDef {
   hideInTable?: boolean;
   render?: (value: any, row: any) => ReactNode;
   className?: string;
+  /** Section heading used to group fields in full-page editors. */
+  group?: string;
+  /** Return an error message when the value is invalid, otherwise null. */
+  validate?: (value: any, values: Record<string, any>) => string | null;
 }
 
 interface DataModulePageProps {
@@ -60,6 +64,7 @@ interface DataModulePageProps {
   defaultOrder?: string;
   rowHref?: (row: any) => string;
   createHref?: string;
+  filterFields?: { key: string; label: string; options: string[] }[];
   postAction?: {
     rpc: string;
     paramName: string;
@@ -91,7 +96,7 @@ export function DataModulePage(props: DataModulePageProps) {
   const {
     title, description, table, fields, entityLabel, attachments,
     writeRoles = ["tenant_admin"], searchColumn = "name", defaultOrder = "created_at",
-    rowHref, createHref, postAction,
+    rowHref, createHref, postAction, filterFields = [],
   } = props;
 
   const { hasRole } = useAuth();
@@ -104,8 +109,9 @@ export function DataModulePage(props: DataModulePageProps) {
   const pageSize = 25;
   const [orderBy, setOrderBy] = useState(defaultOrder);
   const [orderAsc, setOrderAsc] = useState(false);
+  const [filters, setFilters] = useState<Record<string, string>>({});
 
-  const { data, isLoading } = useModuleList(table, { search, searchColumn, page, pageSize, orderBy, orderAsc });
+  const { data, isLoading } = useModuleList(table, { search, searchColumn, page, pageSize, orderBy, orderAsc, filters });
   const { create, update, remove } = useModuleMutations(table);
 
   const post = useMutation({
@@ -157,7 +163,29 @@ export function DataModulePage(props: DataModulePageProps) {
               onChange={(e) => { setSearch(e.target.value); setPage(1); }}
               className="h-8 pl-8 text-sm bg-background" />
           </div>
-          <Button variant="outline" size="sm" className="h-8"><Filter className="h-3.5 w-3.5 mr-1.5" /> Filters</Button>
+          {filterFields.length === 0 ? (
+            <Button variant="outline" size="sm" className="h-8"><Filter className="h-3.5 w-3.5 mr-1.5" /> Filters</Button>
+          ) : (
+            <div className="flex items-center gap-2">
+              <Filter className="h-3.5 w-3.5 text-muted-foreground" />
+              {filterFields.map((f) => (
+                <Select
+                  key={f.key}
+                  value={filters[f.key] ?? "all"}
+                  onValueChange={(v) => { setFilters((p) => ({ ...p, [f.key]: v })); setPage(1); }}
+                >
+                  <SelectTrigger className="h-8 w-[150px] bg-background text-xs"><SelectValue placeholder={f.label} /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All {f.label}</SelectItem>
+                    {f.options.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              ))}
+              {Object.values(filters).some((v) => v && v !== "all") && (
+                <Button variant="ghost" size="sm" className="h-8 text-xs" onClick={() => setFilters({})}>Clear</Button>
+              )}
+            </div>
+          )}
           <div className="ml-auto text-xs text-muted-foreground">{total} record{total === 1 ? "" : "s"}</div>
         </div>
 

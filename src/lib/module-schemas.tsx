@@ -7,17 +7,31 @@ export const moneyRight = (v: any) => v == null ? "—" : <span className="font-
 export const bold = (v: any) => <span className="font-medium text-foreground">{v}</span>;
 export const dateFmt = (v: any) => !v ? "—" : new Date(v).toLocaleDateString(undefined, { day: "2-digit", month: "short", year: "numeric" });
 
+const emailRule = (v: any) =>
+  !v || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(v)) ? null : "Enter a valid email address";
+const positive = (label: string) => (v: any) =>
+  v === "" || v == null || Number(v) >= 0 ? null : `${label} cannot be negative`;
+
 export const customerFields: FieldDef[] = [
-  { key: "code", label: "Code", render: mono },
-  { key: "name", label: "Customer", required: true, render: bold },
-  { key: "email", label: "Email" },
-  { key: "phone", label: "Phone" },
-  { key: "currency", label: "Currency", type: "select", options: ["USD","EUR","GBP","KES","AED","EGP","INR","ZAR"], defaultValue: "USD" },
-  { key: "credit_limit", label: "Credit Limit", type: "number", className: "text-right", render: moneyRight },
-  { key: "balance", label: "Balance", type: "number", className: "text-right", render: moneyRight },
-  { key: "status", label: "Status", type: "select", options: ["Active","Inactive","Overdue"], defaultValue: "Active" },
-  { key: "notes", label: "Notes", type: "textarea", hideInTable: true },
+  { key: "code", label: "Code", render: mono, group: "Identity", validate: (v) => !v || String(v).length <= 24 ? null : "Code must be 24 characters or less" },
+  { key: "name", label: "Customer Name", required: true, render: bold, group: "Identity" },
+  { key: "contact_person", label: "Contact Person", hideInTable: true, group: "Identity" },
+  { key: "industry", label: "Industry", type: "select", options: ["Retail","Wholesale","Manufacturing","Construction","Logistics","Technology","Healthcare","Government","Other"], hideInTable: true, group: "Identity" },
+  { key: "email", label: "Email", group: "Contact", validate: emailRule },
+  { key: "phone", label: "Phone", group: "Contact" },
+  { key: "website", label: "Website", hideInTable: true, group: "Contact" },
+  { key: "salesperson_id", label: "Salesperson", type: "fk", fkTable: "profiles", fkLabel: "full_name", hideInTable: true, group: "Contact" },
+  { key: "currency", label: "Currency", type: "select", options: ["USD","EUR","GBP","KES","AED","EGP","INR","ZAR"], defaultValue: "USD", group: "Financial" },
+  { key: "payment_terms", label: "Payment Terms", type: "select", options: ["Due on Receipt","Net 7","Net 15","Net 30","Net 45","Net 60"], defaultValue: "Net 30", hideInTable: true, group: "Financial" },
+  { key: "tax_id", label: "Tax / VAT ID", hideInTable: true, group: "Financial" },
+  { key: "credit_limit", label: "Credit Limit", type: "number", className: "text-right", render: moneyRight, group: "Financial", validate: positive("Credit limit") },
+  { key: "balance", label: "Balance", type: "number", className: "text-right", render: moneyRight, group: "Financial", validate: positive("Balance") },
+  { key: "status", label: "Status", type: "select", options: ["Active","Inactive","Overdue"], defaultValue: "Active", group: "Financial" },
+  { key: "billing_address", label: "Billing Address", type: "textarea", hideInTable: true, group: "Addresses" },
+  { key: "shipping_address", label: "Shipping Address", type: "textarea", hideInTable: true, group: "Addresses" },
+  { key: "notes", label: "Notes", type: "textarea", hideInTable: true, group: "Addresses" },
 ];
+
 
 export const supplierFields: FieldDef[] = [
   { key: "code", label: "Code", render: mono },

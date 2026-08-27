@@ -69,6 +69,8 @@ export function RecordEditor({
       for (const f of fields) {
         let v = values[f.key];
         if (f.required && (v === "" || v == null)) throw new Error(`${f.label} is required`);
+        const err = f.validate?.(v, values);
+        if (err) throw new Error(err);
         if (f.type === "number") v = v === "" || v == null ? null : Number(v);
         if (v === "") v = null;
         payload[f.key] = v;

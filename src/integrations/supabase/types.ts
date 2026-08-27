@@ -637,7 +637,9 @@ export type Database = {
       customers: {
         Row: {
           balance: number | null
+          billing_address: string | null
           code: string | null
+          contact_person: string | null
           created_at: string
           created_by: string | null
           credit_limit: number | null
@@ -645,17 +647,25 @@ export type Database = {
           deleted_at: string | null
           email: string | null
           id: string
+          industry: string | null
           name: string
           notes: string | null
+          payment_terms: string | null
           phone: string | null
+          salesperson_id: string | null
           search_vec: unknown
+          shipping_address: string | null
           status: string | null
+          tax_id: string | null
           tenant_id: string
           updated_at: string
+          website: string | null
         }
         Insert: {
           balance?: number | null
+          billing_address?: string | null
           code?: string | null
+          contact_person?: string | null
           created_at?: string
           created_by?: string | null
           credit_limit?: number | null
@@ -663,17 +673,25 @@ export type Database = {
           deleted_at?: string | null
           email?: string | null
           id?: string
+          industry?: string | null
           name: string
           notes?: string | null
+          payment_terms?: string | null
           phone?: string | null
+          salesperson_id?: string | null
           search_vec?: unknown
+          shipping_address?: string | null
           status?: string | null
+          tax_id?: string | null
           tenant_id: string
           updated_at?: string
+          website?: string | null
         }
         Update: {
           balance?: number | null
+          billing_address?: string | null
           code?: string | null
+          contact_person?: string | null
           created_at?: string
           created_by?: string | null
           credit_limit?: number | null
@@ -681,15 +699,28 @@ export type Database = {
           deleted_at?: string | null
           email?: string | null
           id?: string
+          industry?: string | null
           name?: string
           notes?: string | null
+          payment_terms?: string | null
           phone?: string | null
+          salesperson_id?: string | null
           search_vec?: unknown
+          shipping_address?: string | null
           status?: string | null
+          tax_id?: string | null
           tenant_id?: string
           updated_at?: string
+          website?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "customers_salesperson_id_fkey"
+            columns: ["salesperson_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "customers_tenant_id_fkey"
             columns: ["tenant_id"]
