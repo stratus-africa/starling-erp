@@ -13,6 +13,10 @@ export const Route = createFileRoute("/_authenticated/crm/customers/")({
       attachments={false}
       rowHref={(r) => `/crm/customers/${r.id}`}
       createHref="/crm/customers/new"
+      filterFields={[
+        { key: "status", label: "Status", options: ["Active", "Inactive", "Overdue"] },
+        { key: "currency", label: "Currency", options: ["USD", "EUR", "GBP", "KES", "AED", "EGP", "INR", "ZAR"] },
+      ]}
     />
   ),
 });
