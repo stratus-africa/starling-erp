@@ -5,11 +5,13 @@ import {
   SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar,
 } from "@/components/ui/sidebar";
 import { navGroups } from "@/lib/nav";
+import { useAuth } from "@/hooks/use-auth";
 
 export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const pathname = useRouterState({ select: (r) => r.location.pathname });
+  const { hasFeature } = useAuth();
 
   return (
     <Sidebar collapsible="icon" className="border-r">
@@ -37,7 +39,7 @@ export function AppSidebar() {
             )}
             <SidebarGroupContent>
               <SidebarMenu>
-                {group.items.map((item) => {
+                {group.items.filter((item) => !item.feature || hasFeature(item.feature)).map((item) => {
                   const active = pathname === item.url;
                   return (
                     <SidebarMenuItem key={item.url}>
