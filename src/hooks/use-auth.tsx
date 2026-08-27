@@ -26,7 +26,6 @@ interface AuthCtx {
   switchTenant: (tenantId: string) => Promise<void>;
 }
 
-
 const Ctx = createContext<AuthCtx | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -61,9 +60,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const { data: sub } = supabase.auth.onAuthStateChange((event, s) => {
       setSession(s);
-      if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED" && event !== "INITIAL_SESSION") return;
-      if (s?.user) { setTimeout(() => loadContext(s.user.id), 0); }
-      else { setProfile(null); setTenant(null); setRoles([]); setPermissions([]); setFeatures([]); }
+      if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED" && event !== "INITIAL_SESSION")
+        return;
+      if (s?.user) {
+        setTimeout(() => loadContext(s.user.id), 0);
+      } else {
+        setProfile(null);
+        setTenant(null);
+        setRoles([]);
+        setPermissions([]);
+        setFeatures([]);
+      }
       if (event === "SIGNED_IN" || event === "SIGNED_OUT") router.invalidate();
       if (event !== "SIGNED_OUT" && s?.user) qc.invalidateQueries();
     });
@@ -97,7 +104,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     navigate({ to: "/auth", replace: true });
   };
 
-  const refresh = async () => { if (session?.user) await loadContext(session.user.id); };
+  const refresh = async () => {
+    if (session?.user) await loadContext(session.user.id);
+  };
 
   const switchTenant = async (tenantId: string) => {
     const { error } = await supabase.rpc("switch_tenant", { target_tenant: tenantId });
@@ -109,7 +118,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <Ctx.Provider value={{ user: session?.user ?? null, session, profile, tenant, roles, permissions, loading, hasRole, can, hasFeature, signOut, refresh, switchTenant }}>
+    <Ctx.Provider
+      value={{
+        user: session?.user ?? null,
+        session,
+        profile,
+        tenant,
+        roles,
+        permissions,
+        loading,
+        hasRole,
+        can,
+        hasFeature,
+        signOut,
+        refresh,
+        switchTenant,
+      }}
+    >
       {children}
     </Ctx.Provider>
   );
