@@ -16,7 +16,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft, Loader2, Save } from "lucide-react";
 import type { FieldDef } from "@/components/data-module-page";
-import { schemaByTable, formatZodError } from "@/lib/module-schemas";
+import { schemaByTable, formatZodError } from "@/lib/module-validation-schemas";
 
 function FkField({
   field,
