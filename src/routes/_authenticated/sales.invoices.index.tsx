@@ -1,19 +1,17 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { DataModulePage } from "@/components/data-module-page";
+import { DocumentViewWindow } from "@/components/document-view-window";
 import { invoiceFields } from "@/lib/module-schemas";
 
 export const Route = createFileRoute("/_authenticated/sales/invoices/")({
   component: () => (
-    <DataModulePage
+    <DocumentViewWindow
+      kind="invoice"
       title="Invoices"
       description="Customer invoices, taxes, and payment status."
       table="invoices"
       fields={invoiceFields}
-      entityLabel="Invoice"
-      attachments={true}
       searchColumn="number"
-      rowHref={(r) => `/sales/invoices/${r.id}`}
-      createHref="/sales/invoices/new"
+      filters={[{ key: "status", label: "Status", options: invoiceFields.find((f) => f.key === "status")?.options ?? [] }, { key: "currency", label: "Currency", options: ["USD","EUR","GBP","KES","AED","EGP","INR","ZAR"] }]}
     />
   ),
 });
