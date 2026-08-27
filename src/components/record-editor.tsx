@@ -28,7 +28,7 @@ function FkField({ field, value, onChange, disabled }: { field: FieldDef; value:
 }
 
 export function RecordEditor({
-  id, table, fields, entityLabel, listHref, titleKey = "name", writeRoles,
+  id, table, fields, entityLabel, listHref, titleKey = "name", writeRoles, permissionModule,
 }: {
   id: string;
   table: string;
@@ -37,11 +37,24 @@ export function RecordEditor({
   listHref: string;
   titleKey?: string;
   writeRoles?: string[];
+  permissionModule?: string;
 }) {
   const qc = useQueryClient();
   const nav = useNavigate();
-  const { tenant, hasRole } = useAuth();
-  const canWrite = hasRole((writeRoles ?? ["tenant_admin", "super_admin", "sales"]) as any);
+  const { tenant, hasRole, can } = useAuth();
+  const inferredModule: Record<string, string> = {
+    customers: "crm", sales_quotes: "sales", sales_orders: "sales", invoices: "sales",
+    credit_notes: "sales", suppliers: "purchasing", purchase_orders: "purchasing",
+    purchase_requisitions: "purchasing", bills: "purchasing", expenses: "purchasing",
+    payments_received: "payments", payments_made: "payments", items: "inventory",
+    warehouses: "inventory", inventory_adjustments: "inventory", inventory_transfers: "inventory",
+    production_orders: "manufacturing", bom_headers: "manufacturing", chart_of_accounts: "accounting",
+    journal_entries: "accounting", bank_accounts: "banking",
+  };
+  const moduleName = permissionModule ?? inferredModule[table];
+  const canWrite = moduleName
+    ? can([`${moduleName}.create`, `${moduleName}.update`])
+    : hasRole((writeRoles ?? ["tenant_admin", "super_admin", "sales"]) as any);
   const isNew = id === "new";
 
   const { data: record, isLoading } = useQuery({

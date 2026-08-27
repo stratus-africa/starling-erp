@@ -32,6 +32,7 @@ import { toast } from "sonner";
 import { AttachmentsPanel } from "@/components/attachments-panel";
 import { useAuth, type AppRole } from "@/hooks/use-auth";
 import { Link, useNavigate } from "@tanstack/react-router";
+import type { Permission } from "@/lib/permissions";
 
 export interface FieldDef {
   key: string;
@@ -60,6 +61,8 @@ interface DataModulePageProps {
   entityLabel: string;
   attachments?: boolean;
   writeRoles?: AppRole[];
+  permissionModule?: string;
+  postPermission?: Permission | string;
   searchColumn?: string;
   defaultOrder?: string;
   rowHref?: (row: any) => string;
@@ -96,13 +99,26 @@ export function DataModulePage(props: DataModulePageProps) {
   const {
     title, description, table, fields, entityLabel, attachments,
     writeRoles = ["tenant_admin"], searchColumn = "name", defaultOrder = "created_at",
-    rowHref, createHref, postAction, filterFields = [],
+    rowHref, createHref, postAction, filterFields = [], permissionModule, postPermission,
   } = props;
 
-  const { hasRole } = useAuth();
+  const { hasRole, can } = useAuth();
   const navigate = useNavigate();
   const qc = useQueryClient();
-  const canWrite = hasRole(["tenant_admin", "super_admin", ...writeRoles]);
+  const inferredPermissionModule: Record<string, string> = {
+    customers: "crm", sales_quotes: "sales", sales_orders: "sales", invoices: "sales",
+    credit_notes: "sales", packages: "sales", shipments: "sales", payments_received: "payments",
+    suppliers: "purchasing", purchase_orders: "purchasing", purchase_requisitions: "purchasing",
+    bills: "purchasing", expenses: "purchasing", payments_made: "payments", items: "inventory",
+    warehouses: "inventory", inventory_adjustments: "inventory", inventory_transfers: "inventory",
+    production_orders: "manufacturing", bom_headers: "manufacturing", chart_of_accounts: "accounting",
+    journal_entries: "accounting", bank_accounts: "banking",
+  };
+  const moduleName = permissionModule ?? inferredPermissionModule[table];
+  const canWrite = moduleName
+    ? can([`${moduleName}.create`, `${moduleName}.update`])
+    : hasRole(["tenant_admin", "super_admin", ...writeRoles]);
+  const canPost = postPermission ? can(postPermission) : can(`${moduleName}.post`);
 
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
@@ -116,6 +132,7 @@ export function DataModulePage(props: DataModulePageProps) {
 
   const post = useMutation({
     mutationFn: async (id: string) => {
+      if (postPermission && !can(postPermission)) throw new Error(`Not authorized: ${postPermission}`);
       const { error } = await (supabase as any).rpc(postAction!.rpc, { [postAction!.paramName]: id });
       if (error) throw error;
     },
@@ -279,7 +296,7 @@ export function DataModulePage(props: DataModulePageProps) {
         }}
         busy={create.isPending || update.isPending}
         postAction={postAction}
-        onPost={postAction && editing ? async () => { await post.mutateAsync(editing.id); setEditing(null); } : undefined}
+        onPost={postAction && editing && canPost ? async () => { await post.mutateAsync(editing.id); setEditing(null); } : undefined}
         postBusy={post.isPending}
       />
 

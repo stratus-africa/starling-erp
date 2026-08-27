@@ -211,12 +211,23 @@ export function DocumentEditor({
   const cfg = CFG[kind];
   const qc = useQueryClient();
   const nav = useNavigate();
-  const { tenant, user, profile, hasRole } = useAuth();
+  const { tenant, user, profile, hasRole, can } = useAuth();
   const writeRoles: string[] =
     kind === "po" || kind === "bill" || kind === "requisition"
       ? ["tenant_admin", "super_admin", "purchasing"]
       : ["tenant_admin", "super_admin", "sales", "accounting"];
-  const canWrite = hasRole(writeRoles as any);
+  const permissionModule = kind === "po" || kind === "bill" || kind === "requisition" ? "purchasing" : "sales";
+  const canWrite = can([
+    `${permissionModule}.create`,
+    `${permissionModule}.update`,
+    ...(permissionModule === "sales" ? ["accounting.create", "accounting.update"] : []),
+  ]) || hasRole(writeRoles as any);
+  const canPost = kind === "invoice" || kind === "credit_note"
+    ? can("sales.accounting_post")
+    : kind === "bill"
+      ? can(["purchasing.post", "accounting.post"])
+      : false;
+  const canRecordPayment = can(["payments.create", "payments.post"]);
   const isNew = id === "new";
   const [payOpen, setPayOpen] = useState(false);
   const [emailOpen, setEmailOpen] = useState(false);
@@ -803,7 +814,7 @@ export function DocumentEditor({
               <Send className="h-4 w-4 mr-1.5" /> Convert to Bill
             </Button>
           )}
-          {canWrite && kind === "invoice" && !isNew && !doc?.posted_at && (
+          {canPost && kind === "invoice" && !isNew && !doc?.posted_at && (
             <Button
               variant="default"
               size="sm"
@@ -813,12 +824,12 @@ export function DocumentEditor({
               <DollarSign className="h-4 w-4 mr-1.5" /> Post Invoice
             </Button>
           )}
-          {canWrite && kind === "bill" && !isNew && !doc?.posted_at && (
+          {canPost && kind === "bill" && !isNew && !doc?.posted_at && (
             <Button variant="default" size="sm" disabled={runRpc.isPending} onClick={() => runRpc.mutate("post_bill")}>
               <DollarSign className="h-4 w-4 mr-1.5" /> Post Bill
             </Button>
           )}
-          {canWrite && kind === "credit_note" && !isNew && !doc?.posted_at && (
+          {canPost && kind === "credit_note" && !isNew && !doc?.posted_at && (
             <Button
               variant="default"
               size="sm"
@@ -828,7 +839,7 @@ export function DocumentEditor({
               <DollarSign className="h-4 w-4 mr-1.5" /> Post Credit Note
             </Button>
           )}
-          {canWrite && showRecordPayment && (
+          {canRecordPayment && showRecordPayment && (
             <Button variant="secondary" size="sm" onClick={() => setPayOpen(true)}>
               <DollarSign className="h-4 w-4 mr-1.5" /> Record Payment
             </Button>
