@@ -2964,6 +2964,30 @@ export type Database = {
           },
         ]
       }
+      tenant_features: {
+        Row: {
+          tenant_id: string
+          feature: string
+          enabled: boolean
+          source: string
+          updated_at: string
+        }
+        Insert: {
+          tenant_id: string
+          feature: string
+          enabled?: boolean
+          source?: string
+          updated_at?: string
+        }
+        Update: {
+          tenant_id?: string
+          feature?: string
+          enabled?: boolean
+          source?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       tenants: {
         Row: {
           created_at: string
@@ -3165,6 +3189,8 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: number
       }
+      get_my_features: { Args: Record<PropertyKey, never>; Returns: { feature: string }[] }
+      has_feature: { Args: { p_feature: string }; Returns: boolean }
       mark_notification_read: {
         Args: { _notification_id: string }
         Returns: undefined
