@@ -273,6 +273,19 @@ export function DocumentEditor({
   });
 
   const { data: parties = [] } = useFkOptions(cfg.partyTable);
+
+  type DocumentHeader = Record<string, string | number | null | undefined>;
+  const [header, setHeader] = useState<DocumentHeader>({
+    number: "",
+    [cfg.partyField]: "",
+    [cfg.dateField]: new Date().toISOString().slice(0, 10),
+    ...(cfg.extraDate ? { [cfg.extraDate.field]: "" } : {}),
+    currency: "USD",
+    notes: "",
+    status: cfg.statuses[0],
+  });
+  const [lines, setLines] = useState<Line[]>([]);
+
   const selectedCustomerId =
     kind === "quote" || kind === "order" || kind === "invoice" ? header.customer_id || null : null;
   const { data: selectedCustomer } = useQuery({
@@ -308,19 +321,8 @@ export function DocumentEditor({
     staleTime: 30_000,
   });
 
-  type DocumentHeader = Record<string, string | number | null | undefined>;
-  const [header, setHeader] = useState<DocumentHeader>({
-    number: "",
-    [cfg.partyField]: "",
-    [cfg.dateField]: new Date().toISOString().slice(0, 10),
-    ...(cfg.extraDate ? { [cfg.extraDate.field]: "" } : {}),
-    currency: "USD",
-    notes: "",
-    status: cfg.statuses[0],
-  });
   const canWrite = canWriteBase && !doc?.posted_at && header.status !== "Voided";
   const canVoid = !!doc?.posted_at && !!voidPermission && can(voidPermission);
-  const [lines, setLines] = useState<Line[]>([]);
 
   useEffect(() => {
     if (doc) setHeader(doc as unknown as DocumentHeader);
