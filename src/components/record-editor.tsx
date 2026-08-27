@@ -15,20 +15,43 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ArrowLeft, Loader2, Save } from "lucide-react";
 import type { FieldDef } from "@/components/data-module-page";
 
-function FkField({ field, value, onChange, disabled }: { field: FieldDef; value: any; onChange: (v: string) => void; disabled?: boolean }) {
+function FkField({
+  field,
+  value,
+  onChange,
+  disabled,
+}: {
+  field: FieldDef;
+  value: any;
+  onChange: (v: string) => void;
+  disabled?: boolean;
+}) {
   const { data: options = [] } = useFkOptions(field.fkTable!, field.fkLabel ?? "name");
   return (
     <Select value={value ?? ""} onValueChange={onChange} disabled={disabled}>
-      <SelectTrigger><SelectValue placeholder={`Select ${field.label.toLowerCase()}…`} /></SelectTrigger>
+      <SelectTrigger>
+        <SelectValue placeholder={`Select ${field.label.toLowerCase()}…`} />
+      </SelectTrigger>
       <SelectContent>
-        {options.map((o: any) => <SelectItem key={o.id} value={o.id}>{o[field.fkLabel ?? "name"]}</SelectItem>)}
+        {options.map((o: any) => (
+          <SelectItem key={o.id} value={o.id}>
+            {o[field.fkLabel ?? "name"]}
+          </SelectItem>
+        ))}
       </SelectContent>
     </Select>
   );
 }
 
 export function RecordEditor({
-  id, table, fields, entityLabel, listHref, titleKey = "name", writeRoles, permissionModule,
+  id,
+  table,
+  fields,
+  entityLabel,
+  listHref,
+  titleKey = "name",
+  writeRoles,
+  permissionModule,
 }: {
   id: string;
   table: string;
@@ -41,27 +64,43 @@ export function RecordEditor({
 }) {
   const qc = useQueryClient();
   const nav = useNavigate();
-  const { tenant, hasRole, can } = useAuth();
+  const { tenant, canAny } = useAuth();
   const inferredModule: Record<string, string> = {
-    customers: "crm", sales_quotes: "sales", sales_orders: "sales", invoices: "sales",
-    credit_notes: "sales", suppliers: "purchasing", purchase_orders: "purchasing",
-    purchase_requisitions: "purchasing", bills: "purchasing", expenses: "purchasing",
-    payments_received: "payments", payments_made: "payments", items: "inventory",
-    warehouses: "inventory", inventory_adjustments: "inventory", inventory_transfers: "inventory",
-    production_orders: "manufacturing", bom_headers: "manufacturing", chart_of_accounts: "accounting",
-    journal_entries: "accounting", bank_accounts: "banking",
+    customers: "crm",
+    sales_quotes: "sales",
+    sales_orders: "sales",
+    invoices: "sales",
+    credit_notes: "sales",
+    suppliers: "purchasing",
+    purchase_orders: "purchasing",
+    purchase_requisitions: "purchasing",
+    bills: "purchasing",
+    expenses: "purchasing",
+    payments_received: "payments",
+    payments_made: "payments",
+    items: "inventory",
+    warehouses: "inventory",
+    inventory_adjustments: "inventory",
+    inventory_transfers: "inventory",
+    production_orders: "manufacturing",
+    bom_headers: "manufacturing",
+    chart_of_accounts: "accounting",
+    journal_entries: "accounting",
+    bank_accounts: "banking",
   };
   const moduleName = permissionModule ?? inferredModule[table];
-  const canWrite = moduleName
-    ? can([`${moduleName}.create`, `${moduleName}.update`])
-    : hasRole((writeRoles ?? ["tenant_admin", "super_admin", "sales"]) as any);
+  const canWrite = moduleName ? canAny(moduleName as any, ["create", "update"]) : false;
   const isNew = id === "new";
 
   const { data: record, isLoading } = useQuery({
     queryKey: [table, "record", id],
     enabled: !isNew,
     queryFn: async () => {
-      const { data, error } = await supabase.from(table as any).select("*").eq("id", id).maybeSingle();
+      const { data, error } = await supabase
+        .from(table as any)
+        .select("*")
+        .eq("id", id)
+        .maybeSingle();
       if (error) throw error;
       return data as any;
     },
@@ -71,7 +110,9 @@ export function RecordEditor({
     Object.fromEntries(fields.map((f) => [f.key, f.defaultValue ?? (f.type === "number" ? 0 : "")])),
   );
 
-  useEffect(() => { if (record) setValues(record); }, [record]);
+  useEffect(() => {
+    if (record) setValues(record);
+  }, [record]);
 
   const set = (k: string, v: any) => setValues((p) => ({ ...p, [k]: v }));
 
@@ -89,11 +130,18 @@ export function RecordEditor({
         payload[f.key] = v;
       }
       if (isNew) {
-        const { data, error } = await supabase.from(table as any).insert({ ...payload, tenant_id: tenant.id }).select("id").single();
+        const { data, error } = await supabase
+          .from(table as any)
+          .insert({ ...payload, tenant_id: tenant.id })
+          .select("id")
+          .single();
         if (error) throw error;
         return (data as any).id as string;
       }
-      const { error } = await supabase.from(table as any).update(payload).eq("id", id);
+      const { error } = await supabase
+        .from(table as any)
+        .update(payload)
+        .eq("id", id);
       if (error) throw error;
       return id;
     },
@@ -106,7 +154,11 @@ export function RecordEditor({
   });
 
   if (!isNew && isLoading) {
-    return <div className="p-8 flex items-center gap-2 text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> Loading…</div>;
+    return (
+      <div className="p-8 flex items-center gap-2 text-muted-foreground">
+        <Loader2 className="h-4 w-4 animate-spin" /> Loading…
+      </div>
+    );
   }
 
   const textFields = fields.filter((f) => f.type !== "textarea");
@@ -116,18 +168,25 @@ export function RecordEditor({
     <div className="flex flex-col gap-4 p-4 md:p-6 w-full">
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-3 min-w-0">
-          <Button variant="ghost" size="sm" onClick={() => nav({ to: listHref as any })}><ArrowLeft className="h-4 w-4 mr-1" /> Back</Button>
+          <Button variant="ghost" size="sm" onClick={() => nav({ to: listHref as any })}>
+            <ArrowLeft className="h-4 w-4 mr-1" /> Back
+          </Button>
           <div className="min-w-0">
             <div className="flex items-center gap-2">
-              <h1 className="text-xl font-semibold truncate">{isNew ? `New ${entityLabel}` : values[titleKey] || entityLabel}</h1>
+              <h1 className="text-xl font-semibold truncate">
+                {isNew ? `New ${entityLabel}` : values[titleKey] || entityLabel}
+              </h1>
               {values.status && <Badge variant="secondary">{values.status}</Badge>}
             </div>
-            <p className="text-xs text-muted-foreground mt-0.5">{isNew ? `Create a new ${entityLabel.toLowerCase()} record` : `${entityLabel} details`}</p>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {isNew ? `Create a new ${entityLabel.toLowerCase()} record` : `${entityLabel} details`}
+            </p>
           </div>
         </div>
         {canWrite && (
           <Button size="sm" disabled={save.isPending} onClick={() => save.mutate()}>
-            {save.isPending ? <Loader2 className="h-4 w-4 mr-1.5 animate-spin" /> : <Save className="h-4 w-4 mr-1.5" />} Save
+            {save.isPending ? <Loader2 className="h-4 w-4 mr-1.5 animate-spin" /> : <Save className="h-4 w-4 mr-1.5" />}{" "}
+            Save
           </Button>
         )}
       </div>
@@ -135,11 +194,22 @@ export function RecordEditor({
       <Card className="p-4 grid grid-cols-1 md:grid-cols-3 gap-4">
         {textFields.map((f) => (
           <div key={f.key} className="grid gap-1.5">
-            <Label>{f.label}{f.required && <span className="text-destructive"> *</span>}</Label>
+            <Label>
+              {f.label}
+              {f.required && <span className="text-destructive"> *</span>}
+            </Label>
             {f.type === "select" ? (
               <Select value={values[f.key] ?? ""} onValueChange={(v) => set(f.key, v)} disabled={!canWrite}>
-                <SelectTrigger><SelectValue placeholder="Select…" /></SelectTrigger>
-                <SelectContent>{(f.options ?? []).map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}</SelectContent>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select…" />
+                </SelectTrigger>
+                <SelectContent>
+                  {(f.options ?? []).map((o) => (
+                    <SelectItem key={o} value={o}>
+                      {o}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
               </Select>
             ) : f.type === "fk" ? (
               <FkField field={f} value={values[f.key]} onChange={(v) => set(f.key, v)} disabled={!canWrite} />
@@ -161,7 +231,12 @@ export function RecordEditor({
           {longFields.map((f) => (
             <div key={f.key} className="grid gap-1.5">
               <Label>{f.label}</Label>
-              <Textarea rows={4} value={values[f.key] ?? ""} onChange={(e) => set(f.key, e.target.value)} disabled={!canWrite} />
+              <Textarea
+                rows={4}
+                value={values[f.key] ?? ""}
+                onChange={(e) => set(f.key, e.target.value)}
+                disabled={!canWrite}
+              />
             </div>
           ))}
         </Card>
