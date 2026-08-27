@@ -1,19 +1,17 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { DataModulePage } from "@/components/data-module-page";
+import { DocumentViewWindow } from "@/components/document-view-window";
 import { salesQuoteFields } from "@/lib/module-schemas";
 
 export const Route = createFileRoute("/_authenticated/sales/quotes/")({
   component: () => (
-    <DataModulePage
+    <DocumentViewWindow
+      kind="quote"
       title="Quotes"
       description="Prepare and send price quotes to customers."
       table="sales_quotes"
       fields={salesQuoteFields}
-      entityLabel="Quote"
-      attachments={true}
       searchColumn="number"
-      rowHref={(r) => `/sales/quotes/${r.id}`}
-      createHref="/sales/quotes/new"
+      filters={[{ key: "status", label: "Status", options: salesQuoteFields.find((f) => f.key === "status")?.options ?? [] }, { key: "currency", label: "Currency", options: ["USD","EUR","GBP","KES","AED","EGP","INR","ZAR"] }]}
     />
   ),
 });
