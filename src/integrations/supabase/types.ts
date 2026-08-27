@@ -3144,6 +3144,7 @@ export type Database = {
       Relationships: []
     }
     Functions: {
+      get_sales_dashboard: { Args: Record<PropertyKey, never>; Returns: Json }
       record_business_event: {
         Args: { _action: string; _entity_id?: string | null; _entity_type: string; _metadata?: Json; _new_values?: Json | null; _old_values?: Json | null }
         Returns: string
