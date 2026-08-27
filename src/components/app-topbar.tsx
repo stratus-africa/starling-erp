@@ -19,7 +19,7 @@ import { useMemo } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { TenantSwitcher } from "./tenant-switcher";
 import { GlobalSearch } from "./global-search";
-//import { NotificationCenter } from "./notification-center";
+import { NotificationCenter } from "./notification-center";
 
 function useBreadcrumbs() {
   const pathname = useRouterState({ select: (r) => r.location.pathname });
