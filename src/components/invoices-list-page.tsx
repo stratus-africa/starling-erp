@@ -199,10 +199,10 @@ function PaymentSummaryBar({ rows, currency, kind }: { rows: any[]; currency: st
   return (
     <div className="mx-6 mt-3 mb-1 rounded-lg border bg-muted/30 px-5 py-3">
       <p className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Payment Summary</p>
-      <div className="flex items-start justify-between gap-4">
+      <div className="grid gap-0" style={{ gridTemplateColumns: `repeat(${stats.length}, 1fr)` }}>
         {stats.map((s, i) => (
-          <div key={i} className="flex flex-1 flex-col gap-0.5 min-w-0">
-            <span className="text-[11px] text-muted-foreground whitespace-nowrap">{s.label}</span>
+          <div key={i} className={`flex flex-col gap-0.5 pr-4 ${i > 0 ? "border-l pl-4" : ""}`}>
+            <span className="text-[11px] text-muted-foreground">{s.label}</span>
             <span
               className={`font-mono text-sm tabular-nums ${
                 s.bold ? "font-semibold text-foreground" : ""
