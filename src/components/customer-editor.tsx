@@ -18,7 +18,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft, History, Loader2, Save, User2 } from "lucide-react";
 import type { FieldDef } from "@/components/data-module-page";
-import { CustomerSchema, formatZodError } from "@/lib/module-schemas";
+import { CustomerSchema, formatZodError } from "from "@/lib/module-validation-schemas"";
 
 const money = (v: any, currency = "USD") =>
   v == null
