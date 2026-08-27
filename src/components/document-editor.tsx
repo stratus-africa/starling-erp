@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -26,6 +27,7 @@ import {
   Truck,
   Package as PackageIcon,
   CheckCircle2,
+  Ban,
 } from "lucide-react";
 import { useFkOptions } from "@/hooks/use-module-data";
 import { RecordPaymentDialog } from "@/components/record-payment-dialog";
@@ -211,22 +213,25 @@ export function DocumentEditor({
   const cfg = CFG[kind];
   const qc = useQueryClient();
   const nav = useNavigate();
-  const { tenant, user, profile, can, canAny } = useAuth();
+  const { tenant, user, profile, hasRole, can } = useAuth();
   const writeRoles: string[] =
     kind === "po" || kind === "bill" || kind === "requisition"
       ? ["tenant_admin", "super_admin", "purchasing"]
       : ["tenant_admin", "super_admin", "sales", "accounting"];
   const permissionModule = kind === "po" || kind === "bill" || kind === "requisition" ? "purchasing" : "sales";
-  const canWrite =
-    canAny(permissionModule as any, ["create", "update"]) ||
-    (permissionModule === "sales" && canAny("accounting", ["create", "update"]));
-  const canPost =
-    kind === "invoice" || kind === "credit_note"
-      ? can("sales", "accounting_post")
-      : kind === "bill"
-        ? can("purchasing", "post") || can("accounting", "post")
-        : false;
-  const canRecordPayment = can("payments", "create") || can("payments", "post");
+  const canWriteBase = can([
+    `${permissionModule}.create`,
+    `${permissionModule}.update`,
+    ...(permissionModule === "sales" ? ["accounting.create", "accounting.update"] : []),
+  ]) || hasRole(writeRoles as any);
+  const canPost = kind === "invoice" || kind === "credit_note"
+    ? can("sales.accounting_post")
+    : kind === "bill"
+      ? can(["purchasing.post", "accounting.post"])
+      : false;
+  const canRecordPayment = can(["payments.create", "payments.post"]);
+  const voidPermission = kind === "invoice" || kind === "credit_note" ? "sales.void" : kind === "bill" ? "purchasing.void" : null;
+  const [voidOpen, setVoidOpen] = useState(false);
   const isNew = id === "new";
   const [payOpen, setPayOpen] = useState(false);
   const [emailOpen, setEmailOpen] = useState(false);
@@ -309,6 +314,8 @@ export function DocumentEditor({
     notes: "",
     status: cfg.statuses[0],
   });
+  const canWrite = canWriteBase && !doc?.posted_at && header.status !== "Voided";
+  const canVoid = !!doc?.posted_at && !!voidPermission && can(voidPermission);
   const [lines, setLines] = useState<Line[]>([]);
 
   useEffect(() => {
@@ -372,6 +379,7 @@ export function DocumentEditor({
   const save = useMutation({
     mutationFn: async () => {
       if (!tenant?.id) throw new Error("No tenant");
+      if (!isNew && doc?.posted_at) throw new Error("Posted documents are locked. Use Void & Reverse instead.");
       if (cfg.partyRequired !== false && !header[cfg.partyField])
         throw new Error(`Please select a ${cfg.partyLabel.toLowerCase()}`);
 
@@ -493,8 +501,29 @@ export function DocumentEditor({
     onError: (e: any) => toast.error(e.message ?? "Action failed"),
   });
 
+  const voidDocument = useMutation({
+    mutationFn: async () => {
+      if (!voidPermission) throw new Error("This document type cannot be reversed");
+      const { data, error } = await (supabase as any).rpc("void_posted_document", {
+        _entity_type: kind,
+        _entity_id: id,
+        _permission: voidPermission,
+        _reason: `Voided ${cfg.label}`
+      });
+      if (error) throw error;
+      return data as string;
+    },
+    onSuccess: () => {
+      setVoidOpen(false);
+      setHeader((h: any) => ({ ...h, status: "Voided" }));
+      toast.success(`${cfg.label} voided and reversed`);
+      qc.invalidateQueries();
+    },
+    onError: (e: any) => toast.error(e.message ?? "Void failed"),
+  });
+
   const isReq = kind === "requisition";
-  const canApprove = can("purchasing", "post");
+  const canApprove = hasRole(["tenant_admin", "super_admin", "purchasing"] as any);
   const reqApproved = header.status === "Approved" || header.status === "Ordered";
 
   const setReqStatus = useMutation({
@@ -843,8 +872,13 @@ export function DocumentEditor({
               <DollarSign className="h-4 w-4 mr-1.5" /> Record Payment
             </Button>
           )}
+          {canVoid && (
+            <Button variant="destructive" size="sm" onClick={() => setVoidOpen(true)} disabled={voidDocument.isPending}>
+              <Ban className="h-4 w-4 mr-1.5" /> Void & Reverse
+            </Button>
+          )}
           {canWrite && (
-            <Button size="sm" disabled={save.isPending} onClick={() => save.mutate()}>
+            <Button size="sm" disabled={save.isPending || !!doc?.posted_at} onClick={() => save.mutate()}>
               {save.isPending ? (
                 <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
               ) : (
@@ -1299,6 +1333,23 @@ export function DocumentEditor({
       )}
 
       {!isNew && (
+        <AlertDialog open={voidOpen} onOpenChange={setVoidOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Void and reverse this {cfg.label.toLowerCase()}?</AlertDialogTitle>
+              <AlertDialogDescription>
+                The original posted document will remain unchanged for audit purposes. NimbusERP will create a balanced reversal journal and inverse inventory movements, then mark the original document as Voided.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={() => voidDocument.mutate()} disabled={voidDocument.isPending}>
+                {voidDocument.isPending ? "Reversing…" : "Void & Reverse"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
         <PostingDetailsDrawer
           open={postOpen}
           onOpenChange={setPostOpen}
