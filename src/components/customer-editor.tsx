@@ -18,6 +18,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft, History, Loader2, Save, User2 } from "lucide-react";
 import type { FieldDef } from "@/components/data-module-page";
+import { CustomerSchema, formatZodError } from "@/lib/module-schemas";
 
 const money = (v: any, currency = "USD") =>
   v == null
@@ -225,8 +226,8 @@ function AuditTrail({ customerId }: { customerId: string }) {
 export function CustomerEditor({ id, fields }: { id: string; fields: FieldDef[] }) {
   const qc = useQueryClient();
   const nav = useNavigate();
-  const { tenant, can } = useAuth();
-  const canWrite = can("crm", "create") || can("crm", "update");
+  const { tenant, hasRole } = useAuth();
+  const canWrite = hasRole(["tenant_admin", "super_admin", "sales"]);
   const isNew = id === "new";
 
   const { data: record, isLoading } = useQuery({
@@ -292,19 +293,16 @@ export function CustomerEditor({ id, fields }: { id: string; fields: FieldDef[] 
         if (v === "") v = null;
         payload[f.key] = v;
       }
+      const validated = CustomerSchema.safeParse({ ...payload, tenant_id: tenant.id });
+      if (!validated.success) throw new Error(formatZodError(validated.error));
+
       if (isNew) {
-        const { data, error } = await supabase
-          .from("customers")
-          .insert({ ...payload, tenant_id: tenant.id } as any)
-          .select("id")
-          .single();
+        const { data, error } = await supabase.from("customers").insert(validated.data).select("id").single();
         if (error) throw error;
-        return (data as any).id as string;
+        return data.id;
       }
-      const { error } = await supabase
-        .from("customers")
-        .update(payload as any)
-        .eq("id", id);
+      const { tenant_id: _tenantId, ...customerUpdate } = validated.data;
+      const { error } = await supabase.from("customers").update(customerUpdate).eq("id", id);
       if (error) throw error;
       return id;
     },
