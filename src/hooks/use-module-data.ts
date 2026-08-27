@@ -10,15 +10,19 @@ export interface ListOpts {
   orderAsc?: boolean;
   page?: number;
   pageSize?: number;
+  filters?: Record<string, string | undefined>;
 }
 
 export function useModuleList(table: string, opts: ListOpts = {}) {
-  const { search, searchColumn = "name", orderBy = "created_at", orderAsc = false, page = 1, pageSize = 25 } = opts;
+  const { search, searchColumn = "name", orderBy = "created_at", orderAsc = false, page = 1, pageSize = 25, filters } = opts;
   return useQuery({
-    queryKey: [table, "list", { search, searchColumn, orderBy, orderAsc, page, pageSize }],
+    queryKey: [table, "list", { search, searchColumn, orderBy, orderAsc, page, pageSize, filters }],
     queryFn: async () => {
       let q = supabase.from(table as any).select("*", { count: "exact" }).is("deleted_at", null);
       if (search && search.trim()) q = q.ilike(searchColumn, `%${search.trim()}%`);
+      for (const [k, v] of Object.entries(filters ?? {})) {
+        if (v != null && v !== "" && v !== "all") q = q.eq(k, v);
+      }
       q = q.order(orderBy, { ascending: orderAsc }).range((page - 1) * pageSize, page * pageSize - 1);
       const { data, error, count } = await q;
       if (error) throw error;
