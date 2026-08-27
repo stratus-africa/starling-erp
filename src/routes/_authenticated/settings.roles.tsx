@@ -6,7 +6,8 @@ import { Layers, ArrowRight } from "lucide-react";
 const ROLE_MATRIX: { role: string; description: string; modules: string[] }[] = [
   { role: "super_admin",    description: "Platform-wide access. Can switch tenants and view all audit logs.", modules: ["Everything"] },
   { role: "tenant_admin",   description: "Full access within the tenant. Manages users, roles, and settings.", modules: ["Everything in tenant"] },
-  { role: "sales",          description: "CRM, quotes, sales orders, invoices, payments received.", modules: ["CRM","Sales"] },
+  { role: "sales",          description: "CRM, quotes, sales orders, invoices, payments received.", modules: ["CRM","Sales","Payments"] },
+  { role: "cashier",        description: "POS sales, sales accounting posting, and customer payments.", modules: ["POS","Sales posting","Payments"] },
   { role: "purchasing",     description: "Suppliers, purchase orders, bills, payments made.", modules: ["Purchasing"] },
   { role: "inventory",      description: "Items, warehouses, adjustments, transfers.", modules: ["Inventory"] },
   { role: "accounting",     description: "Chart of accounts, banking, manual journals, reconciliation.", modules: ["Accounting"] },
@@ -20,7 +21,7 @@ function RolesPage() {
       <div>
         <h1 className="text-2xl font-semibold tracking-tight flex items-center gap-2"><Layers className="h-5 w-5" /> Roles & Permissions</h1>
         <p className="text-sm text-muted-foreground mt-0.5">
-          Roles are enforced server-side by Supabase RLS via <span className="font-mono text-xs">has_role()</span> and per-table policies.
+          Roles are enforced server-side through centralized permissions, protected RPCs, and Supabase RLS. The UI only mirrors those permissions for usability.
           Assign roles to users on the <Link to="/settings/users" className="text-primary underline">Users</Link> screen.
         </p>
       </div>

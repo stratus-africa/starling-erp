@@ -11,7 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Users, ShieldAlert, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
-const ALL_ROLES: AppRole[] = ["tenant_admin","sales","purchasing","inventory","accounting","manufacturing","viewer"];
+const ALL_ROLES: AppRole[] = ["tenant_admin","sales","cashier","purchasing","inventory","accounting","manufacturing","viewer"];
 
 function UsersPage() {
   const { hasRole, tenant, roles } = useAuth();
