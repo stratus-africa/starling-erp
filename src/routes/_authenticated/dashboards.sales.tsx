@@ -1,46 +1,19 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { RoleDashboard, makeChart } from "@/components/role-dashboard";
-import { useSalesDashboard } from "@/hooks/use-sales-dashboard";
-import { DollarSign, FileText, Plus, Receipt, ShoppingCart, Wallet } from "lucide-react";
+import { TrendingUp, DollarSign, FileText, Receipt, Wallet, Plus, ShoppingCart } from "lucide-react";
 
-const metricIcons = [DollarSign, Wallet, FileText, ShoppingCart, Receipt] as const;
-
-function SalesDashboard() {
-  const { data, isLoading, error } = useSalesDashboard();
-
-  if (isLoading) {
-    return <div className="p-6 text-sm text-muted-foreground">Loading sales dashboard…</div>;
-  }
-
-  if (error || !data) {
-    return <div className="p-6 text-sm text-destructive">Unable to load sales dashboard.</div>;
-  }
-
-  const metrics = data.metrics.map((metric, index) => ({
-    label: metric.label,
-    value:
-      metric.key.includes("sales") || metric.key.includes("receivables")
-        ? new Intl.NumberFormat("en-KE", {
-            style: "currency",
-            currency: "KES",
-            maximumFractionDigits: 0,
-          }).format(metric.value)
-        : metric.value.toLocaleString("en-KE"),
-    icon: metricIcons[index] ?? Receipt,
-    href: metric.href,
-  }));
-
-  const chartData = makeChart(
-    data.trend.map((point) => point.x),
-    data.trend.map((point) => point.a),
-    data.trend.map((point) => point.b),
-  );
-
-  return (
+export const Route = createFileRoute("/_authenticated/dashboards/sales")({
+  component: () => (
     <RoleDashboard
       title="Sales Manager Dashboard"
       subtitle="Pipeline, revenue, and collections at a glance"
-      metrics={metrics}
+      metrics={[
+        { label: "Quotes", value: "38", delta: "+12%", up: true, icon: FileText },
+        { label: "Sales Orders", value: "142", delta: "+8%", up: true, icon: ShoppingCart },
+        { label: "Invoiced MTD", value: "$348,210", delta: "+14%", up: true, icon: Receipt },
+        { label: "Collected", value: "$286,400", delta: "+9%", up: true, icon: Wallet },
+        { label: "Outstanding", value: "$790,200", delta: "-3%", up: true, icon: DollarSign },
+      ]}
       actions={[
         { label: "New Quote", to: "/sales/quotes", icon: Plus },
         { label: "New Invoice", to: "/sales/invoices", icon: Plus },
@@ -48,13 +21,18 @@ function SalesDashboard() {
       ]}
       chart="line"
       chartTitle="Sales Trend — Revenue vs Collections"
-      chartData={chartData}
+      chartData={makeChart(
+        ["W1", "W2", "W3", "W4", "W5", "W6", "W7"],
+        [42, 58, 51, 71, 88, 62, 94],
+        [38, 45, 49, 66, 72, 58, 80],
+      )}
       listTitle="Top Selling Products"
-      list={data.top_products}
+      list={[
+        { primary: "Brake Assembly – Model X", secondary: "128 units · $11,392", status: "▲ 22%", tone: "success" },
+        { primary: "Exhaust Manifold", secondary: "74 units · $8,214", status: "▲ 14%", tone: "success" },
+        { primary: "Cold Rolled Steel 2mm", secondary: "1,820 kg · $3,367", status: "▲ 6%", tone: "info" },
+        { primary: "On-site Installation", secondary: "42 hrs · $1,890", status: "▼ 4%", tone: "warning" },
+      ]}
     />
-  );
-}
-
-export const Route = createFileRoute("/_authenticated/dashboards/sales")({
-  component: SalesDashboard,
+  ),
 });
