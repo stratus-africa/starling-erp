@@ -5,6 +5,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useRouter } from "@tanstack/react-router";
 import type { Permission } from "@/lib/permissions";
 import type { AppRole } from "@/lib/db-types";
+export type { AppRole } from "@/lib/db-types";
 import type { Feature } from "@/lib/features";
 
 export type Profile = import("@/integrations/supabase/types").Tables<"profiles">;
