@@ -17,7 +17,7 @@ const tooltipStyle = {
   },
 };
 
-interface Metric { label: string; value: string; delta?: string; up?: boolean; icon: LucideIcon }
+interface Metric { label: string; value: string; delta?: string; up?: boolean; icon: LucideIcon; href?: string }
 interface Action { label: string; to: string; icon: LucideIcon }
 interface RoleDashboardProps {
   title: string; subtitle: string; metrics: Metric[]; actions: Action[];
@@ -49,7 +49,8 @@ export function RoleDashboard({ title, subtitle, metrics, actions, chart, chartT
 
       <div className={"grid grid-cols-2 gap-3 " + (metrics.length > 4 ? "lg:grid-cols-5" : "lg:grid-cols-4")}>
         {metrics.map((m) => (
-          <Card key={m.label} className="p-4 border shadow-sm">
+          <Card key={m.label} className="p-4 border shadow-sm hover:border-primary/40 transition-colors">
+            {m.href ? <Link to={m.href} className="block"> : null}
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{m.label}</span>
               <div className="h-7 w-7 rounded-md bg-primary/10 text-primary flex items-center justify-center">
@@ -65,6 +66,8 @@ export function RoleDashboard({ title, subtitle, metrics, actions, chart, chartT
                 </span>
               </div>
             )}
+            {m.href && <span className="mt-2 inline-block text-[11px] text-primary">View details →</span>}
+            {m.href ? </Link> : null}
           </Card>
         ))}
       </div>
