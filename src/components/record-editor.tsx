@@ -4,6 +4,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { useFkOptions } from "@/hooks/use-module-data";
+import { fetchRow, insertRow, updateRow } from "@/lib/typed-db";
+import type { TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,6 +16,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft, Loader2, Save } from "lucide-react";
 import type { FieldDef } from "@/components/data-module-page";
+import { schemaByTable, formatZodError } from "@/lib/module-schemas";
 
 function FkField({
   field,
@@ -22,7 +25,7 @@ function FkField({
   disabled,
 }: {
   field: FieldDef;
-  value: any;
+  value: unknown;
   onChange: (v: string) => void;
   disabled?: boolean;
 }) {
@@ -33,11 +36,14 @@ function FkField({
         <SelectValue placeholder={`Select ${field.label.toLowerCase()}…`} />
       </SelectTrigger>
       <SelectContent>
-        {options.map((o: any) => (
-          <SelectItem key={o.id} value={o.id}>
-            {o[field.fkLabel ?? "name"]}
-          </SelectItem>
-        ))}
+        {options.map((o) => {
+          const option = o as unknown as Record<string, string | null>;
+          return (
+            <SelectItem key={option.id} value={option.id ?? ""}>
+              {option[field.fkLabel ?? "name"] ?? option.name ?? ""}
+            </SelectItem>
+          );
+        })}
       </SelectContent>
     </Select>
   );
@@ -64,7 +70,7 @@ export function RecordEditor({
 }) {
   const qc = useQueryClient();
   const nav = useNavigate();
-  const { tenant, canAny } = useAuth();
+  const { tenant, can } = useAuth();
   const inferredModule: Record<string, string> = {
     customers: "crm",
     sales_quotes: "sales",
@@ -89,24 +95,20 @@ export function RecordEditor({
     bank_accounts: "banking",
   };
   const moduleName = permissionModule ?? inferredModule[table];
-  const canWrite = moduleName ? canAny(moduleName as any, ["create", "update"]) : false;
+  const canWrite = moduleName ? can([`${moduleName}.create`, `${moduleName}.update`]) : Boolean(writeRoles?.length);
   const isNew = id === "new";
+
+  const typedTable = table as "expenses" | "suppliers";
 
   const { data: record, isLoading } = useQuery({
     queryKey: [table, "record", id],
     enabled: !isNew,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from(table as any)
-        .select("*")
-        .eq("id", id)
-        .maybeSingle();
-      if (error) throw error;
-      return data as any;
+      return fetchRow(typedTable, id);
     },
   });
 
-  const [values, setValues] = useState<Record<string, any>>(() =>
+  const [values, setValues] = useState<Record<string, unknown>>(() =>
     Object.fromEntries(fields.map((f) => [f.key, f.defaultValue ?? (f.type === "number" ? 0 : "")])),
   );
 
@@ -114,12 +116,12 @@ export function RecordEditor({
     if (record) setValues(record);
   }, [record]);
 
-  const set = (k: string, v: any) => setValues((p) => ({ ...p, [k]: v }));
+  const set = (k: string, v: unknown) => setValues((p) => ({ ...p, [k]: v }));
 
   const save = useMutation({
     mutationFn: async () => {
       if (!tenant?.id) throw new Error("No tenant");
-      const payload: Record<string, any> = {};
+      const payload: Record<string, unknown> = {};
       for (const f of fields) {
         let v = values[f.key];
         if (f.required && (v === "" || v == null)) throw new Error(`${f.label} is required`);
@@ -129,28 +131,25 @@ export function RecordEditor({
         if (v === "") v = null;
         payload[f.key] = v;
       }
+      const schema = schemaByTable[table as keyof typeof schemaByTable];
+      const validated = schema?.safeParse({ ...payload, tenant_id: tenant.id });
+      if (validated && !validated.success) throw new Error(formatZodError(validated.error));
+      const validatedPayload = validated?.success ? validated.data : { ...payload, tenant_id: tenant.id };
+
       if (isNew) {
-        const { data, error } = await supabase
-          .from(table as any)
-          .insert({ ...payload, tenant_id: tenant.id })
-          .select("id")
-          .single();
-        if (error) throw error;
-        return (data as any).id as string;
+        const data = await insertRow(typedTable, validatedPayload as TablesInsert<typeof typedTable>);
+        return data.id;
       }
-      const { error } = await supabase
-        .from(table as any)
-        .update(payload)
-        .eq("id", id);
-      if (error) throw error;
+      const { tenant_id: _tenantId, ...updatePayload } = validatedPayload as Record<string, unknown>;
+      await updateRow(typedTable, id, updatePayload as TablesUpdate<typeof typedTable>);
       return id;
     },
     onSuccess: (newId) => {
       toast.success("Saved");
       qc.invalidateQueries({ queryKey: [table] });
-      if (isNew) nav({ to: `${listHref}/${newId}` as any });
+      if (isNew) nav({ to: `${listHref}/${newId}` as never });
     },
-    onError: (e: any) => toast.error(e.message ?? "Save failed"),
+    onError: (e: Error) => toast.error(e.message ?? "Save failed"),
   });
 
   if (!isNew && isLoading) {
@@ -168,7 +167,7 @@ export function RecordEditor({
     <div className="flex flex-col gap-4 p-4 md:p-6 w-full">
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-3 min-w-0">
-          <Button variant="ghost" size="sm" onClick={() => nav({ to: listHref as any })}>
+          <Button variant="ghost" size="sm" onClick={() => nav({ to: listHref as never })}>
             <ArrowLeft className="h-4 w-4 mr-1" /> Back
           </Button>
           <div className="min-w-0">
