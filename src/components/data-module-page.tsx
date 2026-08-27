@@ -96,7 +96,7 @@ export function DataModulePage(props: DataModulePageProps) {
   const {
     title, description, table, fields, entityLabel, attachments,
     writeRoles = ["tenant_admin"], searchColumn = "name", defaultOrder = "created_at",
-    rowHref, createHref, postAction,
+    rowHref, createHref, postAction, filterFields = [],
   } = props;
 
   const { hasRole } = useAuth();
@@ -109,8 +109,9 @@ export function DataModulePage(props: DataModulePageProps) {
   const pageSize = 25;
   const [orderBy, setOrderBy] = useState(defaultOrder);
   const [orderAsc, setOrderAsc] = useState(false);
+  const [filters, setFilters] = useState<Record<string, string>>({});
 
-  const { data, isLoading } = useModuleList(table, { search, searchColumn, page, pageSize, orderBy, orderAsc });
+  const { data, isLoading } = useModuleList(table, { search, searchColumn, page, pageSize, orderBy, orderAsc, filters });
   const { create, update, remove } = useModuleMutations(table);
 
   const post = useMutation({
