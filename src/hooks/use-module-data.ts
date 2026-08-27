@@ -16,15 +16,7 @@ export interface ListOpts {
 }
 
 export function useModuleList(table: TableName, opts: ListOpts = {}) {
-  const {
-    search,
-    searchColumn = "name",
-    orderBy = "created_at",
-    orderAsc = false,
-    page = 1,
-    pageSize = 25,
-    filters,
-  } = opts;
+  const { search, searchColumn = "name", orderBy = "created_at", orderAsc = false, page = 1, pageSize = 25, filters } = opts;
   return useQuery({
     queryKey: [table, "list", { search, searchColumn, orderBy, orderAsc, page, pageSize, filters }],
     queryFn: async () => {
@@ -51,10 +43,7 @@ export function useModuleMutations<T extends TableName>(table: T) {
       if (!tenant?.id) throw new Error("No tenant");
       return insertRow(table, { ...values, tenant_id: tenant.id } as TablesInsert<T>);
     },
-    onSuccess: () => {
-      toast.success("Created");
-      invalidate();
-    },
+    onSuccess: () => { toast.success("Created"); invalidate(); },
     onError: (e: Error) => toast.error(e.message ?? "Create failed"),
   });
 
@@ -63,10 +52,7 @@ export function useModuleMutations<T extends TableName>(table: T) {
       await updateRow(table, id, values);
       return id;
     },
-    onSuccess: () => {
-      toast.success("Updated");
-      invalidate();
-    },
+    onSuccess: () => { toast.success("Updated"); invalidate(); },
     onError: (e: Error) => toast.error(e.message ?? "Update failed"),
   });
 
@@ -74,10 +60,7 @@ export function useModuleMutations<T extends TableName>(table: T) {
     mutationFn: async (id: string) => {
       await softDeleteRow(table, id);
     },
-    onSuccess: () => {
-      toast.success("Deleted");
-      invalidate();
-    },
+    onSuccess: () => { toast.success("Deleted"); invalidate(); },
     onError: (e: Error) => toast.error(e.message ?? "Delete failed"),
   });
 
@@ -88,11 +71,7 @@ export function useFkOptions<T extends TableName>(table: T, labelCol: string = "
   return useQuery({
     queryKey: [table, "fk-options", labelCol],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from(table)
-        .select(`id, ${labelCol}`)
-        .is("deleted_at", null)
-        .order(labelCol);
+      const { data, error } = await supabase.from(table).select(`id, ${labelCol}`).is("deleted_at", null).order(labelCol);
       if (error) throw error;
       return data ?? [];
     },

@@ -5,6 +5,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useRouter } from "@tanstack/react-router";
 import type { Permission } from "@/lib/permissions";
 import type { AppRole } from "@/lib/db-types";
+import type { Feature } from "@/lib/features";
 
 export type Profile = import("@/integrations/supabase/types").Tables<"profiles">;
 export type Tenant = import("@/integrations/supabase/types").Tables<"tenants">;
@@ -19,10 +20,12 @@ interface AuthCtx {
   loading: boolean;
   hasRole: (r: AppRole | AppRole[]) => boolean;
   can: (permission: Permission | string | Array<Permission | string>) => boolean;
+  hasFeature: (feature: Feature | string) => boolean;
   signOut: () => Promise<void>;
   refresh: () => Promise<void>;
   switchTenant: (tenantId: string) => Promise<void>;
 }
+
 
 const Ctx = createContext<AuthCtx | null>(null);
 
@@ -32,20 +35,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [tenant, setTenant] = useState<Tenant | null>(null);
   const [roles, setRoles] = useState<AppRole[]>([]);
   const [permissions, setPermissions] = useState<string[]>([]);
+  const [features, setFeatures] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const qc = useQueryClient();
   const router = useRouter();
   const navigate = useNavigate();
 
   const loadContext = async (uid: string) => {
-    const [{ data: prof }, { data: rls }, { data: perms }] = await Promise.all([
+    const [{ data: prof }, { data: rls }, { data: perms }, { data: featureRows }] = await Promise.all([
       supabase.from("profiles").select("*").eq("id", uid).maybeSingle(),
       supabase.from("user_roles").select("role").eq("user_id", uid),
       supabase.rpc("get_my_permissions"),
+      supabase.rpc("get_my_features"),
     ]);
     setProfile(prof);
     setRoles((rls ?? []).map((r) => r.role));
     setPermissions((perms ?? []) as string[]);
+    setFeatures((featureRows ?? []).map((row) => row.feature));
     if (prof?.tenant_id) {
       const { data: t } = await supabase.from("tenants").select("*").eq("id", prof.tenant_id).maybeSingle();
       setTenant(t);
@@ -55,16 +61,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const { data: sub } = supabase.auth.onAuthStateChange((event, s) => {
       setSession(s);
-      if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED" && event !== "INITIAL_SESSION")
-        return;
-      if (s?.user) {
-        setTimeout(() => loadContext(s.user.id), 0);
-      } else {
-        setProfile(null);
-        setTenant(null);
-        setRoles([]);
-        setPermissions([]);
-      }
+      if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED" && event !== "INITIAL_SESSION") return;
+      if (s?.user) { setTimeout(() => loadContext(s.user.id), 0); }
+      else { setProfile(null); setTenant(null); setRoles([]); setPermissions([]); setFeatures([]); }
       if (event === "SIGNED_IN" || event === "SIGNED_OUT") router.invalidate();
       if (event !== "SIGNED_OUT" && s?.user) qc.invalidateQueries();
     });
@@ -89,6 +88,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return required.some((p) => permissions.includes(p));
   };
 
+  const hasFeature = (feature: Feature | string) => features.includes(feature);
+
   const signOut = async () => {
     await qc.cancelQueries();
     qc.clear();
@@ -96,9 +97,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     navigate({ to: "/auth", replace: true });
   };
 
-  const refresh = async () => {
-    if (session?.user) await loadContext(session.user.id);
-  };
+  const refresh = async () => { if (session?.user) await loadContext(session.user.id); };
 
   const switchTenant = async (tenantId: string) => {
     const { error } = await supabase.rpc("switch_tenant", { target_tenant: tenantId });
@@ -110,22 +109,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <Ctx.Provider
-      value={{
-        user: session?.user ?? null,
-        session,
-        profile,
-        tenant,
-        roles,
-        permissions,
-        loading,
-        hasRole,
-        can,
-        signOut,
-        refresh,
-        switchTenant,
-      }}
-    >
+    <Ctx.Provider value={{ user: session?.user ?? null, session, profile, tenant, roles, permissions, loading, hasRole, can, hasFeature, signOut, refresh, switchTenant }}>
       {children}
     </Ctx.Provider>
   );
