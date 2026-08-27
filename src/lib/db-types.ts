@@ -1,4 +1,4 @@
-import type { Tables, TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
+import type { Database, Tables, TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
 
 export type Invoice = Tables<"invoices">;
 export type InvoiceInsert = TablesInsert<"invoices">;
