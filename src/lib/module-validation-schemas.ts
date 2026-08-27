@@ -2,12 +2,7 @@ import { z } from "zod";
 
 export const CustomerSchema = z.object({
   name: z.string().trim().min(1, "Customer name is required"),
-  email: z
-    .string()
-    .trim()
-    .email("Invalid email address")
-    .optional()
-    .or(z.literal("")),
+  email: z.string().trim().email("Invalid email address").optional().or(z.literal("")),
   phone: z.string().trim().optional(),
 });
 
@@ -34,6 +29,35 @@ export const StockMovementSchema = z.object({
   quantity: z.coerce.number(),
   movement_type: z.string().min(1, "Movement type is required"),
 });
+
+/**
+ * Validation schema for invoice/order line items.
+ * Used by the document editor before inserting line records.
+ */
+export const InvoiceLineSchema = z.object({
+  line_no: z.coerce.number().int().positive("Line number must be positive"),
+  item_id: z.string().nullable().optional(),
+  description: z.string().trim().optional(),
+  quantity: z.coerce.number().nonnegative("Quantity cannot be negative"),
+  unit_price: z.coerce.number().nonnegative("Unit price cannot be negative"),
+  discount_pct: z.coerce.number().min(0, "Discount cannot be negative").max(100, "Discount cannot exceed 100%"),
+  tax_pct: z.coerce.number().min(0, "Tax cannot be negative"),
+  line_total: z.coerce.number().nonnegative("Line total cannot be negative"),
+});
+
+/**
+ * Validation schemas keyed by the application table name.
+ * Consumers can safely look up a schema; tables without a dedicated
+ * validation schema are intentionally omitted and remain unvalidated here.
+ */
+export const schemaByTable = {
+  customers: CustomerSchema,
+  invoices: InvoiceSchema,
+  purchase_orders: PurchaseOrderSchema,
+  payments_received: PaymentSchema,
+  payments_made: PaymentSchema,
+  stock_movements: StockMovementSchema,
+} as const;
 
 export function formatZodError(error: z.ZodError) {
   return error.issues.reduce<Record<string, string>>((errors, issue) => {
