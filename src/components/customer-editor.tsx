@@ -9,16 +9,18 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Card } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, History, Loader2, Save, User2 } from "lucide-react";
+import { ArrowLeft, History, Loader2, Save, User2, ShoppingCart, Wallet } from "lucide-react";
 import type { FieldDef } from "@/components/data-module-page";
 import { CustomerSchema, formatZodError } from "@/lib/module-validation-schemas";
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const money = (v: any, currency = "USD") =>
   v == null
@@ -27,6 +29,31 @@ const money = (v: any, currency = "USD") =>
 const dateFmt = (v: any) =>
   !v ? "—" : new Date(v).toLocaleDateString(undefined, { day: "2-digit", month: "short", year: "numeric" });
 const dateTimeFmt = (v: any) => (!v ? "—" : new Date(v).toLocaleString());
+
+// Address stored as newline-separated: Line1\nCity\nTown\nCounty\nRegion\nCountry
+const ADDR_KEYS = ["line1", "city", "town", "county", "region", "country"] as const;
+type AddrKey = (typeof ADDR_KEYS)[number];
+const ADDR_LABELS: Record<AddrKey, string> = {
+  line1: "Address Line 1",
+  city: "City",
+  town: "Town",
+  county: "County",
+  region: "Region",
+  country: "Country",
+};
+
+function parseAddress(raw: string | null | undefined): Record<AddrKey, string> {
+  const parts = (raw ?? "").split("\n");
+  return Object.fromEntries(ADDR_KEYS.map((k, i) => [k, parts[i] ?? ""])) as Record<AddrKey, string>;
+}
+
+function serializeAddress(addr: Record<AddrKey, string>): string {
+  return ADDR_KEYS.map((k) => addr[k] ?? "")
+    .join("\n")
+    .replace(/\n+$/, "");
+}
+
+// ─── Sub-components ───────────────────────────────────────────────────────────
 
 function FkField({
   field,
@@ -61,6 +88,47 @@ function FkField({
   );
 }
 
+function AddressBlock({
+  label,
+  addrKey,
+  values,
+  canWrite,
+  onChange,
+}: {
+  label: string;
+  addrKey: "billing_address" | "shipping_address";
+  values: Record<string, any>;
+  canWrite: boolean;
+  onChange: (k: string, v: string) => void;
+}) {
+  const parsed = useMemo(() => parseAddress(values[addrKey]), [values, addrKey]);
+
+  const handleField = (field: AddrKey, val: string) => {
+    const next = { ...parsed, [field]: val };
+    onChange(addrKey, serializeAddress(next));
+  };
+
+  return (
+    <div className="flex flex-col gap-3">
+      <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{label}</h3>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        {ADDR_KEYS.map((k) => (
+          <div key={k} className={k === "line1" ? "sm:col-span-2" : ""}>
+            <Label className="text-xs">{ADDR_LABELS[k]}</Label>
+            <Input
+              className="mt-1 h-8 text-sm"
+              value={parsed[k]}
+              onChange={(e) => handleField(k, e.target.value)}
+              disabled={!canWrite}
+              placeholder={ADDR_LABELS[k]}
+            />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function TransactionAccordion({
   value,
   title,
@@ -92,7 +160,6 @@ function TransactionAccordion({
       return (data ?? []) as any[];
     },
   });
-
   const total = rows.reduce((s, r) => s + Number(r[amountKey] ?? 0), 0);
 
   return (
@@ -176,16 +243,14 @@ function AuditTrail({ customerId }: { customerId: string }) {
       .map((k) => ({ key: k, from: oldD[k], to: newD[k] }));
   };
 
-  if (isLoading) {
+  if (isLoading)
     return (
       <div className="flex items-center gap-2 p-6 text-sm text-muted-foreground">
         <Loader2 className="h-4 w-4 animate-spin" /> Loading audit trail…
       </div>
     );
-  }
-  if (logs.length === 0) {
+  if (logs.length === 0)
     return <div className="p-6 text-sm text-muted-foreground">No changes recorded for this customer yet.</div>;
-  }
 
   return (
     <div className="divide-y">
@@ -223,6 +288,8 @@ function AuditTrail({ customerId }: { customerId: string }) {
   );
 }
 
+// ─── Main Component ───────────────────────────────────────────────────────────
+
 export function CustomerEditor({ id, fields }: { id: string; fields: FieldDef[] }) {
   const qc = useQueryClient();
   const nav = useNavigate();
@@ -237,6 +304,41 @@ export function CustomerEditor({ id, fields }: { id: string; fields: FieldDef[] 
       const { data, error } = await supabase.from("customers").select("*").eq("id", id).maybeSingle();
       if (error) throw error;
       return data as any;
+    },
+  });
+
+  // Orders YTD
+  const ytdStart = new Date(new Date().getFullYear(), 0, 1).toISOString();
+  const { data: ordersYtd } = useQuery({
+    queryKey: ["sales_orders", "ytd", id],
+    enabled: !isNew,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("sales_orders")
+        .select("grand_total, currency")
+        .eq("customer_id", id)
+        .is("deleted_at", null)
+        .gte("date", ytdStart);
+      if (error) return { count: 0, total: 0 };
+      const rows = data ?? [];
+      return {
+        count: rows.length,
+        total: rows.reduce((s, r) => s + Number(r.grand_total ?? 0), 0),
+      };
+    },
+  });
+
+  // Salesperson name lookup
+  const { data: salespersonName } = useQuery({
+    queryKey: ["profiles", "name", record?.salesperson_id],
+    enabled: !!record?.salesperson_id,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("full_name")
+        .eq("id", record.salesperson_id)
+        .maybeSingle();
+      return data?.full_name ?? null;
     },
   });
 
@@ -258,15 +360,10 @@ export function CustomerEditor({ id, fields }: { id: string; fields: FieldDef[] 
     });
   };
 
-  const groups = useMemo(() => {
-    const map = new Map<string, FieldDef[]>();
-    for (const f of fields) {
-      const g = f.group ?? "Details";
-      if (!map.has(g)) map.set(g, []);
-      map.get(g)!.push(f);
-    }
-    return [...map.entries()];
-  }, [fields]);
+  // Fields for the identity / contact section (exclude financial, address, notes)
+  const identityFields = useMemo(() => fields.filter((f) => f.group === "Identity" || f.group === "Contact"), [fields]);
+
+  const financialFields = useMemo(() => fields.filter((f) => f.group === "Financial"), [fields]);
 
   const validateAll = () => {
     const next: Record<string, string> = {};
@@ -293,16 +390,25 @@ export function CustomerEditor({ id, fields }: { id: string; fields: FieldDef[] 
         if (v === "") v = null;
         payload[f.key] = v;
       }
+      // Include address and notes which aren't in fields array
+      payload.billing_address = values.billing_address ?? null;
+      payload.shipping_address = values.shipping_address ?? null;
+      payload.notes = values.notes ?? null;
+
       const validated = CustomerSchema.safeParse({ ...payload, tenant_id: tenant.id });
       if (!validated.success) throw new Error(formatZodError(validated.error));
 
       if (isNew) {
-        const { data, error } = await supabase.from("customers").insert(validated.data).select("id").single();
+        const { data, error } = await supabase
+          .from("customers")
+          .insert(validated.data as any)
+          .select("id")
+          .single();
         if (error) throw error;
         return data.id;
       }
-      const { tenant_id: _tenantId, ...customerUpdate } = validated.data;
-      const { error } = await supabase.from("customers").update(customerUpdate).eq("id", id);
+      const { tenant_id: _tid, ...update } = validated.data as any;
+      const { error } = await supabase.from("customers").update(update).eq("id", id);
       if (error) throw error;
       return id;
     },
@@ -368,6 +474,7 @@ export function CustomerEditor({ id, fields }: { id: string; fields: FieldDef[] 
 
   return (
     <div className="flex w-full flex-col gap-4 p-4 md:p-6">
+      {/* ── Header ── */}
       <div className="flex items-center justify-between gap-3">
         <div className="flex min-w-0 items-center gap-3">
           <Button variant="ghost" size="sm" onClick={() => nav({ to: "/crm/customers" })}>
@@ -398,22 +505,60 @@ export function CustomerEditor({ id, fields }: { id: string; fields: FieldDef[] 
         )}
       </div>
 
+      {/* ── Summary Cards ── */}
       {!isNew && (
         <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-          {[
-            { label: "Outstanding Balance", value: money(values.balance, currency) },
-            { label: "Credit Limit", value: money(values.credit_limit, currency) },
-            { label: "Payment Terms", value: values.payment_terms || "—" },
-            { label: "Currency", value: currency },
-          ].map((k) => (
-            <Card key={k.label} className="p-3">
-              <p className="text-xs text-muted-foreground">{k.label}</p>
-              <p className="mt-1 font-mono text-sm font-medium tabular-nums">{k.value}</p>
-            </Card>
-          ))}
+          {/* Orders YTD */}
+          <Card className="p-4">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-xs text-muted-foreground">Orders YTD</p>
+                <p className="mt-1 font-mono text-lg font-semibold tabular-nums">{money(ordersYtd?.total, currency)}</p>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  {ordersYtd?.count ?? 0} order{(ordersYtd?.count ?? 0) !== 1 ? "s" : ""}
+                </p>
+              </div>
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-500/10 text-blue-500">
+                <ShoppingCart className="h-4 w-4" />
+              </div>
+            </div>
+          </Card>
+
+          {/* Outstanding Balance */}
+          <Card className="p-4">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-xs text-muted-foreground">Outstanding Balance</p>
+                <p
+                  className={`mt-1 font-mono text-lg font-semibold tabular-nums ${Number(values.balance) > 0 ? "text-amber-600" : ""}`}
+                >
+                  {money(values.balance, currency)}
+                </p>
+                <p className="mt-0.5 text-xs text-muted-foreground">Limit: {money(values.credit_limit, currency)}</p>
+              </div>
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-amber-500/10 text-amber-500">
+                <Wallet className="h-4 w-4" />
+              </div>
+            </div>
+          </Card>
+
+          {/* Payment Terms */}
+          <Card className="p-4">
+            <p className="text-xs text-muted-foreground">Payment Terms</p>
+            <p className="mt-1 text-sm font-medium">{values.payment_terms || "—"}</p>
+            <p className="mt-0.5 text-xs text-muted-foreground">Currency: {currency}</p>
+          </Card>
+
+          {/* Salesperson */}
+          <Card className="p-4">
+            <p className="text-xs text-muted-foreground">Salesperson</p>
+            <p className="mt-1 text-sm font-medium truncate">{salespersonName ?? "—"}</p>
+            <p className="mt-0.5 text-xs text-muted-foreground">Industry: {values.industry || "—"}</p>
+          </Card>
         </div>
       )}
 
+      {/* ── Tabs ── */}
       <Tabs defaultValue="details">
         <TabsList>
           <TabsTrigger value="details">Details</TabsTrigger>
@@ -425,16 +570,80 @@ export function CustomerEditor({ id, fields }: { id: string; fields: FieldDef[] 
           </TabsTrigger>
         </TabsList>
 
+        {/* ── Details Tab ── */}
         <TabsContent value="details" className="mt-4 flex flex-col gap-4">
-          {groups.map(([group, groupFields]) => (
-            <Card key={group} className="p-4">
-              <h2 className="text-sm font-semibold">{group}</h2>
-              <Separator className="my-3" />
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-3">{groupFields.map(renderField)}</div>
-            </Card>
-          ))}
+          {/* Identity & Contact */}
+          <Card>
+            <CardHeader className="pb-2 pt-4 px-4">
+              <CardTitle className="text-sm font-semibold">Identity &amp; Contact</CardTitle>
+            </CardHeader>
+            <Separator />
+            <CardContent className="p-4">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-3">{identityFields.map(renderField)}</div>
+            </CardContent>
+          </Card>
+
+          {/* Financial */}
+          <Card>
+            <CardHeader className="pb-2 pt-4 px-4">
+              <CardTitle className="text-sm font-semibold">Financial</CardTitle>
+            </CardHeader>
+            <Separator />
+            <CardContent className="p-4">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                {financialFields
+                  .filter((f) => !["balance"].includes(f.key)) // balance is read-only; shown in cards
+                  .map(renderField)}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Address */}
+          <Card>
+            <CardHeader className="pb-2 pt-4 px-4">
+              <CardTitle className="text-sm font-semibold">Address</CardTitle>
+            </CardHeader>
+            <Separator />
+            <CardContent className="p-4">
+              <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
+                <AddressBlock
+                  label="Billing Address"
+                  addrKey="billing_address"
+                  values={values}
+                  canWrite={canWrite}
+                  onChange={set}
+                />
+                <div className="hidden md:block w-px bg-border self-stretch" />
+                <AddressBlock
+                  label="Shipping Address"
+                  addrKey="shipping_address"
+                  values={values}
+                  canWrite={canWrite}
+                  onChange={set}
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Notes */}
+          <Card>
+            <CardHeader className="pb-2 pt-4 px-4">
+              <CardTitle className="text-sm font-semibold">Notes</CardTitle>
+            </CardHeader>
+            <Separator />
+            <CardContent className="p-4">
+              <Textarea
+                rows={4}
+                placeholder="Internal notes about this customer…"
+                value={values.notes ?? ""}
+                onChange={(e) => set("notes", e.target.value)}
+                disabled={!canWrite}
+              />
+            </CardContent>
+          </Card>
         </TabsContent>
 
+        {/* ── Transactions Tab ── */}
         <TabsContent value="transactions" className="mt-4">
           {!isNew && (
             <Card className="overflow-hidden p-0">
@@ -489,6 +698,7 @@ export function CustomerEditor({ id, fields }: { id: string; fields: FieldDef[] 
           )}
         </TabsContent>
 
+        {/* ── Audit Tab ── */}
         <TabsContent value="audit" className="mt-4">
           {!isNew && (
             <Card className="overflow-hidden p-0">
