@@ -42,3 +42,37 @@ export const PERMISSIONS = {
 } as const;
 
 export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
+
+export type PermissionModule =
+  | "crm"
+  | "sales"
+  | "payments"
+  | "inventory"
+  | "purchasing"
+  | "accounting"
+  | "banking"
+  | "manufacturing"
+  | "reports"
+  | "settings";
+
+export type PermissionAction =
+  | "read"
+  | "create"
+  | "update"
+  | "delete"
+  | "post"
+  | "accounting_post"
+  | "void"
+  | "adjust"
+  | "transfer"
+  | "reconcile"
+  | "export"
+  | "users"
+  | "roles";
+
+export type PermissionKey = `${PermissionModule}.${PermissionAction}`;
+
+export const permission = <M extends PermissionModule, A extends PermissionAction>(
+  module: M,
+  action: A,
+): PermissionKey => `${module}.${action}`;
