@@ -11,11 +11,20 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Users, ShieldAlert, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
-const ALL_ROLES: AppRole[] = ["tenant_admin","sales","cashier","purchasing","inventory","accounting","manufacturing","viewer"];
+const ALL_ROLES: AppRole[] = [
+  "tenant_admin",
+  "sales",
+  "cashier",
+  "purchasing",
+  "inventory",
+  "accounting",
+  "manufacturing",
+  "viewer",
+];
 
 function UsersPage() {
-  const { hasRole, tenant, roles } = useAuth();
-  const allowed = hasRole(["tenant_admin","super_admin"]);
+  const { can, tenant, roles } = useAuth();
+  const allowed = can("settings", "users");
   const isSuper = roles.includes("super_admin");
   const qc = useQueryClient();
   const [pending, setPending] = useState<Record<string, AppRole[]>>({});
@@ -31,7 +40,8 @@ function UsersPage() {
       const byUser = new Map<string, AppRole[]>();
       (userRoles ?? []).forEach((r: any) => {
         const list = byUser.get(r.user_id) ?? [];
-        list.push(r.role); byUser.set(r.user_id, list);
+        list.push(r.role);
+        byUser.set(r.user_id, list);
       });
       return (profiles ?? []).map((p: any) => ({ ...p, roles: byUser.get(p.id) ?? [] }));
     },
@@ -44,20 +54,28 @@ function UsersPage() {
     },
     onSuccess: (_d, v) => {
       toast.success("Roles updated");
-      setPending((p) => { const { [v.userId]: _, ...rest } = p; return rest; });
+      setPending((p) => {
+        const { [v.userId]: _, ...rest } = p;
+        return rest;
+      });
       qc.invalidateQueries({ queryKey: ["tenant", tenant?.id, "users"] });
     },
     onError: (e: any) => toast.error(e.message ?? "Save failed"),
   });
 
-  const rowsWithPending = useMemo(() => users.map((u: any) => ({ ...u, effective: pending[u.id] ?? u.roles })), [users, pending]);
+  const rowsWithPending = useMemo(
+    () => users.map((u: any) => ({ ...u, effective: pending[u.id] ?? u.roles })),
+    [users, pending],
+  );
 
   if (!allowed) {
     return (
-      <div className="p-6"><Card className="p-8 text-center">
-        <ShieldAlert className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-        <p className="text-sm text-muted-foreground">Admin access required.</p>
-      </Card></div>
+      <div className="p-6">
+        <Card className="p-8 text-center">
+          <ShieldAlert className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+          <p className="text-sm text-muted-foreground">Admin access required.</p>
+        </Card>
+      </div>
     );
   }
 
@@ -72,19 +90,40 @@ function UsersPage() {
         <h1 className="text-2xl font-semibold tracking-tight flex items-center gap-2">
           <Users className="h-5 w-5" /> Users & Roles
         </h1>
-        <p className="text-sm text-muted-foreground mt-0.5">Assign roles per user. Changes are enforced by Supabase RLS via <span className="font-mono text-xs">has_role()</span>.</p>
+        <p className="text-sm text-muted-foreground mt-0.5">
+          Assign roles per user. Changes are enforced by Supabase RLS via{" "}
+          <span className="font-mono text-xs">has_role()</span>.
+        </p>
       </div>
 
       <Card className="p-0 overflow-hidden">
         <Table>
-          <TableHeader><TableRow className="bg-muted/20">
-            <TableHead>User</TableHead>
-            {ALL_ROLES.map((r) => <TableHead key={r} className="text-center text-[10px] uppercase tracking-wider">{r.replace("_"," ")}</TableHead>)}
-            <TableHead className="w-24 text-right">Save</TableHead>
-          </TableRow></TableHeader>
+          <TableHeader>
+            <TableRow className="bg-muted/20">
+              <TableHead>User</TableHead>
+              {ALL_ROLES.map((r) => (
+                <TableHead key={r} className="text-center text-[10px] uppercase tracking-wider">
+                  {r.replace("_", " ")}
+                </TableHead>
+              ))}
+              <TableHead className="w-24 text-right">Save</TableHead>
+            </TableRow>
+          </TableHeader>
           <TableBody>
-            {isLoading && <TableRow><TableCell colSpan={ALL_ROLES.length + 2} className="text-center py-8"><Loader2 className="h-4 w-4 animate-spin mx-auto text-muted-foreground" /></TableCell></TableRow>}
-            {!isLoading && rowsWithPending.length === 0 && <TableRow><TableCell colSpan={ALL_ROLES.length + 2} className="text-center py-8 text-sm text-muted-foreground">No users in this tenant.</TableCell></TableRow>}
+            {isLoading && (
+              <TableRow>
+                <TableCell colSpan={ALL_ROLES.length + 2} className="text-center py-8">
+                  <Loader2 className="h-4 w-4 animate-spin mx-auto text-muted-foreground" />
+                </TableCell>
+              </TableRow>
+            )}
+            {!isLoading && rowsWithPending.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={ALL_ROLES.length + 2} className="text-center py-8 text-sm text-muted-foreground">
+                  No users in this tenant.
+                </TableCell>
+              </TableRow>
+            )}
             {rowsWithPending.map((u: any) => {
               const dirty = !!pending[u.id];
               return (
@@ -92,16 +131,31 @@ function UsersPage() {
                   <TableCell>
                     <div className="text-sm font-medium">{u.full_name ?? u.email}</div>
                     <div className="text-xs text-muted-foreground">{u.email}</div>
-                    {u.roles.includes("super_admin") && <Badge variant="secondary" className="mt-1 bg-primary/10 text-primary text-[10px]">super admin</Badge>}
+                    {u.roles.includes("super_admin") && (
+                      <Badge variant="secondary" className="mt-1 bg-primary/10 text-primary text-[10px]">
+                        super admin
+                      </Badge>
+                    )}
                   </TableCell>
                   {ALL_ROLES.map((r) => (
                     <TableCell key={r} className="text-center">
-                      <Checkbox checked={u.effective.includes(r)} onCheckedChange={() => toggleRole(u.id, u.effective, r)} />
+                      <Checkbox
+                        checked={u.effective.includes(r)}
+                        onCheckedChange={() => toggleRole(u.id, u.effective, r)}
+                      />
                     </TableCell>
                   ))}
                   <TableCell className="text-right">
-                    <Button size="sm" disabled={!dirty || save.isPending} onClick={() => save.mutate({ userId: u.id, newRoles: u.effective })}>
-                      {save.isPending && save.variables?.userId === u.id ? <Loader2 className="h-3 w-3 animate-spin" /> : "Save"}
+                    <Button
+                      size="sm"
+                      disabled={!dirty || save.isPending}
+                      onClick={() => save.mutate({ userId: u.id, newRoles: u.effective })}
+                    >
+                      {save.isPending && save.variables?.userId === u.id ? (
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                      ) : (
+                        "Save"
+                      )}
                     </Button>
                   </TableCell>
                 </TableRow>
@@ -111,7 +165,11 @@ function UsersPage() {
         </Table>
       </Card>
 
-      {isSuper && <p className="text-xs text-muted-foreground">You are a super admin. To manage users in another workspace, switch tenants from the top bar first.</p>}
+      {isSuper && (
+        <p className="text-xs text-muted-foreground">
+          You are a super admin. To manage users in another workspace, switch tenants from the top bar first.
+        </p>
+      )}
     </div>
   );
 }

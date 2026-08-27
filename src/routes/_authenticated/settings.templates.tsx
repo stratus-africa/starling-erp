@@ -27,8 +27,8 @@ const PRESETS = ["#1E293B", "#0F766E", "#B45309", "#7C3AED", "#BE123C", "#1D4ED8
 
 function TemplatesPage() {
   const qc = useQueryClient();
-  const { tenant, hasRole } = useAuth();
-  const canWrite = hasRole(["tenant_admin", "super_admin"] as any);
+  const { tenant, can } = useAuth();
+  const canWrite = can("settings", "roles");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [draft, setDraft] = useState<any>(null);
 
@@ -52,7 +52,9 @@ function TemplatesPage() {
     [templates, selectedId],
   );
 
-  useEffect(() => { if (current) setDraft({ ...current }); }, [current?.id, current?.updated_at]);
+  useEffect(() => {
+    if (current) setDraft({ ...current });
+  }, [current?.id, current?.updated_at]);
 
   const save = useMutation({
     mutationFn: async () => {
@@ -67,40 +69,62 @@ function TemplatesPage() {
         applies_to: draft.applies_to ?? [],
         is_default: !!draft.is_default,
       };
-      const { error } = await supabase.from("document_templates" as any).update(payload).eq("id", draft.id);
+      const { error } = await supabase
+        .from("document_templates" as any)
+        .update(payload)
+        .eq("id", draft.id);
       if (error) throw error;
       if (payload.is_default) {
-        await supabase.from("document_templates" as any).update({ is_default: false }).neq("id", draft.id);
+        await supabase
+          .from("document_templates" as any)
+          .update({ is_default: false })
+          .neq("id", draft.id);
       }
     },
-    onSuccess: () => { toast.success("Template saved"); qc.invalidateQueries({ queryKey: ["document_templates"] }); },
+    onSuccess: () => {
+      toast.success("Template saved");
+      qc.invalidateQueries({ queryKey: ["document_templates"] });
+    },
     onError: (e: any) => toast.error(e.message ?? "Save failed"),
   });
 
   const create = useMutation({
     mutationFn: async () => {
       if (!tenant?.id) throw new Error("No workspace");
-      const { data, error } = await supabase.from("document_templates" as any).insert({
-        tenant_id: tenant.id,
-        name: "New template",
-        accent_color: "#1E293B",
-        show_logo: true,
-        applies_to: KINDS.map((k) => k.key),
-        is_default: templates.length === 0,
-      }).select("id").single();
+      const { data, error } = await supabase
+        .from("document_templates" as any)
+        .insert({
+          tenant_id: tenant.id,
+          name: "New template",
+          accent_color: "#1E293B",
+          show_logo: true,
+          applies_to: KINDS.map((k) => k.key),
+          is_default: templates.length === 0,
+        })
+        .select("id")
+        .single();
       if (error) throw error;
       return (data as any).id as string;
     },
-    onSuccess: (id) => { setSelectedId(id); qc.invalidateQueries({ queryKey: ["document_templates"] }); },
+    onSuccess: (id) => {
+      setSelectedId(id);
+      qc.invalidateQueries({ queryKey: ["document_templates"] });
+    },
     onError: (e: any) => toast.error(e.message ?? "Create failed"),
   });
 
   const remove = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("document_templates" as any).update({ deleted_at: new Date().toISOString() }).eq("id", id);
+      const { error } = await supabase
+        .from("document_templates" as any)
+        .update({ deleted_at: new Date().toISOString() })
+        .eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => { setSelectedId(null); qc.invalidateQueries({ queryKey: ["document_templates"] }); },
+    onSuccess: () => {
+      setSelectedId(null);
+      qc.invalidateQueries({ queryKey: ["document_templates"] });
+    },
   });
 
   const branding: PdfBranding = {
@@ -112,22 +136,26 @@ function TemplatesPage() {
     terms: draft?.terms ?? null,
   };
 
-  const preview = () => downloadDocumentPdf({
-    title: "Invoice",
-    number: "INV-PREVIEW",
-    companyName: tenant?.name ?? "Company",
-    partyLabel: "Customer",
-    partyName: "Sample Customer Ltd",
-    currency: "USD",
-    meta: [{ label: "Date", value: new Date().toISOString().slice(0, 10) }, { label: "Status", value: "Draft" }],
-    lines: [
-      { description: "Consulting services", quantity: 10, unitPrice: 150, lineTotal: 1500 },
-      { description: "Implementation support", quantity: 4, unitPrice: 250, lineTotal: 1000 },
-    ],
-    totals: { subtotal: 2500, discount: 0, tax: 400, grandTotal: 2900 },
-    notes: "Thank you for your business.",
-    branding,
-  } as any);
+  const preview = () =>
+    downloadDocumentPdf({
+      title: "Invoice",
+      number: "INV-PREVIEW",
+      companyName: tenant?.name ?? "Company",
+      partyLabel: "Customer",
+      partyName: "Sample Customer Ltd",
+      currency: "USD",
+      meta: [
+        { label: "Date", value: new Date().toISOString().slice(0, 10) },
+        { label: "Status", value: "Draft" },
+      ],
+      lines: [
+        { description: "Consulting services", quantity: 10, unitPrice: 150, lineTotal: 1500 },
+        { description: "Implementation support", quantity: 4, unitPrice: 250, lineTotal: 1000 },
+      ],
+      totals: { subtotal: 2500, discount: 0, tax: 400, grandTotal: 2900 },
+      notes: "Thank you for your business.",
+      branding,
+    } as any);
 
   const toggleKind = (k: string) => {
     const list: string[] = draft.applies_to ?? [];
@@ -138,16 +166,28 @@ function TemplatesPage() {
     <div className="flex flex-col gap-4 p-4 md:p-6">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight flex items-center gap-2"><Palette className="h-5 w-5" /> PDF Templates & Branding</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">Logos, accent colours, address blocks and footer terms applied to your generated documents.</p>
+          <h1 className="text-2xl font-semibold tracking-tight flex items-center gap-2">
+            <Palette className="h-5 w-5" /> PDF Templates & Branding
+          </h1>
+          <p className="text-sm text-muted-foreground mt-0.5">
+            Logos, accent colours, address blocks and footer terms applied to your generated documents.
+          </p>
         </div>
-        {canWrite && <Button size="sm" onClick={() => create.mutate()}><Plus className="h-4 w-4 mr-1.5" /> New template</Button>}
+        {canWrite && (
+          <Button size="sm" onClick={() => create.mutate()}>
+            <Plus className="h-4 w-4 mr-1.5" /> New template
+          </Button>
+        )}
       </div>
 
       {isLoading ? (
-        <div className="p-8 flex items-center gap-2 text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> Loading…</div>
+        <div className="p-8 flex items-center gap-2 text-muted-foreground">
+          <Loader2 className="h-4 w-4 animate-spin" /> Loading…
+        </div>
       ) : templates.length === 0 ? (
-        <Card className="p-10 text-center text-sm text-muted-foreground">No templates yet — create one to start branding your documents.</Card>
+        <Card className="p-10 text-center text-sm text-muted-foreground">
+          No templates yet — create one to start branding your documents.
+        </Card>
       ) : (
         <div className="grid gap-4 lg:grid-cols-[260px_1fr]">
           <Card className="p-2 h-fit">
@@ -169,43 +209,92 @@ function TemplatesPage() {
               <Card className="p-4 grid gap-4 md:grid-cols-2">
                 <div className="grid gap-1.5">
                   <Label>Template name</Label>
-                  <Input value={draft.name ?? ""} onChange={(e) => setDraft({ ...draft, name: e.target.value })} disabled={!canWrite} />
+                  <Input
+                    value={draft.name ?? ""}
+                    onChange={(e) => setDraft({ ...draft, name: e.target.value })}
+                    disabled={!canWrite}
+                  />
                 </div>
                 <div className="grid gap-1.5">
                   <Label>Logo URL</Label>
-                  <Input value={draft.logo_url ?? ""} onChange={(e) => setDraft({ ...draft, logo_url: e.target.value })} placeholder="https://…" disabled={!canWrite} />
+                  <Input
+                    value={draft.logo_url ?? ""}
+                    onChange={(e) => setDraft({ ...draft, logo_url: e.target.value })}
+                    placeholder="https://…"
+                    disabled={!canWrite}
+                  />
                 </div>
                 <div className="grid gap-1.5">
                   <Label>Accent colour</Label>
                   <div className="flex items-center gap-2">
-                    <Input type="color" className="w-14 p-1 h-9" value={draft.accent_color ?? "#1E293B"} onChange={(e) => setDraft({ ...draft, accent_color: e.target.value })} disabled={!canWrite} />
-                    <Input value={draft.accent_color ?? ""} onChange={(e) => setDraft({ ...draft, accent_color: e.target.value })} disabled={!canWrite} />
+                    <Input
+                      type="color"
+                      className="w-14 p-1 h-9"
+                      value={draft.accent_color ?? "#1E293B"}
+                      onChange={(e) => setDraft({ ...draft, accent_color: e.target.value })}
+                      disabled={!canWrite}
+                    />
+                    <Input
+                      value={draft.accent_color ?? ""}
+                      onChange={(e) => setDraft({ ...draft, accent_color: e.target.value })}
+                      disabled={!canWrite}
+                    />
                     <div className="flex gap-1">
                       {PRESETS.map((c) => (
-                        <button key={c} className="h-6 w-6 rounded-sm border" style={{ background: c }} onClick={() => setDraft({ ...draft, accent_color: c })} />
+                        <button
+                          key={c}
+                          className="h-6 w-6 rounded-sm border"
+                          style={{ background: c }}
+                          onClick={() => setDraft({ ...draft, accent_color: c })}
+                        />
                       ))}
                     </div>
                   </div>
                 </div>
                 <div className="flex items-center gap-6 pt-6">
                   <label className="flex items-center gap-2 text-sm">
-                    <Switch checked={!!draft.show_logo} onCheckedChange={(v) => setDraft({ ...draft, show_logo: v })} disabled={!canWrite} /> Show logo
+                    <Switch
+                      checked={!!draft.show_logo}
+                      onCheckedChange={(v) => setDraft({ ...draft, show_logo: v })}
+                      disabled={!canWrite}
+                    />{" "}
+                    Show logo
                   </label>
                   <label className="flex items-center gap-2 text-sm">
-                    <Switch checked={!!draft.is_default} onCheckedChange={(v) => setDraft({ ...draft, is_default: v })} disabled={!canWrite} /> Default template
+                    <Switch
+                      checked={!!draft.is_default}
+                      onCheckedChange={(v) => setDraft({ ...draft, is_default: v })}
+                      disabled={!canWrite}
+                    />{" "}
+                    Default template
                   </label>
                 </div>
                 <div className="grid gap-1.5 md:col-span-2">
                   <Label>Company address block</Label>
-                  <Textarea rows={3} value={draft.company_address ?? ""} onChange={(e) => setDraft({ ...draft, company_address: e.target.value })} disabled={!canWrite} />
+                  <Textarea
+                    rows={3}
+                    value={draft.company_address ?? ""}
+                    onChange={(e) => setDraft({ ...draft, company_address: e.target.value })}
+                    disabled={!canWrite}
+                  />
                 </div>
                 <div className="grid gap-1.5">
                   <Label>Footer text</Label>
-                  <Textarea rows={2} value={draft.footer_text ?? ""} onChange={(e) => setDraft({ ...draft, footer_text: e.target.value })} disabled={!canWrite} />
+                  <Textarea
+                    rows={2}
+                    value={draft.footer_text ?? ""}
+                    onChange={(e) => setDraft({ ...draft, footer_text: e.target.value })}
+                    disabled={!canWrite}
+                  />
                 </div>
                 <div className="grid gap-1.5">
                   <Label>Terms & conditions</Label>
-                  <Textarea rows={2} value={draft.terms ?? ""} onChange={(e) => setDraft({ ...draft, terms: e.target.value })} disabled={!canWrite} />
+                  <Textarea
+                    rows={2}
+                    value={draft.terms ?? ""}
+                    onChange={(e) => setDraft({ ...draft, terms: e.target.value })}
+                    disabled={!canWrite}
+                  />
                 </div>
                 <div className="md:col-span-2 grid gap-1.5">
                   <Label>Applies to</Label>
@@ -213,7 +302,12 @@ function TemplatesPage() {
                     {KINDS.map((k) => {
                       const on = (draft.applies_to ?? []).includes(k.key);
                       return (
-                        <Badge key={k.key} variant={on ? "default" : "outline"} className="cursor-pointer" onClick={() => canWrite && toggleKind(k.key)}>
+                        <Badge
+                          key={k.key}
+                          variant={on ? "default" : "outline"}
+                          className="cursor-pointer"
+                          onClick={() => canWrite && toggleKind(k.key)}
+                        >
                           {k.label}
                         </Badge>
                       );
@@ -232,17 +326,31 @@ function TemplatesPage() {
                         {branding.showLogo && branding.logoUrl ? (
                           <img src={branding.logoUrl} alt="Company logo preview" className="h-10 object-contain mb-2" />
                         ) : (
-                          <div className="text-lg font-semibold" style={{ color: branding.accentColor ?? undefined }}>{tenant?.name ?? "Company"}</div>
+                          <div className="text-lg font-semibold" style={{ color: branding.accentColor ?? undefined }}>
+                            {tenant?.name ?? "Company"}
+                          </div>
                         )}
-                        <div className="text-xs text-muted-foreground whitespace-pre-line mt-1">{branding.companyAddress || "Your company address block"}</div>
+                        <div className="text-xs text-muted-foreground whitespace-pre-line mt-1">
+                          {branding.companyAddress || "Your company address block"}
+                        </div>
                       </div>
                       <div className="text-right">
-                        <div className="text-xl font-bold uppercase tracking-wide" style={{ color: branding.accentColor ?? undefined }}>Invoice</div>
+                        <div
+                          className="text-xl font-bold uppercase tracking-wide"
+                          style={{ color: branding.accentColor ?? undefined }}
+                        >
+                          Invoice
+                        </div>
                         <div className="text-xs text-muted-foreground mt-1">INV-PREVIEW</div>
                       </div>
                     </div>
                     <div className="px-6">
-                      <div className="text-xs uppercase tracking-wide" style={{ color: branding.accentColor ?? undefined }}>Bill To</div>
+                      <div
+                        className="text-xs uppercase tracking-wide"
+                        style={{ color: branding.accentColor ?? undefined }}
+                      >
+                        Bill To
+                      </div>
                       <div className="text-sm font-medium">Sample Customer Ltd</div>
                     </div>
                     <table className="w-full text-sm mt-4">
@@ -253,26 +361,59 @@ function TemplatesPage() {
                         </tr>
                       </thead>
                       <tbody>
-                        <tr className="border-b"><td className="px-6 py-2">Consulting services</td><td className="px-6 py-2 text-right font-mono">1,500.00</td></tr>
-                        <tr className="border-b"><td className="px-6 py-2">Implementation support</td><td className="px-6 py-2 text-right font-mono">1,000.00</td></tr>
+                        <tr className="border-b">
+                          <td className="px-6 py-2">Consulting services</td>
+                          <td className="px-6 py-2 text-right font-mono">1,500.00</td>
+                        </tr>
+                        <tr className="border-b">
+                          <td className="px-6 py-2">Implementation support</td>
+                          <td className="px-6 py-2 text-right font-mono">1,000.00</td>
+                        </tr>
                       </tbody>
                     </table>
-                    <div className="px-6 py-3 flex justify-end text-sm font-semibold" style={{ color: branding.accentColor ?? undefined }}>Total 2,900.00</div>
-                    {branding.terms && <div className="px-6 pb-2 text-xs text-muted-foreground whitespace-pre-line">{branding.terms}</div>}
-                    <div className="px-6 py-3 border-t text-xs text-center text-muted-foreground">{branding.footerText || "Footer text appears here"}</div>
+                    <div
+                      className="px-6 py-3 flex justify-end text-sm font-semibold"
+                      style={{ color: branding.accentColor ?? undefined }}
+                    >
+                      Total 2,900.00
+                    </div>
+                    {branding.terms && (
+                      <div className="px-6 pb-2 text-xs text-muted-foreground whitespace-pre-line">
+                        {branding.terms}
+                      </div>
+                    )}
+                    <div className="px-6 py-3 border-t text-xs text-center text-muted-foreground">
+                      {branding.footerText || "Footer text appears here"}
+                    </div>
                   </div>
                 </div>
               </Card>
 
               <div className="flex items-center justify-between">
                 {canWrite && !draft.is_default ? (
-                  <Button variant="ghost" size="sm" className="text-destructive" onClick={() => remove.mutate(draft.id)}><Trash2 className="h-4 w-4 mr-1.5" /> Delete</Button>
-                ) : <span />}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-destructive"
+                    onClick={() => remove.mutate(draft.id)}
+                  >
+                    <Trash2 className="h-4 w-4 mr-1.5" /> Delete
+                  </Button>
+                ) : (
+                  <span />
+                )}
                 <div className="flex gap-2">
-                  <Button variant="outline" size="sm" onClick={preview}><Printer className="h-4 w-4 mr-1.5" /> Download sample PDF</Button>
+                  <Button variant="outline" size="sm" onClick={preview}>
+                    <Printer className="h-4 w-4 mr-1.5" /> Download sample PDF
+                  </Button>
                   {canWrite && (
                     <Button size="sm" disabled={save.isPending} onClick={() => save.mutate()}>
-                      {save.isPending ? <Loader2 className="h-4 w-4 mr-1.5 animate-spin" /> : <Save className="h-4 w-4 mr-1.5" />} Save template
+                      {save.isPending ? (
+                        <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
+                      ) : (
+                        <Save className="h-4 w-4 mr-1.5" />
+                      )}{" "}
+                      Save template
                     </Button>
                   )}
                 </div>
