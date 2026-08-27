@@ -84,6 +84,13 @@ interface DataModulePageProps {
     label: string;
     showWhen?: (row: any) => boolean;
   };
+  voidAction?: {
+    permission: Permission | string;
+    entityType: string;
+    label?: string;
+    reason?: string;
+    showWhen?: (row: any) => boolean;
+  };
 }
 
 const statusVariant: Record<string, string> = {
@@ -119,12 +126,13 @@ export function DataModulePage(props: DataModulePageProps) {
     rowHref,
     createHref,
     postAction,
+    voidAction,
     filterFields = [],
     permissionModule,
     postPermission,
   } = props;
 
-  const { canAny, can } = useAuth();
+  const { hasRole, can } = useAuth();
   const navigate = useNavigate();
   const qc = useQueryClient();
   const inferredPermissionModule: Record<string, string> = {
@@ -153,12 +161,11 @@ export function DataModulePage(props: DataModulePageProps) {
     bank_accounts: "banking",
   };
   const moduleName = permissionModule ?? inferredPermissionModule[table];
-  const canWrite = moduleName ? canAny(moduleName as any, ["create", "update"]) : false;
-  const postParts = postPermission?.split(".");
-  const canPost =
-    postParts?.length === 2
-      ? can(postParts[0] as any, postParts[1] as any)
-      : !!moduleName && can(moduleName as any, "post");
+  const canWrite = moduleName
+    ? can([`${moduleName}.create`, `${moduleName}.update`])
+    : hasRole(["tenant_admin", "super_admin", ...writeRoles]);
+  const canPost = postPermission ? can(postPermission) : can(`${moduleName}.post`);
+  const canVoid = voidAction ? can(voidAction.permission) : false;
 
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
@@ -180,8 +187,7 @@ export function DataModulePage(props: DataModulePageProps) {
 
   const post = useMutation({
     mutationFn: async (id: string) => {
-      if (postParts?.length === 2 && !can(postParts[0] as any, postParts[1] as any))
-        throw new Error(`Not authorized: ${postPermission}`);
+      if (postPermission && !can(postPermission)) throw new Error(`Not authorized: ${postPermission}`);
       const { error } = await (supabase as any).rpc(postAction!.rpc, { [postAction!.paramName]: id });
       if (error) throw error;
     },
@@ -193,9 +199,32 @@ export function DataModulePage(props: DataModulePageProps) {
     onError: (e: any) => toast.error(e.message ?? "Post failed"),
   });
 
+  const voidDocument = useMutation({
+    mutationFn: async (row: any) => {
+      if (!voidAction || !can(voidAction.permission))
+        throw new Error(`Not authorized: ${voidAction?.permission ?? "void"}`);
+      const { data, error } = await (supabase as any).rpc("void_posted_document", {
+        _entity_type: voidAction.entityType,
+        _entity_id: row.id,
+        _permission: voidAction.permission,
+        _reason: voidAction.reason ?? `Voided ${entityLabel.toLowerCase()}`,
+      });
+      if (error) throw error;
+      return data as string;
+    },
+    onSuccess: () => {
+      toast.success(`${entityLabel} voided and reversed`);
+      setVoidingRow(null);
+      qc.invalidateQueries({ queryKey: [table, "list"] });
+      qc.invalidateQueries({ queryKey: [table] });
+    },
+    onError: (e: any) => toast.error(e.message ?? "Void failed"),
+  });
+
   const [editing, setEditing] = useState<any | null>(null);
   const [creating, setCreating] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [voidingRow, setVoidingRow] = useState<any | null>(null);
 
   const rows = data?.rows ?? [];
   const total = data?.count ?? 0;
@@ -376,11 +405,11 @@ export function DataModulePage(props: DataModulePageProps) {
                         <DropdownMenuContent align="end">
                           {href ? (
                             <DropdownMenuItem onClick={() => navigate({ to: href as any })}>
-                              {canWrite ? "Open" : "View"}
+                              {canWrite && !row.posted_at && row.status !== "Voided" ? "Open" : "View"}
                             </DropdownMenuItem>
                           ) : (
                             <DropdownMenuItem onClick={() => setEditing(row)}>
-                              {canWrite ? "Edit" : "View"}
+                              {canWrite && !row.posted_at && row.status !== "Voided" ? "Edit" : "View"}
                             </DropdownMenuItem>
                           )}
                           {postAction && (!postAction.showWhen || postAction.showWhen(row)) && (
@@ -391,7 +420,16 @@ export function DataModulePage(props: DataModulePageProps) {
                               {postAction.label}
                             </DropdownMenuItem>
                           )}
-                          {canWrite && (
+                          {voidAction &&
+                            canVoid &&
+                            row.posted_at &&
+                            row.status !== "Voided" &&
+                            (!voidAction.showWhen || voidAction.showWhen(row)) && (
+                              <DropdownMenuItem className="text-destructive" onClick={() => setVoidingRow(row)}>
+                                {voidAction.label ?? "Void & Reverse"}
+                              </DropdownMenuItem>
+                            )}
+                          {canWrite && !row.posted_at && row.status !== "Voided" && (
                             <DropdownMenuItem className="text-destructive" onClick={() => setDeletingId(row.id)}>
                               Delete
                             </DropdownMenuItem>
@@ -446,7 +484,7 @@ export function DataModulePage(props: DataModulePageProps) {
         entityLabel={entityLabel}
         entityType={props.entityType ?? table}
         attachments={attachments}
-        canWrite={canWrite}
+        canWrite={canWrite && !(editing?.posted_at || editing?.status === "Voided")}
         onSubmit={async (values) => {
           if (editing) await update.mutateAsync({ id: editing.id, values });
           else await create.mutateAsync(values);
@@ -465,6 +503,28 @@ export function DataModulePage(props: DataModulePageProps) {
         }
         postBusy={post.isPending}
       />
+
+      <AlertDialog open={!!voidingRow} onOpenChange={(o) => !o && setVoidingRow(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Void and reverse this {entityLabel.toLowerCase()}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              The posted document will remain unchanged for audit purposes. A balanced reversal journal and inverse
+              inventory movements will be created, and the original document will be marked Voided.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (voidingRow) voidDocument.mutate(voidingRow);
+              }}
+            >
+              {voidDocument.isPending ? "Reversing…" : "Void & Reverse"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <AlertDialog open={!!deletingId} onOpenChange={(o) => !o && setDeletingId(null)}>
         <AlertDialogContent>
