@@ -64,6 +64,7 @@ interface DataModulePageProps {
   defaultOrder?: string;
   rowHref?: (row: any) => string;
   createHref?: string;
+  filterFields?: { key: string; label: string; options: string[] }[];
   postAction?: {
     rpc: string;
     paramName: string;
