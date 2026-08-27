@@ -5,25 +5,35 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
-} from "@/components/ui/table";
-import {
-  Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle,
-} from "@/components/ui/sheet";
-import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from "@/components/ui/select";
-import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import {
-  Filter, Download, Plus, Search, MoreHorizontal, Loader2, ArrowUpDown,
-  ChevronLeft, ChevronRight,
+  Filter,
+  Download,
+  Plus,
+  Search,
+  MoreHorizontal,
+  Loader2,
+  ArrowUpDown,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { useModuleList, useModuleMutations, useFkOptions } from "@/hooks/use-module-data";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -97,28 +107,58 @@ const statusVariant: Record<string, string> = {
 
 export function DataModulePage(props: DataModulePageProps) {
   const {
-    title, description, table, fields, entityLabel, attachments,
-    writeRoles = ["tenant_admin"], searchColumn = "name", defaultOrder = "created_at",
-    rowHref, createHref, postAction, filterFields = [], permissionModule, postPermission,
+    title,
+    description,
+    table,
+    fields,
+    entityLabel,
+    attachments,
+    writeRoles = ["tenant_admin"],
+    searchColumn = "name",
+    defaultOrder = "created_at",
+    rowHref,
+    createHref,
+    postAction,
+    filterFields = [],
+    permissionModule,
+    postPermission,
   } = props;
 
-  const { hasRole, can } = useAuth();
+  const { canAny, can } = useAuth();
   const navigate = useNavigate();
   const qc = useQueryClient();
   const inferredPermissionModule: Record<string, string> = {
-    customers: "crm", sales_quotes: "sales", sales_orders: "sales", invoices: "sales",
-    credit_notes: "sales", packages: "sales", shipments: "sales", payments_received: "payments",
-    suppliers: "purchasing", purchase_orders: "purchasing", purchase_requisitions: "purchasing",
-    bills: "purchasing", expenses: "purchasing", payments_made: "payments", items: "inventory",
-    warehouses: "inventory", inventory_adjustments: "inventory", inventory_transfers: "inventory",
-    production_orders: "manufacturing", bom_headers: "manufacturing", chart_of_accounts: "accounting",
-    journal_entries: "accounting", bank_accounts: "banking",
+    customers: "crm",
+    sales_quotes: "sales",
+    sales_orders: "sales",
+    invoices: "sales",
+    credit_notes: "sales",
+    packages: "sales",
+    shipments: "sales",
+    payments_received: "payments",
+    suppliers: "purchasing",
+    purchase_orders: "purchasing",
+    purchase_requisitions: "purchasing",
+    bills: "purchasing",
+    expenses: "purchasing",
+    payments_made: "payments",
+    items: "inventory",
+    warehouses: "inventory",
+    inventory_adjustments: "inventory",
+    inventory_transfers: "inventory",
+    production_orders: "manufacturing",
+    bom_headers: "manufacturing",
+    chart_of_accounts: "accounting",
+    journal_entries: "accounting",
+    bank_accounts: "banking",
   };
   const moduleName = permissionModule ?? inferredPermissionModule[table];
-  const canWrite = moduleName
-    ? can([`${moduleName}.create`, `${moduleName}.update`])
-    : hasRole(["tenant_admin", "super_admin", ...writeRoles]);
-  const canPost = postPermission ? can(postPermission) : can(`${moduleName}.post`);
+  const canWrite = moduleName ? canAny(moduleName as any, ["create", "update"]) : false;
+  const postParts = postPermission?.split(".");
+  const canPost =
+    postParts?.length === 2
+      ? can(postParts[0] as any, postParts[1] as any)
+      : !!moduleName && can(moduleName as any, "post");
 
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
@@ -127,16 +167,29 @@ export function DataModulePage(props: DataModulePageProps) {
   const [orderAsc, setOrderAsc] = useState(false);
   const [filters, setFilters] = useState<Record<string, string>>({});
 
-  const { data, isLoading } = useModuleList(table, { search, searchColumn, page, pageSize, orderBy, orderAsc, filters });
+  const { data, isLoading } = useModuleList(table, {
+    search,
+    searchColumn,
+    page,
+    pageSize,
+    orderBy,
+    orderAsc,
+    filters,
+  });
   const { create, update, remove } = useModuleMutations(table);
 
   const post = useMutation({
     mutationFn: async (id: string) => {
-      if (postPermission && !can(postPermission)) throw new Error(`Not authorized: ${postPermission}`);
+      if (postParts?.length === 2 && !can(postParts[0] as any, postParts[1] as any))
+        throw new Error(`Not authorized: ${postPermission}`);
       const { error } = await (supabase as any).rpc(postAction!.rpc, { [postAction!.paramName]: id });
       if (error) throw error;
     },
-    onSuccess: () => { toast.success("Posted"); qc.invalidateQueries({ queryKey: [table, "list"] }); qc.invalidateQueries({ queryKey: [table] }); },
+    onSuccess: () => {
+      toast.success("Posted");
+      qc.invalidateQueries({ queryKey: [table, "list"] });
+      qc.invalidateQueries({ queryKey: [table] });
+    },
     onError: (e: any) => toast.error(e.message ?? "Post failed"),
   });
 
@@ -150,7 +203,10 @@ export function DataModulePage(props: DataModulePageProps) {
 
   const toggleSort = (key: string) => {
     if (orderBy === key) setOrderAsc(!orderAsc);
-    else { setOrderBy(key); setOrderAsc(true); }
+    else {
+      setOrderBy(key);
+      setOrderAsc(true);
+    }
   };
 
   return (
@@ -161,14 +217,21 @@ export function DataModulePage(props: DataModulePageProps) {
           <p className="text-sm text-muted-foreground mt-0.5">{description}</p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm"><Download className="h-4 w-4 mr-1.5" /> Export</Button>
-          {canWrite && (createHref ? (
-            <Button asChild size="sm"><Link to={createHref as any}><Plus className="h-4 w-4 mr-1.5" /> New {entityLabel}</Link></Button>
-          ) : (
-            <Button size="sm" onClick={() => setCreating(true)}>
-              <Plus className="h-4 w-4 mr-1.5" /> New {entityLabel}
-            </Button>
-          ))}
+          <Button variant="outline" size="sm">
+            <Download className="h-4 w-4 mr-1.5" /> Export
+          </Button>
+          {canWrite &&
+            (createHref ? (
+              <Button asChild size="sm">
+                <Link to={createHref as any}>
+                  <Plus className="h-4 w-4 mr-1.5" /> New {entityLabel}
+                </Link>
+              </Button>
+            ) : (
+              <Button size="sm" onClick={() => setCreating(true)}>
+                <Plus className="h-4 w-4 mr-1.5" /> New {entityLabel}
+              </Button>
+            ))}
         </div>
       </div>
 
@@ -176,12 +239,20 @@ export function DataModulePage(props: DataModulePageProps) {
         <div className="flex items-center gap-2 border-b px-3 py-2 bg-muted/30">
           <div className="relative flex-1 max-w-sm">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-            <Input placeholder={`Search ${searchColumn}…`} value={search}
-              onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-              className="h-8 pl-8 text-sm bg-background" />
+            <Input
+              placeholder={`Search ${searchColumn}…`}
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setPage(1);
+              }}
+              className="h-8 pl-8 text-sm bg-background"
+            />
           </div>
           {filterFields.length === 0 ? (
-            <Button variant="outline" size="sm" className="h-8"><Filter className="h-3.5 w-3.5 mr-1.5" /> Filters</Button>
+            <Button variant="outline" size="sm" className="h-8">
+              <Filter className="h-3.5 w-3.5 mr-1.5" /> Filters
+            </Button>
           ) : (
             <div className="flex items-center gap-2">
               <Filter className="h-3.5 w-3.5 text-muted-foreground" />
@@ -189,21 +260,34 @@ export function DataModulePage(props: DataModulePageProps) {
                 <Select
                   key={f.key}
                   value={filters[f.key] ?? "all"}
-                  onValueChange={(v) => { setFilters((p) => ({ ...p, [f.key]: v })); setPage(1); }}
+                  onValueChange={(v) => {
+                    setFilters((p) => ({ ...p, [f.key]: v }));
+                    setPage(1);
+                  }}
                 >
-                  <SelectTrigger className="h-8 w-[150px] bg-background text-xs"><SelectValue placeholder={f.label} /></SelectTrigger>
+                  <SelectTrigger className="h-8 w-[150px] bg-background text-xs">
+                    <SelectValue placeholder={f.label} />
+                  </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All {f.label}</SelectItem>
-                    {f.options.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+                    {f.options.map((o) => (
+                      <SelectItem key={o} value={o}>
+                        {o}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               ))}
               {Object.values(filters).some((v) => v && v !== "all") && (
-                <Button variant="ghost" size="sm" className="h-8 text-xs" onClick={() => setFilters({})}>Clear</Button>
+                <Button variant="ghost" size="sm" className="h-8 text-xs" onClick={() => setFilters({})}>
+                  Clear
+                </Button>
               )}
             </div>
           )}
-          <div className="ml-auto text-xs text-muted-foreground">{total} record{total === 1 ? "" : "s"}</div>
+          <div className="ml-auto text-xs text-muted-foreground">
+            {total} record{total === 1 ? "" : "s"}
+          </div>
         </div>
 
         <div className="overflow-x-auto">
@@ -211,9 +295,18 @@ export function DataModulePage(props: DataModulePageProps) {
             <TableHeader>
               <TableRow className="bg-muted/20 hover:bg-muted/20">
                 {tableFields.map((c) => (
-                  <TableHead key={c.key} className={"text-xs font-semibold uppercase tracking-wider text-muted-foreground " + (c.className ?? "")}>
-                    <button onClick={() => toggleSort(c.key)} className="inline-flex items-center gap-1 hover:text-foreground">
-                      {c.label}<ArrowUpDown className="h-3 w-3 opacity-50" />
+                  <TableHead
+                    key={c.key}
+                    className={
+                      "text-xs font-semibold uppercase tracking-wider text-muted-foreground " + (c.className ?? "")
+                    }
+                  >
+                    <button
+                      onClick={() => toggleSort(c.key)}
+                      className="inline-flex items-center gap-1 hover:text-foreground"
+                    >
+                      {c.label}
+                      <ArrowUpDown className="h-3 w-3 opacity-50" />
                     </button>
                   </TableHead>
                 ))}
@@ -222,67 +315,132 @@ export function DataModulePage(props: DataModulePageProps) {
             </TableHeader>
             <TableBody>
               {isLoading && (
-                <TableRow><TableCell colSpan={tableFields.length + 1} className="text-center py-16">
-                  <Loader2 className="h-4 w-4 animate-spin mx-auto text-muted-foreground" />
-                </TableCell></TableRow>
+                <TableRow>
+                  <TableCell colSpan={tableFields.length + 1} className="text-center py-16">
+                    <Loader2 className="h-4 w-4 animate-spin mx-auto text-muted-foreground" />
+                  </TableCell>
+                </TableRow>
               )}
               {!isLoading && rows.length === 0 && (
-                <TableRow><TableCell colSpan={tableFields.length + 1} className="text-center text-sm text-muted-foreground py-16">
-                  No records yet. {canWrite && <>Click <span className="font-medium">New {entityLabel}</span> to create one.</>}
-                </TableCell></TableRow>
+                <TableRow>
+                  <TableCell
+                    colSpan={tableFields.length + 1}
+                    className="text-center text-sm text-muted-foreground py-16"
+                  >
+                    No records yet.{" "}
+                    {canWrite && (
+                      <>
+                        Click <span className="font-medium">New {entityLabel}</span> to create one.
+                      </>
+                    )}
+                  </TableCell>
+                </TableRow>
               )}
               {rows.map((row) => {
                 const href = rowHref?.(row);
                 return (
-                <TableRow key={row.id} className={"hover:bg-muted/30 " + (href ? "cursor-pointer" : "")}
-                  onClick={href ? () => navigate({ to: href as any }) : undefined}>
-                  {tableFields.map((c) => {
-                    const v = row[c.key];
-                    const content = c.render ? c.render(v, row)
-                      : c.key === "status" && typeof v === "string" ? (
-                        <Badge variant="secondary" className={"font-medium " + (statusVariant[v] ?? "bg-muted text-muted-foreground")}>{v}</Badge>
-                      ) : v == null || v === "" ? <span className="text-muted-foreground">—</span> : String(v);
-                    return <TableCell key={c.key} className={"text-sm " + (c.className ?? "")}>{content}</TableCell>;
-                  })}
-                  <TableCell onClick={(e) => e.stopPropagation()}>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-7 w-7"><MoreHorizontal className="h-4 w-4" /></Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        {href ? (
-                          <DropdownMenuItem onClick={() => navigate({ to: href as any })}>{canWrite ? "Open" : "View"}</DropdownMenuItem>
-                        ) : (
-                          <DropdownMenuItem onClick={() => setEditing(row)}>{canWrite ? "Edit" : "View"}</DropdownMenuItem>
-                        )}
-                        {postAction && (!postAction.showWhen || postAction.showWhen(row)) && (
-                          <DropdownMenuItem onClick={() => post.mutate(row.id)} disabled={post.isPending}>
-                            {post.isPending && post.variables === row.id ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : null}
-                            {postAction.label}
-                          </DropdownMenuItem>
-                        )}
-                        {canWrite && <DropdownMenuItem className="text-destructive" onClick={() => setDeletingId(row.id)}>Delete</DropdownMenuItem>}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              );})}
+                  <TableRow
+                    key={row.id}
+                    className={"hover:bg-muted/30 " + (href ? "cursor-pointer" : "")}
+                    onClick={href ? () => navigate({ to: href as any }) : undefined}
+                  >
+                    {tableFields.map((c) => {
+                      const v = row[c.key];
+                      const content = c.render ? (
+                        c.render(v, row)
+                      ) : c.key === "status" && typeof v === "string" ? (
+                        <Badge
+                          variant="secondary"
+                          className={"font-medium " + (statusVariant[v] ?? "bg-muted text-muted-foreground")}
+                        >
+                          {v}
+                        </Badge>
+                      ) : v == null || v === "" ? (
+                        <span className="text-muted-foreground">—</span>
+                      ) : (
+                        String(v)
+                      );
+                      return (
+                        <TableCell key={c.key} className={"text-sm " + (c.className ?? "")}>
+                          {content}
+                        </TableCell>
+                      );
+                    })}
+                    <TableCell onClick={(e) => e.stopPropagation()}>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-7 w-7">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          {href ? (
+                            <DropdownMenuItem onClick={() => navigate({ to: href as any })}>
+                              {canWrite ? "Open" : "View"}
+                            </DropdownMenuItem>
+                          ) : (
+                            <DropdownMenuItem onClick={() => setEditing(row)}>
+                              {canWrite ? "Edit" : "View"}
+                            </DropdownMenuItem>
+                          )}
+                          {postAction && (!postAction.showWhen || postAction.showWhen(row)) && (
+                            <DropdownMenuItem onClick={() => post.mutate(row.id)} disabled={post.isPending}>
+                              {post.isPending && post.variables === row.id ? (
+                                <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                              ) : null}
+                              {postAction.label}
+                            </DropdownMenuItem>
+                          )}
+                          {canWrite && (
+                            <DropdownMenuItem className="text-destructive" onClick={() => setDeletingId(row.id)}>
+                              Delete
+                            </DropdownMenuItem>
+                          )}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         </div>
 
         <div className="flex items-center justify-between border-t px-3 py-2 text-xs text-muted-foreground">
-          <div>Page {page} of {Math.max(1, Math.ceil(total / pageSize))} · {total} total</div>
+          <div>
+            Page {page} of {Math.max(1, Math.ceil(total / pageSize))} · {total} total
+          </div>
           <div className="flex items-center gap-1">
-            <Button variant="outline" size="sm" className="h-7" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}><ChevronLeft className="h-3 w-3" /></Button>
-            <Button variant="outline" size="sm" className="h-7" disabled={page * pageSize >= total} onClick={() => setPage((p) => p + 1)}><ChevronRight className="h-3 w-3" /></Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7"
+              disabled={page <= 1}
+              onClick={() => setPage((p) => p - 1)}
+            >
+              <ChevronLeft className="h-3 w-3" />
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7"
+              disabled={page * pageSize >= total}
+              onClick={() => setPage((p) => p + 1)}
+            >
+              <ChevronRight className="h-3 w-3" />
+            </Button>
           </div>
         </div>
       </Card>
 
       <RecordSheet
         open={creating || !!editing}
-        onOpenChange={(o) => { if (!o) { setCreating(false); setEditing(null); } }}
+        onOpenChange={(o) => {
+          if (!o) {
+            setCreating(false);
+            setEditing(null);
+          }
+        }}
         fields={fields}
         row={editing}
         entityLabel={entityLabel}
@@ -292,11 +450,19 @@ export function DataModulePage(props: DataModulePageProps) {
         onSubmit={async (values) => {
           if (editing) await update.mutateAsync({ id: editing.id, values });
           else await create.mutateAsync(values);
-          setCreating(false); setEditing(null);
+          setCreating(false);
+          setEditing(null);
         }}
         busy={create.isPending || update.isPending}
         postAction={postAction}
-        onPost={postAction && editing && canPost ? async () => { await post.mutateAsync(editing.id); setEditing(null); } : undefined}
+        onPost={
+          postAction && editing && canPost
+            ? async () => {
+                await post.mutateAsync(editing.id);
+                setEditing(null);
+              }
+            : undefined
+        }
         postBusy={post.isPending}
       />
 
@@ -304,11 +470,22 @@ export function DataModulePage(props: DataModulePageProps) {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete this {entityLabel.toLowerCase()}?</AlertDialogTitle>
-            <AlertDialogDescription>The record will be soft-deleted and hidden from lists. This can be reversed by an administrator.</AlertDialogDescription>
+            <AlertDialogDescription>
+              The record will be soft-deleted and hidden from lists. This can be reversed by an administrator.
+            </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={async () => { if (deletingId) { await remove.mutateAsync(deletingId); setDeletingId(null); } }}>Delete</AlertDialogAction>
+            <AlertDialogAction
+              onClick={async () => {
+                if (deletingId) {
+                  await remove.mutateAsync(deletingId);
+                  setDeletingId(null);
+                }
+              }}
+            >
+              Delete
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -317,13 +494,30 @@ export function DataModulePage(props: DataModulePageProps) {
 }
 
 function RecordSheet({
-  open, onOpenChange, fields, row, entityLabel, entityType, attachments, canWrite, onSubmit, busy,
-  postAction, onPost, postBusy,
+  open,
+  onOpenChange,
+  fields,
+  row,
+  entityLabel,
+  entityType,
+  attachments,
+  canWrite,
+  onSubmit,
+  busy,
+  postAction,
+  onPost,
+  postBusy,
 }: {
-  open: boolean; onOpenChange: (o: boolean) => void;
-  fields: FieldDef[]; row: any | null;
-  entityLabel: string; entityType: string; attachments?: boolean;
-  canWrite: boolean; onSubmit: (v: Record<string, any>) => Promise<void>; busy: boolean;
+  open: boolean;
+  onOpenChange: (o: boolean) => void;
+  fields: FieldDef[];
+  row: any | null;
+  entityLabel: string;
+  entityType: string;
+  attachments?: boolean;
+  canWrite: boolean;
+  onSubmit: (v: Record<string, any>) => Promise<void>;
+  busy: boolean;
   postAction?: { rpc: string; paramName: string; label: string; showWhen?: (row: any) => boolean };
   onPost?: () => Promise<void>;
   postBusy?: boolean;
@@ -339,7 +533,9 @@ function RecordSheet({
       <SheetContent className="sm:max-w-lg overflow-y-auto">
         <SheetHeader>
           <SheetTitle>{row ? `Edit ${entityLabel}` : `New ${entityLabel}`}</SheetTitle>
-          <SheetDescription>{row ? "Update the record details." : `Add a new ${entityLabel.toLowerCase()} to your workspace.`}</SheetDescription>
+          <SheetDescription>
+            {row ? "Update the record details." : `Add a new ${entityLabel.toLowerCase()} to your workspace.`}
+          </SheetDescription>
         </SheetHeader>
 
         <form
@@ -359,12 +555,18 @@ function RecordSheet({
           }}
         >
           {fields.map((f) => (
-            <FieldInput key={f.key} field={f} defaultValue={row?.[f.key] ?? f.defaultValue ?? ""}
-              onChange={(val) => setValues((v) => ({ ...v, [f.key]: val }))} disabled={!canWrite} />
+            <FieldInput
+              key={f.key}
+              field={f}
+              defaultValue={row?.[f.key] ?? f.defaultValue ?? ""}
+              onChange={(val) => setValues((v) => ({ ...v, [f.key]: val }))}
+              disabled={!canWrite}
+            />
           ))}
           <SheetFooter className="px-0">
             <Button type="submit" disabled={!canWrite || busy}>
-              {busy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}{row ? "Save changes" : "Create"}
+              {busy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {row ? "Save changes" : "Create"}
             </Button>
             {postAction && row && (!postAction.showWhen || postAction.showWhen(row)) && onPost && (
               <Button type="button" variant="secondary" onClick={onPost} disabled={postBusy}>
@@ -385,40 +587,111 @@ function RecordSheet({
   );
 }
 
-function FieldInput({ field, defaultValue, onChange, disabled }: {
-  field: FieldDef; defaultValue: any; onChange: (v: any) => void; disabled?: boolean;
+function FieldInput({
+  field,
+  defaultValue,
+  onChange,
+  disabled,
+}: {
+  field: FieldDef;
+  defaultValue: any;
+  onChange: (v: any) => void;
+  disabled?: boolean;
 }) {
   const id = `f-${field.key}`;
-  const label = <Label htmlFor={id} className="text-sm">{field.label}{field.required && <span className="text-destructive">*</span>}</Label>;
+  const label = (
+    <Label htmlFor={id} className="text-sm">
+      {field.label}
+      {field.required && <span className="text-destructive">*</span>}
+    </Label>
+  );
   const commonProps = { id, name: field.key, defaultValue: defaultValue ?? "", required: field.required, disabled };
 
-  if (field.type === "textarea") return <div className="grid gap-1.5">{label}<Textarea {...commonProps} onChange={(e) => onChange(e.target.value)} rows={3} /></div>;
-  if (field.type === "number") return <div className="grid gap-1.5">{label}<Input type="number" step="any" {...commonProps} onChange={(e) => onChange(e.target.value === "" ? null : Number(e.target.value))} /></div>;
-  if (field.type === "date") return <div className="grid gap-1.5">{label}<Input type="date" {...commonProps} onChange={(e) => onChange(e.target.value || null)} /></div>;
-  if (field.type === "select") return (
-    <div className="grid gap-1.5">{label}
-      <Select defaultValue={String(defaultValue ?? "")} onValueChange={(v) => onChange(v)} disabled={disabled}>
-        <SelectTrigger id={id}><SelectValue placeholder="Select…" /></SelectTrigger>
-        <SelectContent>{(field.options ?? []).map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}</SelectContent>
-      </Select>
-      <input type="hidden" name={field.key} defaultValue={defaultValue ?? ""} />
+  if (field.type === "textarea")
+    return (
+      <div className="grid gap-1.5">
+        {label}
+        <Textarea {...commonProps} onChange={(e) => onChange(e.target.value)} rows={3} />
+      </div>
+    );
+  if (field.type === "number")
+    return (
+      <div className="grid gap-1.5">
+        {label}
+        <Input
+          type="number"
+          step="any"
+          {...commonProps}
+          onChange={(e) => onChange(e.target.value === "" ? null : Number(e.target.value))}
+        />
+      </div>
+    );
+  if (field.type === "date")
+    return (
+      <div className="grid gap-1.5">
+        {label}
+        <Input type="date" {...commonProps} onChange={(e) => onChange(e.target.value || null)} />
+      </div>
+    );
+  if (field.type === "select")
+    return (
+      <div className="grid gap-1.5">
+        {label}
+        <Select defaultValue={String(defaultValue ?? "")} onValueChange={(v) => onChange(v)} disabled={disabled}>
+          <SelectTrigger id={id}>
+            <SelectValue placeholder="Select…" />
+          </SelectTrigger>
+          <SelectContent>
+            {(field.options ?? []).map((o) => (
+              <SelectItem key={o} value={o}>
+                {o}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <input type="hidden" name={field.key} defaultValue={defaultValue ?? ""} />
+      </div>
+    );
+  if (field.type === "fk")
+    return <FkField field={field} defaultValue={defaultValue} onChange={onChange} disabled={disabled} />;
+  return (
+    <div className="grid gap-1.5">
+      {label}
+      <Input {...commonProps} onChange={(e) => onChange(e.target.value)} />
     </div>
   );
-  if (field.type === "fk") return <FkField field={field} defaultValue={defaultValue} onChange={onChange} disabled={disabled} />;
-  return <div className="grid gap-1.5">{label}<Input {...commonProps} onChange={(e) => onChange(e.target.value)} /></div>;
 }
 
-function FkField({ field, defaultValue, onChange, disabled }: { field: FieldDef; defaultValue: any; onChange: (v: any) => void; disabled?: boolean }) {
+function FkField({
+  field,
+  defaultValue,
+  onChange,
+  disabled,
+}: {
+  field: FieldDef;
+  defaultValue: any;
+  onChange: (v: any) => void;
+  disabled?: boolean;
+}) {
   const { data: opts = [] } = useFkOptions(field.fkTable!, field.fkLabel ?? "name");
   const id = `f-${field.key}`;
   return (
     <div className="grid gap-1.5">
-      <Label htmlFor={id}>{field.label}{field.required && <span className="text-destructive">*</span>}</Label>
+      <Label htmlFor={id}>
+        {field.label}
+        {field.required && <span className="text-destructive">*</span>}
+      </Label>
       <Select defaultValue={defaultValue ?? undefined} onValueChange={(v) => onChange(v)} disabled={disabled}>
-        <SelectTrigger id={id}><SelectValue placeholder="Select…" /></SelectTrigger>
+        <SelectTrigger id={id}>
+          <SelectValue placeholder="Select…" />
+        </SelectTrigger>
         <SelectContent>
           {opts.length === 0 && <div className="px-2 py-1.5 text-xs text-muted-foreground">No options yet</div>}
-          {opts.map((o: any) => <SelectItem key={o.id} value={o.id}>{o[field.fkLabel ?? "name"]}</SelectItem>)}
+          {opts.map((o: any) => (
+            <SelectItem key={o.id} value={o.id}>
+              {o[field.fkLabel ?? "name"]}
+            </SelectItem>
+          ))}
         </SelectContent>
       </Select>
       <input type="hidden" name={field.key} defaultValue={defaultValue ?? ""} />
