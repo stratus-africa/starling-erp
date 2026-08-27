@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { DataModulePage } from "@/components/data-module-page";
-import { creditNoteFields } from "@/lib/module-schemas";
+import { creditNoteFields } from "@/lib/module-validation-schemas";
 
 export const Route = createFileRoute("/_authenticated/sales/credit-notes/")({
   component: () => (

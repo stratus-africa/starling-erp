@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { DocumentViewWindow } from "@/components/document-view-window";
-import { salesOrderFields } from "@/lib/module-schemas";
+import { salesOrderFields } from "@/lib/module-validation-schemas";
 
 export const Route = createFileRoute("/_authenticated/sales/orders/")({
   component: () => (
@@ -11,7 +11,10 @@ export const Route = createFileRoute("/_authenticated/sales/orders/")({
       table="sales_orders"
       fields={salesOrderFields}
       searchColumn="number"
-      filters={[{ key: "status", label: "Status", options: salesOrderFields.find((f) => f.key === "status")?.options ?? [] }, { key: "currency", label: "Currency", options: ["USD","EUR","GBP","KES","AED","EGP","INR","ZAR"] }]}
+      filters={[
+        { key: "status", label: "Status", options: salesOrderFields.find((f) => f.key === "status")?.options ?? [] },
+        { key: "currency", label: "Currency", options: ["USD", "EUR", "GBP", "KES", "AED", "EGP", "INR", "ZAR"] },
+      ]}
     />
   ),
 });
