@@ -4,9 +4,21 @@ import { inventoryAdjustmentFields } from "@/lib/module-schemas";
 
 export const Route = createFileRoute("/_authenticated/inventory/adjustments")({
   component: () => (
-    <DataModulePage title="Inventory Adjustments" description="Post stock adjustments with a reason."
-      table="inventory_adjustments" entityLabel="Adjustment" fields={inventoryAdjustmentFields}
-      writeRoles={["inventory"]} searchColumn="number"
-      postAction={{ rpc: "post_adjustment", paramName: "_adjustment_id", label: "Post", showWhen: (row) => row.status !== "Posted" }} />
+    <DataModulePage
+      title="Inventory Adjustments"
+      description="Post stock adjustments with a reason."
+      table="inventory_adjustments"
+      entityLabel="Adjustment"
+      fields={inventoryAdjustmentFields}
+      writeRoles={["inventory"]}
+      searchColumn="number"
+      postAction={{
+        rpc: "post_adjustment",
+        paramName: "_adjustment_id",
+        label: "Post",
+        showWhen: (row) => row.status !== "Posted",
+      }}
+      voidAction={{ entityType: "adjustment", permission: "inventory.void" }}
+    />
   ),
 });
