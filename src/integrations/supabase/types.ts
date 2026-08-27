@@ -64,6 +64,57 @@ export type Database = {
           },
         ]
       }
+      business_events: {
+        Row: {
+          id: string
+          tenant_id: string
+          actor_id: string | null
+          actor_email: string | null
+          action: string
+          entity_type: string
+          entity_id: string | null
+          old_values: Json | null
+          new_values: Json | null
+          metadata: Json
+          ip_address: string | null
+          user_agent: string | null
+          occurred_at: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          tenant_id: string
+          actor_id?: string | null
+          actor_email?: string | null
+          action: string
+          entity_type: string
+          entity_id?: string | null
+          old_values?: Json | null
+          new_values?: Json | null
+          metadata?: Json
+          ip_address?: string | null
+          user_agent?: string | null
+          occurred_at?: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          tenant_id?: string
+          actor_id?: string | null
+          actor_email?: string | null
+          action?: string
+          entity_type?: string
+          entity_id?: string | null
+          old_values?: Json | null
+          new_values?: Json | null
+          metadata?: Json
+          ip_address?: string | null
+          user_agent?: string | null
+          occurred_at?: string
+          created_at?: string
+        }
+        Relationships: []
+      }
       audit_logs: {
         Row: {
           action: string
@@ -3093,6 +3144,14 @@ export type Database = {
       Relationships: []
     }
     Functions: {
+      record_business_event: {
+        Args: { _action: string; _entity_id?: string | null; _entity_type: string; _metadata?: Json; _new_values?: Json | null; _old_values?: Json | null }
+        Returns: string
+      }
+      get_business_events: {
+        Args: { _action?: string | null; _entity_id?: string | null; _entity_type?: string | null; _from?: string | null; _limit?: number; _to?: string | null }
+        Returns: Database["public"]["Tables"]["business_events"]["Row"][]
+      }
       create_notification: {
         Args: { _entity_id?: string | null; _entity_type?: string | null; _message: string; _severity?: string; _title: string; _type: string; _user_id: string }
         Returns: string
