@@ -15,8 +15,16 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import {
-  ArrowLeft, Save, Loader2, ImagePlus, Package, Info,
-  TrendingUp, ShoppingCart, FileText, ReceiptText,
+  ArrowLeft,
+  Save,
+  Loader2,
+  ImagePlus,
+  Package,
+  Info,
+  TrendingUp,
+  ShoppingCart,
+  FileText,
+  ReceiptText,
 } from "lucide-react";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -25,7 +33,9 @@ const fmt = (v: any) =>
   !v ? "—" : new Date(v).toLocaleDateString(undefined, { day: "2-digit", month: "short", year: "numeric" });
 
 const money = (v: any, currency = "KES") =>
-  v == null ? "—" : `${currency} ${Number(v).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  v == null
+    ? "—"
+    : `${currency} ${Number(v).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 const qty = (v: any) =>
   v == null ? "0.00" : Number(v).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -36,18 +46,14 @@ function StockRow({ label, value, blue }: { label: string; value: number; blue?:
   return (
     <div className="flex items-center justify-between py-0.5 text-sm">
       <span className="text-muted-foreground">{label}</span>
-      <span className={`font-mono tabular-nums ${blue ? "text-blue-500" : ""}`}>
-        : {qty(value)}
-      </span>
+      <span className={`font-mono tabular-nums ${blue ? "text-blue-500" : ""}`}>: {qty(value)}</span>
     </div>
   );
 }
 
 // ─── Pending Qty Card ─────────────────────────────────────────────────────────
 
-function PendingCard({
-  icon: Icon, label, value,
-}: { icon: any; label: string; value: number }) {
+function PendingCard({ icon: Icon, label, value }: { icon: any; label: string; value: number }) {
   return (
     <div className="flex flex-col gap-1 rounded-lg border p-3">
       <div className="flex items-center gap-2">
@@ -76,8 +82,7 @@ export function ProductionItemPage({ id }: { id: string }) {
     queryKey: ["items", id],
     enabled: !isNew,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("items").select("*").eq("id", id).maybeSingle();
+      const { data, error } = await supabase.from("items").select("*").eq("id", id).maybeSingle();
       if (error) throw error;
       return data as any;
     },
@@ -108,16 +113,25 @@ export function ProductionItemPage({ id }: { id: string }) {
     return acc;
   }, {});
 
-  // ── Fetch BOM lines where this item appears as a component (Associated Items) ──
+  // ── Fetch BOM lines for this item as finished product (Associated Items = components) ──
   const { data: bomLines = [] } = useQuery({
     queryKey: ["bom_lines", "for-item", id],
     enabled: !isNew,
     queryFn: async () => {
-      // Find BOMs that use this item as input, then get sibling items
+      // First get BOM headers where this item is the product
+      const { data: headers, error: hErr } = await supabase
+        .from("bom_headers")
+        .select("id")
+        .eq("product_id", id)
+        .is("deleted_at", null)
+        .limit(5);
+      if (hErr || !headers?.length) return [];
+      const bomIds = headers.map((h) => h.id);
+      // Then get the component lines for those BOMs
       const { data, error } = await supabase
         .from("bom_lines")
         .select("*, items(id, name, sku, stock)")
-        .eq("item_id", id)
+        .in("bom_id", bomIds)
         .is("deleted_at", null)
         .limit(50);
       if (error) throw error;
@@ -146,15 +160,22 @@ export function ProductionItemPage({ id }: { id: string }) {
     queryKey: ["production_orders", "pending-receive", id],
     enabled: !isNew,
     queryFn: async () => {
-      // Production orders in progress
+      // Find BOM headers for this product
+      const { data: headers } = await supabase
+        .from("bom_headers")
+        .select("id")
+        .eq("product_id", id)
+        .is("deleted_at", null);
+      if (!headers?.length) return 0;
+      const bomIds = headers.map((h) => h.id);
+      // Find open production orders using those BOMs
       const { data } = await supabase
         .from("production_orders")
-        .select("quantity, status, bom_id, bills_of_materials(product_id)")
+        .select("quantity, status")
+        .in("bom_id", bomIds)
         .is("deleted_at", null)
         .in("status", ["Draft", "Confirmed", "In Progress"]);
-      return (data ?? [])
-        .filter((o: any) => o.bills_of_materials?.product_id === id)
-        .reduce((s: number, o: any) => s + Number(o.quantity ?? 0), 0);
+      return (data ?? []).reduce((s: number, o: any) => s + Number(o.quantity ?? 0), 0);
     },
   });
 
@@ -164,11 +185,15 @@ export function ProductionItemPage({ id }: { id: string }) {
     queryFn: async () => {
       const { data } = await supabase
         .from("sales_order_lines")
-        .select("quantity, sales_orders(status)")
+        .select("quantity, sales_orders!document_id(status, converted_invoice_id)")
         .eq("item_id", id)
         .is("deleted_at", null);
       return (data ?? [])
-        .filter((l: any) => ["Confirmed", "Processing", "Packed", "Shipped"].includes(l.sales_orders?.status))
+        .filter((l: any) => {
+          const s = l.sales_orders?.status;
+          const invoiced = !!l.sales_orders?.converted_invoice_id;
+          return !invoiced && ["Confirmed", "Processing", "Packed", "Shipped"].includes(s);
+        })
         .reduce((s: number, l: any) => s + Number(l.quantity ?? 0), 0);
     },
   });
@@ -177,20 +202,20 @@ export function ProductionItemPage({ id }: { id: string }) {
     queryKey: ["purchase_order_lines", "pending-bill", id],
     enabled: !isNew,
     queryFn: async () => {
-      const { data } = await supabase
-        .from("sales_order_lines") // fallback — use same table
-        .select("quantity")
-        .eq("item_id", id)
-        .is("deleted_at", null)
-        .limit(1);
-      return 0; // purchase_order_lines not in schema — show 0
+      // purchase_order_lines not yet in typed schema — return 0 gracefully
+      return 0;
     },
   });
 
   // ── Form state ──
   const [values, setValues] = useState<Record<string, any>>({
-    name: "", sku: "", type: "Finished Good", uom: "pc",
-    cost: "", price: "", description: "",
+    name: "",
+    sku: "",
+    type: "Finished Good",
+    uom: "pc",
+    cost: "",
+    price: "",
+    description: "",
   });
 
   // Sync when item loads
@@ -264,15 +289,13 @@ export function ProductionItemPage({ id }: { id: string }) {
             <ArrowLeft className="mr-1 h-4 w-4" />
           </Button>
           <div className="min-w-0">
-            <h1 className="truncate text-lg font-semibold">
-              {isNew ? "New Production Item" : (item?.name ?? "Item")}
-            </h1>
-            {!isNew && item?.sku && (
-              <p className="text-xs text-muted-foreground font-mono">{item.sku}</p>
-            )}
+            <h1 className="truncate text-lg font-semibold">{isNew ? "New Production Item" : (item?.name ?? "Item")}</h1>
+            {!isNew && item?.sku && <p className="text-xs text-muted-foreground font-mono">{item.sku}</p>}
           </div>
           {!isNew && item?.type && (
-            <Badge variant="secondary" className="shrink-0">{item.type}</Badge>
+            <Badge variant="secondary" className="shrink-0">
+              {item.type}
+            </Badge>
           )}
         </div>
         <div className="flex items-center gap-2">
@@ -283,9 +306,11 @@ export function ProductionItemPage({ id }: { id: string }) {
           )}
           {canWrite && (
             <Button size="sm" disabled={save.isPending} onClick={() => save.mutate()}>
-              {save.isPending
-                ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
-                : <Save className="mr-1.5 h-4 w-4" />}
+              {save.isPending ? (
+                <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+              ) : (
+                <Save className="mr-1.5 h-4 w-4" />
+              )}
               Save
             </Button>
           )}
@@ -312,10 +337,8 @@ export function ProductionItemPage({ id }: { id: string }) {
           {/* ── Overview ── */}
           <TabsContent value="overview" className="mt-0 flex-1 overflow-auto">
             <div className="grid grid-cols-1 gap-0 lg:grid-cols-[1fr_340px] min-h-full">
-
               {/* Left column */}
               <div className="flex flex-col gap-5 border-r p-6">
-
                 {/* Primary Details */}
                 <section>
                   <h2 className="mb-3 text-sm font-semibold">Primary Details</h2>
@@ -338,10 +361,14 @@ export function ProductionItemPage({ id }: { id: string }) {
                     <div>
                       {canWrite ? (
                         <Select value={values.type} onValueChange={(v) => set("type", v)}>
-                          <SelectTrigger className="h-7 text-sm"><SelectValue /></SelectTrigger>
+                          <SelectTrigger className="h-7 text-sm">
+                            <SelectValue />
+                          </SelectTrigger>
                           <SelectContent>
                             {["Finished Good", "Raw Material", "Sub-assembly", "Service", "Consumable"].map((o) => (
-                              <SelectItem key={o} value={o}>{o}</SelectItem>
+                              <SelectItem key={o} value={o}>
+                                {o}
+                              </SelectItem>
                             ))}
                           </SelectContent>
                         </Select>
@@ -353,7 +380,12 @@ export function ProductionItemPage({ id }: { id: string }) {
                     <span className="text-muted-foreground">SKU</span>
                     <div>
                       {canWrite ? (
-                        <Input className="h-7 text-sm font-mono" value={values.sku} onChange={(e) => set("sku", e.target.value)} placeholder="SKU…" />
+                        <Input
+                          className="h-7 text-sm font-mono"
+                          value={values.sku}
+                          onChange={(e) => set("sku", e.target.value)}
+                          placeholder="SKU…"
+                        />
                       ) : (
                         <span className="font-mono">{values.sku || "—"}</span>
                       )}
@@ -363,10 +395,14 @@ export function ProductionItemPage({ id }: { id: string }) {
                     <div>
                       {canWrite ? (
                         <Select value={values.uom} onValueChange={(v) => set("uom", v)}>
-                          <SelectTrigger className="h-7 text-sm"><SelectValue /></SelectTrigger>
+                          <SelectTrigger className="h-7 text-sm">
+                            <SelectValue />
+                          </SelectTrigger>
                           <SelectContent>
                             {["pc", "kg", "g", "lb", "m", "cm", "l", "ml", "box", "pack", "pcs"].map((o) => (
-                              <SelectItem key={o} value={o}>{o}</SelectItem>
+                              <SelectItem key={o} value={o}>
+                                {o}
+                              </SelectItem>
                             ))}
                           </SelectContent>
                         </Select>
@@ -393,8 +429,11 @@ export function ProductionItemPage({ id }: { id: string }) {
                     <div>
                       {canWrite ? (
                         <Input
-                          type="number" step="any" className="h-7 text-sm"
-                          value={values.cost} onChange={(e) => set("cost", e.target.value)}
+                          type="number"
+                          step="any"
+                          className="h-7 text-sm"
+                          value={values.cost}
+                          onChange={(e) => set("cost", e.target.value)}
                           placeholder="0.00"
                         />
                       ) : (
@@ -416,8 +455,11 @@ export function ProductionItemPage({ id }: { id: string }) {
                     <div>
                       {canWrite ? (
                         <Input
-                          type="number" step="any" className="h-7 text-sm"
-                          value={values.price} onChange={(e) => set("price", e.target.value)}
+                          type="number"
+                          step="any"
+                          className="h-7 text-sm"
+                          value={values.price}
+                          onChange={(e) => set("price", e.target.value)}
                           placeholder="0.00"
                         />
                       ) : (
@@ -468,15 +510,15 @@ export function ProductionItemPage({ id }: { id: string }) {
                               <tr key={line.id} className="border-b last:border-0">
                                 <td className="px-3 py-2">
                                   <p className="font-medium text-primary">{line.items?.name ?? "—"}</p>
-                                  <p className="text-xs text-muted-foreground font-mono">[{line.items?.sku ?? "no-sku"}]</p>
+                                  <p className="text-xs text-muted-foreground font-mono">
+                                    [{line.items?.sku ?? "no-sku"}]
+                                  </p>
                                   <p className="text-xs text-muted-foreground">
-                                    Accounting Stock: {qty(line.items?.stock)}&nbsp;&nbsp;
-                                    Physical Stock: {qty(line.items?.stock)}
+                                    Accounting Stock: {qty(line.items?.stock)}&nbsp;&nbsp; Physical Stock:{" "}
+                                    {qty(line.items?.stock)}
                                   </p>
                                 </td>
-                                <td className="px-3 py-2 text-right font-mono tabular-nums">
-                                  {qty(line.quantity)}
-                                </td>
+                                <td className="px-3 py-2 text-right font-mono tabular-nums">{qty(line.quantity)}</td>
                               </tr>
                             ))}
                           </tbody>
@@ -489,13 +531,11 @@ export function ProductionItemPage({ id }: { id: string }) {
 
               {/* Right panel */}
               <div className="flex flex-col gap-5 p-6">
-
                 {/* Image upload placeholder */}
                 <div className="flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-muted-foreground/30 p-8 text-center">
                   <ImagePlus className="h-8 w-8 text-muted-foreground/40" />
                   <p className="text-sm text-muted-foreground">
-                    Drag image(s) here or{" "}
-                    <span className="cursor-pointer text-primary underline">Browse images</span>
+                    Drag image(s) here or <span className="cursor-pointer text-primary underline">Browse images</span>
                   </p>
                   <p className="text-xs text-muted-foreground/60 flex items-start gap-1">
                     <Info className="h-3 w-3 mt-0.5 shrink-0" />
@@ -621,11 +661,12 @@ export function ProductionItemPage({ id }: { id: string }) {
                         <TableCell className="font-mono text-xs text-muted-foreground">
                           {m.note ?? m.ref_id?.slice(0, 10) ?? "—"}
                         </TableCell>
-                        <TableCell className="text-sm">
-                          {m.warehouses?.name ?? "—"}
-                        </TableCell>
-                        <TableCell className={`text-right font-mono tabular-nums text-sm ${m.quantity >= 0 ? "text-emerald-600" : "text-destructive"}`}>
-                          {m.quantity >= 0 ? "+" : ""}{qty(m.quantity)}
+                        <TableCell className="text-sm">{m.warehouses?.name ?? "—"}</TableCell>
+                        <TableCell
+                          className={`text-right font-mono tabular-nums text-sm ${m.quantity >= 0 ? "text-emerald-600" : "text-destructive"}`}
+                        >
+                          {m.quantity >= 0 ? "+" : ""}
+                          {qty(m.quantity)}
                         </TableCell>
                         <TableCell className="text-right font-mono tabular-nums text-sm">
                           {money(m.unit_cost)}
@@ -659,13 +700,17 @@ export function ProductionItemPage({ id }: { id: string }) {
                             <Badge variant="secondary" className="text-xs capitalize">
                               {(m.ref_type ?? "movement").replace(/_/g, " ")}
                             </Badge>
-                            <span className={`font-mono text-sm tabular-nums font-medium ${m.quantity >= 0 ? "text-emerald-600" : "text-destructive"}`}>
-                              {m.quantity >= 0 ? "+" : ""}{qty(m.quantity)} {item?.uom ?? ""}
+                            <span
+                              className={`font-mono text-sm tabular-nums font-medium ${m.quantity >= 0 ? "text-emerald-600" : "text-destructive"}`}
+                            >
+                              {m.quantity >= 0 ? "+" : ""}
+                              {qty(m.quantity)} {item?.uom ?? ""}
                             </span>
                             <span className="text-xs text-muted-foreground">{fmt(m.created_at)}</span>
                           </div>
                           <p className="mt-0.5 text-xs text-muted-foreground">
-                            {m.note ?? "No note"}{m.warehouses?.name ? ` · ${m.warehouses.name}` : ""}
+                            {m.note ?? "No note"}
+                            {m.warehouses?.name ? ` · ${m.warehouses.name}` : ""}
                           </p>
                         </div>
                       </div>
