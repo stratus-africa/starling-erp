@@ -3,14 +3,33 @@ import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useRouter } from "@tanstack/react-router";
-import type { Permission } from "@/lib/permissions";
+import type { Permission, PermissionAction, PermissionModule, PermissionKey } from "@/lib/permissions";
 
 export type AppRole =
-  | "super_admin" | "tenant_admin" | "sales" | "purchasing"
-  | "inventory" | "accounting" | "manufacturing" | "viewer" | "cashier";
+  | "super_admin"
+  | "tenant_admin"
+  | "sales"
+  | "purchasing"
+  | "inventory"
+  | "accounting"
+  | "manufacturing"
+  | "viewer"
+  | "cashier";
 
-export interface Profile { id: string; tenant_id: string | null; email: string | null; full_name: string | null; avatar_url: string | null }
-export interface Tenant { id: string; name: string; slug: string; currency: string; status: string }
+export interface Profile {
+  id: string;
+  tenant_id: string | null;
+  email: string | null;
+  full_name: string | null;
+  avatar_url: string | null;
+}
+export interface Tenant {
+  id: string;
+  name: string;
+  slug: string;
+  currency: string;
+  status: string;
+}
 
 interface AuthCtx {
   user: User | null;
@@ -21,12 +40,14 @@ interface AuthCtx {
   permissions: string[];
   loading: boolean;
   hasRole: (r: AppRole | AppRole[]) => boolean;
-  can: (permission: Permission | string | Array<Permission | string>) => boolean;
+  can: (module: PermissionModule, action: PermissionAction) => boolean;
+  canAny: (module: PermissionModule, actions: PermissionAction[]) => boolean;
+  canAll: (module: PermissionModule, actions: PermissionAction[]) => boolean;
+  hasPermission: (permission: Permission | PermissionKey | string) => boolean;
   signOut: () => Promise<void>;
   refresh: () => Promise<void>;
   switchTenant: (tenantId: string) => Promise<void>;
 }
-
 
 const Ctx = createContext<AuthCtx | null>(null);
 
@@ -59,9 +80,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const { data: sub } = supabase.auth.onAuthStateChange((event, s) => {
       setSession(s);
-      if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED" && event !== "INITIAL_SESSION") return;
-      if (s?.user) { setTimeout(() => loadContext(s.user.id), 0); }
-      else { setProfile(null); setTenant(null); setRoles([]); setPermissions([]); }
+      if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED" && event !== "INITIAL_SESSION")
+        return;
+      if (s?.user) {
+        setTimeout(() => loadContext(s.user.id), 0);
+      } else {
+        setProfile(null);
+        setTenant(null);
+        setRoles([]);
+        setPermissions([]);
+      }
       if (event === "SIGNED_IN" || event === "SIGNED_OUT") router.invalidate();
       if (event !== "SIGNED_OUT" && s?.user) qc.invalidateQueries();
     });
@@ -80,11 +108,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return arr.some((x) => roles.includes(x));
   };
 
-  const can = (permission: Permission | string | Array<Permission | string>) => {
-    const required = Array.isArray(permission) ? permission : [permission];
-    if (roles.includes("super_admin") || roles.includes("tenant_admin")) return true;
-    return required.some((p) => permissions.includes(p));
-  };
+  const isAdmin = roles.includes("super_admin") || roles.includes("tenant_admin");
+
+  const hasPermission = (permission: Permission | PermissionKey | string) =>
+    isAdmin || permissions.includes(permission);
+
+  const can = (module: PermissionModule, action: PermissionAction) => hasPermission(`${module}.${action}`);
+
+  const canAny = (module: PermissionModule, actions: PermissionAction[]) =>
+    isAdmin || actions.some((action) => permissions.includes(`${module}.${action}`));
+
+  const canAll = (module: PermissionModule, actions: PermissionAction[]) =>
+    isAdmin || actions.every((action) => permissions.includes(`${module}.${action}`));
 
   const signOut = async () => {
     await qc.cancelQueries();
@@ -93,7 +128,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     navigate({ to: "/auth", replace: true });
   };
 
-  const refresh = async () => { if (session?.user) await loadContext(session.user.id); };
+  const refresh = async () => {
+    if (session?.user) await loadContext(session.user.id);
+  };
 
   const switchTenant = async (tenantId: string) => {
     const { error } = await supabase.rpc("switch_tenant", { target_tenant: tenantId });
@@ -105,7 +142,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <Ctx.Provider value={{ user: session?.user ?? null, session, profile, tenant, roles, permissions, loading, hasRole, can, signOut, refresh, switchTenant }}>
+    <Ctx.Provider
+      value={{
+        user: session?.user ?? null,
+        session,
+        profile,
+        tenant,
+        roles,
+        permissions,
+        loading,
+        hasRole,
+        can,
+        canAny,
+        canAll,
+        hasPermission,
+        signOut,
+        refresh,
+        switchTenant,
+      }}
+    >
       {children}
     </Ctx.Provider>
   );
