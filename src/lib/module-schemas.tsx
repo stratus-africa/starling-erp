@@ -20,7 +20,7 @@ export const customerFields: FieldDef[] = [
   { key: "email", label: "Email", group: "Contact", validate: emailRule },
   { key: "phone", label: "Phone", group: "Contact" },
   { key: "website", label: "Website", hideInTable: true, group: "Contact" },
-  { key: "salesperson_id", label: "Salesperson", type: "fk", fkTable: "profiles", fkLabel: "full_name", group: "Contact" },
+  { key: "salesperson_id", label: "Salesperson", type: "fk", fkTable: "profiles", fkLabel: "full_name", hideInTable: true, group: "Contact" },
   { key: "currency", label: "Currency", type: "select", options: ["USD","EUR","GBP","KES","AED","EGP","INR","ZAR"], defaultValue: "USD", group: "Financial" },
   { key: "payment_terms", label: "Payment Terms", type: "select", options: ["Due on Receipt","Net 7","Net 15","Net 30","Net 45","Net 60"], defaultValue: "Net 30", hideInTable: true, group: "Financial" },
   { key: "tax_id", label: "Tax / VAT ID", hideInTable: true, group: "Financial" },
