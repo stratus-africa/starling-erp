@@ -13,6 +13,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AdminRouteRouteImport } from './routes/_admin/route'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
+import { Route as SuperAdminAdminRouteImport } from './routes/super-admin/admin'
 import { Route as AuthenticatedAuditEventsRouteImport } from './routes/_authenticated/audit-events'
 import { Route as AdminUsersRouteImport } from './routes/_admin/users'
 import { Route as AdminTenantsRouteImport } from './routes/_admin/tenants'
@@ -112,6 +113,11 @@ const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const SuperAdminAdminRoute = SuperAdminAdminRouteImport.update({
+  id: '/super-admin/admin',
+  path: '/super-admin/admin',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedAuditEventsRoute =
   AuthenticatedAuditEventsRouteImport.update({
@@ -604,6 +610,7 @@ export interface FileRoutesByFullPath {
   '/tenants': typeof AdminTenantsRoute
   '/users': typeof AdminUsersRoute
   '/audit-events': typeof AuthenticatedAuditEventsRoute
+  '/super-admin/admin': typeof SuperAdminAdminRoute
   '/accounting/audit-trail': typeof AuthenticatedAccountingAuditTrailRoute
   '/accounting/balance-sheet': typeof AuthenticatedAccountingBalanceSheetRoute
   '/accounting/banking': typeof AuthenticatedAccountingBankingRoute
@@ -689,6 +696,7 @@ export interface FileRoutesByTo {
   '/tenants': typeof AdminTenantsRoute
   '/users': typeof AdminUsersRoute
   '/audit-events': typeof AuthenticatedAuditEventsRoute
+  '/super-admin/admin': typeof SuperAdminAdminRoute
   '/accounting/audit-trail': typeof AuthenticatedAccountingAuditTrailRoute
   '/accounting/balance-sheet': typeof AuthenticatedAccountingBalanceSheetRoute
   '/accounting/banking': typeof AuthenticatedAccountingBankingRoute
@@ -775,6 +783,7 @@ export interface FileRoutesById {
   '/_admin/tenants': typeof AdminTenantsRoute
   '/_admin/users': typeof AdminUsersRoute
   '/_authenticated/audit-events': typeof AuthenticatedAuditEventsRoute
+  '/super-admin/admin': typeof SuperAdminAdminRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/accounting/audit-trail': typeof AuthenticatedAccountingAuditTrailRoute
   '/_authenticated/accounting/balance-sheet': typeof AuthenticatedAccountingBalanceSheetRoute
@@ -863,6 +872,7 @@ export interface FileRouteTypes {
     | '/tenants'
     | '/users'
     | '/audit-events'
+    | '/super-admin/admin'
     | '/accounting/audit-trail'
     | '/accounting/balance-sheet'
     | '/accounting/banking'
@@ -948,6 +958,7 @@ export interface FileRouteTypes {
     | '/tenants'
     | '/users'
     | '/audit-events'
+    | '/super-admin/admin'
     | '/accounting/audit-trail'
     | '/accounting/balance-sheet'
     | '/accounting/banking'
@@ -1033,6 +1044,7 @@ export interface FileRouteTypes {
     | '/_admin/tenants'
     | '/_admin/users'
     | '/_authenticated/audit-events'
+    | '/super-admin/admin'
     | '/_authenticated/'
     | '/_authenticated/accounting/audit-trail'
     | '/_authenticated/accounting/balance-sheet'
@@ -1115,6 +1127,7 @@ export interface RootRouteChildren {
   AdminRouteRoute: typeof AdminRouteRouteWithChildren
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
+  SuperAdminAdminRoute: typeof SuperAdminAdminRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -1146,6 +1159,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof AuthenticatedIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/super-admin/admin': {
+      id: '/super-admin/admin'
+      path: '/super-admin/admin'
+      fullPath: '/super-admin/admin'
+      preLoaderRoute: typeof SuperAdminAdminRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_authenticated/audit-events': {
       id: '/_authenticated/audit-events'
@@ -1928,6 +1948,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminRouteRoute: AdminRouteRouteWithChildren,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
+  SuperAdminAdminRoute: SuperAdminAdminRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
