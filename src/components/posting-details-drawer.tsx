@@ -137,7 +137,7 @@ export function PostingDetailsDrawer({
                         </tr>
                       </thead>
                       <tbody>
-                        {e.lines.map((l) => (
+                        {(e.lines as Row[]).map((l) => (
                           <tr key={l.id} className="border-b last:border-0">
                             <td className="px-3 py-1.5">
                               <span className="font-mono text-xs text-muted-foreground mr-1.5">{l.account?.code}</span>

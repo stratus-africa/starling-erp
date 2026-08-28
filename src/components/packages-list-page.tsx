@@ -221,7 +221,6 @@ export function PackagesListPage() {
   // ── Batch-fetch shipment dates ──
   const { data: shipments = [] } = useQuery({
     queryKey: ["shipments", "ship-dates", pkgIds],
-    enabled: pkgIds.length > 0,
     queryFn: async () => {
       // shipments link to sales_order_id; use carrier match or join via sales_order_id
       const { data, error } = await db.from("shipments")

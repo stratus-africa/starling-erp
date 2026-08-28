@@ -663,7 +663,7 @@ export function DocumentEditor({
     companyName: tenant?.name ?? "Company",
     partyLabel: cfg.partyLabel,
     partyName: party?.name ?? "—",
-    currency: header.currency ?? "USD",
+    currency: String(header.currency ?? "USD"),
     meta: [
       { label: "Date", value: header[cfg.dateField] ?? "" },
       ...(cfg.extraDate ? [{ label: cfg.extraDate.label, value: header[cfg.extraDate.field] ?? "" }] : []),
@@ -1352,7 +1352,7 @@ export function DocumentEditor({
         <EmailDocumentDialog
           open={emailOpen}
           onOpenChange={setEmailOpen}
-          defaultTo={party?.email ?? ""}
+          defaultTo={String(party?.email ?? "")}
           defaultSubject={`${cfg.label} ${String(header.number ?? "")}`}
           defaultMessage={`Dear ${party?.name ?? "Customer"},\n\nPlease find attached ${cfg.label.toLowerCase()} ${header.number ?? ""} for ${header.currency ?? "USD"} ${money(totals.grand_total)}.\n\nKind regards,\n${tenant?.name ?? ""}`}
           pdf={buildPdf}
