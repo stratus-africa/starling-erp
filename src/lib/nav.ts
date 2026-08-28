@@ -143,11 +143,7 @@ export const navGroups: NavGroup[] = [
   {
     label: "Reports",
     items: [
-      { title: "General Ledger", url: "/accounting/ledger", icon: BookOpen },
-      { title: "Trial Balance", url: "/accounting/trial-balance", icon: Scale },
-      { title: "Profit & Loss", url: "/accounting/profit-loss", icon: TrendingUp },
-      { title: "Balance Sheet", url: "/accounting/balance-sheet", icon: LayoutList },
-      { title: "VAT Report", url: "/accounting/tax-report", icon: Percent },
+      { title: "Financial Reports", url: "/reports/financial", icon: Wallet2 },
       { title: "Sales Reports", url: "/reports/sales", icon: BarChart3 },
       { title: "Purchase Reports", url: "/reports/purchases", icon: LineChart },
       { title: "Inventory Reports", url: "/reports/inventory", icon: PieChart },
