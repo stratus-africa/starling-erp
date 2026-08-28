@@ -128,6 +128,7 @@ export const navGroups: NavGroup[] = [
   {
     label: "Accounting",
     items: [
+      { title: "Accounting", url: "/accounting", icon: Wallet2 },
       { title: "Chart of Accounts", url: "/accounting/chart", icon: BookText },
       { title: "General Ledger", url: "/accounting/ledger", icon: BookOpen },
       { title: "Trial Balance", url: "/accounting/trial-balance", icon: Scale },

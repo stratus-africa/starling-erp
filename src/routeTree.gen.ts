@@ -19,6 +19,7 @@ import { Route as AdminTenantsRouteImport } from './routes/_admin/tenants'
 import { Route as AdminSettingsRouteImport } from './routes/_admin/settings'
 import { Route as AdminPlansRouteImport } from './routes/_admin/plans'
 import { Route as AdminAuditRouteImport } from './routes/_admin/audit'
+import { Route as AuthenticatedAccountingIndexRouteImport } from './routes/_authenticated/accounting.index'
 import { Route as AuthenticatedSettingsWorkflowsRouteImport } from './routes/_authenticated/settings.workflows'
 import { Route as AuthenticatedSettingsWarehousesRouteImport } from './routes/_authenticated/settings.warehouses'
 import { Route as AuthenticatedSettingsUsersRouteImport } from './routes/_authenticated/settings.users'
@@ -139,6 +140,12 @@ const AdminAuditRoute = AdminAuditRouteImport.update({
   path: '/audit',
   getParentRoute: () => AdminRouteRoute,
 } as any)
+const AuthenticatedAccountingIndexRoute =
+  AuthenticatedAccountingIndexRouteImport.update({
+    id: '/accounting/',
+    path: '/accounting/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedSettingsWorkflowsRoute =
   AuthenticatedSettingsWorkflowsRouteImport.update({
     id: '/settings/workflows',
@@ -611,6 +618,7 @@ export interface FileRoutesByFullPath {
   '/settings/users': typeof AuthenticatedSettingsUsersRoute
   '/settings/warehouses': typeof AuthenticatedSettingsWarehousesRoute
   '/settings/workflows': typeof AuthenticatedSettingsWorkflowsRoute
+  '/accounting/': typeof AuthenticatedAccountingIndexRoute
   '/crm/customers/$id': typeof AuthenticatedCrmCustomersIdRoute
   '/manufacturing/bom/$id': typeof AuthenticatedManufacturingBomIdRoute
   '/manufacturing/items/$id': typeof AuthenticatedManufacturingItemsIdRoute
@@ -691,6 +699,7 @@ export interface FileRoutesByTo {
   '/settings/users': typeof AuthenticatedSettingsUsersRoute
   '/settings/warehouses': typeof AuthenticatedSettingsWarehousesRoute
   '/settings/workflows': typeof AuthenticatedSettingsWorkflowsRoute
+  '/accounting': typeof AuthenticatedAccountingIndexRoute
   '/crm/customers/$id': typeof AuthenticatedCrmCustomersIdRoute
   '/manufacturing/bom/$id': typeof AuthenticatedManufacturingBomIdRoute
   '/manufacturing/items/$id': typeof AuthenticatedManufacturingItemsIdRoute
@@ -774,6 +783,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/users': typeof AuthenticatedSettingsUsersRoute
   '/_authenticated/settings/warehouses': typeof AuthenticatedSettingsWarehousesRoute
   '/_authenticated/settings/workflows': typeof AuthenticatedSettingsWorkflowsRoute
+  '/_authenticated/accounting/': typeof AuthenticatedAccountingIndexRoute
   '/_authenticated/crm/customers/$id': typeof AuthenticatedCrmCustomersIdRoute
   '/_authenticated/manufacturing/bom/$id': typeof AuthenticatedManufacturingBomIdRoute
   '/_authenticated/manufacturing/items/$id': typeof AuthenticatedManufacturingItemsIdRoute
@@ -856,6 +866,7 @@ export interface FileRouteTypes {
     | '/settings/users'
     | '/settings/warehouses'
     | '/settings/workflows'
+    | '/accounting/'
     | '/crm/customers/$id'
     | '/manufacturing/bom/$id'
     | '/manufacturing/items/$id'
@@ -936,6 +947,7 @@ export interface FileRouteTypes {
     | '/settings/users'
     | '/settings/warehouses'
     | '/settings/workflows'
+    | '/accounting'
     | '/crm/customers/$id'
     | '/manufacturing/bom/$id'
     | '/manufacturing/items/$id'
@@ -1018,6 +1030,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/users'
     | '/_authenticated/settings/warehouses'
     | '/_authenticated/settings/workflows'
+    | '/_authenticated/accounting/'
     | '/_authenticated/crm/customers/$id'
     | '/_authenticated/manufacturing/bom/$id'
     | '/_authenticated/manufacturing/items/$id'
@@ -1125,6 +1138,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/audit'
       preLoaderRoute: typeof AdminAuditRouteImport
       parentRoute: typeof AdminRouteRoute
+    }
+    '/_authenticated/accounting/': {
+      id: '/_authenticated/accounting/'
+      path: '/accounting'
+      fullPath: '/accounting/'
+      preLoaderRoute: typeof AuthenticatedAccountingIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/settings/workflows': {
       id: '/_authenticated/settings/workflows'
@@ -1684,6 +1704,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedSettingsUsersRoute: typeof AuthenticatedSettingsUsersRoute
   AuthenticatedSettingsWarehousesRoute: typeof AuthenticatedSettingsWarehousesRoute
   AuthenticatedSettingsWorkflowsRoute: typeof AuthenticatedSettingsWorkflowsRoute
+  AuthenticatedAccountingIndexRoute: typeof AuthenticatedAccountingIndexRoute
   AuthenticatedCrmCustomersIdRoute: typeof AuthenticatedCrmCustomersIdRoute
   AuthenticatedManufacturingBomIdRoute: typeof AuthenticatedManufacturingBomIdRoute
   AuthenticatedManufacturingItemsIdRoute: typeof AuthenticatedManufacturingItemsIdRoute
@@ -1769,6 +1790,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSettingsUsersRoute: AuthenticatedSettingsUsersRoute,
   AuthenticatedSettingsWarehousesRoute: AuthenticatedSettingsWarehousesRoute,
   AuthenticatedSettingsWorkflowsRoute: AuthenticatedSettingsWorkflowsRoute,
+  AuthenticatedAccountingIndexRoute: AuthenticatedAccountingIndexRoute,
   AuthenticatedCrmCustomersIdRoute: AuthenticatedCrmCustomersIdRoute,
   AuthenticatedManufacturingBomIdRoute: AuthenticatedManufacturingBomIdRoute,
   AuthenticatedManufacturingItemsIdRoute:
