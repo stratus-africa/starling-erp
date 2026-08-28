@@ -51,7 +51,9 @@ import { Route as AuthenticatedDashboardsSalesRouteImport } from './routes/_auth
 import { Route as AuthenticatedDashboardsProductionRouteImport } from './routes/_authenticated/dashboards.production'
 import { Route as AuthenticatedDashboardsProcurementRouteImport } from './routes/_authenticated/dashboards.procurement'
 import { Route as AuthenticatedDashboardsLogisticsRouteImport } from './routes/_authenticated/dashboards.logistics'
+import { Route as AuthenticatedAccountingTrialBalanceRouteImport } from './routes/_authenticated/accounting.trial-balance'
 import { Route as AuthenticatedAccountingReconciliationRouteImport } from './routes/_authenticated/accounting.reconciliation'
+import { Route as AuthenticatedAccountingProfitLossRouteImport } from './routes/_authenticated/accounting.profit-loss'
 import { Route as AuthenticatedAccountingLedgerRouteImport } from './routes/_authenticated/accounting.ledger'
 import { Route as AuthenticatedAccountingJournalsRouteImport } from './routes/_authenticated/accounting.journals'
 import { Route as AuthenticatedAccountingChartRouteImport } from './routes/_authenticated/accounting.chart'
@@ -326,10 +328,22 @@ const AuthenticatedDashboardsLogisticsRoute =
     path: '/dashboards/logistics',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAccountingTrialBalanceRoute =
+  AuthenticatedAccountingTrialBalanceRouteImport.update({
+    id: '/accounting/trial-balance',
+    path: '/accounting/trial-balance',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAccountingReconciliationRoute =
   AuthenticatedAccountingReconciliationRouteImport.update({
     id: '/accounting/reconciliation',
     path: '/accounting/reconciliation',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAccountingProfitLossRoute =
+  AuthenticatedAccountingProfitLossRouteImport.update({
+    id: '/accounting/profit-loss',
+    path: '/accounting/profit-loss',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedAccountingLedgerRoute =
@@ -538,7 +552,9 @@ export interface FileRoutesByFullPath {
   '/accounting/chart': typeof AuthenticatedAccountingChartRoute
   '/accounting/journals': typeof AuthenticatedAccountingJournalsRoute
   '/accounting/ledger': typeof AuthenticatedAccountingLedgerRoute
+  '/accounting/profit-loss': typeof AuthenticatedAccountingProfitLossRoute
   '/accounting/reconciliation': typeof AuthenticatedAccountingReconciliationRoute
+  '/accounting/trial-balance': typeof AuthenticatedAccountingTrialBalanceRoute
   '/dashboards/logistics': typeof AuthenticatedDashboardsLogisticsRoute
   '/dashboards/procurement': typeof AuthenticatedDashboardsProcurementRoute
   '/dashboards/production': typeof AuthenticatedDashboardsProductionRoute
@@ -613,7 +629,9 @@ export interface FileRoutesByTo {
   '/accounting/chart': typeof AuthenticatedAccountingChartRoute
   '/accounting/journals': typeof AuthenticatedAccountingJournalsRoute
   '/accounting/ledger': typeof AuthenticatedAccountingLedgerRoute
+  '/accounting/profit-loss': typeof AuthenticatedAccountingProfitLossRoute
   '/accounting/reconciliation': typeof AuthenticatedAccountingReconciliationRoute
+  '/accounting/trial-balance': typeof AuthenticatedAccountingTrialBalanceRoute
   '/dashboards/logistics': typeof AuthenticatedDashboardsLogisticsRoute
   '/dashboards/procurement': typeof AuthenticatedDashboardsProcurementRoute
   '/dashboards/production': typeof AuthenticatedDashboardsProductionRoute
@@ -691,7 +709,9 @@ export interface FileRoutesById {
   '/_authenticated/accounting/chart': typeof AuthenticatedAccountingChartRoute
   '/_authenticated/accounting/journals': typeof AuthenticatedAccountingJournalsRoute
   '/_authenticated/accounting/ledger': typeof AuthenticatedAccountingLedgerRoute
+  '/_authenticated/accounting/profit-loss': typeof AuthenticatedAccountingProfitLossRoute
   '/_authenticated/accounting/reconciliation': typeof AuthenticatedAccountingReconciliationRoute
+  '/_authenticated/accounting/trial-balance': typeof AuthenticatedAccountingTrialBalanceRoute
   '/_authenticated/dashboards/logistics': typeof AuthenticatedDashboardsLogisticsRoute
   '/_authenticated/dashboards/procurement': typeof AuthenticatedDashboardsProcurementRoute
   '/_authenticated/dashboards/production': typeof AuthenticatedDashboardsProductionRoute
@@ -768,7 +788,9 @@ export interface FileRouteTypes {
     | '/accounting/chart'
     | '/accounting/journals'
     | '/accounting/ledger'
+    | '/accounting/profit-loss'
     | '/accounting/reconciliation'
+    | '/accounting/trial-balance'
     | '/dashboards/logistics'
     | '/dashboards/procurement'
     | '/dashboards/production'
@@ -843,7 +865,9 @@ export interface FileRouteTypes {
     | '/accounting/chart'
     | '/accounting/journals'
     | '/accounting/ledger'
+    | '/accounting/profit-loss'
     | '/accounting/reconciliation'
+    | '/accounting/trial-balance'
     | '/dashboards/logistics'
     | '/dashboards/procurement'
     | '/dashboards/production'
@@ -920,7 +944,9 @@ export interface FileRouteTypes {
     | '/_authenticated/accounting/chart'
     | '/_authenticated/accounting/journals'
     | '/_authenticated/accounting/ledger'
+    | '/_authenticated/accounting/profit-loss'
     | '/_authenticated/accounting/reconciliation'
+    | '/_authenticated/accounting/trial-balance'
     | '/_authenticated/dashboards/logistics'
     | '/_authenticated/dashboards/procurement'
     | '/_authenticated/dashboards/production'
@@ -1285,11 +1311,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardsLogisticsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/accounting/trial-balance': {
+      id: '/_authenticated/accounting/trial-balance'
+      path: '/accounting/trial-balance'
+      fullPath: '/accounting/trial-balance'
+      preLoaderRoute: typeof AuthenticatedAccountingTrialBalanceRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/accounting/reconciliation': {
       id: '/_authenticated/accounting/reconciliation'
       path: '/accounting/reconciliation'
       fullPath: '/accounting/reconciliation'
       preLoaderRoute: typeof AuthenticatedAccountingReconciliationRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/accounting/profit-loss': {
+      id: '/_authenticated/accounting/profit-loss'
+      path: '/accounting/profit-loss'
+      fullPath: '/accounting/profit-loss'
+      preLoaderRoute: typeof AuthenticatedAccountingProfitLossRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/accounting/ledger': {
@@ -1546,7 +1586,9 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAccountingChartRoute: typeof AuthenticatedAccountingChartRoute
   AuthenticatedAccountingJournalsRoute: typeof AuthenticatedAccountingJournalsRoute
   AuthenticatedAccountingLedgerRoute: typeof AuthenticatedAccountingLedgerRoute
+  AuthenticatedAccountingProfitLossRoute: typeof AuthenticatedAccountingProfitLossRoute
   AuthenticatedAccountingReconciliationRoute: typeof AuthenticatedAccountingReconciliationRoute
+  AuthenticatedAccountingTrialBalanceRoute: typeof AuthenticatedAccountingTrialBalanceRoute
   AuthenticatedDashboardsLogisticsRoute: typeof AuthenticatedDashboardsLogisticsRoute
   AuthenticatedDashboardsProcurementRoute: typeof AuthenticatedDashboardsProcurementRoute
   AuthenticatedDashboardsProductionRoute: typeof AuthenticatedDashboardsProductionRoute
@@ -1616,8 +1658,12 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAccountingChartRoute: AuthenticatedAccountingChartRoute,
   AuthenticatedAccountingJournalsRoute: AuthenticatedAccountingJournalsRoute,
   AuthenticatedAccountingLedgerRoute: AuthenticatedAccountingLedgerRoute,
+  AuthenticatedAccountingProfitLossRoute:
+    AuthenticatedAccountingProfitLossRoute,
   AuthenticatedAccountingReconciliationRoute:
     AuthenticatedAccountingReconciliationRoute,
+  AuthenticatedAccountingTrialBalanceRoute:
+    AuthenticatedAccountingTrialBalanceRoute,
   AuthenticatedDashboardsLogisticsRoute: AuthenticatedDashboardsLogisticsRoute,
   AuthenticatedDashboardsProcurementRoute:
     AuthenticatedDashboardsProcurementRoute,
