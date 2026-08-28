@@ -135,11 +135,60 @@
 }
 
 @layer base {
-  * { border-color: var(--color-border); }
+  * {
+    border-color: var(--color-border);
+  }
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   }
-  h1, h2, h3, h4 { letter-spacing: -0.02em; }
+  h1,
+  h2,
+  h3,
+  h4 {
+    letter-spacing: -0.02em;
+  }
+}
+
+/* ── Print styles (used by Trial Balance and other report pages) ──────────── */
+@media print {
+  /* Hide chrome: sidebar, topbar, toolbars, action buttons */
+  [data-sidebar],
+  aside,
+  nav,
+  header,
+  .print\:hidden {
+    display: none !important;
+  }
+
+  /* Reset page chrome */
+  body {
+    background: white !important;
+    color: black !important;
+  }
+
+  /* Let the report table fill the page */
+  .flex.h-full.flex-col {
+    height: auto !important;
+    overflow: visible !important;
+  }
+  .min-h-0.flex-1.overflow-auto {
+    overflow: visible !important;
+  }
+
+  /* Sticky thead becomes static so it prints at the top of each page */
+  thead {
+    position: static !important;
+  }
+
+  /* Keep rows together where possible */
+  tr {
+    page-break-inside: avoid;
+  }
+
+  /* Type group headers always start on a fresh line */
+  tbody tr:has(.rotate-90) {
+    page-break-before: auto;
+  }
 }
