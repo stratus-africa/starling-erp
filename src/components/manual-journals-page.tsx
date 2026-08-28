@@ -479,12 +479,67 @@ export function ManualJournalsPage() {
 
       {/* ── Void confirmation ── */}
       <AlertDialog open={!!voidingRow} onOpenChange={(o) => !o && setVoidingRow(null)}>
-        <AlertDialogContent>
+        <AlertDialogContent className="max-w-lg">
           <AlertDialogHeader>
             <AlertDialogTitle>Void and reverse journal?</AlertDialogTitle>
-            <AlertDialogDescription>
-              <span className="font-mono font-semibold">{voidingRow?.number}</span> will be voided. A balancing reversal
-              journal will be created automatically. This cannot be undone.
+            <AlertDialogDescription asChild>
+              <div className="space-y-3 text-sm">
+                <p>
+                  <span className="font-mono font-semibold text-foreground">{voidingRow?.number}</span> will be
+                  permanently marked <span className="font-semibold text-destructive">VOIDED</span>. A new reversal
+                  journal <span className="font-mono font-semibold text-foreground">VOID-{voidingRow?.number}</span>{" "}
+                  will be created with every debit and credit exactly swapped, cancelling the original entry.
+                </p>
+
+                {/* Reversal preview */}
+                {voidingRow && (
+                  <div className="rounded-md border overflow-hidden text-xs">
+                    <div className="grid grid-cols-2 divide-x">
+                      {/* Original */}
+                      <div>
+                        <div className="bg-muted/40 px-3 py-1.5 font-semibold text-muted-foreground uppercase tracking-wide text-[10px]">
+                          Original — {voidingRow.number}
+                        </div>
+                        <div className="flex justify-between px-3 py-1.5 border-t">
+                          <span className="text-muted-foreground">Debit</span>
+                          <span className="font-mono tabular-nums">
+                            {Number(voidingRow.total_debit).toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                          </span>
+                        </div>
+                        <div className="flex justify-between px-3 py-1.5 border-t">
+                          <span className="text-muted-foreground">Credit</span>
+                          <span className="font-mono tabular-nums">
+                            {Number(voidingRow.total_credit).toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                          </span>
+                        </div>
+                      </div>
+                      {/* Reversal */}
+                      <div>
+                        <div className="bg-destructive/8 px-3 py-1.5 font-semibold text-destructive uppercase tracking-wide text-[10px]">
+                          Reversal — VOID-{voidingRow.number}
+                        </div>
+                        <div className="flex justify-between px-3 py-1.5 border-t">
+                          <span className="text-muted-foreground">Debit</span>
+                          <span className="font-mono tabular-nums text-destructive">
+                            {Number(voidingRow.total_credit).toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                          </span>
+                        </div>
+                        <div className="flex justify-between px-3 py-1.5 border-t">
+                          <span className="text-muted-foreground">Credit</span>
+                          <span className="font-mono tabular-nums text-destructive">
+                            {Number(voidingRow.total_debit).toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <p className="text-muted-foreground text-xs">
+                  Both journals remain in the ledger for audit purposes. The reversal uses today's date and must land in
+                  an open accounting period.
+                </p>
+              </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
