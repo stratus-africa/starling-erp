@@ -139,6 +139,7 @@ export const navGroups: NavGroup[] = [
       { title: "VAT Report", url: "/accounting/tax-report", icon: Percent },
       { title: "Banking", url: "/accounting/banking", icon: Landmark },
       { title: "Bank Reconciliation", url: "/accounting/reconciliation", icon: Scale },
+      { title: "Posting Config", url: "/accounting/posting-config", icon: Settings2 },
     ],
   },
   {
