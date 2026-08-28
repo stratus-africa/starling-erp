@@ -73,8 +73,8 @@ export function AppTopbar() {
             size="sm"
             className="h-8 gap-1.5 border-amber-500/40 bg-amber-500/10 text-amber-700 hover:bg-amber-500/20 dark:text-amber-300"
           >
-            <Link to="/tenants">
-              <ShieldCheck className="h-3.5 w-3.5" /> Platform Console
+            <Link to="/super-admin">
+              <ShieldCheck className="h-3.5 w-3.5" /> Super Admin
             </Link>
           </Button>
         )}

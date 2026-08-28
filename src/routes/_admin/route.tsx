@@ -40,7 +40,7 @@ import type { PlatformRole } from "@/lib/platform-permissions";
 
 // ─── Route definition ─────────────────────────────────────────────────────────
 
-export const Route = createFileRoute("/super-admin")({
+export const Route = createFileRoute("/_admin")({
   ssr: false,
   component: () => (
     <AuthProvider>
