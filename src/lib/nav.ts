@@ -132,12 +132,8 @@ export const navGroups: NavGroup[] = [
     items: [
       { title: "Chart of Accounts", url: "/accounting/chart", icon: BookText },
       { title: "Manual Journals", url: "/accounting/journals", icon: BookMarked },
-      { title: "Accounting Periods", url: "/accounting/periods", icon: CalendarRange },
       { title: "Banking", url: "/accounting/banking", icon: Landmark },
       { title: "Bank Reconciliation", url: "/accounting/reconciliation", icon: Scale },
-      { title: "Posting Config", url: "/accounting/posting-config", icon: Settings2 },
-      { title: "Integrity Checks", url: "/accounting/integrity", icon: ShieldCheck },
-      { title: "Audit Trail", url: "/accounting/audit-trail", icon: GitBranch },
     ],
   },
   {
