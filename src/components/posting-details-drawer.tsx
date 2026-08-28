@@ -40,11 +40,13 @@ export function PostingDetailsDrawer({
     enabled: open && ids.length > 0,
     queryFn: async () => {
       const [{ data: entries }, { data: movements }] = await Promise.all([
-        db.from("journal_entries")
-          .select("id,number,entry_date,memo,total_debit,total_credit,source_ref_type")
+        db
+          .from("journal_entries")
+          .select("id,number,entry_date,memo,total_debit,total_credit,source_ref_type,status")
           .in("source_ref_id", ids)
           .order("created_at"),
-        db.from("stock_movements")
+        db
+          .from("stock_movements")
           .select("id,quantity,unit_cost,note,created_at,item_id,warehouse_id,ref_type")
           .in("ref_id", ids)
           .order("created_at"),
@@ -55,7 +57,8 @@ export function PostingDetailsDrawer({
       const journalIds = entryRows.map((e) => e.id);
       let lines: JournalLine[] = [];
       if (journalIds.length) {
-        const { data: jl } = await db.from("journal_lines")
+        const { data: jl } = await db
+          .from("journal_lines")
           .select("id,journal_id,debit,credit,memo,account_id")
           .in("journal_id", journalIds);
         lines = (jl ?? []) as JournalLine[];
@@ -74,10 +77,14 @@ export function PostingDetailsDrawer({
       const acctMap = new Map((accounts as Row[]).map((a) => [a.id, a]));
 
       return {
-        entries: entryRows.map((e): Row => ({
-          ...e,
-          lines: lines.filter((l) => l.journal_id === e.id).map((l) => ({ ...l, account: acctMap.get(l.account_id) })),
-        })),
+        entries: entryRows.map(
+          (e): Row => ({
+            ...e,
+            lines: lines
+              .filter((l) => l.journal_id === e.id)
+              .map((l) => ({ ...l, account: acctMap.get(l.account_id) })),
+          }),
+        ),
         movements: movementRows.map((m): Row => ({ ...m, item: itemMap.get(m.item_id) })),
       };
     },
@@ -125,7 +132,19 @@ export function PostingDetailsDrawer({
                 data.entries.map((e) => (
                   <div key={e.id} className="rounded-md border mb-3 overflow-hidden">
                     <div className="flex items-center justify-between px-3 py-2 bg-muted/30 text-sm">
-                      <span className="font-medium">{e.number ?? "Journal"}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium">{e.number ?? "Journal"}</span>
+                        {e.status === "Voided" && (
+                          <span className="inline-flex items-center rounded-full border bg-destructive/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-destructive">
+                            VOIDED
+                          </span>
+                        )}
+                        {e.source_ref_type === "reversal" && (
+                          <span className="inline-flex items-center rounded-full border bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-600 dark:text-amber-400">
+                            REVERSAL
+                          </span>
+                        )}
+                      </div>
                       <span className="text-xs text-muted-foreground">{e.entry_date}</span>
                     </div>
                     <table className="w-full text-sm">
