@@ -52,6 +52,7 @@ import { Route as AuthenticatedDashboardsProductionRouteImport } from './routes/
 import { Route as AuthenticatedDashboardsProcurementRouteImport } from './routes/_authenticated/dashboards.procurement'
 import { Route as AuthenticatedDashboardsLogisticsRouteImport } from './routes/_authenticated/dashboards.logistics'
 import { Route as AuthenticatedAccountingTrialBalanceRouteImport } from './routes/_authenticated/accounting.trial-balance'
+import { Route as AuthenticatedAccountingTaxReportRouteImport } from './routes/_authenticated/accounting.tax-report'
 import { Route as AuthenticatedAccountingReconciliationRouteImport } from './routes/_authenticated/accounting.reconciliation'
 import { Route as AuthenticatedAccountingProfitLossRouteImport } from './routes/_authenticated/accounting.profit-loss'
 import { Route as AuthenticatedAccountingPeriodsRouteImport } from './routes/_authenticated/accounting.periods'
@@ -336,6 +337,12 @@ const AuthenticatedAccountingTrialBalanceRoute =
     path: '/accounting/trial-balance',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAccountingTaxReportRoute =
+  AuthenticatedAccountingTaxReportRouteImport.update({
+    id: '/accounting/tax-report',
+    path: '/accounting/tax-report',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAccountingReconciliationRoute =
   AuthenticatedAccountingReconciliationRouteImport.update({
     id: '/accounting/reconciliation',
@@ -570,6 +577,7 @@ export interface FileRoutesByFullPath {
   '/accounting/periods': typeof AuthenticatedAccountingPeriodsRoute
   '/accounting/profit-loss': typeof AuthenticatedAccountingProfitLossRoute
   '/accounting/reconciliation': typeof AuthenticatedAccountingReconciliationRoute
+  '/accounting/tax-report': typeof AuthenticatedAccountingTaxReportRoute
   '/accounting/trial-balance': typeof AuthenticatedAccountingTrialBalanceRoute
   '/dashboards/logistics': typeof AuthenticatedDashboardsLogisticsRoute
   '/dashboards/procurement': typeof AuthenticatedDashboardsProcurementRoute
@@ -649,6 +657,7 @@ export interface FileRoutesByTo {
   '/accounting/periods': typeof AuthenticatedAccountingPeriodsRoute
   '/accounting/profit-loss': typeof AuthenticatedAccountingProfitLossRoute
   '/accounting/reconciliation': typeof AuthenticatedAccountingReconciliationRoute
+  '/accounting/tax-report': typeof AuthenticatedAccountingTaxReportRoute
   '/accounting/trial-balance': typeof AuthenticatedAccountingTrialBalanceRoute
   '/dashboards/logistics': typeof AuthenticatedDashboardsLogisticsRoute
   '/dashboards/procurement': typeof AuthenticatedDashboardsProcurementRoute
@@ -731,6 +740,7 @@ export interface FileRoutesById {
   '/_authenticated/accounting/periods': typeof AuthenticatedAccountingPeriodsRoute
   '/_authenticated/accounting/profit-loss': typeof AuthenticatedAccountingProfitLossRoute
   '/_authenticated/accounting/reconciliation': typeof AuthenticatedAccountingReconciliationRoute
+  '/_authenticated/accounting/tax-report': typeof AuthenticatedAccountingTaxReportRoute
   '/_authenticated/accounting/trial-balance': typeof AuthenticatedAccountingTrialBalanceRoute
   '/_authenticated/dashboards/logistics': typeof AuthenticatedDashboardsLogisticsRoute
   '/_authenticated/dashboards/procurement': typeof AuthenticatedDashboardsProcurementRoute
@@ -812,6 +822,7 @@ export interface FileRouteTypes {
     | '/accounting/periods'
     | '/accounting/profit-loss'
     | '/accounting/reconciliation'
+    | '/accounting/tax-report'
     | '/accounting/trial-balance'
     | '/dashboards/logistics'
     | '/dashboards/procurement'
@@ -891,6 +902,7 @@ export interface FileRouteTypes {
     | '/accounting/periods'
     | '/accounting/profit-loss'
     | '/accounting/reconciliation'
+    | '/accounting/tax-report'
     | '/accounting/trial-balance'
     | '/dashboards/logistics'
     | '/dashboards/procurement'
@@ -972,6 +984,7 @@ export interface FileRouteTypes {
     | '/_authenticated/accounting/periods'
     | '/_authenticated/accounting/profit-loss'
     | '/_authenticated/accounting/reconciliation'
+    | '/_authenticated/accounting/tax-report'
     | '/_authenticated/accounting/trial-balance'
     | '/_authenticated/dashboards/logistics'
     | '/_authenticated/dashboards/procurement'
@@ -1344,6 +1357,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAccountingTrialBalanceRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/accounting/tax-report': {
+      id: '/_authenticated/accounting/tax-report'
+      path: '/accounting/tax-report'
+      fullPath: '/accounting/tax-report'
+      preLoaderRoute: typeof AuthenticatedAccountingTaxReportRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/accounting/reconciliation': {
       id: '/_authenticated/accounting/reconciliation'
       path: '/accounting/reconciliation'
@@ -1630,6 +1650,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAccountingPeriodsRoute: typeof AuthenticatedAccountingPeriodsRoute
   AuthenticatedAccountingProfitLossRoute: typeof AuthenticatedAccountingProfitLossRoute
   AuthenticatedAccountingReconciliationRoute: typeof AuthenticatedAccountingReconciliationRoute
+  AuthenticatedAccountingTaxReportRoute: typeof AuthenticatedAccountingTaxReportRoute
   AuthenticatedAccountingTrialBalanceRoute: typeof AuthenticatedAccountingTrialBalanceRoute
   AuthenticatedDashboardsLogisticsRoute: typeof AuthenticatedDashboardsLogisticsRoute
   AuthenticatedDashboardsProcurementRoute: typeof AuthenticatedDashboardsProcurementRoute
@@ -1707,6 +1728,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
     AuthenticatedAccountingProfitLossRoute,
   AuthenticatedAccountingReconciliationRoute:
     AuthenticatedAccountingReconciliationRoute,
+  AuthenticatedAccountingTaxReportRoute: AuthenticatedAccountingTaxReportRoute,
   AuthenticatedAccountingTrialBalanceRoute:
     AuthenticatedAccountingTrialBalanceRoute,
   AuthenticatedDashboardsLogisticsRoute: AuthenticatedDashboardsLogisticsRoute,

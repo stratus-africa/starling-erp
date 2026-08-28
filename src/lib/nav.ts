@@ -135,6 +135,7 @@ export const navGroups: NavGroup[] = [
       { title: "Balance Sheet", url: "/accounting/balance-sheet", icon: LayoutList },
       { title: "Manual Journals", url: "/accounting/journals", icon: BookMarked },
       { title: "Accounting Periods", url: "/accounting/periods", icon: CalendarRange },
+      { title: "VAT Report", url: "/accounting/tax-report", icon: Percent },
       { title: "Banking", url: "/accounting/banking", icon: Landmark },
       { title: "Bank Reconciliation", url: "/accounting/reconciliation", icon: Scale },
     ],
