@@ -263,17 +263,82 @@ export const paymentMadeFields: FieldDef[] = [
   { key: "amount", label: "Amount", type: "number", className: "text-right", render: moneyRight },
 ];
 
+// NOTE: The Chart of Accounts page uses a dedicated component
+// (src/components/chart-of-accounts-page.tsx) and no longer uses DataModulePage.
+// This export is kept for any legacy references (e.g. reporting or FK pickers).
 export const chartOfAccountFields: FieldDef[] = [
-  { key: "code", label: "Code", render: mono },
-  { key: "name", label: "Account", required: true, render: bold },
+  { key: "code", label: "Code", render: mono, group: "Identity" },
+  { key: "name", label: "Account Name", required: true, render: bold, group: "Identity" },
   {
     key: "type",
-    label: "Type",
+    label: "Account Type",
     type: "select",
     options: ["Asset", "Liability", "Equity", "Income", "Expense"],
     defaultValue: "Asset",
+    group: "Identity",
   },
-  { key: "balance", label: "Balance", type: "number", className: "text-right", render: moneyRight },
+  {
+    key: "parent_id",
+    label: "Parent Account",
+    type: "fk",
+    fkTable: "chart_of_accounts",
+    fkLabel: "name",
+    hideInTable: true,
+    group: "Identity",
+  },
+  {
+    key: "normal_balance",
+    label: "Normal Balance",
+    type: "select",
+    options: ["Debit", "Credit"],
+    defaultValue: "Debit",
+    hideInTable: true,
+    group: "Identity",
+  },
+  {
+    key: "currency",
+    label: "Currency",
+    type: "select",
+    options: ["USD", "EUR", "GBP", "KES", "AED", "EGP", "INR", "ZAR"],
+    hideInTable: true,
+    group: "Identity",
+  },
+  { key: "description", label: "Description", type: "textarea", hideInTable: true, group: "Identity" },
+  {
+    key: "opening_balance",
+    label: "Opening Balance",
+    type: "number",
+    className: "text-right",
+    render: moneyRight,
+    hideInTable: true,
+    group: "Balances",
+  },
+  {
+    key: "balance",
+    label: "Account Balance",
+    type: "number",
+    className: "text-right",
+    render: moneyRight,
+    group: "Balances",
+  },
+  {
+    key: "is_active",
+    label: "Active",
+    type: "select",
+    options: ["true", "false"],
+    defaultValue: "true",
+    hideInTable: true,
+    group: "Settings",
+  },
+  {
+    key: "allow_manual_posting",
+    label: "Allow Manual Posting",
+    type: "select",
+    options: ["true", "false"],
+    defaultValue: "true",
+    hideInTable: true,
+    group: "Settings",
+  },
 ];
 
 export const bankAccountFields: FieldDef[] = [
