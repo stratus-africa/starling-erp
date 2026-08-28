@@ -73,6 +73,7 @@ export const navGroups: NavGroup[] = [
     label: "Overview",
     items: [
       { title: "Dashboard", url: "/", icon: LayoutDashboard },
+      { title: "Accounting", url: "/accounting", icon: Wallet2 },
       { title: "Sales", url: "/dashboards/sales", icon: TrendingUp },
       { title: "Logistics", url: "/dashboards/logistics", icon: TruckIcon },
       { title: "Production", url: "/dashboards/production", icon: HardHat, feature: "manufacturing" },
@@ -129,15 +130,9 @@ export const navGroups: NavGroup[] = [
   {
     label: "Accounting",
     items: [
-      { title: "Accounting", url: "/accounting", icon: Wallet2 },
       { title: "Chart of Accounts", url: "/accounting/chart", icon: BookText },
-      { title: "General Ledger", url: "/accounting/ledger", icon: BookOpen },
-      { title: "Trial Balance", url: "/accounting/trial-balance", icon: Scale },
-      { title: "Profit & Loss", url: "/accounting/profit-loss", icon: TrendingUp },
-      { title: "Balance Sheet", url: "/accounting/balance-sheet", icon: LayoutList },
       { title: "Manual Journals", url: "/accounting/journals", icon: BookMarked },
       { title: "Accounting Periods", url: "/accounting/periods", icon: CalendarRange },
-      { title: "VAT Report", url: "/accounting/tax-report", icon: Percent },
       { title: "Banking", url: "/accounting/banking", icon: Landmark },
       { title: "Bank Reconciliation", url: "/accounting/reconciliation", icon: Scale },
       { title: "Posting Config", url: "/accounting/posting-config", icon: Settings2 },
@@ -148,11 +143,15 @@ export const navGroups: NavGroup[] = [
   {
     label: "Reports",
     items: [
+      { title: "General Ledger", url: "/accounting/ledger", icon: BookOpen },
+      { title: "Trial Balance", url: "/accounting/trial-balance", icon: Scale },
+      { title: "Profit & Loss", url: "/accounting/profit-loss", icon: TrendingUp },
+      { title: "Balance Sheet", url: "/accounting/balance-sheet", icon: LayoutList },
+      { title: "VAT Report", url: "/accounting/tax-report", icon: Percent },
       { title: "Sales Reports", url: "/reports/sales", icon: BarChart3 },
       { title: "Purchase Reports", url: "/reports/purchases", icon: LineChart },
       { title: "Inventory Reports", url: "/reports/inventory", icon: PieChart },
       { title: "Manufacturing Reports", url: "/reports/manufacturing", icon: Activity, feature: "manufacturing" },
-      { title: "Financial Reports", url: "/reports/financial", icon: Wallet2 },
     ],
   },
   {
