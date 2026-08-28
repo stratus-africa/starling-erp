@@ -51,6 +51,7 @@ import {
   HardHat,
   ShieldCheck,
   Settings2,
+  LayoutList,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -130,6 +131,7 @@ export const navGroups: NavGroup[] = [
       { title: "General Ledger", url: "/accounting/ledger", icon: BookOpen },
       { title: "Trial Balance", url: "/accounting/trial-balance", icon: Scale },
       { title: "Profit & Loss", url: "/accounting/profit-loss", icon: TrendingUp },
+      { title: "Balance Sheet", url: "/accounting/balance-sheet", icon: LayoutList },
       { title: "Manual Journals", url: "/accounting/journals", icon: BookMarked },
       { title: "Banking", url: "/accounting/banking", icon: Landmark, feature: "banking" },
       { title: "Bank Reconciliation", url: "/accounting/reconciliation", icon: Scale, feature: "banking" },

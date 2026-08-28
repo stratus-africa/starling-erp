@@ -58,6 +58,7 @@ import { Route as AuthenticatedAccountingLedgerRouteImport } from './routes/_aut
 import { Route as AuthenticatedAccountingJournalsRouteImport } from './routes/_authenticated/accounting.journals'
 import { Route as AuthenticatedAccountingChartRouteImport } from './routes/_authenticated/accounting.chart'
 import { Route as AuthenticatedAccountingBankingRouteImport } from './routes/_authenticated/accounting.banking'
+import { Route as AuthenticatedAccountingBalanceSheetRouteImport } from './routes/_authenticated/accounting.balance-sheet'
 import { Route as AuthenticatedSalesShipmentsIndexRouteImport } from './routes/_authenticated/sales.shipments.index'
 import { Route as AuthenticatedSalesQuotesIndexRouteImport } from './routes/_authenticated/sales.quotes.index'
 import { Route as AuthenticatedSalesPackagesIndexRouteImport } from './routes/_authenticated/sales.packages.index'
@@ -370,6 +371,12 @@ const AuthenticatedAccountingBankingRoute =
     path: '/accounting/banking',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAccountingBalanceSheetRoute =
+  AuthenticatedAccountingBalanceSheetRouteImport.update({
+    id: '/accounting/balance-sheet',
+    path: '/accounting/balance-sheet',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedSalesShipmentsIndexRoute =
   AuthenticatedSalesShipmentsIndexRouteImport.update({
     id: '/sales/shipments/',
@@ -548,6 +555,7 @@ export interface FileRoutesByFullPath {
   '/tenants': typeof AdminTenantsRoute
   '/users': typeof AdminUsersRoute
   '/audit-events': typeof AuthenticatedAuditEventsRoute
+  '/accounting/balance-sheet': typeof AuthenticatedAccountingBalanceSheetRoute
   '/accounting/banking': typeof AuthenticatedAccountingBankingRoute
   '/accounting/chart': typeof AuthenticatedAccountingChartRoute
   '/accounting/journals': typeof AuthenticatedAccountingJournalsRoute
@@ -625,6 +633,7 @@ export interface FileRoutesByTo {
   '/tenants': typeof AdminTenantsRoute
   '/users': typeof AdminUsersRoute
   '/audit-events': typeof AuthenticatedAuditEventsRoute
+  '/accounting/balance-sheet': typeof AuthenticatedAccountingBalanceSheetRoute
   '/accounting/banking': typeof AuthenticatedAccountingBankingRoute
   '/accounting/chart': typeof AuthenticatedAccountingChartRoute
   '/accounting/journals': typeof AuthenticatedAccountingJournalsRoute
@@ -705,6 +714,7 @@ export interface FileRoutesById {
   '/_admin/users': typeof AdminUsersRoute
   '/_authenticated/audit-events': typeof AuthenticatedAuditEventsRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
+  '/_authenticated/accounting/balance-sheet': typeof AuthenticatedAccountingBalanceSheetRoute
   '/_authenticated/accounting/banking': typeof AuthenticatedAccountingBankingRoute
   '/_authenticated/accounting/chart': typeof AuthenticatedAccountingChartRoute
   '/_authenticated/accounting/journals': typeof AuthenticatedAccountingJournalsRoute
@@ -784,6 +794,7 @@ export interface FileRouteTypes {
     | '/tenants'
     | '/users'
     | '/audit-events'
+    | '/accounting/balance-sheet'
     | '/accounting/banking'
     | '/accounting/chart'
     | '/accounting/journals'
@@ -861,6 +872,7 @@ export interface FileRouteTypes {
     | '/tenants'
     | '/users'
     | '/audit-events'
+    | '/accounting/balance-sheet'
     | '/accounting/banking'
     | '/accounting/chart'
     | '/accounting/journals'
@@ -940,6 +952,7 @@ export interface FileRouteTypes {
     | '/_admin/users'
     | '/_authenticated/audit-events'
     | '/_authenticated/'
+    | '/_authenticated/accounting/balance-sheet'
     | '/_authenticated/accounting/banking'
     | '/_authenticated/accounting/chart'
     | '/_authenticated/accounting/journals'
@@ -1360,6 +1373,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAccountingBankingRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/accounting/balance-sheet': {
+      id: '/_authenticated/accounting/balance-sheet'
+      path: '/accounting/balance-sheet'
+      fullPath: '/accounting/balance-sheet'
+      preLoaderRoute: typeof AuthenticatedAccountingBalanceSheetRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/sales/shipments/': {
       id: '/_authenticated/sales/shipments/'
       path: '/sales/shipments'
@@ -1582,6 +1602,7 @@ const AdminRouteRouteWithChildren = AdminRouteRoute._addFileChildren(
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAuditEventsRoute: typeof AuthenticatedAuditEventsRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
+  AuthenticatedAccountingBalanceSheetRoute: typeof AuthenticatedAccountingBalanceSheetRoute
   AuthenticatedAccountingBankingRoute: typeof AuthenticatedAccountingBankingRoute
   AuthenticatedAccountingChartRoute: typeof AuthenticatedAccountingChartRoute
   AuthenticatedAccountingJournalsRoute: typeof AuthenticatedAccountingJournalsRoute
@@ -1654,6 +1675,8 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAuditEventsRoute: AuthenticatedAuditEventsRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
+  AuthenticatedAccountingBalanceSheetRoute:
+    AuthenticatedAccountingBalanceSheetRoute,
   AuthenticatedAccountingBankingRoute: AuthenticatedAccountingBankingRoute,
   AuthenticatedAccountingChartRoute: AuthenticatedAccountingChartRoute,
   AuthenticatedAccountingJournalsRoute: AuthenticatedAccountingJournalsRoute,
