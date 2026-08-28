@@ -1326,17 +1326,33 @@ export function DocumentEditor({
       {!isNew && (
         <>
           <AlertDialog open={voidOpen} onOpenChange={setVoidOpen}>
-            <AlertDialogContent>
+            <AlertDialogContent className="max-w-md">
               <AlertDialogHeader>
                 <AlertDialogTitle>Void and reverse this {cfg.label.toLowerCase()}?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  The original posted document will remain unchanged for audit purposes. NimbusERP will create a
-                  balanced reversal journal and inverse inventory movements, then mark the original document as Voided.
+                <AlertDialogDescription asChild>
+                  <div className="space-y-3 text-sm">
+                    <p>
+                      The original posted document will remain unchanged for audit purposes. A balanced reversal journal{" "}
+                      <span className="font-mono font-semibold text-foreground">VOID-{header.number}</span> will be
+                      created with every debit and credit exactly swapped, and the original will be marked{" "}
+                      <span className="font-semibold text-destructive">VOIDED</span>.
+                    </p>
+                    <ul className="space-y-1 text-xs text-muted-foreground list-disc list-inside">
+                      <li>All journal lines are inverted — every DR becomes CR and vice versa</li>
+                      <li>Inventory movements are reversed at the same unit cost</li>
+                      <li>Reversal uses today's date and must land in an open accounting period</li>
+                      <li>Both the original and the reversal remain in the ledger permanently</li>
+                    </ul>
+                  </div>
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={() => voidDocument.mutate()} disabled={voidDocument.isPending}>
+                <AlertDialogAction
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  onClick={() => voidDocument.mutate()}
+                  disabled={voidDocument.isPending}
+                >
                   {voidDocument.isPending ? "Reversing…" : "Void & Reverse"}
                 </AlertDialogAction>
               </AlertDialogFooter>

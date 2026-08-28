@@ -510,17 +510,29 @@ export function DataModulePage(props: DataModulePageProps) {
       />
 
       <AlertDialog open={!!voidingRow} onOpenChange={(o) => !o && setVoidingRow(null)}>
-        <AlertDialogContent>
+        <AlertDialogContent className="max-w-md">
           <AlertDialogHeader>
             <AlertDialogTitle>Void and reverse this {entityLabel.toLowerCase()}?</AlertDialogTitle>
-            <AlertDialogDescription>
-              The posted document will remain unchanged for audit purposes. A balanced reversal journal and inverse
-              inventory movements will be created, and the original document will be marked Voided.
+            <AlertDialogDescription asChild>
+              <div className="space-y-3 text-sm">
+                <p>
+                  <span className="font-mono font-semibold text-foreground">{voidingRow?.number ?? entityLabel}</span>{" "}
+                  will be permanently marked <span className="font-semibold text-destructive">VOIDED</span>. A reversal
+                  journal will be created with every debit and credit exactly swapped.
+                </p>
+                <ul className="space-y-1 text-xs text-muted-foreground list-disc list-inside">
+                  <li>Original document remains in the ledger — it is never deleted or modified</li>
+                  <li>All journal lines are inverted — every DR becomes CR and vice versa</li>
+                  <li>Inventory movements are reversed at the same unit cost</li>
+                  <li>Reversal uses today's date and must land in an open accounting period</li>
+                </ul>
+              </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               onClick={() => {
                 if (voidingRow) voidDocument.mutate(voidingRow);
               }}
