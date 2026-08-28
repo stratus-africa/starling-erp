@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { db } from "@/lib/typed-db";
+import { db, type Row } from "@/lib/typed-db";
 import { useAuth } from "@/hooks/use-auth";
 import { useFkOptions } from "@/hooks/use-module-data";
 import { toast } from "sonner";
@@ -318,7 +318,7 @@ export function CustomerEditor({ id, fields }: { id: string; fields: FieldDef[] 
         .is("deleted_at", null)
         .gte("date", ytdStart);
       if (error) return { count: 0, total: 0 };
-      const rows = data ?? [];
+      const rows: Row[] = data ?? [];
       return {
         count: rows.length,
         total: rows.reduce((s, r) => s + Number(r.grand_total ?? 0), 0),

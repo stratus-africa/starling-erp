@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { db } from "@/lib/typed-db";
+import { db, type Row } from "@/lib/typed-db";
 import { useAuth } from "@/hooks/use-auth";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -125,7 +125,7 @@ export function ProductionItemPage({ id }: { id: string }) {
         .is("deleted_at", null)
         .limit(5);
       if (hErr || !headers?.length) return [];
-      const bomIds = headers.map((h) => h.id);
+      const bomIds = (headers as Row[]).map((h) => h.id);
       // Then get the component lines for those BOMs
       const { data, error } = await db.from("bom_lines")
         .select("*, items(id, name, sku, stock)")
@@ -163,7 +163,7 @@ export function ProductionItemPage({ id }: { id: string }) {
         .eq("product_id", id)
         .is("deleted_at", null);
       if (!headers?.length) return 0;
-      const bomIds = headers.map((h) => h.id);
+      const bomIds = (headers as Row[]).map((h) => h.id);
       // Find open production orders using those BOMs
       const { data } = await db.from("production_orders")
         .select("quantity, status")

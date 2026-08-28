@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
-import { db } from "@/lib/typed-db";
+import { db, type Row } from "@/lib/typed-db";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
 import type { JournalLine } from "@/lib/db-types";
@@ -50,33 +50,35 @@ export function PostingDetailsDrawer({
           .order("created_at"),
       ]);
 
-      const journalIds = (entries ?? []).map((e) => e.id);
+      const entryRows: Row[] = entries ?? [];
+      const movementRows: Row[] = movements ?? [];
+      const journalIds = entryRows.map((e) => e.id);
       let lines: JournalLine[] = [];
       if (journalIds.length) {
         const { data: jl } = await db.from("journal_lines")
           .select("id,journal_id,debit,credit,memo,account_id")
           .in("journal_id", journalIds);
-        lines = jl ?? [];
+        lines = (jl ?? []) as JournalLine[];
       }
 
-      const itemIds = [...new Set((movements ?? []).map((m) => m.item_id).filter((id): id is string => Boolean(id)))];
+      const itemIds = [...new Set(movementRows.map((m) => m.item_id as string).filter(Boolean))];
       const acctIds = [...new Set(lines.map((l) => l.account_id).filter(Boolean))];
       const items = itemIds.length
-        ? ((await db.from("items").select("id,name,sku").in("id", itemIds)).data ?? [])
+        ? (((await db.from("items").select("id,name,sku").in("id", itemIds)).data ?? []) as Row[])
         : [];
       const accounts = acctIds.length
-        ? ((await db.from("chart_of_accounts").select("id,code,name").in("id", acctIds)).data ?? [])
+        ? (((await db.from("chart_of_accounts").select("id,code,name").in("id", acctIds)).data ?? []) as Row[])
         : [];
 
-      const itemMap = new Map(items.map((i) => [i.id, i]));
-      const acctMap = new Map(accounts.map((a) => [a.id, a]));
+      const itemMap = new Map((items as Row[]).map((i) => [i.id, i]));
+      const acctMap = new Map((accounts as Row[]).map((a) => [a.id, a]));
 
       return {
-        entries: (entries ?? []).map((e) => ({
+        entries: entryRows.map((e) => ({
           ...e,
           lines: lines.filter((l) => l.journal_id === e.id).map((l) => ({ ...l, account: acctMap.get(l.account_id) })),
         })),
-        movements: (movements ?? []).map((m) => ({ ...m, item: itemMap.get(m.item_id) })),
+        movements: movementRows.map((m) => ({ ...m, item: itemMap.get(m.item_id) })),
       };
     },
   });
