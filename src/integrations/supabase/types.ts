@@ -14,6 +14,224 @@ export type Database = {
   }
   public: {
     Tables: {
+      approval_actions: {
+        Row: {
+          acted_at: string
+          acted_by: string
+          action: string
+          id: string
+          note: string | null
+          request_id: string
+          tenant_id: string
+          workflow_step_id: string
+        }
+        Insert: {
+          acted_at?: string
+          acted_by: string
+          action: string
+          id?: string
+          note?: string | null
+          request_id: string
+          tenant_id: string
+          workflow_step_id: string
+        }
+        Update: {
+          acted_at?: string
+          acted_by?: string
+          action?: string
+          id?: string
+          note?: string | null
+          request_id?: string
+          tenant_id?: string
+          workflow_step_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "approval_actions_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "approval_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "approval_actions_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "approval_actions_workflow_step_id_fkey"
+            columns: ["workflow_step_id"]
+            isOneToOne: false
+            referencedRelation: "approval_workflow_steps"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      approval_requests: {
+        Row: {
+          amount: number | null
+          completed_at: string | null
+          created_at: string
+          current_step: number
+          entity_id: string
+          entity_type: string
+          id: string
+          idempotency_key: string | null
+          payload: Json
+          requested_by: string
+          status: string
+          submitted_at: string
+          tenant_id: string
+          updated_at: string
+          workflow_id: string
+        }
+        Insert: {
+          amount?: number | null
+          completed_at?: string | null
+          created_at?: string
+          current_step?: number
+          entity_id: string
+          entity_type: string
+          id?: string
+          idempotency_key?: string | null
+          payload?: Json
+          requested_by: string
+          status?: string
+          submitted_at?: string
+          tenant_id: string
+          updated_at?: string
+          workflow_id: string
+        }
+        Update: {
+          amount?: number | null
+          completed_at?: string | null
+          created_at?: string
+          current_step?: number
+          entity_id?: string
+          entity_type?: string
+          id?: string
+          idempotency_key?: string | null
+          payload?: Json
+          requested_by?: string
+          status?: string
+          submitted_at?: string
+          tenant_id?: string
+          updated_at?: string
+          workflow_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "approval_requests_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "approval_requests_workflow_id_fkey"
+            columns: ["workflow_id"]
+            isOneToOne: false
+            referencedRelation: "approval_workflows"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      approval_workflow_steps: {
+        Row: {
+          approver_role: string | null
+          approver_type: string
+          approver_user_id: string | null
+          created_at: string
+          id: string
+          minimum_approvals: number
+          name: string
+          step_order: number
+          workflow_id: string
+        }
+        Insert: {
+          approver_role?: string | null
+          approver_type: string
+          approver_user_id?: string | null
+          created_at?: string
+          id?: string
+          minimum_approvals?: number
+          name: string
+          step_order: number
+          workflow_id: string
+        }
+        Update: {
+          approver_role?: string | null
+          approver_type?: string
+          approver_user_id?: string | null
+          created_at?: string
+          id?: string
+          minimum_approvals?: number
+          name?: string
+          step_order?: number
+          workflow_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "approval_workflow_steps_workflow_id_fkey"
+            columns: ["workflow_id"]
+            isOneToOne: false
+            referencedRelation: "approval_workflows"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      approval_workflows: {
+        Row: {
+          code: string
+          conditions: Json
+          created_at: string
+          created_by: string | null
+          description: string | null
+          entity_type: string
+          id: string
+          is_active: boolean
+          name: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          conditions?: Json
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          entity_type: string
+          id?: string
+          is_active?: boolean
+          name: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          conditions?: Json
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          entity_type?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "approval_workflows_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       attachments: {
         Row: {
           deleted_at: string | null
@@ -63,57 +281,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      business_events: {
-        Row: {
-          id: string
-          tenant_id: string
-          actor_id: string | null
-          actor_email: string | null
-          action: string
-          entity_type: string
-          entity_id: string | null
-          old_values: Json | null
-          new_values: Json | null
-          metadata: Json
-          ip_address: string | null
-          user_agent: string | null
-          occurred_at: string
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          tenant_id: string
-          actor_id?: string | null
-          actor_email?: string | null
-          action: string
-          entity_type: string
-          entity_id?: string | null
-          old_values?: Json | null
-          new_values?: Json | null
-          metadata?: Json
-          ip_address?: string | null
-          user_agent?: string | null
-          occurred_at?: string
-          created_at?: string
-        }
-        Update: {
-          id?: string
-          tenant_id?: string
-          actor_id?: string | null
-          actor_email?: string | null
-          action?: string
-          entity_type?: string
-          entity_id?: string | null
-          old_values?: Json | null
-          new_values?: Json | null
-          metadata?: Json
-          ip_address?: string | null
-          user_agent?: string | null
-          occurred_at?: string
-          created_at?: string
-        }
-        Relationships: []
       }
       audit_logs: {
         Row: {
@@ -279,6 +446,7 @@ export type Database = {
           notes: string | null
           number: string | null
           posted_at: string | null
+          reversal_id: string | null
           search_vec: unknown
           source_po_id: string | null
           status: string | null
@@ -287,7 +455,6 @@ export type Database = {
           tax_total: number
           tenant_id: string
           updated_at: string
-          reversal_id: string | null
           voided_at: string | null
           voided_by: string | null
         }
@@ -307,6 +474,8 @@ export type Database = {
           id?: string
           notes?: string | null
           number?: string | null
+          posted_at?: string | null
+          reversal_id?: string | null
           search_vec?: unknown
           source_po_id?: string | null
           status?: string | null
@@ -315,8 +484,6 @@ export type Database = {
           tax_total?: number
           tenant_id: string
           updated_at?: string
-          posted_at?: string | null
-          reversal_id?: string | null
           voided_at?: string | null
           voided_by?: string | null
         }
@@ -336,6 +503,8 @@ export type Database = {
           id?: string
           notes?: string | null
           number?: string | null
+          posted_at?: string | null
+          reversal_id?: string | null
           search_vec?: unknown
           source_po_id?: string | null
           status?: string | null
@@ -344,8 +513,6 @@ export type Database = {
           tax_total?: number
           tenant_id?: string
           updated_at?: string
-          posted_at?: string | null
-          reversal_id?: string | null
           voided_at?: string | null
           voided_by?: string | null
         }
@@ -414,6 +581,13 @@ export type Database = {
             foreignKeyName: "bom_headers_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
+            referencedRelation: "inventory_item_stock"
+            referencedColumns: ["item_id"]
+          },
+          {
+            foreignKeyName: "bom_headers_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
             referencedRelation: "items"
             referencedColumns: ["id"]
           },
@@ -471,11 +645,77 @@ export type Database = {
             foreignKeyName: "bom_lines_item_id_fkey"
             columns: ["item_id"]
             isOneToOne: false
+            referencedRelation: "inventory_item_stock"
+            referencedColumns: ["item_id"]
+          },
+          {
+            foreignKeyName: "bom_lines_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
             referencedRelation: "items"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "bom_lines_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      business_events: {
+        Row: {
+          action: string
+          actor_email: string | null
+          actor_id: string | null
+          created_at: string
+          entity_id: string | null
+          entity_type: string
+          id: string
+          ip_address: unknown
+          metadata: Json
+          new_values: Json | null
+          occurred_at: string
+          old_values: Json | null
+          tenant_id: string
+          user_agent: string | null
+        }
+        Insert: {
+          action: string
+          actor_email?: string | null
+          actor_id?: string | null
+          created_at?: string
+          entity_id?: string | null
+          entity_type: string
+          id?: string
+          ip_address?: unknown
+          metadata?: Json
+          new_values?: Json | null
+          occurred_at?: string
+          old_values?: Json | null
+          tenant_id: string
+          user_agent?: string | null
+        }
+        Update: {
+          action?: string
+          actor_email?: string | null
+          actor_id?: string | null
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string
+          id?: string
+          ip_address?: unknown
+          metadata?: Json
+          new_values?: Json | null
+          occurred_at?: string
+          old_values?: Json | null
+          tenant_id?: string
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "business_events_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
@@ -591,6 +831,13 @@ export type Database = {
             foreignKeyName: "credit_note_lines_item_id_fkey"
             columns: ["item_id"]
             isOneToOne: false
+            referencedRelation: "inventory_item_stock"
+            referencedColumns: ["item_id"]
+          },
+          {
+            foreignKeyName: "credit_note_lines_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
             referencedRelation: "items"
             referencedColumns: ["id"]
           },
@@ -620,12 +867,12 @@ export type Database = {
           number: string | null
           posted_at: string | null
           reason: string | null
+          reversal_id: string | null
           status: string | null
           subtotal: number
           tax_total: number
           tenant_id: string
           updated_at: string
-          reversal_id: string | null
           voided_at: string | null
           voided_by: string | null
         }
@@ -643,14 +890,14 @@ export type Database = {
           invoice_id?: string | null
           notes?: string | null
           number?: string | null
+          posted_at?: string | null
           reason?: string | null
+          reversal_id?: string | null
           status?: string | null
           subtotal?: number
           tax_total?: number
           tenant_id: string
           updated_at?: string
-          posted_at?: string | null
-          reversal_id?: string | null
           voided_at?: string | null
           voided_by?: string | null
         }
@@ -668,14 +915,14 @@ export type Database = {
           invoice_id?: string | null
           notes?: string | null
           number?: string | null
+          posted_at?: string | null
           reason?: string | null
+          reversal_id?: string | null
           status?: string | null
           subtotal?: number
           tax_total?: number
           tenant_id?: string
           updated_at?: string
-          posted_at?: string | null
-          reversal_id?: string | null
           voided_at?: string | null
           voided_by?: string | null
         }
@@ -843,6 +1090,60 @@ export type Database = {
           },
         ]
       }
+      document_reversals: {
+        Row: {
+          actor_id: string | null
+          created_at: string
+          entity_id: string
+          entity_type: string
+          id: string
+          metadata: Json
+          reason: string
+          reversal_journal_id: string | null
+          tenant_id: string
+          voided_at: string
+        }
+        Insert: {
+          actor_id?: string | null
+          created_at?: string
+          entity_id: string
+          entity_type: string
+          id?: string
+          metadata?: Json
+          reason: string
+          reversal_journal_id?: string | null
+          tenant_id: string
+          voided_at?: string
+        }
+        Update: {
+          actor_id?: string | null
+          created_at?: string
+          entity_id?: string
+          entity_type?: string
+          id?: string
+          metadata?: Json
+          reason?: string
+          reversal_journal_id?: string | null
+          tenant_id?: string
+          voided_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_reversals_reversal_journal_id_fkey"
+            columns: ["reversal_journal_id"]
+            isOneToOne: false
+            referencedRelation: "journal_entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "document_reversals_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       document_templates: {
         Row: {
           accent_color: string
@@ -991,13 +1292,13 @@ export type Database = {
           number: string | null
           posted_at: string | null
           reference: string | null
+          reversal_id: string | null
           status: string
           supplier_id: string | null
           tax_amount: number
           tenant_id: string
           total: number
           updated_at: string
-          reversal_id: string | null
           voided_at: string | null
           voided_by: string | null
         }
@@ -1016,15 +1317,15 @@ export type Database = {
           mode?: string | null
           notes?: string | null
           number?: string | null
+          posted_at?: string | null
           reference?: string | null
+          reversal_id?: string | null
           status?: string
           supplier_id?: string | null
           tax_amount?: number
           tenant_id: string
           total?: number
           updated_at?: string
-          posted_at?: string | null
-          reversal_id?: string | null
           voided_at?: string | null
           voided_by?: string | null
         }
@@ -1043,15 +1344,15 @@ export type Database = {
           mode?: string | null
           notes?: string | null
           number?: string | null
+          posted_at?: string | null
           reference?: string | null
+          reversal_id?: string | null
           status?: string
           supplier_id?: string | null
           tax_amount?: number
           tenant_id?: string
           total?: number
           updated_at?: string
-          posted_at?: string | null
-          reversal_id?: string | null
           voided_at?: string | null
           voided_by?: string | null
         }
@@ -1098,13 +1399,13 @@ export type Database = {
           posted_at: string | null
           quantity: number
           reason: string | null
+          reversal_id: string | null
           status: string | null
           tenant_id: string
           updated_at: string
-          warehouse_id: string | null
-          reversal_id: string | null
           voided_at: string | null
           voided_by: string | null
+          warehouse_id: string | null
         }
         Insert: {
           created_at?: string
@@ -1114,16 +1415,16 @@ export type Database = {
           id?: string
           item_id?: string | null
           number: string
+          posted_at?: string | null
           quantity?: number
           reason?: string | null
+          reversal_id?: string | null
           status?: string | null
           tenant_id: string
           updated_at?: string
-          warehouse_id?: string | null
-          posted_at?: string | null
-          reversal_id?: string | null
           voided_at?: string | null
           voided_by?: string | null
+          warehouse_id?: string | null
         }
         Update: {
           created_at?: string
@@ -1133,18 +1434,25 @@ export type Database = {
           id?: string
           item_id?: string | null
           number?: string
+          posted_at?: string | null
           quantity?: number
           reason?: string | null
+          reversal_id?: string | null
           status?: string | null
           tenant_id?: string
           updated_at?: string
-          warehouse_id?: string | null
-          posted_at?: string | null
-          reversal_id?: string | null
           voided_at?: string | null
           voided_by?: string | null
+          warehouse_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "inventory_adjustments_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_item_stock"
+            referencedColumns: ["item_id"]
+          },
           {
             foreignKeyName: "inventory_adjustments_item_id_fkey"
             columns: ["item_id"]
@@ -1174,11 +1482,11 @@ export type Database = {
           number: string
           posted_at: string | null
           quantity: number
+          reversal_id: string | null
           status: string | null
           tenant_id: string
           to_warehouse_id: string | null
           updated_at: string
-          reversal_id: string | null
           voided_at: string | null
           voided_by: string | null
         }
@@ -1192,13 +1500,13 @@ export type Database = {
           item_id?: string | null
           notes?: string | null
           number: string
+          posted_at?: string | null
           quantity?: number
+          reversal_id?: string | null
           status?: string | null
           tenant_id: string
           to_warehouse_id?: string | null
           updated_at?: string
-          posted_at?: string | null
-          reversal_id?: string | null
           voided_at?: string | null
           voided_by?: string | null
         }
@@ -1212,13 +1520,13 @@ export type Database = {
           item_id?: string | null
           notes?: string | null
           number?: string
+          posted_at?: string | null
           quantity?: number
+          reversal_id?: string | null
           status?: string | null
           tenant_id?: string
           to_warehouse_id?: string | null
           updated_at?: string
-          posted_at?: string | null
-          reversal_id?: string | null
           voided_at?: string | null
           voided_by?: string | null
         }
@@ -1229,6 +1537,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "warehouses"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_transfers_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_item_stock"
+            referencedColumns: ["item_id"]
           },
           {
             foreignKeyName: "inventory_transfers_item_id_fkey"
@@ -1307,6 +1622,13 @@ export type Database = {
             foreignKeyName: "invoice_lines_item_id_fkey"
             columns: ["item_id"]
             isOneToOne: false
+            referencedRelation: "inventory_item_stock"
+            referencedColumns: ["item_id"]
+          },
+          {
+            foreignKeyName: "invoice_lines_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
             referencedRelation: "items"
             referencedColumns: ["id"]
           },
@@ -1338,6 +1660,7 @@ export type Database = {
           notes: string | null
           number: string | null
           posted_at: string | null
+          reversal_id: string | null
           search_vec: unknown
           source_order_id: string | null
           status: string | null
@@ -1345,7 +1668,6 @@ export type Database = {
           tax_total: number
           tenant_id: string
           updated_at: string
-          reversal_id: string | null
           voided_at: string | null
           voided_by: string | null
         }
@@ -1366,6 +1688,8 @@ export type Database = {
           id?: string
           notes?: string | null
           number?: string | null
+          posted_at?: string | null
+          reversal_id?: string | null
           search_vec?: unknown
           source_order_id?: string | null
           status?: string | null
@@ -1373,8 +1697,6 @@ export type Database = {
           tax_total?: number
           tenant_id: string
           updated_at?: string
-          posted_at?: string | null
-          reversal_id?: string | null
           voided_at?: string | null
           voided_by?: string | null
         }
@@ -1395,6 +1717,8 @@ export type Database = {
           id?: string
           notes?: string | null
           number?: string | null
+          posted_at?: string | null
+          reversal_id?: string | null
           search_vec?: unknown
           source_order_id?: string | null
           status?: string | null
@@ -1402,8 +1726,6 @@ export type Database = {
           tax_total?: number
           tenant_id?: string
           updated_at?: string
-          posted_at?: string | null
-          reversal_id?: string | null
           voided_at?: string | null
           voided_by?: string | null
         }
@@ -1601,6 +1923,56 @@ export type Database = {
           },
         ]
       }
+      notifications: {
+        Row: {
+          created_at: string
+          entity_id: string | null
+          entity_type: string | null
+          id: string
+          message: string
+          read_at: string | null
+          severity: string
+          tenant_id: string
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          message: string
+          read_at?: string | null
+          severity?: string
+          tenant_id: string
+          title: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          message?: string
+          read_at?: string | null
+          severity?: string
+          tenant_id?: string
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       package_lines: {
         Row: {
           created_at: string
@@ -1650,6 +2022,13 @@ export type Database = {
             foreignKeyName: "package_lines_item_id_fkey"
             columns: ["item_id"]
             isOneToOne: false
+            referencedRelation: "inventory_item_stock"
+            referencedColumns: ["item_id"]
+          },
+          {
+            foreignKeyName: "package_lines_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
             referencedRelation: "items"
             referencedColumns: ["id"]
           },
@@ -1674,16 +2053,16 @@ export type Database = {
           notes: string | null
           number: string | null
           posted_at: string | null
+          reversal_id: string | null
           sales_order_id: string | null
           status: string | null
           tenant_id: string
           tracking: string | null
           updated_at: string
-          warehouse_id: string | null
-          weight: number | null
-          reversal_id: string | null
           voided_at: string | null
           voided_by: string | null
+          warehouse_id: string | null
+          weight: number | null
         }
         Insert: {
           carrier?: string | null
@@ -1695,17 +2074,17 @@ export type Database = {
           id?: string
           notes?: string | null
           number?: string | null
+          posted_at?: string | null
+          reversal_id?: string | null
           sales_order_id?: string | null
           status?: string | null
           tenant_id: string
           tracking?: string | null
           updated_at?: string
-          warehouse_id?: string | null
-          weight?: number | null
-          posted_at?: string | null
-          reversal_id?: string | null
           voided_at?: string | null
           voided_by?: string | null
+          warehouse_id?: string | null
+          weight?: number | null
         }
         Update: {
           carrier?: string | null
@@ -1717,17 +2096,17 @@ export type Database = {
           id?: string
           notes?: string | null
           number?: string | null
+          posted_at?: string | null
+          reversal_id?: string | null
           sales_order_id?: string | null
           status?: string | null
           tenant_id?: string
           tracking?: string | null
           updated_at?: string
-          warehouse_id?: string | null
-          weight?: number | null
-          posted_at?: string | null
-          reversal_id?: string | null
           voided_at?: string | null
           voided_by?: string | null
+          warehouse_id?: string | null
+          weight?: number | null
         }
         Relationships: [
           {
@@ -1861,12 +2240,12 @@ export type Database = {
           id: string
           mode: string | null
           number: string | null
+          posted_at: string | null
           reference: string | null
+          reversal_id: string | null
           supplier_id: string | null
           tenant_id: string
           updated_at: string
-          posted_at: string | null
-          reversal_id: string | null
           voided_at: string | null
           voided_by: string | null
         }
@@ -1879,12 +2258,12 @@ export type Database = {
           id?: string
           mode?: string | null
           number?: string | null
+          posted_at?: string | null
           reference?: string | null
+          reversal_id?: string | null
           supplier_id?: string | null
           tenant_id: string
           updated_at?: string
-          posted_at?: string | null
-          reversal_id?: string | null
           voided_at?: string | null
           voided_by?: string | null
         }
@@ -1897,12 +2276,12 @@ export type Database = {
           id?: string
           mode?: string | null
           number?: string | null
+          posted_at?: string | null
           reference?: string | null
+          reversal_id?: string | null
           supplier_id?: string | null
           tenant_id?: string
           updated_at?: string
-          posted_at?: string | null
-          reversal_id?: string | null
           voided_at?: string | null
           voided_by?: string | null
         }
@@ -1934,11 +2313,11 @@ export type Database = {
           id: string
           mode: string | null
           number: string | null
+          posted_at: string | null
           reference: string | null
+          reversal_id: string | null
           tenant_id: string
           updated_at: string
-          posted_at: string | null
-          reversal_id: string | null
           voided_at: string | null
           voided_by: string | null
         }
@@ -1952,11 +2331,11 @@ export type Database = {
           id?: string
           mode?: string | null
           number?: string | null
+          posted_at?: string | null
           reference?: string | null
+          reversal_id?: string | null
           tenant_id: string
           updated_at?: string
-          posted_at?: string | null
-          reversal_id?: string | null
           voided_at?: string | null
           voided_by?: string | null
         }
@@ -1970,11 +2349,11 @@ export type Database = {
           id?: string
           mode?: string | null
           number?: string | null
+          posted_at?: string | null
           reference?: string | null
+          reversal_id?: string | null
           tenant_id?: string
           updated_at?: string
-          posted_at?: string | null
-          reversal_id?: string | null
           voided_at?: string | null
           voided_by?: string | null
         }
@@ -1995,6 +2374,80 @@ export type Database = {
           },
         ]
       }
+      permissions: {
+        Row: {
+          action: string
+          code: string
+          created_at: string
+          description: string | null
+          module: string
+        }
+        Insert: {
+          action: string
+          code: string
+          created_at?: string
+          description?: string | null
+          module: string
+        }
+        Update: {
+          action?: string
+          code?: string
+          created_at?: string
+          description?: string | null
+          module?: string
+        }
+        Relationships: []
+      }
+      posting_audit_events: {
+        Row: {
+          action: string
+          actor_id: string | null
+          created_at: string
+          entity_id: string
+          entity_type: string
+          id: string
+          metadata: Json
+          permission_code: string
+          posted_at: string
+          result: string
+          tenant_id: string
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          created_at?: string
+          entity_id: string
+          entity_type: string
+          id?: string
+          metadata?: Json
+          permission_code: string
+          posted_at?: string
+          result?: string
+          tenant_id: string
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          created_at?: string
+          entity_id?: string
+          entity_type?: string
+          id?: string
+          metadata?: Json
+          permission_code?: string
+          posted_at?: string
+          result?: string
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "posting_audit_events_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       production_orders: {
         Row: {
           bom_id: string | null
@@ -2007,13 +2460,13 @@ export type Database = {
           number: string
           posted_at: string | null
           quantity: number
+          reversal_id: string | null
           status: string | null
           tenant_id: string
           updated_at: string
-          warehouse_id: string | null
-          reversal_id: string | null
           voided_at: string | null
           voided_by: string | null
+          warehouse_id: string | null
         }
         Insert: {
           bom_id?: string | null
@@ -2024,15 +2477,15 @@ export type Database = {
           id?: string
           notes?: string | null
           number: string
+          posted_at?: string | null
           quantity?: number
+          reversal_id?: string | null
           status?: string | null
           tenant_id: string
           updated_at?: string
-          warehouse_id?: string | null
-          posted_at?: string | null
-          reversal_id?: string | null
           voided_at?: string | null
           voided_by?: string | null
+          warehouse_id?: string | null
         }
         Update: {
           bom_id?: string | null
@@ -2043,15 +2496,15 @@ export type Database = {
           id?: string
           notes?: string | null
           number?: string
+          posted_at?: string | null
           quantity?: number
+          reversal_id?: string | null
           status?: string | null
           tenant_id?: string
           updated_at?: string
-          warehouse_id?: string | null
-          posted_at?: string | null
-          reversal_id?: string | null
           voided_at?: string | null
           voided_by?: string | null
+          warehouse_id?: string | null
         }
         Relationships: [
           {
@@ -2315,6 +2768,13 @@ export type Database = {
             foreignKeyName: "purchase_requisition_lines_item_id_fkey"
             columns: ["item_id"]
             isOneToOne: false
+            referencedRelation: "inventory_item_stock"
+            referencedColumns: ["item_id"]
+          },
+          {
+            foreignKeyName: "purchase_requisition_lines_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
             referencedRelation: "items"
             referencedColumns: ["id"]
           },
@@ -2414,6 +2874,32 @@ export type Database = {
           },
         ]
       }
+      role_permissions: {
+        Row: {
+          created_at: string
+          permission_code: string
+          role: string
+        }
+        Insert: {
+          created_at?: string
+          permission_code: string
+          role: string
+        }
+        Update: {
+          created_at?: string
+          permission_code?: string
+          role?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "role_permissions_permission_code_fkey"
+            columns: ["permission_code"]
+            isOneToOne: false
+            referencedRelation: "permissions"
+            referencedColumns: ["code"]
+          },
+        ]
+      }
       sales_order_lines: {
         Row: {
           created_at: string
@@ -2470,6 +2956,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "sales_orders"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_order_lines_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_item_stock"
+            referencedColumns: ["item_id"]
           },
           {
             foreignKeyName: "sales_order_lines_item_id_fkey"
@@ -2635,6 +3128,13 @@ export type Database = {
             foreignKeyName: "sales_quote_lines_item_id_fkey"
             columns: ["item_id"]
             isOneToOne: false
+            referencedRelation: "inventory_item_stock"
+            referencedColumns: ["item_id"]
+          },
+          {
+            foreignKeyName: "sales_quote_lines_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
             referencedRelation: "items"
             referencedColumns: ["id"]
           },
@@ -2745,6 +3245,7 @@ export type Database = {
           number: string | null
           package_id: string | null
           posted_at: string | null
+          reversal_id: string | null
           sales_order_id: string | null
           service_level: string | null
           ship_date: string | null
@@ -2752,7 +3253,6 @@ export type Database = {
           tenant_id: string
           tracking: string | null
           updated_at: string
-          reversal_id: string | null
           voided_at: string | null
           voided_by: string | null
         }
@@ -2768,6 +3268,8 @@ export type Database = {
           notes?: string | null
           number?: string | null
           package_id?: string | null
+          posted_at?: string | null
+          reversal_id?: string | null
           sales_order_id?: string | null
           service_level?: string | null
           ship_date?: string | null
@@ -2775,8 +3277,6 @@ export type Database = {
           tenant_id: string
           tracking?: string | null
           updated_at?: string
-          posted_at?: string | null
-          reversal_id?: string | null
           voided_at?: string | null
           voided_by?: string | null
         }
@@ -2792,6 +3292,8 @@ export type Database = {
           notes?: string | null
           number?: string | null
           package_id?: string | null
+          posted_at?: string | null
+          reversal_id?: string | null
           sales_order_id?: string | null
           service_level?: string | null
           ship_date?: string | null
@@ -2799,8 +3301,6 @@ export type Database = {
           tenant_id?: string
           tracking?: string | null
           updated_at?: string
-          posted_at?: string | null
-          reversal_id?: string | null
           voided_at?: string | null
           voided_by?: string | null
         }
@@ -2876,6 +3376,13 @@ export type Database = {
           warehouse_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "stock_movements_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_item_stock"
+            referencedColumns: ["item_id"]
+          },
           {
             foreignKeyName: "stock_movements_item_id_fkey"
             columns: ["item_id"]
@@ -2966,27 +3473,35 @@ export type Database = {
       }
       tenant_features: {
         Row: {
-          tenant_id: string
-          feature: string
           enabled: boolean
+          feature: string
           source: string
+          tenant_id: string
           updated_at: string
         }
         Insert: {
-          tenant_id: string
-          feature: string
           enabled?: boolean
+          feature: string
           source?: string
+          tenant_id: string
           updated_at?: string
         }
         Update: {
-          tenant_id?: string
-          feature?: string
           enabled?: boolean
+          feature?: string
           source?: string
+          tenant_id?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "tenant_features_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       tenants: {
         Row: {
@@ -3104,106 +3619,103 @@ export type Database = {
     Views: {
       inventory_item_stock: {
         Row: {
-          item_id: string
-          item_name: string
-          name: string
-          on_hand: number
+          item_id: string | null
+          name: string | null
+          on_hand: number | null
           reorder: number | null
           sku: string | null
-          tenant_id: string
+          tenant_id: string | null
           uom: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "items_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       inventory_warehouse_stock: {
         Row: {
-          item_id: string
-          on_hand: number
-          tenant_id: string
+          item_id: string | null
+          on_hand: number | null
+          tenant_id: string | null
           warehouse_id: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "stock_movements_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_item_stock"
+            referencedColumns: ["item_id"]
+          },
+          {
+            foreignKeyName: "stock_movements_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_movements_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_movements_warehouse_id_fkey"
+            columns: ["warehouse_id"]
+            isOneToOne: false
+            referencedRelation: "warehouses"
+            referencedColumns: ["id"]
+          },
+        ]
       }
-    }
-    notifications: {
-      Row: {
-        id: string
-        tenant_id: string
-        user_id: string
-        type: string
-        title: string
-        message: string
-        entity_type: string | null
-        entity_id: string | null
-        severity: string
-        read_at: string | null
-        created_at: string
-      }
-      Insert: {
-        id?: string
-        tenant_id: string
-        user_id: string
-        type: string
-        title: string
-        message: string
-        entity_type?: string | null
-        entity_id?: string | null
-        severity?: string
-        read_at?: string | null
-        created_at?: string
-      }
-      Update: {
-        id?: string
-        tenant_id?: string
-        user_id?: string
-        type?: string
-        title?: string
-        message?: string
-        entity_type?: string | null
-        entity_id?: string | null
-        severity?: string
-        read_at?: string | null
-        created_at?: string
-      }
-      Relationships: []
     }
     Functions: {
-      get_sales_dashboard: { Args: Record<PropertyKey, never>; Returns: Json }
-      record_business_event: {
-        Args: { _action: string; _entity_id?: string | null; _entity_type: string; _metadata?: Json; _new_values?: Json | null; _old_values?: Json | null }
-        Returns: string
-      }
-      get_business_events: {
-        Args: { _action?: string | null; _entity_id?: string | null; _entity_type?: string | null; _from?: string | null; _limit?: number; _to?: string | null }
-        Returns: Database["public"]["Tables"]["business_events"]["Row"][]
-      }
-      create_notification: {
-        Args: { _entity_id?: string | null; _entity_type?: string | null; _message: string; _severity?: string; _title: string; _type: string; _user_id: string }
-        Returns: string
-      }
-      get_my_notifications: {
-        Args: { _limit?: number }
-        Returns: { id: string; user_id: string; tenant_id: string; type: string; title: string; message: string; entity_type: string | null; entity_id: string | null; severity: string; read_at: string | null; created_at: string }[]
-      }
-      get_my_notification_unread_count: {
-        Args: Record<PropertyKey, never>
-        Returns: number
-      }
-      get_my_features: { Args: Record<PropertyKey, never>; Returns: { feature: string }[] }
-      has_feature: { Args: { p_feature: string }; Returns: boolean }
-      mark_notification_read: {
-        Args: { _notification_id: string }
-        Returns: undefined
-      }
-      mark_all_notifications_read: {
-        Args: Record<PropertyKey, never>
-        Returns: number
-      }
-      complete_posting: { Args: { _action: string; _entity_id: string; _entity_type: string; _permission: string; _require_journal?: boolean }; Returns: string }
-      validate_posting_inventory: { Args: { _entity_id: string }; Returns: number }
-      validate_posting_journals: { Args: { _entity_id: string; _entity_type: string; _require_journal?: boolean }; Returns: number }
-      validate_posting_target: { Args: { _document_id: string; _permission: string; _table_name: string }; Returns: boolean }
       _account_id: { Args: { _code: string; _tenant: string }; Returns: string }
+      act_on_approval_request: {
+        Args: { _action: string; _note?: string; _request_id: string }
+        Returns: {
+          amount: number | null
+          completed_at: string | null
+          created_at: string
+          current_step: number
+          entity_id: string
+          entity_type: string
+          id: string
+          idempotency_key: string | null
+          payload: Json
+          requested_by: string
+          status: string
+          submitted_at: string
+          tenant_id: string
+          updated_at: string
+          workflow_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "approval_requests"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      add_approval_workflow_step: {
+        Args: {
+          _approver_role?: string
+          _approver_type: string
+          _approver_user_id?: string
+          _minimum_approvals?: number
+          _name: string
+          _step_order: number
+          _workflow_id: string
+        }
+        Returns: string
+      }
       admin_set_user_roles: {
         Args: {
           new_roles: Database["public"]["Enums"]["app_role"][]
@@ -3219,13 +3731,158 @@ export type Database = {
         Args: { _allocations: Json; _payment_id: string }
         Returns: undefined
       }
+      approval_actor_can_act: {
+        Args: {
+          _request: Database["public"]["Tables"]["approval_requests"]["Row"]
+          _step: Database["public"]["Tables"]["approval_workflow_steps"]["Row"]
+        }
+        Returns: boolean
+      }
+      approval_condition_matches: {
+        Args: { _amount: number; _conditions: Json }
+        Returns: boolean
+      }
+      audit_request_ip: { Args: never; Returns: unknown }
+      audit_request_user_agent: { Args: never; Returns: string }
+      check_inventory_stock_integrity: {
+        Args: { _item_id?: string }
+        Returns: {
+          difference: number
+          is_valid: boolean
+          item_id: string
+          item_name: string
+          ledger_on_hand: number
+          projected_stock: number
+          sku: string
+        }[]
+      }
+      complete_posting: {
+        Args: {
+          _action: string
+          _entity_id: string
+          _entity_type: string
+          _permission: string
+          _require_journal?: boolean
+        }
+        Returns: string
+      }
       convert_order_to_invoice: { Args: { _order_id: string }; Returns: string }
       convert_po_to_bill: { Args: { _po_id: string }; Returns: string }
       convert_quote_to_order: { Args: { _quote_id: string }; Returns: string }
+      create_approval_request: {
+        Args: {
+          _amount?: number
+          _entity_id: string
+          _entity_type: string
+          _idempotency_key?: string
+          _payload?: Json
+          _workflow_code?: string
+        }
+        Returns: string
+      }
+      create_approval_workflow: {
+        Args: {
+          _code: string
+          _conditions?: Json
+          _description?: string
+          _entity_type: string
+          _name: string
+        }
+        Returns: string
+      }
+      create_notification: {
+        Args: {
+          _entity_id?: string
+          _entity_type?: string
+          _message: string
+          _severity?: string
+          _title: string
+          _type: string
+          _user_id: string
+        }
+        Returns: string
+      }
+      create_reversal_journal: {
+        Args: { _entity_id: string; _entity_type: string; _reason: string }
+        Returns: string
+      }
+      create_reversal_movements: {
+        Args: { _entity_id: string; _entity_type: string; _reversal_id: string }
+        Returns: number
+      }
       current_tenant_id: { Args: never; Returns: string }
-      recalculate_item_stock_projection: { Args: { _item_id?: string | null }; Returns: number }
-      check_inventory_stock_integrity: { Args: { _item_id?: string | null }; Returns: { item_id: string; sku: string | null; item_name: string; ledger_on_hand: number; projected_stock: number; difference: number; is_valid: boolean }[] }
-      set_item_opening_stock: { Args: { _item_id: string; _quantity: number; _unit_cost?: number; _warehouse_id?: string | null }; Returns: string }
+      get_business_events: {
+        Args: {
+          _action?: string
+          _entity_id?: string
+          _entity_type?: string
+          _from?: string
+          _limit?: number
+          _to?: string
+        }
+        Returns: {
+          action: string
+          actor_email: string | null
+          actor_id: string | null
+          created_at: string
+          entity_id: string | null
+          entity_type: string
+          id: string
+          ip_address: unknown
+          metadata: Json
+          new_values: Json | null
+          occurred_at: string
+          old_values: Json | null
+          tenant_id: string
+          user_agent: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "business_events"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      get_my_approval_inbox: {
+        Args: never
+        Returns: {
+          amount: number
+          current_step: number
+          entity_id: string
+          entity_type: string
+          id: string
+          requested_by: string
+          status: string
+          step_name: string
+          submitted_at: string
+          workflow_name: string
+        }[]
+      }
+      get_my_features: {
+        Args: never
+        Returns: {
+          feature: string
+        }[]
+      }
+      get_my_notification_unread_count: { Args: never; Returns: number }
+      get_my_notifications: {
+        Args: { _limit?: number }
+        Returns: {
+          created_at: string
+          entity_id: string
+          entity_type: string
+          id: string
+          message: string
+          read_at: string
+          severity: string
+          tenant_id: string
+          title: string
+          type: string
+          user_id: string
+        }[]
+      }
+      get_my_permissions: { Args: never; Returns: string[] }
+      get_sales_dashboard: { Args: never; Returns: Json }
       global_search: {
         Args: {
           date_from?: string
@@ -3242,6 +3899,11 @@ export type Database = {
           title: string
         }[]
       }
+      has_feature: { Args: { p_feature: string }; Returns: boolean }
+      has_permission: {
+        Args: { _permission: string; _user_id?: string }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -3249,22 +3911,96 @@ export type Database = {
         }
         Returns: boolean
       }
-      get_my_permissions: { Args: never; Returns: string[] }
-      has_permission: { Args: { _permission: string; _user_id?: string }; Returns: boolean }
-      void_posted_document: { Args: { _entity_type: string; _entity_id: string; _permission: string; _reason?: string }; Returns: string }
       is_super_admin: { Args: never; Returns: boolean }
+      mark_all_notifications_read: { Args: never; Returns: number }
+      mark_notification_read: {
+        Args: { _notification_id: string }
+        Returns: undefined
+      }
       post_adjustment: { Args: { _adjustment_id: string }; Returns: string }
+      post_adjustment_unchecked: {
+        Args: { _adjustment_id: string }
+        Returns: string
+      }
       post_bill: { Args: { _bill_id: string }; Returns: string }
+      post_bill_unchecked: { Args: { _bill_id: string }; Returns: string }
       post_credit_note: { Args: { _credit_note_id: string }; Returns: string }
+      post_credit_note_unchecked: {
+        Args: { _credit_note_id: string }
+        Returns: string
+      }
       post_invoice: { Args: { _invoice_id: string }; Returns: string }
+      post_invoice_unchecked: { Args: { _invoice_id: string }; Returns: string }
       post_package: { Args: { _package_id: string }; Returns: string }
+      post_package_unchecked: { Args: { _package_id: string }; Returns: string }
       post_production_order: { Args: { _order_id: string }; Returns: string }
+      post_production_order_unchecked: {
+        Args: { _order_id: string }
+        Returns: string
+      }
       post_shipment: { Args: { _shipment_id: string }; Returns: string }
+      post_shipment_unchecked: {
+        Args: { _shipment_id: string }
+        Returns: string
+      }
       post_transfer: { Args: { _transfer_id: string }; Returns: string }
+      post_transfer_unchecked: {
+        Args: { _transfer_id: string }
+        Returns: string
+      }
+      recalculate_item_stock_projection: {
+        Args: { _item_id?: string }
+        Returns: number
+      }
+      record_business_event: {
+        Args: {
+          _action: string
+          _entity_id?: string
+          _entity_type: string
+          _metadata?: Json
+          _new_values?: Json
+          _old_values?: Json
+        }
+        Returns: string
+      }
+      set_item_opening_stock: {
+        Args: {
+          _item_id: string
+          _quantity: number
+          _unit_cost?: number
+          _warehouse_id?: string
+        }
+        Returns: string
+      }
       switch_tenant: { Args: { target_tenant: string }; Returns: string }
       tenant_write_ok: {
         Args: { _roles: Database["public"]["Enums"]["app_role"][] }
         Returns: boolean
+      }
+      validate_posting_inventory: {
+        Args: { _entity_id: string }
+        Returns: number
+      }
+      validate_posting_journals: {
+        Args: {
+          _entity_id: string
+          _entity_type: string
+          _require_journal?: boolean
+        }
+        Returns: number
+      }
+      validate_posting_target: {
+        Args: { _document_id: string; _permission: string; _table_name: string }
+        Returns: boolean
+      }
+      void_posted_document: {
+        Args: {
+          _entity_id: string
+          _entity_type: string
+          _permission: string
+          _reason?: string
+        }
+        Returns: string
       }
     }
     Enums: {
