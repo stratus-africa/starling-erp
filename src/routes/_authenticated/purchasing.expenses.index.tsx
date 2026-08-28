@@ -12,6 +12,21 @@ export const Route = createFileRoute("/_authenticated/purchasing/expenses/")({
       entityLabel="Expense"
       rowHref={(r) => `/purchasing/expenses/${r.id}`}
       createHref="/purchasing/expenses/new"
+      postAction={{
+        rpc: "post_expense",
+        paramName: "_expense_id",
+        label: "Post",
+        showWhen: (row) => !row.posted_at && row.status !== "Voided",
+      }}
+      postPermission="purchasing.post"
+      voidAction={{
+        permission: "purchasing.void",
+        entityType: "expense",
+        label: "Void",
+        reason: "Expense voided and reversed",
+        showWhen: (row) => !!row.posted_at && !row.voided_at,
+      }}
+      filterFields={[{ key: "status", label: "Status", options: ["Draft", "Posted", "Voided"] }]}
     />
   ),
 });
