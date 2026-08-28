@@ -1,10 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { ModulePage } from "@/components/module-page";
-import { modules } from "@/lib/modules";
+import { FinancialReportsHub } from "@/components/financial-reports-hub";
 
 export const Route = createFileRoute("/_authenticated/reports/financial")({
-  component: () => {
-    const m = modules["reports.financial"];
-    return <ModulePage {...m} />;
-  },
+  component: FinancialReportsHub,
 });
