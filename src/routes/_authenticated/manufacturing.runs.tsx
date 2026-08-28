@@ -13,7 +13,7 @@ import { toast } from "sonner";
 function ProductionRunsPage() {
   const { tenant, can } = useAuth();
   const qc = useQueryClient();
-  const canWrite = can("manufacturing", "create") || can("manufacturing", "update");
+  const canWrite = can(["manufacturing.create", "manufacturing.update"]);
 
   const { data, isLoading } = useQuery({
     queryKey: ["production_orders", "active"],

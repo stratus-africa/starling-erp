@@ -25,7 +25,7 @@ const ALL_ROLES: AppRole[] = [
 
 function UsersPage() {
   const { can, tenant, roles } = useAuth();
-  const allowed = can("settings", "users");
+  const allowed = can("settings.users");
   const isSuper = roles.includes("super_admin");
   const qc = useQueryClient();
   const [pending, setPending] = useState<Record<string, AppRole[]>>({});

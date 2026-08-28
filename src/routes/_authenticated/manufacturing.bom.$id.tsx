@@ -40,7 +40,7 @@ function BomEditor({ id }: { id: string }) {
   const { tenant, can } = useAuth();
   const qc = useQueryClient();
   const nav = useNavigate();
-  const canWrite = can("manufacturing", "create") || can("manufacturing", "update");
+  const canWrite = can(["manufacturing.create", "manufacturing.update"]);
 
   const [header, setHeader] = useState({
     code: "",

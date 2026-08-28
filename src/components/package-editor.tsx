@@ -110,7 +110,7 @@ export function PackageEditor({ id }: { id: string }) {
     staleTime: 30_000,
   });
 
-  const [header, setHeader] = useState<PackageInsert>({
+  const [header, setHeader] = useState<Row>({
     number: "",
     sales_order_id: search?.order ?? "",
     customer_id: "",

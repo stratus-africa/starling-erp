@@ -80,7 +80,7 @@ export function ShipmentEditor({ id }: { id: string }) {
     },
   });
 
-  const [header, setHeader] = useState<ShipmentInsert>({
+  const [header, setHeader] = useState<Row>({
     number: "",
     sales_order_id: search?.order ?? "",
     package_id: search?.package ?? "",

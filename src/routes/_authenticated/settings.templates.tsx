@@ -29,7 +29,7 @@ const PRESETS = ["#1E293B", "#0F766E", "#B45309", "#7C3AED", "#BE123C", "#1D4ED8
 function TemplatesPage() {
   const qc = useQueryClient();
   const { tenant, can } = useAuth();
-  const canWrite = can("settings", "roles");
+  const canWrite = can("settings.roles");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [draft, setDraft] = useState<any>(null);
 
