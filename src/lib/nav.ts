@@ -53,6 +53,7 @@ import {
   Settings2,
   LayoutList,
   CalendarRange,
+  GitBranch,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -141,6 +142,7 @@ export const navGroups: NavGroup[] = [
       { title: "Bank Reconciliation", url: "/accounting/reconciliation", icon: Scale },
       { title: "Posting Config", url: "/accounting/posting-config", icon: Settings2 },
       { title: "Integrity Checks", url: "/accounting/integrity", icon: ShieldCheck },
+      { title: "Audit Trail", url: "/accounting/audit-trail", icon: GitBranch },
     ],
   },
   {
