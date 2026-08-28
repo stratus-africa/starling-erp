@@ -1,19 +1,22 @@
 import { useState, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { db } from "@/lib/typed-db";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ChevronLeft, ChevronRight, Search, Loader2, MoreHorizontal } from "lucide-react";
+import { ChevronLeft, ChevronRight, Search, Loader2, MoreHorizontal, CheckCircle2, MinusCircle } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { toast } from "sonner";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -43,13 +46,7 @@ const moneyFmt = (amount: number | null | undefined, currency = "KES") => {
 
 // ─── Summary Bar ──────────────────────────────────────────────────────────────
 
-function SummaryBar({
-  rows,
-  kind,
-}: {
-  rows: any[];
-  kind: PaymentKind;
-}) {
+function SummaryBar({ rows, kind }: { rows: any[]; kind: PaymentKind }) {
   const total = rows.reduce((s, r) => s + Number(r.amount ?? 0), 0);
   const thisMonth = rows.filter((r) => {
     if (!r.date) return false;
@@ -72,15 +69,11 @@ function SummaryBar({
 
   return (
     <div className="mx-6 mt-3 mb-1 rounded-lg border bg-muted/30 px-5 py-3">
-      <p className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-        Payment Summary
-      </p>
+      <p className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Payment Summary</p>
       <div className="flex flex-wrap items-start gap-x-10 gap-y-2">
         <div className="flex flex-col gap-0.5">
           <span className="text-[11px] text-muted-foreground">{label}</span>
-          <span className="font-mono text-sm font-semibold tabular-nums">
-            {moneyFmt(total, currency)}
-          </span>
+          <span className="font-mono text-sm font-semibold tabular-nums">{moneyFmt(total, currency)}</span>
         </div>
         <div className="flex flex-col gap-0.5">
           <span className="text-[11px] text-muted-foreground">{monthLabel}</span>
@@ -104,7 +97,11 @@ function SummaryBar({
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export function PaymentsListPage({ kind }: { kind: PaymentKind }) {
-  const { } = useAuth(); // reserved for future permission checks
+  const { can } = useAuth();
+  const qc = useQueryClient();
+
+  const canPost = can("payments.post");
+  const canVoid = can("payments.void");
 
   const isReceived = kind === "received";
   const table = isReceived ? "payments_received" : "payments_made";
@@ -116,14 +113,48 @@ export function PaymentsListPage({ kind }: { kind: PaymentKind }) {
 
   const [search, setSearch] = useState("");
   const [modeFilter, setModeFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<Set<string>>(new Set());
+
+  const rpc = isReceived ? "post_payment_received" : "post_payment_made";
+  const voidEntityType = isReceived ? "payment_received" : "payment_made";
+
+  const postMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await (supabase as any).rpc(rpc, { _payment_id: id });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Payment posted");
+      qc.invalidateQueries({ queryKey: [table] });
+    },
+    onError: (e: Error) => toast.error(e.message ?? "Post failed"),
+  });
+
+  const voidMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await (supabase as any).rpc("void_posted_document", {
+        _entity_type: voidEntityType,
+        _entity_id: id,
+        _permission: "payments.void",
+        _reason: "Payment voided",
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Payment voided");
+      qc.invalidateQueries({ queryKey: [table] });
+    },
+    onError: (e: Error) => toast.error(e.message ?? "Void failed"),
+  });
 
   // ── Summary data (all rows, no pagination) ──
   const { data: allRows = [] } = useQuery({
     queryKey: [table, "summary"],
     queryFn: async () => {
-      const { data } = await db.from(table as any)
+      const { data } = await db
+        .from(table as any)
         .select("amount, date, currency")
         .is("deleted_at", null)
         .limit(5000);
@@ -134,9 +165,10 @@ export function PaymentsListPage({ kind }: { kind: PaymentKind }) {
 
   // ── Paginated rows ──
   const { data, isLoading } = useQuery({
-    queryKey: [table, "list", { search, modeFilter, page }],
+    queryKey: [table, "list", { search, modeFilter, statusFilter, page }],
     queryFn: async () => {
-      let q = db.from(table as any)
+      let q = db
+        .from(table as any)
         .select("*", { count: "exact" })
         .is("deleted_at", null)
         .order("date", { ascending: false })
@@ -145,6 +177,7 @@ export function PaymentsListPage({ kind }: { kind: PaymentKind }) {
 
       if (search.trim()) q = (q as any).ilike("number", `%${search.trim()}%`);
       if (modeFilter !== "all") q = (q as any).eq("mode", modeFilter);
+      if (statusFilter !== "all") q = (q as any).eq("status", statusFilter);
 
       const { data, error, count } = await q;
       if (error) throw error;
@@ -160,13 +193,14 @@ export function PaymentsListPage({ kind }: { kind: PaymentKind }) {
   // ── Batch-fetch party names ──
   const partyIds = useMemo(
     () => Array.from(new Set(rows.map((r: any) => r[partyField]).filter(Boolean))),
-    [rows, partyField]
+    [rows, partyField],
   );
   const { data: parties = [] } = useQuery({
     queryKey: [partyTable, "names", partyIds],
     enabled: partyIds.length > 0,
     queryFn: async () => {
-      const { data, error } = await db.from(partyTable as any)
+      const { data, error } = await db
+        .from(partyTable as any)
         .select("id,name")
         .in("id", partyIds as string[]);
       if (error) throw error;
@@ -174,14 +208,10 @@ export function PaymentsListPage({ kind }: { kind: PaymentKind }) {
     },
     staleTime: 60_000,
   });
-  const partyMap = useMemo(
-    () => Object.fromEntries(parties.map((p) => [p.id, p.name])),
-    [parties]
-  );
+  const partyMap = useMemo(() => Object.fromEntries(parties.map((p) => [p.id, p.name])), [parties]);
 
   // ── Selection ──
-  const allOnPageSelected =
-    rows.length > 0 && rows.every((r: any) => selected.has(r.id));
+  const allOnPageSelected = rows.length > 0 && rows.every((r: any) => selected.has(r.id));
   const toggleAll = () => {
     if (allOnPageSelected) {
       setSelected((s) => {
@@ -214,7 +244,6 @@ export function PaymentsListPage({ kind }: { kind: PaymentKind }) {
 
   return (
     <div className="flex h-full flex-col bg-background">
-
       {/* ── Header ── */}
       <div className="flex shrink-0 items-center justify-between gap-3 border-b px-6 py-3">
         <h1 className="flex items-center gap-1.5 text-base font-semibold tracking-tight">
@@ -228,21 +257,48 @@ export function PaymentsListPage({ kind }: { kind: PaymentKind }) {
               className="h-8 w-44 pl-8 text-xs"
               placeholder="Search payment #…"
               value={search}
-              onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setPage(1);
+              }}
             />
           </div>
-          <Select value={modeFilter} onValueChange={(v) => { setModeFilter(v); setPage(1); }}>
+          <Select
+            value={modeFilter}
+            onValueChange={(v) => {
+              setModeFilter(v);
+              setPage(1);
+            }}
+          >
             <SelectTrigger className="h-8 w-36 text-xs">
               <SelectValue placeholder="All Modes" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Modes</SelectItem>
               {["Cash", "Bank Transfer", "M-Pesa", "Card", "Cheque", "EFT", "Mobile Money"].map((m) => (
-                <SelectItem key={m} value={m}>{m}</SelectItem>
+                <SelectItem key={m} value={m}>
+                  {m}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
-          {/* No "New" button — payments are created from invoices/bills */}
+          <Select
+            value={statusFilter}
+            onValueChange={(v) => {
+              setStatusFilter(v);
+              setPage(1);
+            }}
+          >
+            <SelectTrigger className="h-8 w-28 text-xs">
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All</SelectItem>
+              <SelectItem value="Draft">Draft</SelectItem>
+              <SelectItem value="Posted">Posted</SelectItem>
+              <SelectItem value="Voided">Voided</SelectItem>
+            </SelectContent>
+          </Select>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm" className="h-8 w-8 px-0">
@@ -251,7 +307,12 @@ export function PaymentsListPage({ kind }: { kind: PaymentKind }) {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem
-                onClick={() => { setSearch(""); setModeFilter("all"); setPage(1); }}
+                onClick={() => {
+                  setSearch("");
+                  setModeFilter("all");
+                  setStatusFilter("all");
+                  setPage(1);
+                }}
               >
                 Clear filters
               </DropdownMenuItem>
@@ -269,11 +330,7 @@ export function PaymentsListPage({ kind }: { kind: PaymentKind }) {
           <thead className="sticky top-0 z-10 bg-muted/60 backdrop-blur">
             <tr className="border-b text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
               <th className="w-9 px-3 py-2.5 text-left">
-                <Checkbox
-                  checked={allOnPageSelected}
-                  onCheckedChange={toggleAll}
-                  aria-label="Select all"
-                />
+                <Checkbox checked={allOnPageSelected} onCheckedChange={toggleAll} aria-label="Select all" />
               </th>
               <th className="px-3 py-2.5 text-left whitespace-nowrap">Date ↕</th>
               <th className="px-3 py-2.5 text-left whitespace-nowrap">Payment#</th>
@@ -284,27 +341,27 @@ export function PaymentsListPage({ kind }: { kind: PaymentKind }) {
               <th className="px-3 py-2.5 text-left whitespace-nowrap">Mode</th>
               <th className="px-3 py-2.5 text-right whitespace-nowrap">Amount</th>
               <th className="px-3 py-2.5 text-right whitespace-nowrap">Unused Amount</th>
+              <th className="px-3 py-2.5 text-left whitespace-nowrap">Status</th>
+              <th className="w-10 px-2 py-2.5" />
             </tr>
           </thead>
           <tbody>
             {isLoading && (
               <tr>
-                <td colSpan={10} className="py-16 text-center text-muted-foreground">
+                <td colSpan={12} className="py-16 text-center text-muted-foreground">
                   <Loader2 className="mx-auto h-5 w-5 animate-spin" />
                 </td>
               </tr>
             )}
             {!isLoading && rows.length === 0 && (
               <tr>
-                <td colSpan={10} className="py-16 text-center text-xs text-muted-foreground">
+                <td colSpan={12} className="py-16 text-center text-xs text-muted-foreground">
                   No {isReceived ? "payments received" : "payments made"} found.
                 </td>
               </tr>
             )}
             {rows.map((row: any) => {
-              const partyName = row[partyField]
-                ? (partyMap[row[partyField]] ?? "—")
-                : "—";
+              const partyName = row[partyField] ? (partyMap[row[partyField]] ?? "—") : "—";
 
               // invoice# comes from reference field (stored as invoice numbers)
               // or from the notes field
@@ -336,15 +393,11 @@ export function PaymentsListPage({ kind }: { kind: PaymentKind }) {
                   </td>
 
                   {/* Date */}
-                  <td className="px-3 py-2 text-xs text-muted-foreground whitespace-nowrap">
-                    {fmt(row.date)}
-                  </td>
+                  <td className="px-3 py-2 text-xs text-muted-foreground whitespace-nowrap">{fmt(row.date)}</td>
 
                   {/* Payment number */}
                   <td className="px-3 py-2 whitespace-nowrap">
-                    <span className="font-mono text-xs font-semibold text-primary">
-                      {row.number ?? "—"}
-                    </span>
+                    <span className="font-mono text-xs font-semibold text-primary">{row.number ?? "—"}</span>
                   </td>
 
                   {/* Payment type */}
@@ -356,29 +409,25 @@ export function PaymentsListPage({ kind }: { kind: PaymentKind }) {
 
                   {/* Reference */}
                   <td className="px-3 py-2 whitespace-nowrap">
-                    <span className="font-mono text-xs text-muted-foreground">
-                      {row.reference ?? "—"}
-                    </span>
+                    <span className="font-mono text-xs text-muted-foreground">{row.reference ?? "—"}</span>
                   </td>
 
                   {/* Party name */}
                   <td className="px-3 py-2 max-w-[200px]">
-                    <span className={`text-sm leading-snug ${isOverdue ? "text-destructive" : partyIsOverdue ? "text-amber-600" : ""}`}>
+                    <span
+                      className={`text-sm leading-snug ${isOverdue ? "text-destructive" : partyIsOverdue ? "text-amber-600" : ""}`}
+                    >
                       {partyName}
                     </span>
                   </td>
 
                   {/* Invoice / Bill numbers */}
                   <td className="px-3 py-2 max-w-[220px]">
-                    <span className="font-mono text-xs text-primary line-clamp-2 leading-snug">
-                      {invoiceNums}
-                    </span>
+                    <span className="font-mono text-xs text-primary line-clamp-2 leading-snug">{invoiceNums}</span>
                   </td>
 
                   {/* Mode */}
-                  <td className="px-3 py-2 text-xs whitespace-nowrap">
-                    {row.mode ?? "—"}
-                  </td>
+                  <td className="px-3 py-2 text-xs whitespace-nowrap">{row.mode ?? "—"}</td>
 
                   {/* Amount */}
                   <td className="px-3 py-2 text-right font-mono text-xs tabular-nums whitespace-nowrap font-medium">
@@ -388,6 +437,65 @@ export function PaymentsListPage({ kind }: { kind: PaymentKind }) {
                   {/* Unused amount */}
                   <td className="px-3 py-2 text-right font-mono text-xs tabular-nums whitespace-nowrap text-muted-foreground">
                     {moneyFmt(unusedAmount, row.currency ?? "KES")}
+                  </td>
+
+                  {/* Status */}
+                  <td className="px-3 py-2 whitespace-nowrap">
+                    {row.posted_at ? (
+                      <span className="inline-flex items-center gap-1 rounded-full border bg-emerald-500/10 px-2 py-0.5 text-[11px] font-medium text-emerald-700 dark:text-emerald-300">
+                        <CheckCircle2 className="h-3 w-3" /> Posted
+                      </span>
+                    ) : row.voided_at ? (
+                      <span className="inline-flex items-center gap-1 rounded-full border bg-destructive/10 px-2 py-0.5 text-[11px] font-medium text-destructive">
+                        Voided
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 rounded-full border bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+                        <MinusCircle className="h-3 w-3" /> Draft
+                      </span>
+                    )}
+                  </td>
+
+                  {/* Row actions */}
+                  <td className="px-2 py-2 text-right" data-no-nav>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 w-7 p-0 opacity-0 group-hover:opacity-100"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        {!row.posted_at && !row.voided_at && canPost && (
+                          <DropdownMenuItem
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              postMutation.mutate(row.id);
+                            }}
+                          >
+                            Post payment
+                          </DropdownMenuItem>
+                        )}
+                        {row.posted_at && !row.voided_at && canVoid && (
+                          <>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              className="text-destructive"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                voidMutation.mutate(row.id);
+                              }}
+                            >
+                              Void &amp; reverse
+                            </DropdownMenuItem>
+                          </>
+                        )}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </td>
                 </tr>
               );
@@ -405,14 +513,18 @@ export function PaymentsListPage({ kind }: { kind: PaymentKind }) {
         </span>
         <div className="flex items-center gap-1">
           <Button
-            variant="outline" size="sm" className="h-7 px-2"
+            variant="outline"
+            size="sm"
+            className="h-7 px-2"
             disabled={page <= 1}
             onClick={() => setPage((p) => p - 1)}
           >
             <ChevronLeft className="h-3.5 w-3.5" />
           </Button>
           <Button
-            variant="outline" size="sm" className="h-7 px-2"
+            variant="outline"
+            size="sm"
+            className="h-7 px-2"
             disabled={page >= totalPages}
             onClick={() => setPage((p) => p + 1)}
           >
