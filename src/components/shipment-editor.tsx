@@ -19,7 +19,7 @@ import { DocumentTimeline } from "@/components/document-timeline";
 import { PostingDetailsDrawer } from "@/components/posting-details-drawer";
 import { useDocumentBranding } from "@/hooks/use-document-branding";
 import { logDocumentEvent } from "@/lib/document-events";
-import { fetchRow, insertRow, updateRow } from "@/lib/typed-db";
+import { fetchRow, insertRow, updateRow, db } from "@/lib/typed-db";
 import type { ShipmentInsert } from "@/lib/db-types";
 
 const STATUSES = ["Draft", "In Transit", "Delivered", "Cancelled"] as const;
@@ -150,7 +150,7 @@ export function ShipmentEditor({ id }: { id: string }) {
 
   const post = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.rpc("post_shipment", { _shipment_id: id });
+      const { error } = await db.rpc("post_shipment", { _shipment_id: id });
       if (error) throw error;
       if (tenant?.id) {
         await logDocumentEvent({

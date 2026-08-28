@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/typed-db";
 import { useAuth } from "@/hooks/use-auth";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -28,12 +29,12 @@ function ProductionRunsPage() {
 
       const bomIds = [...new Set((orders ?? []).map((o: any) => o.bom_id).filter(Boolean))];
       const { data: boms } = bomIds.length
-        ? await supabase.from("bom_headers").select("id,code,product_id").in("id", bomIds)
+        ? await db.from("bom_headers").select("id,code,product_id").in("id", bomIds)
         : { data: [] as any[] };
 
       const productIds = [...new Set((boms ?? []).map((b: any) => b.product_id).filter(Boolean))];
       const { data: items } = productIds.length
-        ? await supabase.from("items").select("id,name,sku").in("id", productIds)
+        ? await db.from("items").select("id,name,sku").in("id", productIds)
         : { data: [] as any[] };
 
       const bomMap = new Map((boms ?? []).map((b: any) => [b.id, b]));
@@ -49,7 +50,7 @@ function ProductionRunsPage() {
 
   const complete = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.rpc("post_production_order", { _order_id: id });
+      const { error } = await db.rpc("post_production_order", { _order_id: id });
       if (error) throw error;
     },
     onSuccess: () => {

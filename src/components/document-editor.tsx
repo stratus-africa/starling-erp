@@ -49,7 +49,7 @@ import { useDocumentBranding, type DocTemplateKind } from "@/hooks/use-document-
 import { logDocumentEvent } from "@/lib/document-events";
 import { downloadDocumentPdf, type PdfDocInput } from "@/lib/document-pdf";
 import { Link } from "@tanstack/react-router";
-import { fetchRow, insertRow, updateRow } from "@/lib/typed-db";
+import { fetchRow, insertRow, updateRow, db } from "@/lib/typed-db";
 import { callRpc } from "@/lib/db-rpc";
 import type { TableName } from "@/lib/typed-db";
 import type { TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
@@ -422,7 +422,7 @@ export function DocumentEditor({
           tax_pct: l.tax_pct || 0,
           line_total: computeLine(l),
         }));
-        const { error } = await supabase.from(cfg.lines).insert(linePayload as never);
+        const { error } = await db.from(cfg.lines).insert(linePayload as never);
         if (error) throw error;
       }
       return docId;
@@ -520,7 +520,7 @@ export function DocumentEditor({
 
   const setReqStatus = useMutation({
     mutationFn: async ({ status, note }: { status: string; note: string }) => {
-      const { error } = await supabase.from(cfg.table).update({ status }).eq("id", id);
+      const { error } = await db.from(cfg.table).update({ status }).eq("id", id);
       if (error) throw error;
       if (tenant?.id) {
         await logDocumentEvent({
@@ -571,7 +571,7 @@ export function DocumentEditor({
       if (error) throw error;
       const poId = po.id;
       if (lines.length) {
-        const { error: le } = await supabase.from("purchase_order_lines").insert(
+        const { error: le } = await db.from("purchase_order_lines").insert(
           lines.map((l, i) => ({
             tenant_id: tenant.id,
             document_id: poId,
@@ -587,7 +587,7 @@ export function DocumentEditor({
         );
         if (le) throw le;
       }
-      await supabase.from("purchase_requisitions").update({ status: "Ordered", converted_po_id: poId }).eq("id", id);
+      await db.from("purchase_requisitions").update({ status: "Ordered", converted_po_id: poId }).eq("id", id);
       await logDocumentEvent({
         tenantId: tenant.id,
         entityType: kind,
@@ -656,7 +656,7 @@ export function DocumentEditor({
     queryKey: [cfg.linkFk?.table, "link-options", header[cfg.partyField]],
     enabled: !!cfg.linkFk,
     queryFn: async () => {
-      let q = supabase.from(cfg.linkFk!.table).select(`id, ${cfg.linkFk!.labelKey}`).is("deleted_at", null);
+      let q = db.from(cfg.linkFk!.table).select(`id, ${cfg.linkFk!.labelKey}`).is("deleted_at", null);
       if (header[cfg.partyField]) q = q.eq(cfg.partyField, header[cfg.partyField]);
       const { data, error } = await q.order("created_at", { ascending: false }).limit(200);
       if (error) throw error;

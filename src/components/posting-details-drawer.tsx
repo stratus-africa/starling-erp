@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/typed-db";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
 import type { JournalLine } from "@/lib/db-types";
@@ -64,10 +65,10 @@ export function PostingDetailsDrawer({
       const itemIds = [...new Set((movements ?? []).map((m) => m.item_id).filter((id): id is string => Boolean(id)))];
       const acctIds = [...new Set(lines.map((l) => l.account_id).filter(Boolean))];
       const items = itemIds.length
-        ? ((await supabase.from("items").select("id,name,sku").in("id", itemIds)).data ?? [])
+        ? ((await db.from("items").select("id,name,sku").in("id", itemIds)).data ?? [])
         : [];
       const accounts = acctIds.length
-        ? ((await supabase.from("chart_of_accounts").select("id,code,name").in("id", acctIds)).data ?? [])
+        ? ((await db.from("chart_of_accounts").select("id,code,name").in("id", acctIds)).data ?? [])
         : [];
 
       const itemMap = new Map(items.map((i) => [i.id, i]));

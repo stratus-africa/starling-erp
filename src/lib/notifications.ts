@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/typed-db";
 
 export const NOTIFICATION_TYPES = {
   approvalRequired: "approval_required",
@@ -30,24 +31,24 @@ export interface AppNotification {
 }
 
 export async function getMyNotifications(limit = 30): Promise<AppNotification[]> {
-  const { data, error } = await supabase.rpc("get_my_notifications", { _limit: limit });
+  const { data, error } = await db.rpc("get_my_notifications", { _limit: limit });
   if (error) throw error;
   return (data ?? []) as AppNotification[];
 }
 
 export async function getUnreadNotificationCount(): Promise<number> {
-  const { data, error } = await supabase.rpc("get_my_notification_unread_count");
+  const { data, error } = await db.rpc("get_my_notification_unread_count");
   if (error) throw error;
   return Number(data ?? 0);
 }
 
 export async function markNotificationRead(id: string): Promise<void> {
-  const { error } = await supabase.rpc("mark_notification_read", { _notification_id: id });
+  const { error } = await db.rpc("mark_notification_read", { _notification_id: id });
   if (error) throw error;
 }
 
 export async function markAllNotificationsRead(): Promise<void> {
-  const { error } = await supabase.rpc("mark_all_notifications_read");
+  const { error } = await db.rpc("mark_all_notifications_read");
   if (error) throw error;
 }
 
@@ -60,7 +61,7 @@ export async function createNotification(input: {
   entityId?: string;
   severity?: NotificationSeverity;
 }): Promise<string> {
-  const { data, error } = await supabase.rpc("create_notification", {
+  const { data, error } = await db.rpc("create_notification", {
     _user_id: input.userId,
     _type: input.type,
     _title: input.title,

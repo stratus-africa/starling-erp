@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/typed-db";
 import { useAuth } from "@/hooks/use-auth";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -82,7 +83,7 @@ export function ProductionItemPage({ id }: { id: string }) {
     queryKey: ["items", id],
     enabled: !isNew,
     queryFn: async () => {
-      const { data, error } = await supabase.from("items").select("*").eq("id", id).maybeSingle();
+      const { data, error } = await db.from("items").select("*").eq("id", id).maybeSingle();
       if (error) throw error;
       return data as any;
     },
@@ -250,11 +251,11 @@ export function ProductionItemPage({ id }: { id: string }) {
         tenant_id: tenant.id,
       };
       if (isNew) {
-        const { data, error } = await supabase.from("items").insert(payload).select("id").single();
+        const { data, error } = await db.from("items").insert(payload).select("id").single();
         if (error) throw error;
         return data.id;
       }
-      const { error } = await supabase.from("items").update(payload).eq("id", id);
+      const { error } = await db.from("items").update(payload).eq("id", id);
       if (error) throw error;
       return id;
     },

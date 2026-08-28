@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/typed-db";
 import { useAuth } from "@/hooks/use-auth";
 import { useFkOptions } from "@/hooks/use-module-data";
 import { toast } from "sonner";
@@ -301,7 +302,7 @@ export function CustomerEditor({ id, fields }: { id: string; fields: FieldDef[] 
     queryKey: ["customers", "record", id],
     enabled: !isNew,
     queryFn: async () => {
-      const { data, error } = await supabase.from("customers").select("*").eq("id", id).maybeSingle();
+      const { data, error } = await db.from("customers").select("*").eq("id", id).maybeSingle();
       if (error) throw error;
       return data as any;
     },
@@ -408,7 +409,7 @@ export function CustomerEditor({ id, fields }: { id: string; fields: FieldDef[] 
         return data.id;
       }
       const { tenant_id: _tid, ...update } = validated.data as any;
-      const { error } = await supabase.from("customers").update(update).eq("id", id);
+      const { error } = await db.from("customers").update(update).eq("id", id);
       if (error) throw error;
       return id;
     },

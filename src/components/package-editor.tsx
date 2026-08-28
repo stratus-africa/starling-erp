@@ -19,7 +19,7 @@ import { DocumentTimeline } from "@/components/document-timeline";
 import { PostingDetailsDrawer } from "@/components/posting-details-drawer";
 import { useDocumentBranding } from "@/hooks/use-document-branding";
 import { logDocumentEvent } from "@/lib/document-events";
-import { fetchRow, insertRow, updateRow } from "@/lib/typed-db";
+import { fetchRow, insertRow, updateRow, db } from "@/lib/typed-db";
 import type { Package, PackageInsert, PackageLine, PackageLineInsert, SalesOrder, Customer } from "@/lib/db-types";
 
 const STATUSES = ["Draft", "Packed", "Shipped", "Delivered", "Cancelled"] as const;
@@ -96,7 +96,7 @@ export function PackageEditor({ id }: { id: string }) {
   const { data: warehouses = [] } = useQuery({
     queryKey: ["warehouses", "picker"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("warehouses").select("id,name").is("deleted_at", null).order("name");
+      const { data, error } = await db.from("warehouses").select("id,name").is("deleted_at", null).order("name");
       if (error) throw error;
       return data ?? [];
     },
@@ -106,7 +106,7 @@ export function PackageEditor({ id }: { id: string }) {
   const { data: items = [] } = useQuery({
     queryKey: ["items", "picker"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("items").select("id,name,sku").is("deleted_at", null).order("name");
+      const { data, error } = await db.from("items").select("id,name,sku").is("deleted_at", null).order("name");
       if (error) throw error;
       return data ?? [];
     },
@@ -220,7 +220,7 @@ export function PackageEditor({ id }: { id: string }) {
 
       await updateRow("package_lines", docId!, { deleted_at: new Date().toISOString() });
       if (lines.length) {
-        const { error } = await supabase.from("package_lines").insert(
+        const { error } = await db.from("package_lines").insert(
           lines.map(
             (l, i): PackageLineInsert => ({
               tenant_id: tenant.id,
@@ -259,7 +259,7 @@ export function PackageEditor({ id }: { id: string }) {
 
   const confirmPackage = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.rpc("post_package", { _package_id: id });
+      const { error } = await db.rpc("post_package", { _package_id: id });
       if (error) throw error;
     },
     onSuccess: () => {
