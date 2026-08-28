@@ -342,19 +342,53 @@ export const chartOfAccountFields: FieldDef[] = [
 ];
 
 export const bankAccountFields: FieldDef[] = [
-  { key: "name", label: "Account", required: true, render: bold },
-  { key: "bank", label: "Bank" },
-  { key: "account_number", label: "Number", render: mono },
+  { key: "name", label: "Account Name", required: true, render: bold, group: "Identity" },
+  { key: "bank", label: "Bank", group: "Identity" },
+  { key: "account_number", label: "Account Number", render: mono, group: "Identity" },
   {
     key: "currency",
     label: "Currency",
     type: "select",
     options: ["USD", "EUR", "GBP", "KES", "AED", "EGP", "INR", "ZAR"],
     defaultValue: "USD",
+    group: "Identity",
   },
-  { key: "balance", label: "Balance", type: "number", className: "text-right", render: moneyRight },
-  { key: "status", label: "Status", type: "select", options: ["Active", "Inactive"], defaultValue: "Active" },
-  { key: "notes", label: "Notes", type: "textarea", hideInTable: true },
+  {
+    key: "gl_account_id",
+    label: "GL Account",
+    type: "fk",
+    fkTable: "chart_of_accounts",
+    fkLabel: "name",
+    hideInTable: true,
+    group: "Identity",
+  },
+  {
+    key: "opening_balance",
+    label: "Opening Balance",
+    type: "number",
+    className: "text-right",
+    render: moneyRight,
+    hideInTable: true,
+    group: "Balances",
+  },
+  { key: "opening_date", label: "Opening Date", type: "date", hideInTable: true, group: "Balances" },
+  {
+    key: "balance",
+    label: "Current Balance",
+    type: "number",
+    className: "text-right",
+    render: moneyRight,
+    group: "Balances",
+  },
+  {
+    key: "status",
+    label: "Status",
+    type: "select",
+    options: ["Active", "Inactive"],
+    defaultValue: "Active",
+    group: "Settings",
+  },
+  { key: "notes", label: "Notes", type: "textarea", hideInTable: true, group: "Settings" },
 ];
 
 export const journalEntryFields: FieldDef[] = [

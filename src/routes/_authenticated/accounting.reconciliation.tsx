@@ -1,10 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { ModulePage } from "@/components/module-page";
-import { modules } from "@/lib/modules";
+import { BankReconciliationPage } from "@/components/bank-reconciliation-page";
 
 export const Route = createFileRoute("/_authenticated/accounting/reconciliation")({
-  component: () => {
-    const m = modules["accounting.reconciliation"];
-    return <ModulePage {...m} />;
-  },
+  component: BankReconciliationPage,
 });
