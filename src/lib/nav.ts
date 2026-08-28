@@ -156,21 +156,7 @@ export const navGroups: NavGroup[] = [
   },
   {
     label: "Settings",
-    items: [
-      { title: "Company Profile", url: "/settings/company", icon: Building2 },
-      { title: "Taxes", url: "/settings/taxes", icon: Percent },
-      { title: "Currencies", url: "/settings/currencies", icon: Globe },
-      { title: "Warehouses", url: "/settings/warehouses", icon: Warehouse },
-      { title: "Units of Measure", url: "/settings/uom", icon: Ruler },
-      { title: "Approval Workflows", url: "/settings/workflows", icon: Workflow },
-      { title: "Payment Terms", url: "/settings/payment-terms", icon: CreditCard },
-      { title: "Document Numbering", url: "/settings/numbering", icon: Hash },
-      { title: "Email Templates", url: "/settings/templates", icon: Mail },
-      { title: "Notifications", url: "/settings/notifications", icon: Bell },
-      { title: "Users", url: "/settings/users", icon: Users },
-      { title: "Roles & Permissions", url: "/settings/roles", icon: Layers },
-      { title: "API Keys", url: "/settings/api-keys", icon: KeyRound },
-    ],
+    items: [{ title: "Settings", url: "/settings", icon: Settings2 }],
   },
 ];
 
