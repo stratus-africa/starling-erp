@@ -58,15 +58,15 @@ const PAGE_SIZE = 50;
 
 /** System account purpose → code + description */
 const SYSTEM_MAPPINGS = [
-  { purpose: "Cash",                code: "1000", description: "Primary cash and cash-equivalent account" },
+  { purpose: "Cash", code: "1000", description: "Primary cash and cash-equivalent account" },
   { purpose: "Accounts Receivable", code: "1100", description: "Amounts owed by customers" },
-  { purpose: "Inventory",           code: "1200", description: "Stock held for sale" },
-  { purpose: "Work in Progress",    code: "1300", description: "Partially completed production costs" },
-  { purpose: "Accounts Payable",    code: "2000", description: "Amounts owed to suppliers" },
-  { purpose: "Equity",              code: "3000", description: "Owner / shareholder equity" },
-  { purpose: "Sales Revenue",       code: "4000", description: "Revenue from primary business operations" },
-  { purpose: "Cost of Goods Sold",  code: "5000", description: "Direct cost of products sold" },
-  { purpose: "Operating Expenses",  code: "6000", description: "Overhead and indirect operating costs" },
+  { purpose: "Inventory", code: "1200", description: "Stock held for sale" },
+  { purpose: "Work in Progress", code: "1300", description: "Partially completed production costs" },
+  { purpose: "Accounts Payable", code: "2000", description: "Amounts owed to suppliers" },
+  { purpose: "Equity", code: "3000", description: "Owner / shareholder equity" },
+  { purpose: "Sales Revenue", code: "4000", description: "Revenue from primary business operations" },
+  { purpose: "Cost of Goods Sold", code: "5000", description: "Direct cost of products sold" },
+  { purpose: "Operating Expenses", code: "6000", description: "Overhead and indirect operating costs" },
 ];
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -98,19 +98,23 @@ type AccountForm = Omit<Account, "id" | "tenant_id" | "created_at" | "updated_at
 const db = supabase as any;
 
 const money = (v: number | null | undefined) =>
-  v == null
-    ? "—"
-    : Number(v).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  v == null ? "—" : Number(v).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 /** Given an account type, return tailwind classes for the badge */
 function typeBadgeClass(type: string | null): string {
   switch (type) {
-    case "Asset":     return "bg-blue-500/12 text-blue-700 dark:text-blue-300 border-blue-500/20";
-    case "Liability": return "bg-red-500/12 text-red-700 dark:text-red-300 border-red-500/20";
-    case "Equity":    return "bg-violet-500/12 text-violet-700 dark:text-violet-300 border-violet-500/20";
-    case "Income":    return "bg-emerald-500/12 text-emerald-700 dark:text-emerald-300 border-emerald-500/20";
-    case "Expense":   return "bg-amber-500/12 text-amber-700 dark:text-amber-300 border-amber-500/20";
-    default:          return "bg-muted text-muted-foreground";
+    case "Asset":
+      return "bg-blue-500/12 text-blue-700 dark:text-blue-300 border-blue-500/20";
+    case "Liability":
+      return "bg-red-500/12 text-red-700 dark:text-red-300 border-red-500/20";
+    case "Equity":
+      return "bg-violet-500/12 text-violet-700 dark:text-violet-300 border-violet-500/20";
+    case "Income":
+      return "bg-emerald-500/12 text-emerald-700 dark:text-emerald-300 border-emerald-500/20";
+    case "Expense":
+      return "bg-amber-500/12 text-amber-700 dark:text-amber-300 border-amber-500/20";
+    default:
+      return "bg-muted text-muted-foreground";
   }
 }
 
@@ -139,7 +143,7 @@ const emptyForm = (): AccountForm => ({
 interface EditorSheetProps {
   open: boolean;
   account: Account | null; // null = create mode
-  accounts: Account[];     // for parent FK select
+  accounts: Account[]; // for parent FK select
   onClose: () => void;
   onSave: (values: AccountForm, id?: string) => Promise<void>;
   saving: boolean;
@@ -190,21 +194,21 @@ function EditorSheet({ open, account, accounts, onClose, onSave, saving }: Edito
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [prevId, open]);
 
-  const set = <K extends keyof AccountForm>(k: K, v: AccountForm[K]) =>
-    setForm((f) => ({ ...f, [k]: v }));
+  const set = <K extends keyof AccountForm>(k: K, v: AccountForm[K]) => setForm((f) => ({ ...f, [k]: v }));
 
   const handleTypeChange = (t: string) => {
     set("type", t);
     set("normal_balance", defaultNormalBalance(t));
   };
 
-  const parentOptions = accounts.filter(
-    (a) => a.id !== account?.id && !a.deleted_at,
-  );
+  const parentOptions = accounts.filter((a) => a.id !== account?.id && !a.deleted_at);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.name.trim()) { toast.error("Account name is required"); return; }
+    if (!form.name.trim()) {
+      toast.error("Account name is required");
+      return;
+    }
     await onSave(form, account?.id);
   };
 
@@ -212,16 +216,11 @@ function EditorSheet({ open, account, accounts, onClose, onSave, saving }: Edito
 
   return (
     <Sheet open={open} onOpenChange={(o) => !o && onClose()}>
-      <SheetContent
-        side="right"
-        className="flex w-full flex-col overflow-hidden sm:max-w-lg"
-      >
+      <SheetContent side="right" className="flex w-full flex-col overflow-hidden sm:max-w-lg">
         <SheetHeader className="shrink-0 pr-2">
           <SheetTitle>{isEdit ? "Edit Account" : "New Account"}</SheetTitle>
           <SheetDescription>
-            {isEdit
-              ? `${account.code ?? ""} · ${account.name}`
-              : "Add a new account to the chart of accounts."}
+            {isEdit ? `${account.code ?? ""} · ${account.name}` : "Add a new account to the chart of accounts."}
           </SheetDescription>
         </SheetHeader>
 
@@ -229,22 +228,17 @@ function EditorSheet({ open, account, accounts, onClose, onSave, saving }: Edito
           <div className="mx-1 mt-1 flex items-start gap-2 rounded-md border border-amber-500/25 bg-amber-500/8 px-3 py-2 text-xs text-amber-700 dark:text-amber-300">
             <ShieldCheck className="mt-0.5 h-3.5 w-3.5 shrink-0" />
             <span>
-              This is a system account used by the posting engine. The code and
-              type are locked to prevent breaking posted journals.
+              This is a system account used by the posting engine. The code and type are locked to prevent breaking
+              posted journals.
             </span>
           </div>
         )}
 
-        <form
-          onSubmit={handleSubmit}
-          className="flex min-h-0 flex-1 flex-col gap-0 overflow-y-auto"
-        >
+        <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col gap-0 overflow-y-auto">
           <div className="flex-1 space-y-5 px-1 py-3">
             {/* ── Identity ── */}
             <section>
-              <p className="mb-3 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
-                Identity
-              </p>
+              <p className="mb-3 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Identity</p>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
                   <Label htmlFor="code" className="text-xs">
@@ -309,11 +303,7 @@ function EditorSheet({ open, account, accounts, onClose, onSave, saving }: Edito
                   <Label htmlFor="type" className="text-xs">
                     Account Type <span className="text-destructive">*</span>
                   </Label>
-                  <Select
-                    value={form.type ?? "Asset"}
-                    onValueChange={handleTypeChange}
-                    disabled={isSystemAccount}
-                  >
+                  <Select value={form.type ?? "Asset"} onValueChange={handleTypeChange} disabled={isSystemAccount}>
                     <SelectTrigger id="type" className="text-xs">
                       <SelectValue />
                     </SelectTrigger>
@@ -362,9 +352,7 @@ function EditorSheet({ open, account, accounts, onClose, onSave, saving }: Edito
                     <Separator className="my-1" />
                     {parentOptions.map((a) => (
                       <SelectItem key={a.id} value={a.id}>
-                        <span className="font-mono text-xs text-muted-foreground mr-1.5">
-                          {a.code}
-                        </span>
+                        <span className="font-mono text-xs text-muted-foreground mr-1.5">{a.code}</span>
                         {a.name}
                       </SelectItem>
                     ))}
@@ -377,9 +365,7 @@ function EditorSheet({ open, account, accounts, onClose, onSave, saving }: Edito
 
             {/* ── Balances ── */}
             <section>
-              <p className="mb-3 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
-                Balances
-              </p>
+              <p className="mb-3 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Balances</p>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
                   <Label htmlFor="opening_balance" className="text-xs">
@@ -403,9 +389,7 @@ function EditorSheet({ open, account, accounts, onClose, onSave, saving }: Edito
                     type="number"
                     step="0.01"
                     value={form.balance ?? ""}
-                    onChange={(e) =>
-                      set("balance", e.target.value === "" ? null : Number(e.target.value))
-                    }
+                    onChange={(e) => set("balance", e.target.value === "" ? null : Number(e.target.value))}
                     className="font-mono"
                     placeholder="Computed from journals"
                   />
@@ -417,21 +401,14 @@ function EditorSheet({ open, account, accounts, onClose, onSave, saving }: Edito
 
             {/* ── Settings ── */}
             <section>
-              <p className="mb-3 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
-                Settings
-              </p>
+              <p className="mb-3 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Settings</p>
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium">Active</p>
-                    <p className="text-xs text-muted-foreground">
-                      Inactive accounts are hidden from selectors.
-                    </p>
+                    <p className="text-xs text-muted-foreground">Inactive accounts are hidden from selectors.</p>
                   </div>
-                  <Switch
-                    checked={form.is_active}
-                    onCheckedChange={(v) => set("is_active", v)}
-                  />
+                  <Switch checked={form.is_active} onCheckedChange={(v) => set("is_active", v)} />
                 </div>
 
                 <div className="flex items-center justify-between">
@@ -441,10 +418,7 @@ function EditorSheet({ open, account, accounts, onClose, onSave, saving }: Edito
                       When off, this account can only receive automated entries.
                     </p>
                   </div>
-                  <Switch
-                    checked={form.allow_manual_posting}
-                    onCheckedChange={(v) => set("allow_manual_posting", v)}
-                  />
+                  <Switch checked={form.allow_manual_posting} onCheckedChange={(v) => set("allow_manual_posting", v)} />
                 </div>
 
                 {!isEdit && (
@@ -455,10 +429,7 @@ function EditorSheet({ open, account, accounts, onClose, onSave, saving }: Edito
                         Mark if this account is required by the posting engine.
                       </p>
                     </div>
-                    <Switch
-                      checked={form.is_system}
-                      onCheckedChange={(v) => set("is_system", v)}
-                    />
+                    <Switch checked={form.is_system} onCheckedChange={(v) => set("is_system", v)} />
                   </div>
                 )}
               </div>
@@ -507,12 +478,7 @@ function SystemMappingsInfo() {
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-8 gap-1.5 text-xs"
-              onClick={() => setOpen(true)}
-            >
+            <Button variant="outline" size="sm" className="h-8 gap-1.5 text-xs" onClick={() => setOpen(true)}>
               <ShieldCheck className="h-3.5 w-3.5" />
               System mappings
             </Button>
@@ -526,8 +492,8 @@ function SystemMappingsInfo() {
           <SheetHeader>
             <SheetTitle>System Account Mappings</SheetTitle>
             <SheetDescription>
-              These accounts are reserved by the posting engine. Changing their
-              codes will break automated journal entries.
+              These accounts are reserved by the posting engine. Changing their codes will break automated journal
+              entries.
             </SheetDescription>
           </SheetHeader>
           <div className="mt-4 rounded-md border overflow-hidden">
@@ -545,9 +511,7 @@ function SystemMappingsInfo() {
                       <p className="font-medium">{m.purpose}</p>
                       <p className="text-xs text-muted-foreground">{m.description}</p>
                     </td>
-                    <td className="px-3 py-2 font-mono text-xs font-semibold text-primary">
-                      {m.code}
-                    </td>
+                    <td className="px-3 py-2 font-mono text-xs font-semibold text-primary">{m.code}</td>
                   </tr>
                 ))}
               </tbody>
@@ -555,8 +519,8 @@ function SystemMappingsInfo() {
           </div>
           <p className="mt-3 flex items-start gap-1.5 text-xs text-muted-foreground">
             <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-            System accounts are protected from deletion. To reassign a purpose, add a
-            new account then update the posting configuration.
+            System accounts are protected from deletion. To reassign a purpose, add a new account then update the
+            posting configuration.
           </p>
         </SheetContent>
       </Sheet>
@@ -570,7 +534,12 @@ export function ChartOfAccountsPage() {
   const { can, tenant } = useAuth();
   const qc = useQueryClient();
 
-  const canWrite = can(["accounting.create", "accounting.update"]);
+  const canWrite = can([
+    "accounting.accounts.create",
+    "accounting.accounts.update",
+    "accounting.create", // legacy fallback
+    "accounting.update", // legacy fallback
+  ]);
 
   // ── Filters ──
   const [search, setSearch] = useState("");
@@ -589,12 +558,9 @@ export function ChartOfAccountsPage() {
         .order("code", { ascending: true })
         .range((page - 1) * PAGE_SIZE, page * PAGE_SIZE - 1);
 
-      if (search.trim())
-        q = q.or(
-          `name.ilike.%${search.trim()}%,code.ilike.%${search.trim()}%`,
-        );
+      if (search.trim()) q = q.or(`name.ilike.%${search.trim()}%,code.ilike.%${search.trim()}%`);
       if (typeFilter !== "all") q = q.eq("type", typeFilter);
-      if (statusFilter === "active")   q = q.eq("is_active", true);
+      if (statusFilter === "active") q = q.eq("is_active", true);
       if (statusFilter === "inactive") q = q.eq("is_active", false);
 
       const { data, error, count } = await q;
@@ -623,10 +589,7 @@ export function ChartOfAccountsPage() {
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   // Parent name lookup (for table display)
-  const parentMap = useMemo(
-    () => new Map(allAccounts.map((a) => [a.id, a])),
-    [allAccounts],
-  );
+  const parentMap = useMemo(() => new Map(allAccounts.map((a) => [a.id, a])), [allAccounts]);
 
   // ── Type summary counts ──
   const typeCounts = useMemo(() => {
@@ -643,12 +606,13 @@ export function ChartOfAccountsPage() {
   const createMutation = useMutation({
     mutationFn: async (values: AccountForm) => {
       if (!tenant?.id) throw new Error("No tenant");
-      const { error } = await db
-        .from("chart_of_accounts")
-        .insert({ ...values, tenant_id: tenant.id });
+      const { error } = await db.from("chart_of_accounts").insert({ ...values, tenant_id: tenant.id });
       if (error) throw error;
     },
-    onSuccess: () => { toast.success("Account created"); invalidate(); },
+    onSuccess: () => {
+      toast.success("Account created");
+      invalidate();
+    },
     onError: (e: Error) => toast.error(e.message ?? "Create failed"),
   });
 
@@ -660,7 +624,10 @@ export function ChartOfAccountsPage() {
         .eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => { toast.success("Account updated"); invalidate(); },
+    onSuccess: () => {
+      toast.success("Account updated");
+      invalidate();
+    },
     onError: (e: Error) => toast.error(e.message ?? "Update failed"),
   });
 
@@ -672,7 +639,10 @@ export function ChartOfAccountsPage() {
         .eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => { toast.success("Account deleted"); invalidate(); },
+    onSuccess: () => {
+      toast.success("Account deleted");
+      invalidate();
+    },
     onError: (e: Error) => toast.error(e.message ?? "Delete failed"),
   });
 
@@ -681,9 +651,18 @@ export function ChartOfAccountsPage() {
   const [editingAccount, setEditingAccount] = useState<Account | null>(null);
   const [deletingAccount, setDeletingAccount] = useState<Account | null>(null);
 
-  const openCreate = () => { setEditingAccount(null); setSheetOpen(true); };
-  const openEdit = (a: Account) => { setEditingAccount(a); setSheetOpen(true); };
-  const closeSheet = () => { setSheetOpen(false); setEditingAccount(null); };
+  const openCreate = () => {
+    setEditingAccount(null);
+    setSheetOpen(true);
+  };
+  const openEdit = (a: Account) => {
+    setEditingAccount(a);
+    setSheetOpen(true);
+  };
+  const closeSheet = () => {
+    setSheetOpen(false);
+    setEditingAccount(null);
+  };
 
   const handleSave = async (values: AccountForm, id?: string) => {
     if (id) {
@@ -700,7 +679,6 @@ export function ChartOfAccountsPage() {
 
   return (
     <div className="flex h-full flex-col bg-background">
-
       {/* ── Header ── */}
       <div className="shrink-0 border-b px-6 py-3">
         <div className="flex items-center justify-between gap-3">
@@ -716,7 +694,10 @@ export function ChartOfAccountsPage() {
                 className="h-8 w-52 pl-8 text-xs"
                 placeholder="Search code or name…"
                 value={search}
-                onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+                onChange={(e) => {
+                  setSearch(e.target.value);
+                  setPage(1);
+                }}
               />
               {search && (
                 <button
@@ -729,7 +710,13 @@ export function ChartOfAccountsPage() {
             </div>
 
             {/* Type filter */}
-            <Select value={typeFilter} onValueChange={(v) => { setTypeFilter(v); setPage(1); }}>
+            <Select
+              value={typeFilter}
+              onValueChange={(v) => {
+                setTypeFilter(v);
+                setPage(1);
+              }}
+            >
               <SelectTrigger className="h-8 w-36 text-xs">
                 <Filter className="mr-1.5 h-3 w-3 text-muted-foreground" />
                 <SelectValue placeholder="All types" />
@@ -748,7 +735,13 @@ export function ChartOfAccountsPage() {
             </Select>
 
             {/* Status filter */}
-            <Select value={statusFilter} onValueChange={(v) => { setStatusFilter(v); setPage(1); }}>
+            <Select
+              value={statusFilter}
+              onValueChange={(v) => {
+                setStatusFilter(v);
+                setPage(1);
+              }}
+            >
               <SelectTrigger className="h-8 w-32 text-xs">
                 <SelectValue placeholder="All" />
               </SelectTrigger>
@@ -777,7 +770,10 @@ export function ChartOfAccountsPage() {
               className={`flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[11px] font-medium transition-colors hover:opacity-80 ${
                 typeFilter === t ? typeBadgeClass(t) + " ring-1 ring-current/30" : "bg-muted/30 text-muted-foreground"
               }`}
-              onClick={() => { setTypeFilter(typeFilter === t ? "all" : t); setPage(1); }}
+              onClick={() => {
+                setTypeFilter(typeFilter === t ? "all" : t);
+                setPage(1);
+              }}
             >
               {t}
               <span className="font-mono">{typeCounts[t] ?? 0}</span>
@@ -832,9 +828,7 @@ export function ChartOfAccountsPage() {
                   {/* Code */}
                   <td className="px-4 py-2.5 whitespace-nowrap">
                     <div className="flex items-center gap-1.5">
-                      <span className="font-mono text-xs font-semibold text-primary">
-                        {row.code ?? "—"}
-                      </span>
+                      <span className="font-mono text-xs font-semibold text-primary">{row.code ?? "—"}</span>
                       {isSystem && (
                         <TooltipProvider>
                           <Tooltip>
@@ -853,9 +847,7 @@ export function ChartOfAccountsPage() {
                   {/* Name */}
                   <td className="px-4 py-2.5 max-w-[220px]">
                     <p className="font-medium leading-snug">{row.name}</p>
-                    {row.description && (
-                      <p className="truncate text-xs text-muted-foreground">{row.description}</p>
-                    )}
+                    {row.description && <p className="truncate text-xs text-muted-foreground">{row.description}</p>}
                   </td>
 
                   {/* Type badge */}
@@ -933,11 +925,7 @@ export function ChartOfAccountsPage() {
                     {canWrite && (
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-7 w-7 p-0 opacity-0 group-hover:opacity-100"
-                          >
+                          <Button variant="ghost" size="sm" className="h-7 w-7 p-0 opacity-0 group-hover:opacity-100">
                             <MoreHorizontal className="h-4 w-4" />
                             <span className="sr-only">Actions</span>
                           </Button>
@@ -949,10 +937,7 @@ export function ChartOfAccountsPage() {
                           {!isSystem && (
                             <>
                               <DropdownMenuSeparator />
-                              <DropdownMenuItem
-                                className="text-destructive"
-                                onClick={() => setDeletingAccount(row)}
-                              >
+                              <DropdownMenuItem className="text-destructive" onClick={() => setDeletingAccount(row)}>
                                 <Trash2 className="mr-2 h-3.5 w-3.5" /> Delete
                               </DropdownMenuItem>
                             </>
@@ -1012,9 +997,8 @@ export function ChartOfAccountsPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete account?</AlertDialogTitle>
             <AlertDialogDescription>
-              <span className="font-mono font-semibold">{deletingAccount?.code}</span>{" "}
-              {deletingAccount?.name} will be soft-deleted. This cannot be undone if
-              there are journal lines posted against this account.
+              <span className="font-mono font-semibold">{deletingAccount?.code}</span> {deletingAccount?.name} will be
+              soft-deleted. This cannot be undone if there are journal lines posted against this account.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
