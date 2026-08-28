@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/typed-db";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -122,8 +123,7 @@ export function PaymentsListPage({ kind }: { kind: PaymentKind }) {
   const { data: allRows = [] } = useQuery({
     queryKey: [table, "summary"],
     queryFn: async () => {
-      const { data } = await supabase
-        .from(table as any)
+      const { data } = await db.from(table as any)
         .select("amount, date, currency")
         .is("deleted_at", null)
         .limit(5000);
@@ -136,8 +136,7 @@ export function PaymentsListPage({ kind }: { kind: PaymentKind }) {
   const { data, isLoading } = useQuery({
     queryKey: [table, "list", { search, modeFilter, page }],
     queryFn: async () => {
-      let q = supabase
-        .from(table as any)
+      let q = db.from(table as any)
         .select("*", { count: "exact" })
         .is("deleted_at", null)
         .order("date", { ascending: false })
@@ -167,8 +166,7 @@ export function PaymentsListPage({ kind }: { kind: PaymentKind }) {
     queryKey: [partyTable, "names", partyIds],
     enabled: partyIds.length > 0,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from(partyTable as any)
+      const { data, error } = await db.from(partyTable as any)
         .select("id,name")
         .in("id", partyIds as string[]);
       if (error) throw error;

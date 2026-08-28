@@ -2,6 +2,7 @@ import { useState, useMemo } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/typed-db";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -253,8 +254,7 @@ export function InvoicesListPage({ kind }: InvoicesListPageProps) {
   const { data: allUnpaid = [] } = useQuery({
     queryKey: [table, "summary"],
     queryFn: async () => {
-      const { data } = await supabase
-        .from(table as any)
+      const { data } = await db.from(table as any)
         .select("balance_due, grand_total, due_date, status, updated_at, currency")
         .is("deleted_at", null)
         .limit(2000);
@@ -274,8 +274,7 @@ export function InvoicesListPage({ kind }: InvoicesListPageProps) {
   const { data, isLoading } = useQuery({
     queryKey: [table, "list", { search, statusFilter, page }],
     queryFn: async () => {
-      let q = supabase
-        .from(table as any)
+      let q = db.from(table as any)
         .select("*", { count: "exact" })
         .is("deleted_at", null)
         .order("date", { ascending: false })
@@ -302,8 +301,7 @@ export function InvoicesListPage({ kind }: InvoicesListPageProps) {
     queryKey: [partyTable, "names", partyIds],
     enabled: partyIds.length > 0,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from(partyTable as any)
+      const { data, error } = await db.from(partyTable as any)
         .select("id,name")
         .in("id", partyIds as string[]);
       if (error) throw error;
@@ -323,8 +321,7 @@ export function InvoicesListPage({ kind }: InvoicesListPageProps) {
     queryKey: [sourceTable, "numbers", sourceIds],
     enabled: sourceIds.length > 0,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from(sourceTable as any)
+      const { data, error } = await db.from(sourceTable as any)
         .select("id,number")
         .in("id", sourceIds as string[]);
       if (error) throw error;

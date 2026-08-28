@@ -150,8 +150,7 @@ function TransactionAccordion({
   const { data: rows = [], isLoading } = useQuery({
     queryKey: [table, "by-customer", customerId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from(table as any)
+      const { data, error } = await db.from(table as any)
         .select("*")
         .eq("customer_id", customerId)
         .is("deleted_at", null)
@@ -223,8 +222,7 @@ function AuditTrail({ customerId }: { customerId: string }) {
   const { data: logs = [], isLoading } = useQuery({
     queryKey: ["audit_logs", "customers", customerId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("audit_logs")
+      const { data, error } = await db.from("audit_logs")
         .select("*")
         .eq("table_name", "customers")
         .eq("record_id", customerId)
@@ -314,8 +312,7 @@ export function CustomerEditor({ id, fields }: { id: string; fields: FieldDef[] 
     queryKey: ["sales_orders", "ytd", id],
     enabled: !isNew,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("sales_orders")
+      const { data, error } = await db.from("sales_orders")
         .select("grand_total, currency")
         .eq("customer_id", id)
         .is("deleted_at", null)
@@ -334,8 +331,7 @@ export function CustomerEditor({ id, fields }: { id: string; fields: FieldDef[] 
     queryKey: ["profiles", "name", record?.salesperson_id],
     enabled: !!record?.salesperson_id,
     queryFn: async () => {
-      const { data } = await supabase
-        .from("profiles")
+      const { data } = await db.from("profiles")
         .select("full_name")
         .eq("id", record.salesperson_id)
         .maybeSingle();
@@ -400,8 +396,7 @@ export function CustomerEditor({ id, fields }: { id: string; fields: FieldDef[] 
       if (!validated.success) throw new Error(formatZodError(validated.error));
 
       if (isNew) {
-        const { data, error } = await supabase
-          .from("customers")
+        const { data, error } = await db.from("customers")
           .insert(validated.data as any)
           .select("id")
           .single();

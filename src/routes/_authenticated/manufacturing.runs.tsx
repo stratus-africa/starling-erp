@@ -19,8 +19,7 @@ function ProductionRunsPage() {
     queryKey: ["production_orders", "active"],
     enabled: !!tenant?.id,
     queryFn: async () => {
-      const { data: orders, error } = await supabase
-        .from("production_orders")
+      const { data: orders, error } = await db.from("production_orders")
         .select("*")
         .eq("tenant_id", tenant!.id)
         .in("status", ["Planned", "In Progress"])

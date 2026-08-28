@@ -40,13 +40,11 @@ export function PostingDetailsDrawer({
     enabled: open && ids.length > 0,
     queryFn: async () => {
       const [{ data: entries }, { data: movements }] = await Promise.all([
-        supabase
-          .from("journal_entries")
+        db.from("journal_entries")
           .select("id,number,entry_date,memo,total_debit,total_credit,source_ref_type")
           .in("source_ref_id", ids)
           .order("created_at"),
-        supabase
-          .from("stock_movements")
+        db.from("stock_movements")
           .select("id,quantity,unit_cost,note,created_at,item_id,warehouse_id,ref_type")
           .in("ref_id", ids)
           .order("created_at"),
@@ -55,8 +53,7 @@ export function PostingDetailsDrawer({
       const journalIds = (entries ?? []).map((e) => e.id);
       let lines: JournalLine[] = [];
       if (journalIds.length) {
-        const { data: jl } = await supabase
-          .from("journal_lines")
+        const { data: jl } = await db.from("journal_lines")
           .select("id,journal_id,debit,credit,memo,account_id")
           .in("journal_id", journalIds);
         lines = jl ?? [];

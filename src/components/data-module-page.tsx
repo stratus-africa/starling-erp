@@ -39,6 +39,7 @@ import {
 import { useModuleList, useModuleMutations, useFkOptions } from "@/hooks/use-module-data";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/typed-db";
 import { toast } from "sonner";
 import { AttachmentsPanel } from "@/components/attachments-panel";
 import { useAuth, type AppRole } from "@/hooks/use-auth";
@@ -190,7 +191,7 @@ export function DataModulePage(props: DataModulePageProps) {
   const post = useMutation({
     mutationFn: async (id: string) => {
       if (postPermission && !can(postPermission)) throw new Error(`Not authorized: ${postPermission}`);
-      const { error } = await (supabase as any).rpc(postAction!.rpc, { [postAction!.paramName]: id });
+      const { error } = await db.rpc(postAction!.rpc, { [postAction!.paramName]: id });
       if (error) throw error;
     },
     onSuccess: () => {
@@ -205,7 +206,7 @@ export function DataModulePage(props: DataModulePageProps) {
     mutationFn: async (row: any) => {
       if (!voidAction || !can(voidAction.permission))
         throw new Error(`Not authorized: ${voidAction?.permission ?? "void"}`);
-      const { data, error } = await (supabase as any).rpc("void_posted_document", {
+      const { data, error } = await db.rpc("void_posted_document", {
         _entity_type: voidAction.entityType,
         _entity_id: row.id,
         _permission: voidAction.permission,

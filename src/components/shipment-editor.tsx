@@ -47,8 +47,7 @@ export function ShipmentEditor({ id }: { id: string }) {
   const { data: orders = [] } = useQuery({
     queryKey: ["sales_orders", "picker"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("sales_orders")
+      const { data, error } = await db.from("sales_orders")
         .select("id,number,customer_id")
         .is("deleted_at", null)
         .order("created_at", { ascending: false });
@@ -60,8 +59,7 @@ export function ShipmentEditor({ id }: { id: string }) {
   const { data: packages = [] } = useQuery({
     queryKey: ["packages", "picker"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("packages")
+      const { data, error } = await db.from("packages")
         .select("id,number,sales_order_id,customer_id")
         .is("deleted_at", null)
         .order("created_at", { ascending: false });
@@ -73,8 +71,7 @@ export function ShipmentEditor({ id }: { id: string }) {
   const { data: customers = [] } = useQuery({
     queryKey: ["customers", "picker"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("customers")
+      const { data, error } = await db.from("customers")
         .select("id,name,email")
         .is("deleted_at", null)
         .order("name");

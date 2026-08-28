@@ -66,8 +66,7 @@ function BomEditor({ id }: { id: string }) {
     queryKey: ["bom_lines", id],
     enabled: !isNew,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("bom_lines")
+      const { data, error } = await db.from("bom_lines")
         .select("*")
         .eq("bom_id", id)
         .is("deleted_at", null)
@@ -152,8 +151,7 @@ function BomEditor({ id }: { id: string }) {
       };
 
       if (isNew) {
-        const { data, error } = await supabase
-          .from("bom_headers")
+        const { data, error } = await db.from("bom_headers")
           .insert({ ...payload, tenant_id: tenant.id })
           .select()
           .single();

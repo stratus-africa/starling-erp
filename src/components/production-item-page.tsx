@@ -94,8 +94,7 @@ export function ProductionItemPage({ id }: { id: string }) {
     queryKey: ["stock_movements", "item", id],
     enabled: !isNew,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("stock_movements")
+      const { data, error } = await db.from("stock_movements")
         .select("*, warehouses(name)")
         .eq("item_id", id)
         .order("created_at", { ascending: false })
@@ -120,8 +119,7 @@ export function ProductionItemPage({ id }: { id: string }) {
     enabled: !isNew,
     queryFn: async () => {
       // First get BOM headers where this item is the product
-      const { data: headers, error: hErr } = await supabase
-        .from("bom_headers")
+      const { data: headers, error: hErr } = await db.from("bom_headers")
         .select("id")
         .eq("product_id", id)
         .is("deleted_at", null)
@@ -129,8 +127,7 @@ export function ProductionItemPage({ id }: { id: string }) {
       if (hErr || !headers?.length) return [];
       const bomIds = headers.map((h) => h.id);
       // Then get the component lines for those BOMs
-      const { data, error } = await supabase
-        .from("bom_lines")
+      const { data, error } = await db.from("bom_lines")
         .select("*, items(id, name, sku, stock)")
         .in("bom_id", bomIds)
         .is("deleted_at", null)
@@ -146,8 +143,7 @@ export function ProductionItemPage({ id }: { id: string }) {
     queryKey: ["package_lines", "pending-ship", id],
     enabled: !isNew,
     queryFn: async () => {
-      const { data } = await supabase
-        .from("package_lines")
+      const { data } = await db.from("package_lines")
         .select("quantity, packages(status)")
         .eq("item_id", id)
         .is("deleted_at", null);
@@ -162,16 +158,14 @@ export function ProductionItemPage({ id }: { id: string }) {
     enabled: !isNew,
     queryFn: async () => {
       // Find BOM headers for this product
-      const { data: headers } = await supabase
-        .from("bom_headers")
+      const { data: headers } = await db.from("bom_headers")
         .select("id")
         .eq("product_id", id)
         .is("deleted_at", null);
       if (!headers?.length) return 0;
       const bomIds = headers.map((h) => h.id);
       // Find open production orders using those BOMs
-      const { data } = await supabase
-        .from("production_orders")
+      const { data } = await db.from("production_orders")
         .select("quantity, status")
         .in("bom_id", bomIds)
         .is("deleted_at", null)
@@ -184,8 +178,7 @@ export function ProductionItemPage({ id }: { id: string }) {
     queryKey: ["sales_order_lines", "pending-invoice", id],
     enabled: !isNew,
     queryFn: async () => {
-      const { data } = await supabase
-        .from("sales_order_lines")
+      const { data } = await db.from("sales_order_lines")
         .select("quantity, sales_orders!document_id(status, converted_invoice_id)")
         .eq("item_id", id)
         .is("deleted_at", null);

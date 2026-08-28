@@ -54,8 +54,7 @@ export function PackageEditor({ id }: { id: string }) {
     queryKey: ["package_lines", id],
     enabled: !isNew,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("package_lines")
+      const { data, error } = await db.from("package_lines")
         .select("*")
         .eq("document_id", id)
         .is("deleted_at", null)
@@ -68,8 +67,7 @@ export function PackageEditor({ id }: { id: string }) {
   const { data: orders = [] } = useQuery({
     queryKey: ["sales_orders", "picker"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("sales_orders")
+      const { data, error } = await db.from("sales_orders")
         .select("id,number,customer_id")
         .is("deleted_at", null)
         .order("created_at", { ascending: false });
@@ -82,8 +80,7 @@ export function PackageEditor({ id }: { id: string }) {
   const { data: customers = [] } = useQuery({
     queryKey: ["customers", "picker"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("customers")
+      const { data, error } = await db.from("customers")
         .select("id,name,email")
         .is("deleted_at", null)
         .order("name");
@@ -149,8 +146,7 @@ export function PackageEditor({ id }: { id: string }) {
     queryKey: ["sales_order_lines", "for-package", sourceOrderId],
     enabled: isNew && !!sourceOrderId,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("sales_order_lines")
+      const { data, error } = await db.from("sales_order_lines")
         .select("line_no,item_id,description,quantity")
         .eq("document_id", sourceOrderId!)
         .is("deleted_at", null)

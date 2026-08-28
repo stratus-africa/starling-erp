@@ -2,6 +2,7 @@ import { useState, useMemo } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/typed-db";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -130,8 +131,7 @@ export function PackagesListPage() {
   const { data, isLoading } = useQuery({
     queryKey: ["packages", "list", { search, statusFilter, page, view }],
     queryFn: async () => {
-      let q = supabase
-        .from("packages")
+      let q = db.from("packages")
         .select("*", { count: "exact" })
         .is("deleted_at", null)
         .order("date", { ascending: false });
@@ -166,8 +166,7 @@ export function PackagesListPage() {
     queryKey: ["customers", "names", customerIds],
     enabled: customerIds.length > 0,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("customers").select("id,name").in("id", customerIds as string[]);
+      const { data, error } = await db.from("customers").select("id,name").in("id", customerIds as string[]);
       if (error) throw error;
       return (data ?? []) as { id: string; name: string }[];
     },
@@ -187,8 +186,7 @@ export function PackagesListPage() {
     queryKey: ["sales_orders", "numbers", orderIds],
     enabled: orderIds.length > 0,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("sales_orders").select("id,number").in("id", orderIds as string[]);
+      const { data, error } = await db.from("sales_orders").select("id,number").in("id", orderIds as string[]);
       if (error) throw error;
       return (data ?? []) as { id: string; number: string }[];
     },
@@ -205,8 +203,7 @@ export function PackagesListPage() {
     queryKey: ["package_lines", "by-packages", pkgIds],
     enabled: pkgIds.length > 0,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("package_lines").select("document_id,quantity")
+      const { data, error } = await db.from("package_lines").select("document_id,quantity")
         .in("document_id", pkgIds).is("deleted_at", null);
       if (error) return [];
       return (data ?? []) as { document_id: string; quantity: number }[];
@@ -227,8 +224,7 @@ export function PackagesListPage() {
     enabled: pkgIds.length > 0,
     queryFn: async () => {
       // shipments link to sales_order_id; use carrier match or join via sales_order_id
-      const { data, error } = await supabase
-        .from("shipments")
+      const { data, error } = await db.from("shipments")
         .select("sales_order_id,ship_date")
         .in("sales_order_id", orderIds as string[])
         .is("deleted_at", null);

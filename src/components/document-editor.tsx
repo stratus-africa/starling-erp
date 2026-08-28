@@ -261,8 +261,7 @@ export function DocumentEditor({
     queryKey: [cfg.lines, id],
     enabled: !isNew,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from(cfg.lines)
+      const { data, error } = await db.from(cfg.lines)
         .select("*")
         .eq("document_id", id)
         .is("deleted_at", null)
@@ -274,7 +273,7 @@ export function DocumentEditor({
 
   const { data: parties = [] } = useFkOptions(cfg.partyTable);
 
-  type DocumentHeader = Record<string, string | number | null | undefined>;
+  type DocumentHeader = Record<string, any>;
   const [header, setHeader] = useState<DocumentHeader>({
     number: "",
     [cfg.partyField]: "",
@@ -292,8 +291,7 @@ export function DocumentEditor({
     queryKey: ["customers", "document-prefill", selectedCustomerId],
     enabled: !!selectedCustomerId,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("customers")
+      const { data, error } = await db.from("customers")
         .select("id,name,contact_person,email,phone,currency,billing_address,shipping_address")
         .eq("id", selectedCustomerId!)
         .maybeSingle();
@@ -310,8 +308,7 @@ export function DocumentEditor({
   const { data: items = [] } = useQuery({
     queryKey: ["items", "picker"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("items")
+      const { data, error } = await db.from("items")
         .select("id,name,sku,price,cost")
         .is("deleted_at", null)
         .order("name");
@@ -549,8 +546,7 @@ export function DocumentEditor({
       if (!reqApproved) throw new Error("Requisition must be approved first");
       if (!header.supplier_id) throw new Error("Select a preferred supplier before converting");
       const number = `PO-${Date.now().toString().slice(-8)}`;
-      const { data: po, error } = await supabase
-        .from("purchase_orders")
+      const { data: po, error } = await db.from("purchase_orders")
         .insert({
           tenant_id: tenant.id,
           number,
@@ -612,8 +608,7 @@ export function DocumentEditor({
     queryKey: [cfg.partyTable, "detail", partyId],
     enabled: !!partyId,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from(cfg.partyTable)
+      const { data, error } = await db.from(cfg.partyTable)
         .select("id,name,email")
         .eq("id", partyId)
         .maybeSingle();
@@ -626,8 +621,7 @@ export function DocumentEditor({
     queryKey: ["packages", "by-order", id],
     enabled: kind === "order" && !isNew,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("packages")
+      const { data, error } = await db.from("packages")
         .select("id,number,date,status,tracking,carrier,posted_at")
         .eq("sales_order_id", id)
         .is("deleted_at", null)
@@ -641,8 +635,7 @@ export function DocumentEditor({
     queryKey: ["shipments", "by-order", id],
     enabled: kind === "order" && !isNew,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("shipments")
+      const { data, error } = await db.from("shipments")
         .select("id,number,ship_date,delivery_date,status,tracking,carrier,posted_at")
         .eq("sales_order_id", id)
         .is("deleted_at", null)
