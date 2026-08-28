@@ -9,7 +9,8 @@ export type TableName = keyof Database["public"]["Tables"];
  */
 export type Row = Record<string, any>;
 
-const db = supabase as any;
+/** Untyped client for dynamic/generic queries where generated row types get in the way. */
+export const db = supabase as any;
 
 export async function fetchRow(table: string, id: string): Promise<Row | null> {
   const { data, error } = await db.from(table).select("*").eq("id", id).maybeSingle();
