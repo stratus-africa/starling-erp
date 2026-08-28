@@ -14,6 +14,56 @@ export type Database = {
   }
   public: {
     Tables: {
+      accounting_integrity_findings: {
+        Row: {
+          check_code: string
+          detail: string
+          detected_at: string
+          entity_id: string | null
+          entity_type: string
+          id: string
+          resolution_note: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          severity: string
+          tenant_id: string
+        }
+        Insert: {
+          check_code: string
+          detail: string
+          detected_at?: string
+          entity_id?: string | null
+          entity_type: string
+          id?: string
+          resolution_note?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: string
+          tenant_id: string
+        }
+        Update: {
+          check_code?: string
+          detail?: string
+          detected_at?: string
+          entity_id?: string | null
+          entity_type?: string
+          id?: string
+          resolution_note?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: string
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "accounting_integrity_findings_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       accounting_periods: {
         Row: {
           closed_at: string | null
@@ -4228,6 +4278,10 @@ export type Database = {
           output_vat: string
         }[]
       }
+      acknowledge_integrity_finding: {
+        Args: { _finding_id: string; _note?: string }
+        Returns: undefined
+      }
       act_on_approval_request: {
         Args: { _action: string; _note?: string; _request_id: string }
         Returns: {
@@ -4542,6 +4596,7 @@ export type Database = {
         }
         Returns: string
       }
+      run_accounting_integrity_checks: { Args: never; Returns: Json }
       set_item_opening_stock: {
         Args: {
           _item_id: string
