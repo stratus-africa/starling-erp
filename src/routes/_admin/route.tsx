@@ -1,34 +1,28 @@
 /**
- * Platform Console route guard
+ * Super Admin Shell — /super-admin
  *
- * Security model:
- *   1. Unauthenticated → redirect to /auth
- *   2. Authenticated but NOT a platform admin → access-denied wall
- *      (platform admin status is verified by admin_ping() RPC which checks
- *       BOTH user_roles.super_admin AND platform_admins table server-side)
- *   3. Authenticated + confirmed platform admin → render console
+ * Security layers:
+ *   1. Unauthenticated → /auth
+ *   2. No Supabase session → /auth
+ *   3. admin_ping() RPC returns false (not in platform_admins + user_roles) → wall
+ *   4. Every child page additionally calls canPlatform(requiredPermission) before
+ *      rendering its content.
  *
- * The old pattern checked `roles.includes("super_admin")` — a value set
- * from the client-side user_roles query.  That check is now secondary:
- * the definitive check is the admin_ping() RPC inside PlatformAuthProvider,
- * which runs is_platform_admin() in SECURITY DEFINER context and requires
- * both the user_roles row AND a live platform_admins row.
- *
- * The AuthProvider from the tenant app is intentionally NOT re-used here.
- * Platform admins have their own context (PlatformAuthProvider) so the
- * two permission systems remain isolated.
+ * This layout is completely isolated from the tenant /_authenticated layout.
+ * It uses its own providers, its own sidebar, and its own topbar.
+ * No tenant UI components leak in; no super-admin components leak out.
  */
 
-import { createFileRoute, Outlet, Navigate, Link } from "@tanstack/react-router";
-import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
-import { AdminSidebar } from "@/components/admin-sidebar";
+import { createFileRoute, Outlet, Navigate, Link, useRouterState } from "@tanstack/react-router";
 import { AuthProvider, useAuth } from "@/hooks/use-auth";
 import { PlatformAuthProvider, usePlatformAuth } from "@/hooks/use-platform-auth";
-import { TenantSwitcher } from "@/components/tenant-switcher";
+import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { SuperAdminSidebar } from "@/components/super-admin/super-admin-sidebar";
+import { SuperAdminBreadcrumbs } from "@/components/super-admin/super-admin-breadcrumbs";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { LogOut, Loader2, ShieldAlert, ShieldCheck, AlertTriangle } from "lucide-react";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Separator } from "@/components/ui/separator";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -37,103 +31,112 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { AlertTriangle, ExternalLink, Loader2, LogOut, ShieldAlert, ShieldCheck } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
+import { PLATFORM_ROLE_LABELS } from "@/lib/platform-permissions";
+import type { PlatformRole } from "@/lib/platform-permissions";
 
-export const Route = createFileRoute("/_admin")({
+// ─── Route definition ─────────────────────────────────────────────────────────
+
+export const Route = createFileRoute("/super-admin")({
   ssr: false,
   component: () => (
-    // Both providers are needed: AuthProvider supplies the base session/profile
-    // used by TenantSwitcher and signOut; PlatformAuthProvider handles the
-    // platform-specific admin check and permission cache.
     <AuthProvider>
       <PlatformAuthProvider>
-        <AdminGate />
+        <SuperAdminGate />
       </PlatformAuthProvider>
     </AuthProvider>
   ),
 });
 
-// ─── Gate ─────────────────────────────────────────────────────────────────────
+// ─── Gate — DB-enforced guard ─────────────────────────────────────────────────
 
-function AdminGate() {
+function SuperAdminGate() {
   const { session, loading: authLoading } = useAuth();
   const { isPlatformAdmin, loading: platformLoading } = usePlatformAuth();
 
-  const loading = authLoading || platformLoading;
-
-  if (loading) {
+  if (authLoading || platformLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-950">
-        <Loader2 className="h-6 w-6 animate-spin text-slate-400" />
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="flex flex-col items-center gap-3">
+          <Loader2 className="h-7 w-7 animate-spin text-muted-foreground" />
+          <p className="text-sm text-muted-foreground">Verifying platform access…</p>
+        </div>
       </div>
     );
   }
 
-  // Not logged in at all
   if (!session) return <Navigate to="/auth" />;
 
-  // Logged in but not a platform admin (DB check failed)
+  // DB-level check failed — render hard wall, not a redirect
   if (!isPlatformAdmin) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-950 p-6">
-        <div className="max-w-md text-center text-slate-200 space-y-3">
-          <ShieldAlert className="h-10 w-10 text-amber-400 mx-auto" />
-          <h2 className="text-lg font-semibold">Platform Console</h2>
-          <p className="text-sm text-slate-400">
-            This area is restricted to platform administrators. Your account does not have platform admin access.
+      <div className="flex min-h-screen items-center justify-center bg-background p-6">
+        <div className="max-w-md text-center space-y-4">
+          <div className="flex justify-center">
+            <div className="h-14 w-14 rounded-full bg-destructive/10 flex items-center justify-center">
+              <ShieldAlert className="h-7 w-7 text-destructive" />
+            </div>
+          </div>
+          <h2 className="text-xl font-semibold">Access Denied</h2>
+          <p className="text-sm text-muted-foreground">
+            The Super Admin area is restricted to platform administrators. Your account has not been granted platform
+            access.
           </p>
-          <p className="text-xs text-slate-500">
-            If you believe this is an error, contact your platform administrator.
+          <p className="text-xs text-muted-foreground/60">
+            If you require access, contact a platform super administrator.
           </p>
-          <Button asChild variant="secondary">
-            <Link to="/">Return to workspace</Link>
-          </Button>
+          <div className="flex items-center justify-center gap-3 pt-2">
+            <Button asChild variant="outline" size="sm">
+              <Link to="/">Return to workspace</Link>
+            </Button>
+            <Button asChild variant="ghost" size="sm">
+              <Link to="/auth">Sign in as another user</Link>
+            </Button>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="dark">
-      <SidebarProvider>
-        <div className="flex min-h-screen w-full bg-slate-950 text-slate-100">
-          <AdminSidebar />
-          <SidebarInset className="min-w-0 flex-1 bg-slate-950">
-            <AdminTopbar />
-            {/* Support session banner — shown whenever admin is inside a tenant */}
-            <SupportSessionBanner />
-            <main className="flex-1 min-w-0">
-              <Outlet />
-            </main>
-          </SidebarInset>
-        </div>
-      </SidebarProvider>
-    </div>
+    <SidebarProvider>
+      <div className="flex min-h-screen w-full bg-background">
+        <SuperAdminSidebar />
+        <SidebarInset className="min-w-0 flex-1">
+          <SuperAdminTopbar />
+          <SupportSessionBanner />
+          <main className="flex-1 min-w-0">
+            <Outlet />
+          </main>
+        </SidebarInset>
+      </div>
+    </SidebarProvider>
   );
 }
 
 // ─── Topbar ───────────────────────────────────────────────────────────────────
 
-function AdminTopbar() {
+function SuperAdminTopbar() {
   const { profile } = useAuth();
-  const { adminProfile, endSupportSession, supportSession } = usePlatformAuth();
+  const { adminProfile, supportSession, endSupportSession } = usePlatformAuth();
   const navigate = useNavigate();
 
-  const initials = (adminProfile?.fullName ?? adminProfile?.email ?? profile?.full_name ?? "??")
+  const displayName = adminProfile?.fullName ?? adminProfile?.email ?? profile?.full_name ?? "Admin";
+  const displayEmail = adminProfile?.email ?? profile?.email ?? "";
+  const initials = displayName
     .split(/\s+/)
     .map((s: string) => s[0])
     .slice(0, 2)
     .join("")
     .toUpperCase();
-
   const roleLabel = adminProfile?.platformRole
-    ? adminProfile.platformRole.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())
+    ? (PLATFORM_ROLE_LABELS[adminProfile.platformRole as PlatformRole] ?? adminProfile.platformRole)
     : "Platform Admin";
 
   const handleSignOut = async () => {
-    // End any active support session before signing out
     if (supportSession) {
       try {
         await endSupportSession("Signed out");
@@ -146,46 +149,65 @@ function AdminTopbar() {
   };
 
   return (
-    <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-slate-800 bg-slate-950/90 px-3 backdrop-blur">
-      <SidebarTrigger className="h-8 w-8 text-slate-300" />
-      <div className="flex items-center gap-2">
-        <ShieldCheck className="h-4 w-4 text-amber-400" />
-        <span className="text-sm font-medium text-slate-200">Platform Console</span>
-      </div>
+    <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b bg-background/95 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <SidebarTrigger className="h-8 w-8" />
+      <Separator orientation="vertical" className="h-5" />
+
+      {/* Breadcrumbs */}
+      <SuperAdminBreadcrumbs />
 
       <div className="ml-auto flex items-center gap-2">
-        <TenantSwitcher />
+        {/* Platform badge */}
+        <Badge
+          variant="outline"
+          className="hidden sm:flex gap-1 text-[10px] border-amber-500/40 bg-amber-500/8 text-amber-700 dark:text-amber-300"
+        >
+          <ShieldCheck className="h-3 w-3" />
+          Platform Admin
+        </Badge>
 
+        <Separator orientation="vertical" className="h-5 hidden sm:block" />
+
+        {/* Exit to tenant workspace */}
+        <Button asChild variant="ghost" size="sm" className="h-8 gap-1.5 text-xs hidden sm:flex">
+          <Link to="/">
+            <ExternalLink className="h-3.5 w-3.5" />
+            Workspace
+          </Link>
+        </Button>
+
+        {/* User menu */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <button className="flex items-center gap-2 rounded-md pl-1 pr-2 py-1 hover:bg-slate-800 transition-colors">
+            <button className="flex items-center gap-2 rounded-md pl-1 pr-2 py-1 hover:bg-muted transition-colors">
               <Avatar className="h-7 w-7">
-                <AvatarFallback className="bg-amber-500/20 text-amber-300 text-xs font-semibold ring-1 ring-amber-500/40">
+                <AvatarFallback className="bg-amber-500/20 text-amber-700 dark:text-amber-300 text-xs font-semibold ring-1 ring-amber-500/30">
                   {initials}
                 </AvatarFallback>
               </Avatar>
               <div className="hidden md:flex flex-col items-start leading-tight">
-                <span className="text-xs font-medium text-slate-100">
-                  {adminProfile?.fullName ?? adminProfile?.email ?? profile?.full_name}
-                </span>
-                <span className="text-[10px] text-amber-400">{roleLabel}</span>
+                <span className="text-xs font-medium">{displayName}</span>
+                <span className="text-[10px] text-amber-600 dark:text-amber-400">{roleLabel}</span>
               </div>
             </button>
           </DropdownMenuTrigger>
 
           <DropdownMenuContent align="end" className="w-64">
             <DropdownMenuLabel className="flex flex-col gap-0.5">
-              <span>Platform Console</span>
-              <span className="text-xs font-normal text-muted-foreground">{adminProfile?.email ?? profile?.email}</span>
+              <span>Super Admin Console</span>
+              <span className="text-xs font-normal text-muted-foreground">{displayEmail}</span>
             </DropdownMenuLabel>
             <div className="px-2 pb-1.5">
-              <Badge variant="outline" className="text-[10px] border-amber-500/40 text-amber-400">
+              <Badge variant="outline" className="text-[10px] border-amber-500/40 text-amber-600 dark:text-amber-400">
                 {roleLabel}
               </Badge>
             </div>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
-              <Link to="/">Exit to tenant workspace</Link>
+              <Link to="/">
+                <ExternalLink className="h-4 w-4 mr-2" />
+                Exit to tenant workspace
+              </Link>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem className="text-destructive" onClick={handleSignOut}>
@@ -198,13 +220,10 @@ function AdminTopbar() {
   );
 }
 
-// ─── Support Session Banner ───────────────────────────────────────────────────
-// Displayed whenever the platform admin is operating inside a tenant's context.
-// This is a critical UX safety mechanism — makes impersonation always visible.
+// ─── Support session banner ───────────────────────────────────────────────────
 
 function SupportSessionBanner() {
   const { supportSession, endSupportSession } = usePlatformAuth();
-
   if (!supportSession) return null;
 
   const minsLeft = Math.round(supportSession.minutesRemaining);
@@ -223,27 +242,20 @@ function SupportSessionBanner() {
     <div
       className={`flex items-center justify-between gap-3 px-4 py-2 text-xs font-medium border-b ${
         isExpiringSoon
-          ? "bg-red-900/40 border-red-700/40 text-red-300"
-          : "bg-amber-900/30 border-amber-700/30 text-amber-300"
+          ? "bg-destructive/8 border-destructive/20 text-destructive"
+          : "bg-amber-500/8 border-amber-500/20 text-amber-700 dark:text-amber-300"
       }`}
     >
       <div className="flex items-center gap-2 min-w-0">
         <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
         <span className="truncate">
-          Support session active inside <span className="font-semibold">{supportSession.targetTenantName}</span> —{" "}
+          Viewing tenant <span className="font-semibold">{supportSession.targetTenantName}</span> —{" "}
           {supportSession.reason}
         </span>
       </div>
       <div className="flex items-center gap-3 shrink-0">
-        <span className={isExpiringSoon ? "text-red-400 font-semibold" : "text-amber-400/70"}>
-          {minsLeft} min remaining
-        </span>
-        <Button
-          size="sm"
-          variant="outline"
-          className="h-6 px-2 text-[10px] border-amber-600/40 hover:bg-amber-900/40 text-amber-300"
-          onClick={handleEnd}
-        >
+        <span className={`tabular-nums ${isExpiringSoon ? "font-semibold" : "opacity-70"}`}>{minsLeft} min left</span>
+        <Button size="sm" variant="outline" className="h-6 px-2 text-[10px]" onClick={handleEnd}>
           End session
         </Button>
       </div>
