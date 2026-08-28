@@ -56,6 +56,7 @@ import { Route as AuthenticatedAccountingTrialBalanceRouteImport } from './route
 import { Route as AuthenticatedAccountingTaxReportRouteImport } from './routes/_authenticated/accounting.tax-report'
 import { Route as AuthenticatedAccountingReconciliationRouteImport } from './routes/_authenticated/accounting.reconciliation'
 import { Route as AuthenticatedAccountingProfitLossRouteImport } from './routes/_authenticated/accounting.profit-loss'
+import { Route as AuthenticatedAccountingPostingConfigRouteImport } from './routes/_authenticated/accounting.posting-config'
 import { Route as AuthenticatedAccountingPeriodsRouteImport } from './routes/_authenticated/accounting.periods'
 import { Route as AuthenticatedAccountingLedgerRouteImport } from './routes/_authenticated/accounting.ledger'
 import { Route as AuthenticatedAccountingJournalsRouteImport } from './routes/_authenticated/accounting.journals'
@@ -362,6 +363,12 @@ const AuthenticatedAccountingProfitLossRoute =
     path: '/accounting/profit-loss',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAccountingPostingConfigRoute =
+  AuthenticatedAccountingPostingConfigRouteImport.update({
+    id: '/accounting/posting-config',
+    path: '/accounting/posting-config',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAccountingPeriodsRoute =
   AuthenticatedAccountingPeriodsRouteImport.update({
     id: '/accounting/periods',
@@ -582,6 +589,7 @@ export interface FileRoutesByFullPath {
   '/accounting/journals': typeof AuthenticatedAccountingJournalsRoute
   '/accounting/ledger': typeof AuthenticatedAccountingLedgerRoute
   '/accounting/periods': typeof AuthenticatedAccountingPeriodsRoute
+  '/accounting/posting-config': typeof AuthenticatedAccountingPostingConfigRoute
   '/accounting/profit-loss': typeof AuthenticatedAccountingProfitLossRoute
   '/accounting/reconciliation': typeof AuthenticatedAccountingReconciliationRoute
   '/accounting/tax-report': typeof AuthenticatedAccountingTaxReportRoute
@@ -663,6 +671,7 @@ export interface FileRoutesByTo {
   '/accounting/journals': typeof AuthenticatedAccountingJournalsRoute
   '/accounting/ledger': typeof AuthenticatedAccountingLedgerRoute
   '/accounting/periods': typeof AuthenticatedAccountingPeriodsRoute
+  '/accounting/posting-config': typeof AuthenticatedAccountingPostingConfigRoute
   '/accounting/profit-loss': typeof AuthenticatedAccountingProfitLossRoute
   '/accounting/reconciliation': typeof AuthenticatedAccountingReconciliationRoute
   '/accounting/tax-report': typeof AuthenticatedAccountingTaxReportRoute
@@ -747,6 +756,7 @@ export interface FileRoutesById {
   '/_authenticated/accounting/journals': typeof AuthenticatedAccountingJournalsRoute
   '/_authenticated/accounting/ledger': typeof AuthenticatedAccountingLedgerRoute
   '/_authenticated/accounting/periods': typeof AuthenticatedAccountingPeriodsRoute
+  '/_authenticated/accounting/posting-config': typeof AuthenticatedAccountingPostingConfigRoute
   '/_authenticated/accounting/profit-loss': typeof AuthenticatedAccountingProfitLossRoute
   '/_authenticated/accounting/reconciliation': typeof AuthenticatedAccountingReconciliationRoute
   '/_authenticated/accounting/tax-report': typeof AuthenticatedAccountingTaxReportRoute
@@ -830,6 +840,7 @@ export interface FileRouteTypes {
     | '/accounting/journals'
     | '/accounting/ledger'
     | '/accounting/periods'
+    | '/accounting/posting-config'
     | '/accounting/profit-loss'
     | '/accounting/reconciliation'
     | '/accounting/tax-report'
@@ -911,6 +922,7 @@ export interface FileRouteTypes {
     | '/accounting/journals'
     | '/accounting/ledger'
     | '/accounting/periods'
+    | '/accounting/posting-config'
     | '/accounting/profit-loss'
     | '/accounting/reconciliation'
     | '/accounting/tax-report'
@@ -994,6 +1006,7 @@ export interface FileRouteTypes {
     | '/_authenticated/accounting/journals'
     | '/_authenticated/accounting/ledger'
     | '/_authenticated/accounting/periods'
+    | '/_authenticated/accounting/posting-config'
     | '/_authenticated/accounting/profit-loss'
     | '/_authenticated/accounting/reconciliation'
     | '/_authenticated/accounting/tax-report'
@@ -1398,6 +1411,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAccountingProfitLossRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/accounting/posting-config': {
+      id: '/_authenticated/accounting/posting-config'
+      path: '/accounting/posting-config'
+      fullPath: '/accounting/posting-config'
+      preLoaderRoute: typeof AuthenticatedAccountingPostingConfigRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/accounting/periods': {
       id: '/_authenticated/accounting/periods'
       path: '/accounting/periods'
@@ -1668,6 +1688,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAccountingJournalsRoute: typeof AuthenticatedAccountingJournalsRoute
   AuthenticatedAccountingLedgerRoute: typeof AuthenticatedAccountingLedgerRoute
   AuthenticatedAccountingPeriodsRoute: typeof AuthenticatedAccountingPeriodsRoute
+  AuthenticatedAccountingPostingConfigRoute: typeof AuthenticatedAccountingPostingConfigRoute
   AuthenticatedAccountingProfitLossRoute: typeof AuthenticatedAccountingProfitLossRoute
   AuthenticatedAccountingReconciliationRoute: typeof AuthenticatedAccountingReconciliationRoute
   AuthenticatedAccountingTaxReportRoute: typeof AuthenticatedAccountingTaxReportRoute
@@ -1745,6 +1766,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAccountingJournalsRoute: AuthenticatedAccountingJournalsRoute,
   AuthenticatedAccountingLedgerRoute: AuthenticatedAccountingLedgerRoute,
   AuthenticatedAccountingPeriodsRoute: AuthenticatedAccountingPeriodsRoute,
+  AuthenticatedAccountingPostingConfigRoute:
+    AuthenticatedAccountingPostingConfigRoute,
   AuthenticatedAccountingProfitLossRoute:
     AuthenticatedAccountingProfitLossRoute,
   AuthenticatedAccountingReconciliationRoute:

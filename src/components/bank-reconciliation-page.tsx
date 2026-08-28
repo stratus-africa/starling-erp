@@ -64,6 +64,7 @@ interface Reconciliation {
   difference: number;
   status: string;
   notes: string | null;
+  reconciled_at: string | null;
 }
 
 const db = supabase as any;
