@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { db, type Row } from "@/lib/typed-db";
 import { useAuth } from "@/hooks/use-auth";
 import { useFkOptions } from "@/hooks/use-module-data";
 import { toast } from "sonner";
@@ -149,8 +150,7 @@ function TransactionAccordion({
   const { data: rows = [], isLoading } = useQuery({
     queryKey: [table, "by-customer", customerId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from(table as any)
+      const { data, error } = await db.from(table as any)
         .select("*")
         .eq("customer_id", customerId)
         .is("deleted_at", null)
@@ -222,8 +222,7 @@ function AuditTrail({ customerId }: { customerId: string }) {
   const { data: logs = [], isLoading } = useQuery({
     queryKey: ["audit_logs", "customers", customerId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("audit_logs")
+      const { data, error } = await db.from("audit_logs")
         .select("*")
         .eq("table_name", "customers")
         .eq("record_id", customerId)
@@ -301,7 +300,7 @@ export function CustomerEditor({ id, fields }: { id: string; fields: FieldDef[] 
     queryKey: ["customers", "record", id],
     enabled: !isNew,
     queryFn: async () => {
-      const { data, error } = await supabase.from("customers").select("*").eq("id", id).maybeSingle();
+      const { data, error } = await db.from("customers").select("*").eq("id", id).maybeSingle();
       if (error) throw error;
       return data as any;
     },
@@ -313,14 +312,13 @@ export function CustomerEditor({ id, fields }: { id: string; fields: FieldDef[] 
     queryKey: ["sales_orders", "ytd", id],
     enabled: !isNew,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("sales_orders")
+      const { data, error } = await db.from("sales_orders")
         .select("grand_total, currency")
         .eq("customer_id", id)
         .is("deleted_at", null)
         .gte("date", ytdStart);
       if (error) return { count: 0, total: 0 };
-      const rows = data ?? [];
+      const rows: Row[] = data ?? [];
       return {
         count: rows.length,
         total: rows.reduce((s, r) => s + Number(r.grand_total ?? 0), 0),
@@ -333,8 +331,7 @@ export function CustomerEditor({ id, fields }: { id: string; fields: FieldDef[] 
     queryKey: ["profiles", "name", record?.salesperson_id],
     enabled: !!record?.salesperson_id,
     queryFn: async () => {
-      const { data } = await supabase
-        .from("profiles")
+      const { data } = await db.from("profiles")
         .select("full_name")
         .eq("id", record.salesperson_id)
         .maybeSingle();
@@ -399,8 +396,7 @@ export function CustomerEditor({ id, fields }: { id: string; fields: FieldDef[] 
       if (!validated.success) throw new Error(formatZodError(validated.error));
 
       if (isNew) {
-        const { data, error } = await supabase
-          .from("customers")
+        const { data, error } = await db.from("customers")
           .insert(validated.data as any)
           .select("id")
           .single();
@@ -408,7 +404,7 @@ export function CustomerEditor({ id, fields }: { id: string; fields: FieldDef[] 
         return data.id;
       }
       const { tenant_id: _tid, ...update } = validated.data as any;
-      const { error } = await supabase.from("customers").update(update).eq("id", id);
+      const { error } = await db.from("customers").update(update).eq("id", id);
       if (error) throw error;
       return id;
     },

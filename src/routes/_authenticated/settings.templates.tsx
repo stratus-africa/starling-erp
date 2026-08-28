@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/typed-db";
 import { useAuth } from "@/hooks/use-auth";
 import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
@@ -28,7 +29,7 @@ const PRESETS = ["#1E293B", "#0F766E", "#B45309", "#7C3AED", "#BE123C", "#1D4ED8
 function TemplatesPage() {
   const qc = useQueryClient();
   const { tenant, can } = useAuth();
-  const canWrite = can("settings", "roles");
+  const canWrite = can("settings.roles");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [draft, setDraft] = useState<any>(null);
 
@@ -36,8 +37,7 @@ function TemplatesPage() {
     queryKey: ["document_templates", "all", tenant?.id],
     enabled: !!tenant?.id,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("document_templates" as any)
+      const { data, error } = await db.from("document_templates" as any)
         .select("*")
         .is("deleted_at", null)
         .order("is_default", { ascending: false })
@@ -69,14 +69,12 @@ function TemplatesPage() {
         applies_to: draft.applies_to ?? [],
         is_default: !!draft.is_default,
       };
-      const { error } = await supabase
-        .from("document_templates" as any)
+      const { error } = await db.from("document_templates" as any)
         .update(payload)
         .eq("id", draft.id);
       if (error) throw error;
       if (payload.is_default) {
-        await supabase
-          .from("document_templates" as any)
+        await db.from("document_templates" as any)
           .update({ is_default: false })
           .neq("id", draft.id);
       }
@@ -91,8 +89,7 @@ function TemplatesPage() {
   const create = useMutation({
     mutationFn: async () => {
       if (!tenant?.id) throw new Error("No workspace");
-      const { data, error } = await supabase
-        .from("document_templates" as any)
+      const { data, error } = await db.from("document_templates" as any)
         .insert({
           tenant_id: tenant.id,
           name: "New template",
@@ -115,8 +112,7 @@ function TemplatesPage() {
 
   const remove = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from("document_templates" as any)
+      const { error } = await db.from("document_templates" as any)
         .update({ deleted_at: new Date().toISOString() })
         .eq("id", id);
       if (error) throw error;

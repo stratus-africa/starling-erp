@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/typed-db";
 
 export type BusinessEventAction =
   | "created"
@@ -38,7 +39,7 @@ export async function recordBusinessEvent(input: {
   newValues?: Record<string, unknown> | null;
   metadata?: Record<string, unknown>;
 }): Promise<string> {
-  const { data, error } = await supabase.rpc("record_business_event", {
+  const { data, error } = await db.rpc("record_business_event", {
     _action: input.action,
     _entity_type: input.entityType,
     _entity_id: input.entityId ?? null,
@@ -58,7 +59,7 @@ export async function getBusinessEvents(options: {
   from?: string;
   to?: string;
 } = {}): Promise<BusinessEvent[]> {
-  const { data, error } = await supabase.rpc("get_business_events", {
+  const { data, error } = await db.rpc("get_business_events", {
     _limit: options.limit ?? 100,
     _action: options.action ?? null,
     _entity_type: options.entityType ?? null,

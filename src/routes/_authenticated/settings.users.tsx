@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/typed-db";
 import { useAuth, type AppRole } from "@/hooks/use-auth";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -24,7 +25,7 @@ const ALL_ROLES: AppRole[] = [
 
 function UsersPage() {
   const { can, tenant, roles } = useAuth();
-  const allowed = can("settings", "users");
+  const allowed = can("settings.users");
   const isSuper = roles.includes("super_admin");
   const qc = useQueryClient();
   const [pending, setPending] = useState<Record<string, AppRole[]>>({});
@@ -34,8 +35,8 @@ function UsersPage() {
     enabled: allowed && !!tenant?.id,
     queryFn: async () => {
       const [{ data: profiles }, { data: userRoles }] = await Promise.all([
-        supabase.from("profiles").select("id,email,full_name,tenant_id").eq("tenant_id", tenant!.id),
-        supabase.from("user_roles").select("user_id,role").eq("tenant_id", tenant!.id),
+        db.from("profiles").select("id,email,full_name,tenant_id").eq("tenant_id", tenant!.id),
+        db.from("user_roles").select("user_id,role").eq("tenant_id", tenant!.id),
       ]);
       const byUser = new Map<string, AppRole[]>();
       (userRoles ?? []).forEach((r: any) => {
@@ -49,7 +50,7 @@ function UsersPage() {
 
   const save = useMutation({
     mutationFn: async ({ userId, newRoles }: { userId: string; newRoles: AppRole[] }) => {
-      const { error } = await supabase.rpc("admin_set_user_roles", { target_user: userId, new_roles: newRoles });
+      const { error } = await db.rpc("admin_set_user_roles", { target_user: userId, new_roles: newRoles });
       if (error) throw error;
     },
     onSuccess: (_d, v) => {

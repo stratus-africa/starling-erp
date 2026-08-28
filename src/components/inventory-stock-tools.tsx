@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/typed-db";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,7 +17,7 @@ export function InventoryStockTools() {
   const recalculate = async () => {
     setRecalculating(true);
     try {
-      const { data, error } = await supabase.rpc("recalculate_item_stock_projection", { _item_id: null });
+      const { data, error } = await db.rpc("recalculate_item_stock_projection", { _item_id: null });
       if (error) throw error;
       toast.success(`Stock projection recalculated for ${data ?? 0} item(s).`);
       await checkIntegrity();
@@ -30,7 +31,7 @@ export function InventoryStockTools() {
   const checkIntegrity = async () => {
     setChecking(true);
     try {
-      const { data, error } = await supabase.rpc("check_inventory_stock_integrity", { _item_id: null });
+      const { data, error } = await db.rpc("check_inventory_stock_integrity", { _item_id: null });
       if (error) throw error;
       setResults((data ?? []) as any[]);
       const invalid = (data ?? []).filter((r: any) => !r.is_valid).length;

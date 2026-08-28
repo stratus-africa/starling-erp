@@ -25,7 +25,7 @@ function FkField({
   disabled,
 }: {
   field: FieldDef;
-  value: unknown;
+  value: any;
   onChange: (v: string) => void;
   disabled?: boolean;
 }) {
@@ -108,7 +108,7 @@ export function RecordEditor({
     },
   });
 
-  const [values, setValues] = useState<Record<string, unknown>>(() =>
+  const [values, setValues] = useState<Record<string, any>>(() =>
     Object.fromEntries(fields.map((f) => [f.key, f.defaultValue ?? (f.type === "number" ? 0 : "")])),
   );
 

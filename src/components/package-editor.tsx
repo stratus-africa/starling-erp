@@ -19,8 +19,8 @@ import { DocumentTimeline } from "@/components/document-timeline";
 import { PostingDetailsDrawer } from "@/components/posting-details-drawer";
 import { useDocumentBranding } from "@/hooks/use-document-branding";
 import { logDocumentEvent } from "@/lib/document-events";
-import { fetchRow, insertRow, updateRow } from "@/lib/typed-db";
-import type { Package, PackageInsert, PackageLine, PackageLineInsert, SalesOrder, Customer } from "@/lib/db-types";
+import { fetchRow, insertRow, updateRow, db, type Row } from "@/lib/typed-db";
+import type { PackageInsert, PackageLine, PackageLineInsert, SalesOrder, Customer } from "@/lib/db-types";
 
 const STATUSES = ["Draft", "Packed", "Shipped", "Delivered", "Cancelled"] as const;
 
@@ -54,27 +54,25 @@ export function PackageEditor({ id }: { id: string }) {
     queryKey: ["package_lines", id],
     enabled: !isNew,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("package_lines")
+      const { data, error } = await db.from("package_lines")
         .select("*")
         .eq("document_id", id)
         .is("deleted_at", null)
         .order("line_no");
       if (error) throw error;
-      return data ?? [];
+      return (data ?? []) as Row[];
     },
   });
 
   const { data: orders = [] } = useQuery({
     queryKey: ["sales_orders", "picker"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("sales_orders")
+      const { data, error } = await db.from("sales_orders")
         .select("id,number,customer_id")
         .is("deleted_at", null)
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return data ?? [];
+      return (data ?? []) as Row[];
     },
     staleTime: 30_000,
   });
@@ -82,13 +80,12 @@ export function PackageEditor({ id }: { id: string }) {
   const { data: customers = [] } = useQuery({
     queryKey: ["customers", "picker"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("customers")
+      const { data, error } = await db.from("customers")
         .select("id,name,email")
         .is("deleted_at", null)
         .order("name");
       if (error) throw error;
-      return data ?? [];
+      return (data ?? []) as Row[];
     },
     staleTime: 30_000,
   });
@@ -96,9 +93,9 @@ export function PackageEditor({ id }: { id: string }) {
   const { data: warehouses = [] } = useQuery({
     queryKey: ["warehouses", "picker"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("warehouses").select("id,name").is("deleted_at", null).order("name");
+      const { data, error } = await db.from("warehouses").select("id,name").is("deleted_at", null).order("name");
       if (error) throw error;
-      return data ?? [];
+      return (data ?? []) as Row[];
     },
     staleTime: 30_000,
   });
@@ -106,14 +103,14 @@ export function PackageEditor({ id }: { id: string }) {
   const { data: items = [] } = useQuery({
     queryKey: ["items", "picker"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("items").select("id,name,sku").is("deleted_at", null).order("name");
+      const { data, error } = await db.from("items").select("id,name,sku").is("deleted_at", null).order("name");
       if (error) throw error;
-      return data ?? [];
+      return (data ?? []) as Row[];
     },
     staleTime: 30_000,
   });
 
-  const [header, setHeader] = useState<PackageInsert>({
+  const [header, setHeader] = useState<Row>({
     number: "",
     sales_order_id: search?.order ?? "",
     customer_id: "",
@@ -149,14 +146,13 @@ export function PackageEditor({ id }: { id: string }) {
     queryKey: ["sales_order_lines", "for-package", sourceOrderId],
     enabled: isNew && !!sourceOrderId,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("sales_order_lines")
+      const { data, error } = await db.from("sales_order_lines")
         .select("line_no,item_id,description,quantity")
         .eq("document_id", sourceOrderId!)
         .is("deleted_at", null)
         .order("line_no");
       if (error) throw error;
-      return data ?? [];
+      return (data ?? []) as Row[];
     },
   });
 
@@ -220,11 +216,11 @@ export function PackageEditor({ id }: { id: string }) {
 
       await updateRow("package_lines", docId!, { deleted_at: new Date().toISOString() });
       if (lines.length) {
-        const { error } = await supabase.from("package_lines").insert(
+        const { error } = await db.from("package_lines").insert(
           lines.map(
             (l, i): PackageLineInsert => ({
               tenant_id: tenant.id,
-              document_id: docId,
+              document_id: docId!,
               line_no: i + 1,
               item_id: l.item_id || null,
               description: l.description,
@@ -259,7 +255,7 @@ export function PackageEditor({ id }: { id: string }) {
 
   const confirmPackage = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.rpc("post_package", { _package_id: id });
+      const { error } = await db.rpc("post_package", { _package_id: id });
       if (error) throw error;
     },
     onSuccess: () => {

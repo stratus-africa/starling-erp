@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/typed-db";
 import { useAuth } from "@/hooks/use-auth";
 import { useFkOptions } from "@/hooks/use-module-data";
 import { toast } from "sonner";
@@ -39,7 +40,7 @@ function BomEditor({ id }: { id: string }) {
   const { tenant, can } = useAuth();
   const qc = useQueryClient();
   const nav = useNavigate();
-  const canWrite = can("manufacturing", "create") || can("manufacturing", "update");
+  const canWrite = can(["manufacturing.create", "manufacturing.update"]);
 
   const [header, setHeader] = useState({
     code: "",
@@ -55,7 +56,7 @@ function BomEditor({ id }: { id: string }) {
     queryKey: ["bom_headers", id],
     enabled: !isNew,
     queryFn: async () => {
-      const { data, error } = await supabase.from("bom_headers").select("*").eq("id", id).maybeSingle();
+      const { data, error } = await db.from("bom_headers").select("*").eq("id", id).maybeSingle();
       if (error) throw error;
       return data as any;
     },
@@ -65,8 +66,7 @@ function BomEditor({ id }: { id: string }) {
     queryKey: ["bom_lines", id],
     enabled: !isNew,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("bom_lines")
+      const { data, error } = await db.from("bom_lines")
         .select("*")
         .eq("bom_id", id)
         .is("deleted_at", null)
@@ -126,7 +126,7 @@ function BomEditor({ id }: { id: string }) {
   const removeLine = async (idx: number) => {
     const line = lines[idx];
     if (line.id) {
-      await supabase.from("bom_lines").update({ deleted_at: new Date().toISOString() }).eq("id", line.id);
+      await db.from("bom_lines").update({ deleted_at: new Date().toISOString() }).eq("id", line.id);
       qc.invalidateQueries({ queryKey: ["bom_lines"] });
     }
     setLines(lines.filter((_, i) => i !== idx).map((l, i) => ({ ...l, line_no: i + 1 })));
@@ -151,15 +151,14 @@ function BomEditor({ id }: { id: string }) {
       };
 
       if (isNew) {
-        const { data, error } = await supabase
-          .from("bom_headers")
+        const { data, error } = await db.from("bom_headers")
           .insert({ ...payload, tenant_id: tenant.id })
           .select()
           .single();
         if (error) throw error;
         bomId = data.id;
       } else {
-        const { error } = await supabase.from("bom_headers").update(payload).eq("id", id);
+        const { error } = await db.from("bom_headers").update(payload).eq("id", id);
         if (error) throw error;
       }
 
@@ -175,10 +174,10 @@ function BomEditor({ id }: { id: string }) {
           line_total: Number(line.line_total),
         };
         if (line.id) {
-          const { error } = await supabase.from("bom_lines").update(linePayload).eq("id", line.id);
+          const { error } = await db.from("bom_lines").update(linePayload).eq("id", line.id);
           if (error) throw error;
         } else {
-          const { error } = await supabase.from("bom_lines").insert(linePayload);
+          const { error } = await db.from("bom_lines").insert(linePayload);
           if (error) throw error;
         }
       }

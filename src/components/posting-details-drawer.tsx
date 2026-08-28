@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
+import { db, type Row } from "@/lib/typed-db";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
 import type { JournalLine } from "@/lib/db-types";
@@ -39,46 +40,45 @@ export function PostingDetailsDrawer({
     enabled: open && ids.length > 0,
     queryFn: async () => {
       const [{ data: entries }, { data: movements }] = await Promise.all([
-        supabase
-          .from("journal_entries")
+        db.from("journal_entries")
           .select("id,number,entry_date,memo,total_debit,total_credit,source_ref_type")
           .in("source_ref_id", ids)
           .order("created_at"),
-        supabase
-          .from("stock_movements")
+        db.from("stock_movements")
           .select("id,quantity,unit_cost,note,created_at,item_id,warehouse_id,ref_type")
           .in("ref_id", ids)
           .order("created_at"),
       ]);
 
-      const journalIds = (entries ?? []).map((e) => e.id);
+      const entryRows: Row[] = entries ?? [];
+      const movementRows: Row[] = movements ?? [];
+      const journalIds = entryRows.map((e) => e.id);
       let lines: JournalLine[] = [];
       if (journalIds.length) {
-        const { data: jl } = await supabase
-          .from("journal_lines")
+        const { data: jl } = await db.from("journal_lines")
           .select("id,journal_id,debit,credit,memo,account_id")
           .in("journal_id", journalIds);
-        lines = jl ?? [];
+        lines = (jl ?? []) as JournalLine[];
       }
 
-      const itemIds = [...new Set((movements ?? []).map((m) => m.item_id).filter((id): id is string => Boolean(id)))];
+      const itemIds = [...new Set(movementRows.map((m) => m.item_id as string).filter(Boolean))];
       const acctIds = [...new Set(lines.map((l) => l.account_id).filter(Boolean))];
       const items = itemIds.length
-        ? ((await supabase.from("items").select("id,name,sku").in("id", itemIds)).data ?? [])
+        ? (((await db.from("items").select("id,name,sku").in("id", itemIds)).data ?? []) as Row[])
         : [];
       const accounts = acctIds.length
-        ? ((await supabase.from("chart_of_accounts").select("id,code,name").in("id", acctIds)).data ?? [])
+        ? (((await db.from("chart_of_accounts").select("id,code,name").in("id", acctIds)).data ?? []) as Row[])
         : [];
 
-      const itemMap = new Map(items.map((i) => [i.id, i]));
-      const acctMap = new Map(accounts.map((a) => [a.id, a]));
+      const itemMap = new Map((items as Row[]).map((i) => [i.id, i]));
+      const acctMap = new Map((accounts as Row[]).map((a) => [a.id, a]));
 
       return {
-        entries: (entries ?? []).map((e) => ({
+        entries: entryRows.map((e): Row => ({
           ...e,
           lines: lines.filter((l) => l.journal_id === e.id).map((l) => ({ ...l, account: acctMap.get(l.account_id) })),
         })),
-        movements: (movements ?? []).map((m) => ({ ...m, item: itemMap.get(m.item_id) })),
+        movements: movementRows.map((m): Row => ({ ...m, item: itemMap.get(m.item_id) })),
       };
     },
   });
@@ -137,7 +137,7 @@ export function PostingDetailsDrawer({
                         </tr>
                       </thead>
                       <tbody>
-                        {e.lines.map((l) => (
+                        {(e.lines as Row[]).map((l) => (
                           <tr key={l.id} className="border-b last:border-0">
                             <td className="px-3 py-1.5">
                               <span className="font-mono text-xs text-muted-foreground mr-1.5">{l.account?.code}</span>

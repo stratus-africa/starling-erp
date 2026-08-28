@@ -2,8 +2,9 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useAuth } from "./use-auth";
-import { insertRow, softDeleteRow, updateRow, type TableName } from "@/lib/typed-db";
-import type { TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
+import { insertRow, softDeleteRow, updateRow, type Row } from "@/lib/typed-db";
+
+const db = supabase as any;
 
 export interface ListOpts {
   search?: string;
@@ -15,12 +16,12 @@ export interface ListOpts {
   filters?: Record<string, string | undefined>;
 }
 
-export function useModuleList(table: TableName, opts: ListOpts = {}) {
+export function useModuleList(table: string, opts: ListOpts = {}) {
   const { search, searchColumn = "name", orderBy = "created_at", orderAsc = false, page = 1, pageSize = 25, filters } = opts;
   return useQuery({
     queryKey: [table, "list", { search, searchColumn, orderBy, orderAsc, page, pageSize, filters }],
     queryFn: async () => {
-      let q = supabase.from(table).select("*", { count: "exact" }).is("deleted_at", null);
+      let q = db.from(table).select("*", { count: "exact" }).is("deleted_at", null);
       if (search && search.trim()) q = q.ilike(searchColumn, `%${search.trim()}%`);
       for (const [k, v] of Object.entries(filters ?? {})) {
         if (v != null && v !== "" && v !== "all") q = q.eq(k, v);
@@ -28,27 +29,27 @@ export function useModuleList(table: TableName, opts: ListOpts = {}) {
       q = q.order(orderBy, { ascending: orderAsc }).range((page - 1) * pageSize, page * pageSize - 1);
       const { data, error, count } = await q;
       if (error) throw error;
-      return { rows: data ?? [], count: count ?? 0 };
+      return { rows: (data ?? []) as Row[], count: count ?? 0 };
     },
   });
 }
 
-export function useModuleMutations<T extends TableName>(table: T) {
+export function useModuleMutations(table: string) {
   const qc = useQueryClient();
   const { tenant } = useAuth();
   const invalidate = () => qc.invalidateQueries({ queryKey: [table, "list"] });
 
   const create = useMutation({
-    mutationFn: async (values: TablesInsert<T>) => {
+    mutationFn: async (values: Row) => {
       if (!tenant?.id) throw new Error("No tenant");
-      return insertRow(table, { ...values, tenant_id: tenant.id } as TablesInsert<T>);
+      return insertRow(table, { ...values, tenant_id: tenant.id });
     },
     onSuccess: () => { toast.success("Created"); invalidate(); },
     onError: (e: Error) => toast.error(e.message ?? "Create failed"),
   });
 
   const update = useMutation({
-    mutationFn: async ({ id, values }: { id: string; values: TablesUpdate<T> }) => {
+    mutationFn: async ({ id, values }: { id: string; values: Row }) => {
       await updateRow(table, id, values);
       return id;
     },
@@ -67,13 +68,13 @@ export function useModuleMutations<T extends TableName>(table: T) {
   return { create, update, remove };
 }
 
-export function useFkOptions<T extends TableName>(table: T, labelCol: string = "name") {
+export function useFkOptions(table: string, labelCol: string = "name") {
   return useQuery({
     queryKey: [table, "fk-options", labelCol],
     queryFn: async () => {
-      const { data, error } = await supabase.from(table).select(`id, ${labelCol}`).is("deleted_at", null).order(labelCol);
+      const { data, error } = await db.from(table).select(`id, ${labelCol}`).is("deleted_at", null).order(labelCol);
       if (error) throw error;
-      return data ?? [];
+      return (data ?? []) as Row[];
     },
     staleTime: 30_000,
   });

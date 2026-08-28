@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/typed-db";
 import { useAuth } from "@/hooks/use-auth";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -12,14 +13,13 @@ import { toast } from "sonner";
 function ProductionRunsPage() {
   const { tenant, can } = useAuth();
   const qc = useQueryClient();
-  const canWrite = can("manufacturing", "create") || can("manufacturing", "update");
+  const canWrite = can(["manufacturing.create", "manufacturing.update"]);
 
   const { data, isLoading } = useQuery({
     queryKey: ["production_orders", "active"],
     enabled: !!tenant?.id,
     queryFn: async () => {
-      const { data: orders, error } = await supabase
-        .from("production_orders")
+      const { data: orders, error } = await db.from("production_orders")
         .select("*")
         .eq("tenant_id", tenant!.id)
         .in("status", ["Planned", "In Progress"])
@@ -28,12 +28,12 @@ function ProductionRunsPage() {
 
       const bomIds = [...new Set((orders ?? []).map((o: any) => o.bom_id).filter(Boolean))];
       const { data: boms } = bomIds.length
-        ? await supabase.from("bom_headers").select("id,code,product_id").in("id", bomIds)
+        ? await db.from("bom_headers").select("id,code,product_id").in("id", bomIds)
         : { data: [] as any[] };
 
       const productIds = [...new Set((boms ?? []).map((b: any) => b.product_id).filter(Boolean))];
       const { data: items } = productIds.length
-        ? await supabase.from("items").select("id,name,sku").in("id", productIds)
+        ? await db.from("items").select("id,name,sku").in("id", productIds)
         : { data: [] as any[] };
 
       const bomMap = new Map((boms ?? []).map((b: any) => [b.id, b]));
@@ -42,14 +42,14 @@ function ProductionRunsPage() {
       return (orders ?? []).map((o: any) => ({
         ...o,
         bom: bomMap.get(o.bom_id),
-        product: productMap.get(bomMap.get(o.bom_id)?.product_id),
+        product: productMap.get((bomMap.get(o.bom_id) as any)?.product_id),
       }));
     },
   });
 
   const complete = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.rpc("post_production_order", { _order_id: id });
+      const { error } = await db.rpc("post_production_order", { _order_id: id });
       if (error) throw error;
     },
     onSuccess: () => {

@@ -19,7 +19,7 @@ import { DocumentTimeline } from "@/components/document-timeline";
 import { PostingDetailsDrawer } from "@/components/posting-details-drawer";
 import { useDocumentBranding } from "@/hooks/use-document-branding";
 import { logDocumentEvent } from "@/lib/document-events";
-import { fetchRow, insertRow, updateRow } from "@/lib/typed-db";
+import { fetchRow, insertRow, updateRow, db, type Row } from "@/lib/typed-db";
 import type { ShipmentInsert } from "@/lib/db-types";
 
 const STATUSES = ["Draft", "In Transit", "Delivered", "Cancelled"] as const;
@@ -47,43 +47,40 @@ export function ShipmentEditor({ id }: { id: string }) {
   const { data: orders = [] } = useQuery({
     queryKey: ["sales_orders", "picker"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("sales_orders")
+      const { data, error } = await db.from("sales_orders")
         .select("id,number,customer_id")
         .is("deleted_at", null)
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return data ?? [];
+      return (data ?? []) as Row[];
     },
   });
 
   const { data: packages = [] } = useQuery({
     queryKey: ["packages", "picker"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("packages")
+      const { data, error } = await db.from("packages")
         .select("id,number,sales_order_id,customer_id")
         .is("deleted_at", null)
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return data ?? [];
+      return (data ?? []) as Row[];
     },
   });
 
   const { data: customers = [] } = useQuery({
     queryKey: ["customers", "picker"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("customers")
+      const { data, error } = await db.from("customers")
         .select("id,name,email")
         .is("deleted_at", null)
         .order("name");
       if (error) throw error;
-      return data ?? [];
+      return (data ?? []) as Row[];
     },
   });
 
-  const [header, setHeader] = useState<ShipmentInsert>({
+  const [header, setHeader] = useState<Row>({
     number: "",
     sales_order_id: search?.order ?? "",
     package_id: search?.package ?? "",
@@ -120,6 +117,7 @@ export function ShipmentEditor({ id }: { id: string }) {
     mutationFn: async () => {
       if (!tenant?.id) throw new Error("No workspace");
       const payload: ShipmentInsert = {
+        tenant_id: tenant.id,
         number: header.number || `SHP-${Date.now().toString().slice(-8)}`,
         sales_order_id: header.sales_order_id || null,
         package_id: header.package_id || null,
@@ -150,7 +148,7 @@ export function ShipmentEditor({ id }: { id: string }) {
 
   const post = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.rpc("post_shipment", { _shipment_id: id });
+      const { error } = await db.rpc("post_shipment", { _shipment_id: id });
       if (error) throw error;
       if (tenant?.id) {
         await logDocumentEvent({

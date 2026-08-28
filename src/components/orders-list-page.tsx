@@ -2,6 +2,7 @@ import { useState, useMemo } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/typed-db";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -124,8 +125,7 @@ export function OrdersListPage({ kind }: OrdersListPageProps) {
   const { data, isLoading } = useQuery({
     queryKey: [table, "list", { search, statusFilter, page }],
     queryFn: async () => {
-      let q = supabase
-        .from(table as any)
+      let q = db.from(table as any)
         .select("*", { count: "exact" })
         .is("deleted_at", null)
         .order("date", { ascending: false })
@@ -152,8 +152,7 @@ export function OrdersListPage({ kind }: OrdersListPageProps) {
     queryKey: [partyTable, "names", partyIds],
     enabled: partyIds.length > 0,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from(partyTable as any)
+      const { data, error } = await db.from(partyTable as any)
         .select("id,name")
         .in("id", partyIds as string[]);
       if (error) throw error;
@@ -173,8 +172,7 @@ export function OrdersListPage({ kind }: OrdersListPageProps) {
     queryKey: ["payments_received", "by-orders", orderIds],
     enabled: isSales && orderIds.length > 0,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("payments_received")
+      const { data, error } = await db.from("payments_received")
         .select("invoice_id, amount")
         .in("invoice_id", orderIds);
       if (error) return [];
@@ -187,8 +185,7 @@ export function OrdersListPage({ kind }: OrdersListPageProps) {
     queryKey: ["packages", "by-orders", orderIds],
     enabled: isSales && orderIds.length > 0,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("packages")
+      const { data, error } = await db.from("packages")
         .select("sales_order_id, status")
         .in("sales_order_id", orderIds)
         .is("deleted_at", null);
@@ -202,8 +199,7 @@ export function OrdersListPage({ kind }: OrdersListPageProps) {
     queryKey: ["shipments", "by-orders", orderIds],
     enabled: isSales && orderIds.length > 0,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("shipments")
+      const { data, error } = await db.from("shipments")
         .select("sales_order_id, status")
         .in("sales_order_id", orderIds)
         .is("deleted_at", null);
@@ -232,7 +228,7 @@ export function OrdersListPage({ kind }: OrdersListPageProps) {
   };
 
   const openDetail = (id: string) =>
-    navigate({ to: `${detailBase}/$id` as any, params: { id } });
+    navigate({ to: `${detailBase}/$id` as any, params: { id } as any });
 
   return (
     <TooltipProvider delayDuration={200}>

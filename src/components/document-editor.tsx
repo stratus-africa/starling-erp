@@ -49,7 +49,7 @@ import { useDocumentBranding, type DocTemplateKind } from "@/hooks/use-document-
 import { logDocumentEvent } from "@/lib/document-events";
 import { downloadDocumentPdf, type PdfDocInput } from "@/lib/document-pdf";
 import { Link } from "@tanstack/react-router";
-import { fetchRow, insertRow, updateRow } from "@/lib/typed-db";
+import { fetchRow, insertRow, updateRow, db, type Row } from "@/lib/typed-db";
 import { callRpc } from "@/lib/db-rpc";
 import type { TableName } from "@/lib/typed-db";
 import type { TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
@@ -261,20 +261,19 @@ export function DocumentEditor({
     queryKey: [cfg.lines, id],
     enabled: !isNew,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from(cfg.lines)
+      const { data, error } = await db.from(cfg.lines)
         .select("*")
         .eq("document_id", id)
         .is("deleted_at", null)
         .order("line_no");
       if (error) throw error;
-      return data ?? [];
+      return (data ?? []) as Row[];
     },
   });
 
   const { data: parties = [] } = useFkOptions(cfg.partyTable);
 
-  type DocumentHeader = Record<string, string | number | null | undefined>;
+  type DocumentHeader = Record<string, any>;
   const [header, setHeader] = useState<DocumentHeader>({
     number: "",
     [cfg.partyField]: "",
@@ -292,8 +291,7 @@ export function DocumentEditor({
     queryKey: ["customers", "document-prefill", selectedCustomerId],
     enabled: !!selectedCustomerId,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("customers")
+      const { data, error } = await db.from("customers")
         .select("id,name,contact_person,email,phone,currency,billing_address,shipping_address")
         .eq("id", selectedCustomerId!)
         .maybeSingle();
@@ -310,13 +308,12 @@ export function DocumentEditor({
   const { data: items = [] } = useQuery({
     queryKey: ["items", "picker"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("items")
+      const { data, error } = await db.from("items")
         .select("id,name,sku,price,cost")
         .is("deleted_at", null)
         .order("name");
       if (error) throw error;
-      return data ?? [];
+      return (data ?? []) as Row[];
     },
     staleTime: 30_000,
   });
@@ -389,7 +386,7 @@ export function DocumentEditor({
       if (cfg.partyRequired !== false && !header[cfg.partyField])
         throw new Error(`Please select a ${cfg.partyLabel.toLowerCase()}`);
 
-      const headerPayload = { ...header, ...totals, amount: totals.grand_total, tenant_id: tenant.id };
+      const headerPayload: Row = { ...header, ...totals, amount: totals.grand_total, tenant_id: tenant.id };
       if (kind === "invoice" || kind === "bill") {
         headerPayload.balance_due = totals.grand_total - (header.amount_paid ?? 0);
         headerPayload.balance = headerPayload.balance_due;
@@ -422,7 +419,7 @@ export function DocumentEditor({
           tax_pct: l.tax_pct || 0,
           line_total: computeLine(l),
         }));
-        const { error } = await supabase.from(cfg.lines).insert(linePayload as never);
+        const { error } = await db.from(cfg.lines).insert(linePayload as never);
         if (error) throw error;
       }
       return docId;
@@ -503,7 +500,7 @@ export function DocumentEditor({
         _permission: voidPermission,
         _reason: `Voided ${cfg.label}`,
       });
-      return data;
+      return data as unknown as Row;
     },
     onSuccess: () => {
       setVoidOpen(false);
@@ -520,7 +517,7 @@ export function DocumentEditor({
 
   const setReqStatus = useMutation({
     mutationFn: async ({ status, note }: { status: string; note: string }) => {
-      const { error } = await supabase.from(cfg.table).update({ status }).eq("id", id);
+      const { error } = await db.from(cfg.table).update({ status }).eq("id", id);
       if (error) throw error;
       if (tenant?.id) {
         await logDocumentEvent({
@@ -549,8 +546,7 @@ export function DocumentEditor({
       if (!reqApproved) throw new Error("Requisition must be approved first");
       if (!header.supplier_id) throw new Error("Select a preferred supplier before converting");
       const number = `PO-${Date.now().toString().slice(-8)}`;
-      const { data: po, error } = await supabase
-        .from("purchase_orders")
+      const { data: po, error } = await db.from("purchase_orders")
         .insert({
           tenant_id: tenant.id,
           number,
@@ -571,7 +567,7 @@ export function DocumentEditor({
       if (error) throw error;
       const poId = po.id;
       if (lines.length) {
-        const { error: le } = await supabase.from("purchase_order_lines").insert(
+        const { error: le } = await db.from("purchase_order_lines").insert(
           lines.map((l, i) => ({
             tenant_id: tenant.id,
             document_id: poId,
@@ -587,7 +583,7 @@ export function DocumentEditor({
         );
         if (le) throw le;
       }
-      await supabase.from("purchase_requisitions").update({ status: "Ordered", converted_po_id: poId }).eq("id", id);
+      await db.from("purchase_requisitions").update({ status: "Ordered", converted_po_id: poId }).eq("id", id);
       await logDocumentEvent({
         tenantId: tenant.id,
         entityType: kind,
@@ -612,8 +608,7 @@ export function DocumentEditor({
     queryKey: [cfg.partyTable, "detail", partyId],
     enabled: !!partyId,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from(cfg.partyTable)
+      const { data, error } = await db.from(cfg.partyTable)
         .select("id,name,email")
         .eq("id", partyId)
         .maybeSingle();
@@ -626,14 +621,13 @@ export function DocumentEditor({
     queryKey: ["packages", "by-order", id],
     enabled: kind === "order" && !isNew,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("packages")
+      const { data, error } = await db.from("packages")
         .select("id,number,date,status,tracking,carrier,posted_at")
         .eq("sales_order_id", id)
         .is("deleted_at", null)
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return data ?? [];
+      return (data ?? []) as Row[];
     },
   });
 
@@ -641,14 +635,13 @@ export function DocumentEditor({
     queryKey: ["shipments", "by-order", id],
     enabled: kind === "order" && !isNew,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("shipments")
+      const { data, error } = await db.from("shipments")
         .select("id,number,ship_date,delivery_date,status,tracking,carrier,posted_at")
         .eq("sales_order_id", id)
         .is("deleted_at", null)
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return data ?? [];
+      return (data ?? []) as Row[];
     },
   });
 
@@ -656,25 +649,25 @@ export function DocumentEditor({
     queryKey: [cfg.linkFk?.table, "link-options", header[cfg.partyField]],
     enabled: !!cfg.linkFk,
     queryFn: async () => {
-      let q = supabase.from(cfg.linkFk!.table).select(`id, ${cfg.linkFk!.labelKey}`).is("deleted_at", null);
+      let q = db.from(cfg.linkFk!.table).select(`id, ${cfg.linkFk!.labelKey}`).is("deleted_at", null);
       if (header[cfg.partyField]) q = q.eq(cfg.partyField, header[cfg.partyField]);
       const { data, error } = await q.order("created_at", { ascending: false }).limit(200);
       if (error) throw error;
-      return data ?? [];
+      return (data ?? []) as Row[];
     },
   });
 
   const buildPdf = (): PdfDocInput => ({
     title: cfg.label,
-    number: header.number ?? "",
+    number: String(header.number ?? ""),
     companyName: tenant?.name ?? "Company",
     partyLabel: cfg.partyLabel,
-    partyName: party?.name ?? "—",
-    currency: header.currency ?? "USD",
+    partyName: String(party?.name ?? "—"),
+    currency: String(header.currency ?? "USD"),
     meta: [
-      { label: "Date", value: header[cfg.dateField] ?? "" },
-      ...(cfg.extraDate ? [{ label: cfg.extraDate.label, value: header[cfg.extraDate.field] ?? "" }] : []),
-      { label: "Status", value: header.status ?? "" },
+      { label: "Date", value: String(header[cfg.dateField] ?? "") },
+      ...(cfg.extraDate ? [{ label: cfg.extraDate.label, value: String(header[cfg.extraDate.field] ?? "") }] : []),
+      { label: "Status", value: String(header.status ?? "") },
     ],
     lines: lines.map((l) => ({
       description: l.description || "",
@@ -1170,11 +1163,11 @@ export function DocumentEditor({
             </div>
             {(kind === "invoice" || kind === "bill") && Number(doc?.amount_paid ?? 0) > 0 && (
               <>
-                <Row label="Paid" v={-Number(doc.amount_paid)} />
+                <Row label="Paid" v={-Number(doc?.amount_paid)} />
                 <div className="flex justify-between font-medium">
                   <span>Balance Due</span>
                   <span className="font-mono tabular-nums">
-                    {money(totals.grand_total - Number(doc.amount_paid || 0))}
+                    {money(totals.grand_total - Number(doc?.amount_paid || 0))}
                   </span>
                 </div>
               </>
@@ -1359,8 +1352,8 @@ export function DocumentEditor({
         <EmailDocumentDialog
           open={emailOpen}
           onOpenChange={setEmailOpen}
-          defaultTo={party?.email ?? ""}
-          defaultSubject={`${cfg.label} ${header.number ?? ""}`}
+          defaultTo={String(party?.email ?? "")}
+          defaultSubject={`${cfg.label} ${String(header.number ?? "")}`}
           defaultMessage={`Dear ${party?.name ?? "Customer"},\n\nPlease find attached ${cfg.label.toLowerCase()} ${header.number ?? ""} for ${header.currency ?? "USD"} ${money(totals.grand_total)}.\n\nKind regards,\n${tenant?.name ?? ""}`}
           pdf={buildPdf}
           entityType={kind}
