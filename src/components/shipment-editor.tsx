@@ -19,7 +19,7 @@ import { DocumentTimeline } from "@/components/document-timeline";
 import { PostingDetailsDrawer } from "@/components/posting-details-drawer";
 import { useDocumentBranding } from "@/hooks/use-document-branding";
 import { logDocumentEvent } from "@/lib/document-events";
-import { fetchRow, insertRow, updateRow, db } from "@/lib/typed-db";
+import { fetchRow, insertRow, updateRow, db, type Row } from "@/lib/typed-db";
 import type { ShipmentInsert } from "@/lib/db-types";
 
 const STATUSES = ["Draft", "In Transit", "Delivered", "Cancelled"] as const;
@@ -52,7 +52,7 @@ export function ShipmentEditor({ id }: { id: string }) {
         .is("deleted_at", null)
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return data ?? [];
+      return (data ?? []) as Row[];
     },
   });
 
@@ -64,7 +64,7 @@ export function ShipmentEditor({ id }: { id: string }) {
         .is("deleted_at", null)
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return data ?? [];
+      return (data ?? []) as Row[];
     },
   });
 
@@ -76,7 +76,7 @@ export function ShipmentEditor({ id }: { id: string }) {
         .is("deleted_at", null)
         .order("name");
       if (error) throw error;
-      return data ?? [];
+      return (data ?? []) as Row[];
     },
   });
 

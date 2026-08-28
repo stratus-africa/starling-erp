@@ -19,7 +19,7 @@ import { DocumentTimeline } from "@/components/document-timeline";
 import { PostingDetailsDrawer } from "@/components/posting-details-drawer";
 import { useDocumentBranding } from "@/hooks/use-document-branding";
 import { logDocumentEvent } from "@/lib/document-events";
-import { fetchRow, insertRow, updateRow, db } from "@/lib/typed-db";
+import { fetchRow, insertRow, updateRow, db, type Row } from "@/lib/typed-db";
 import type { Package, PackageInsert, PackageLine, PackageLineInsert, SalesOrder, Customer } from "@/lib/db-types";
 
 const STATUSES = ["Draft", "Packed", "Shipped", "Delivered", "Cancelled"] as const;
@@ -60,7 +60,7 @@ export function PackageEditor({ id }: { id: string }) {
         .is("deleted_at", null)
         .order("line_no");
       if (error) throw error;
-      return data ?? [];
+      return (data ?? []) as Row[];
     },
   });
 
@@ -72,7 +72,7 @@ export function PackageEditor({ id }: { id: string }) {
         .is("deleted_at", null)
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return data ?? [];
+      return (data ?? []) as Row[];
     },
     staleTime: 30_000,
   });
@@ -85,7 +85,7 @@ export function PackageEditor({ id }: { id: string }) {
         .is("deleted_at", null)
         .order("name");
       if (error) throw error;
-      return data ?? [];
+      return (data ?? []) as Row[];
     },
     staleTime: 30_000,
   });
@@ -95,7 +95,7 @@ export function PackageEditor({ id }: { id: string }) {
     queryFn: async () => {
       const { data, error } = await db.from("warehouses").select("id,name").is("deleted_at", null).order("name");
       if (error) throw error;
-      return data ?? [];
+      return (data ?? []) as Row[];
     },
     staleTime: 30_000,
   });
@@ -105,7 +105,7 @@ export function PackageEditor({ id }: { id: string }) {
     queryFn: async () => {
       const { data, error } = await db.from("items").select("id,name,sku").is("deleted_at", null).order("name");
       if (error) throw error;
-      return data ?? [];
+      return (data ?? []) as Row[];
     },
     staleTime: 30_000,
   });
@@ -152,7 +152,7 @@ export function PackageEditor({ id }: { id: string }) {
         .is("deleted_at", null)
         .order("line_no");
       if (error) throw error;
-      return data ?? [];
+      return (data ?? []) as Row[];
     },
   });
 

@@ -49,7 +49,7 @@ import { useDocumentBranding, type DocTemplateKind } from "@/hooks/use-document-
 import { logDocumentEvent } from "@/lib/document-events";
 import { downloadDocumentPdf, type PdfDocInput } from "@/lib/document-pdf";
 import { Link } from "@tanstack/react-router";
-import { fetchRow, insertRow, updateRow, db } from "@/lib/typed-db";
+import { fetchRow, insertRow, updateRow, db, type Row } from "@/lib/typed-db";
 import { callRpc } from "@/lib/db-rpc";
 import type { TableName } from "@/lib/typed-db";
 import type { TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
@@ -267,7 +267,7 @@ export function DocumentEditor({
         .is("deleted_at", null)
         .order("line_no");
       if (error) throw error;
-      return data ?? [];
+      return (data ?? []) as Row[];
     },
   });
 
@@ -313,7 +313,7 @@ export function DocumentEditor({
         .is("deleted_at", null)
         .order("name");
       if (error) throw error;
-      return data ?? [];
+      return (data ?? []) as Row[];
     },
     staleTime: 30_000,
   });
@@ -500,7 +500,7 @@ export function DocumentEditor({
         _permission: voidPermission,
         _reason: `Voided ${cfg.label}`,
       });
-      return data;
+      return data as Row;
     },
     onSuccess: () => {
       setVoidOpen(false);
@@ -627,7 +627,7 @@ export function DocumentEditor({
         .is("deleted_at", null)
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return data ?? [];
+      return (data ?? []) as Row[];
     },
   });
 
@@ -641,7 +641,7 @@ export function DocumentEditor({
         .is("deleted_at", null)
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return data ?? [];
+      return (data ?? []) as Row[];
     },
   });
 
@@ -653,7 +653,7 @@ export function DocumentEditor({
       if (header[cfg.partyField]) q = q.eq(cfg.partyField, header[cfg.partyField]);
       const { data, error } = await q.order("created_at", { ascending: false }).limit(200);
       if (error) throw error;
-      return data ?? [];
+      return (data ?? []) as Row[];
     },
   });
 
