@@ -662,12 +662,12 @@ export function DocumentEditor({
     number: String(header.number ?? ""),
     companyName: tenant?.name ?? "Company",
     partyLabel: cfg.partyLabel,
-    partyName: party?.name ?? "—",
+    partyName: String(party?.name ?? "—"),
     currency: String(header.currency ?? "USD"),
     meta: [
-      { label: "Date", value: header[cfg.dateField] ?? "" },
-      ...(cfg.extraDate ? [{ label: cfg.extraDate.label, value: header[cfg.extraDate.field] ?? "" }] : []),
-      { label: "Status", value: header.status ?? "" },
+      { label: "Date", value: String(header[cfg.dateField] ?? "") },
+      ...(cfg.extraDate ? [{ label: cfg.extraDate.label, value: String(header[cfg.extraDate.field] ?? "") }] : []),
+      { label: "Status", value: String(header.status ?? "") },
     ],
     lines: lines.map((l) => ({
       description: l.description || "",
