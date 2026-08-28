@@ -61,14 +61,19 @@ export const schemaByTable = {
   stock_movements: StockMovementSchema,
 } as const;
 
-export function formatZodError(error: z.ZodError) {
+/** Field-keyed map of the first error message per field. */
+export function zodFieldErrors(error: z.ZodError) {
   return error.issues.reduce<Record<string, string>>((errors, issue) => {
     const field = issue.path.join(".") || "form";
-
-    if (!errors[field]) {
-      errors[field] = issue.message;
-    }
-
+    if (!errors[field]) errors[field] = issue.message;
     return errors;
   }, {});
+}
+
+/** Human-readable single-line summary, suitable for toasts and Error messages. */
+export function formatZodError(error: z.ZodError): string {
+  const fields = zodFieldErrors(error);
+  return Object.entries(fields)
+    .map(([field, message]) => (field === "form" ? message : `${field}: ${message}`))
+    .join("; ");
 }
