@@ -1,36 +1,33 @@
 import { supabase } from "@/integrations/supabase/client";
-import type { Database, Tables, TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
+import type { Database } from "@/integrations/supabase/types";
 
 export type TableName = keyof Database["public"]["Tables"];
 
-export async function fetchRow<T extends TableName>(table: T, id: string): Promise<Tables<T> | null> {
-  const { data, error } = await supabase
-    .from(table)
-    .select("*")
-    .eq("id", id)
-    .maybeSingle();
+/**
+ * These helpers are used with dynamic (runtime-decided) table names across the
+ * generic module framework, so they intentionally use loose row types.
+ */
+export type Row = Record<string, any>;
+
+const db = supabase as any;
+
+export async function fetchRow(table: string, id: string): Promise<Row | null> {
+  const { data, error } = await db.from(table).select("*").eq("id", id).maybeSingle();
   if (error) throw error;
-  return data as Tables<T> | null;
+  return (data as Row | null) ?? null;
 }
 
-export async function insertRow<T extends TableName>(table: T, payload: TablesInsert<T>): Promise<Tables<T>> {
-  const { data, error } = await supabase
-    .from(table)
-    .insert(payload as never)
-    .select()
-    .single();
+export async function insertRow(table: string, payload: Row): Promise<Row> {
+  const { data, error } = await db.from(table).insert(payload).select().single();
   if (error) throw error;
-  return data as Tables<T>;
+  return data as Row;
 }
 
-export async function updateRow<T extends TableName>(table: T, id: string, payload: TablesUpdate<T>): Promise<void> {
-  const { error } = await supabase
-    .from(table)
-    .update(payload as never)
-    .eq("id", id);
+export async function updateRow(table: string, id: string, payload: Row): Promise<void> {
+  const { error } = await db.from(table).update(payload).eq("id", id);
   if (error) throw error;
 }
 
-export async function softDeleteRow<T extends TableName>(table: T, id: string): Promise<void> {
-  await updateRow(table, id, { deleted_at: new Date().toISOString() } as TablesUpdate<T>);
+export async function softDeleteRow(table: string, id: string): Promise<void> {
+  await updateRow(table, id, { deleted_at: new Date().toISOString() });
 }
