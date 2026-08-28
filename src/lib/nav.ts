@@ -1,16 +1,69 @@
 import {
-  LayoutDashboard, Building2, Users, CreditCard, Activity, UserCircle2, FileText,
-  ShoppingCart, Package, Truck, Receipt, Wallet, FileMinus, Store, ClipboardList,
-  ShoppingBag, FileSpreadsheet, Coins, HandCoins, PiggyBank, Boxes, Warehouse,
-  PackagePlus, ArrowLeftRight, BookOpen, Factory, ListTree, Cog, PlayCircle,
-  BookText, Landmark, BookMarked, Scale, BarChart3, LineChart, PieChart, TrendingUp,
-  Wallet2, Gauge, Bell, KeyRound, Layers, Percent, Globe, Ruler, Workflow, Hash,
-  Mail, Truck as TruckIcon, HardHat, ShieldCheck, Settings2,
+  LayoutDashboard,
+  Building2,
+  Users,
+  CreditCard,
+  Activity,
+  UserCircle2,
+  FileText,
+  ShoppingCart,
+  Package,
+  Truck,
+  Receipt,
+  Wallet,
+  FileMinus,
+  Store,
+  ClipboardList,
+  ShoppingBag,
+  FileSpreadsheet,
+  Coins,
+  HandCoins,
+  PiggyBank,
+  Boxes,
+  Warehouse,
+  PackagePlus,
+  ArrowLeftRight,
+  BookOpen,
+  Factory,
+  ListTree,
+  Cog,
+  PlayCircle,
+  BookText,
+  Landmark,
+  BookMarked,
+  Scale,
+  BarChart3,
+  LineChart,
+  PieChart,
+  TrendingUp,
+  Wallet2,
+  Gauge,
+  Bell,
+  KeyRound,
+  Layers,
+  Percent,
+  Globe,
+  Ruler,
+  Workflow,
+  Hash,
+  Mail,
+  Truck as TruckIcon,
+  HardHat,
+  ShieldCheck,
+  Settings2,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
-export interface NavItem { title: string; url: string; icon: LucideIcon; feature?: string }
-export interface NavGroup { label: string; items: NavItem[] }
+export interface NavItem {
+  title: string;
+  url: string;
+  icon: LucideIcon;
+  feature?: string;
+}
+export interface NavGroup {
+  label: string;
+  items: NavItem[];
+}
 
 export const navGroups: NavGroup[] = [
   {
@@ -74,8 +127,9 @@ export const navGroups: NavGroup[] = [
     label: "Accounting",
     items: [
       { title: "Chart of Accounts", url: "/accounting/chart", icon: BookText },
-      { title: "Banking", url: "/accounting/banking", icon: Landmark, feature: "banking" },
+      { title: "General Ledger", url: "/accounting/ledger", icon: BookOpen },
       { title: "Manual Journals", url: "/accounting/journals", icon: BookMarked },
+      { title: "Banking", url: "/accounting/banking", icon: Landmark, feature: "banking" },
       { title: "Bank Reconciliation", url: "/accounting/reconciliation", icon: Scale, feature: "banking" },
     ],
   },
