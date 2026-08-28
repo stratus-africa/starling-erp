@@ -79,9 +79,12 @@ const ALL_STATUSES = ["Draft", "Posted", "Voided"];
 function StatusBadge({ status }: { status: string | null }) {
   const s = status ?? "Draft";
   const cfg: Record<string, { cls: string; icon: React.ReactNode }> = {
-    Draft:  { cls: "bg-muted text-muted-foreground",                       icon: <MinusCircle  className="h-3 w-3" /> },
-    Posted: { cls: "bg-emerald-500/12 text-emerald-700 dark:text-emerald-300", icon: <CheckCircle2 className="h-3 w-3" /> },
-    Voided: { cls: "bg-destructive/12 text-destructive",                   icon: <AlertCircle  className="h-3 w-3" /> },
+    Draft: { cls: "bg-muted text-muted-foreground", icon: <MinusCircle className="h-3 w-3" /> },
+    Posted: {
+      cls: "bg-emerald-500/12 text-emerald-700 dark:text-emerald-300",
+      icon: <CheckCircle2 className="h-3 w-3" />,
+    },
+    Voided: { cls: "bg-destructive/12 text-destructive", icon: <AlertCircle className="h-3 w-3" /> },
   };
   const { cls, icon } = cfg[s] ?? cfg["Draft"];
   return (
@@ -113,14 +116,23 @@ export function ManualJournalsPage() {
   const { can, tenant } = useAuth();
   const qc = useQueryClient();
 
-  const canCreate = can("accounting.create");
-  const canPost   = can("accounting.post");
-  const canVoid   = can("accounting.reverse");
+  const canCreate = can([
+    "accounting.journal.create",
+    "accounting.create", // legacy fallback
+  ]);
+  const canPost = can([
+    "accounting.journal.post",
+    "accounting.post", // legacy fallback
+  ]);
+  const canVoid = can([
+    "accounting.journal.void",
+    "accounting.reverse", // legacy fallback
+  ]);
 
-  const [search,       setSearch]       = useState("");
+  const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [page,         setPage]         = useState(1);
-  const [voidingRow,   setVoidingRow]   = useState<JournalEntry | null>(null);
+  const [page, setPage] = useState(1);
+  const [voidingRow, setVoidingRow] = useState<JournalEntry | null>(null);
 
   // ── Fetch ──
   const { data, isLoading } = useQuery({
@@ -128,14 +140,15 @@ export function ManualJournalsPage() {
     queryFn: async () => {
       let q = db
         .from("journal_entries")
-        .select("id,number,entry_date,memo,status,total_debit,total_credit,source_ref_type,created_at", { count: "exact" })
+        .select("id,number,entry_date,memo,status,total_debit,total_credit,source_ref_type,created_at", {
+          count: "exact",
+        })
         .is("deleted_at", null)
         .order("entry_date", { ascending: false })
         .order("created_at", { ascending: false })
         .range((page - 1) * PAGE_SIZE, page * PAGE_SIZE - 1);
 
-      if (search.trim())
-        q = q.or(`number.ilike.%${search.trim()}%,memo.ilike.%${search.trim()}%`);
+      if (search.trim()) q = q.or(`number.ilike.%${search.trim()}%,memo.ilike.%${search.trim()}%`);
       if (statusFilter !== "all") q = q.eq("status", statusFilter);
 
       const { data, error, count } = await q;
@@ -145,7 +158,7 @@ export function ManualJournalsPage() {
     staleTime: 15_000,
   });
 
-  const rows  = data?.rows  ?? [];
+  const rows = data?.rows ?? [];
   const total = data?.count ?? 0;
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
@@ -161,7 +174,7 @@ export function ManualJournalsPage() {
       const rows = (data ?? []) as { status: string; total_debit: number; total_credit: number }[];
       const posted = rows.filter((r) => r.status === "Posted");
       return {
-        draft:  rows.filter((r) => r.status === "Draft").length,
+        draft: rows.filter((r) => r.status === "Draft").length,
         posted: posted.length,
         voided: rows.filter((r) => r.status === "Voided").length,
         totalPostedDebit: posted.reduce((s, r) => s + Number(r.total_debit), 0),
@@ -203,13 +216,11 @@ export function ManualJournalsPage() {
     },
   });
 
-  const openJournal = (id: string) =>
-    navigate({ to: "/accounting/journals/$id" as any, params: { id } as any });
+  const openJournal = (id: string) => navigate({ to: "/accounting/journals/$id" as any, params: { id } as any });
 
   // ─── Render ───────────────────────────────────────────────────────────────
   return (
     <div className="flex h-full flex-col bg-background">
-
       {/* ── Header ── */}
       <div className="shrink-0 border-b px-6 py-3">
         <div className="flex items-center justify-between gap-3">
@@ -224,7 +235,10 @@ export function ManualJournalsPage() {
                 className="h-8 w-52 pl-8 text-xs"
                 placeholder="Search entry # or description…"
                 value={search}
-                onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+                onChange={(e) => {
+                  setSearch(e.target.value);
+                  setPage(1);
+                }}
               />
               {search && (
                 <button
@@ -236,14 +250,22 @@ export function ManualJournalsPage() {
               )}
             </div>
 
-            <Select value={statusFilter} onValueChange={(v) => { setStatusFilter(v); setPage(1); }}>
+            <Select
+              value={statusFilter}
+              onValueChange={(v) => {
+                setStatusFilter(v);
+                setPage(1);
+              }}
+            >
               <SelectTrigger className="h-8 w-32 text-xs">
                 <SelectValue placeholder="All" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All statuses</SelectItem>
                 {ALL_STATUSES.map((s) => (
-                  <SelectItem key={s} value={s}>{s}</SelectItem>
+                  <SelectItem key={s} value={s}>
+                    {s}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -260,14 +282,17 @@ export function ManualJournalsPage() {
         {summary && (
           <div className="mt-3 flex items-center gap-6 text-xs">
             {[
-              { label: "Draft",  value: summary.draft,  cls: "text-muted-foreground" },
+              { label: "Draft", value: summary.draft, cls: "text-muted-foreground" },
               { label: "Posted", value: summary.posted, cls: "text-emerald-600 dark:text-emerald-400 font-medium" },
               { label: "Voided", value: summary.voided, cls: "text-destructive" },
             ].map((s, i) => (
               <button
                 key={s.label}
                 className={`flex items-center gap-1.5 ${s.cls} hover:opacity-75 transition-opacity`}
-                onClick={() => { setStatusFilter(statusFilter === s.label ? "all" : s.label); setPage(1); }}
+                onClick={() => {
+                  setStatusFilter(statusFilter === s.label ? "all" : s.label);
+                  setPage(1);
+                }}
               >
                 <span className="font-mono text-sm font-semibold">{s.value}</span>
                 <span>{s.label}</span>
@@ -275,9 +300,7 @@ export function ManualJournalsPage() {
             ))}
             <span className="ml-auto text-muted-foreground">
               Total posted volume:{" "}
-              <span className="font-mono font-medium text-foreground">
-                {money(summary.totalPostedDebit)}
-              </span>
+              <span className="font-mono font-medium text-foreground">{money(summary.totalPostedDebit)}</span>
             </span>
           </div>
         )}
@@ -315,7 +338,7 @@ export function ManualJournalsPage() {
               </tr>
             )}
             {rows.map((row) => {
-              const isDraft  = row.status === "Draft";
+              const isDraft = row.status === "Draft";
               const isPosted = row.status === "Posted";
               const isVoided = row.status === "Voided";
               const isManual = !row.source_ref_type || row.source_ref_type === "manual";
@@ -337,9 +360,7 @@ export function ManualJournalsPage() {
                   </td>
 
                   {/* Date */}
-                  <td className="px-4 py-2.5 whitespace-nowrap text-xs text-muted-foreground">
-                    {fmt(row.entry_date)}
-                  </td>
+                  <td className="px-4 py-2.5 whitespace-nowrap text-xs text-muted-foreground">{fmt(row.entry_date)}</td>
 
                   {/* Description */}
                   <td className="px-4 py-2.5 max-w-[280px]">
@@ -390,9 +411,7 @@ export function ManualJournalsPage() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => openJournal(row.id)}>
-                          Open
-                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => openJournal(row.id)}>Open</DropdownMenuItem>
                         {isDraft && canPost && isManual && (
                           <>
                             <DropdownMenuSeparator />
@@ -437,10 +456,22 @@ export function ManualJournalsPage() {
           {total > 0 ? ` · page ${page} of ${totalPages}` : ""}
         </span>
         <div className="flex items-center gap-1">
-          <Button variant="outline" size="sm" className="h-7 px-2" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-7 px-2"
+            disabled={page <= 1}
+            onClick={() => setPage((p) => p - 1)}
+          >
             <ChevronLeft className="h-3.5 w-3.5" />
           </Button>
-          <Button variant="outline" size="sm" className="h-7 px-2" disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)}>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-7 px-2"
+            disabled={page >= totalPages}
+            onClick={() => setPage((p) => p + 1)}
+          >
             <ChevronRight className="h-3.5 w-3.5" />
           </Button>
         </div>
@@ -452,9 +483,8 @@ export function ManualJournalsPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Void and reverse journal?</AlertDialogTitle>
             <AlertDialogDescription>
-              <span className="font-mono font-semibold">{voidingRow?.number}</span>
-              {" "}will be voided. A balancing reversal journal will be created automatically.
-              This cannot be undone.
+              <span className="font-mono font-semibold">{voidingRow?.number}</span> will be voided. A balancing reversal
+              journal will be created automatically. This cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
