@@ -52,6 +52,7 @@ import {
   ShieldCheck,
   Settings2,
   LayoutList,
+  CalendarRange,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -133,6 +134,7 @@ export const navGroups: NavGroup[] = [
       { title: "Profit & Loss", url: "/accounting/profit-loss", icon: TrendingUp },
       { title: "Balance Sheet", url: "/accounting/balance-sheet", icon: LayoutList },
       { title: "Manual Journals", url: "/accounting/journals", icon: BookMarked },
+      { title: "Accounting Periods", url: "/accounting/periods", icon: CalendarRange },
       { title: "Banking", url: "/accounting/banking", icon: Landmark, feature: "banking" },
       { title: "Bank Reconciliation", url: "/accounting/reconciliation", icon: Scale, feature: "banking" },
     ],

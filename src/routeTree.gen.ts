@@ -54,6 +54,7 @@ import { Route as AuthenticatedDashboardsLogisticsRouteImport } from './routes/_
 import { Route as AuthenticatedAccountingTrialBalanceRouteImport } from './routes/_authenticated/accounting.trial-balance'
 import { Route as AuthenticatedAccountingReconciliationRouteImport } from './routes/_authenticated/accounting.reconciliation'
 import { Route as AuthenticatedAccountingProfitLossRouteImport } from './routes/_authenticated/accounting.profit-loss'
+import { Route as AuthenticatedAccountingPeriodsRouteImport } from './routes/_authenticated/accounting.periods'
 import { Route as AuthenticatedAccountingLedgerRouteImport } from './routes/_authenticated/accounting.ledger'
 import { Route as AuthenticatedAccountingJournalsRouteImport } from './routes/_authenticated/accounting.journals'
 import { Route as AuthenticatedAccountingChartRouteImport } from './routes/_authenticated/accounting.chart'
@@ -347,6 +348,12 @@ const AuthenticatedAccountingProfitLossRoute =
     path: '/accounting/profit-loss',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAccountingPeriodsRoute =
+  AuthenticatedAccountingPeriodsRouteImport.update({
+    id: '/accounting/periods',
+    path: '/accounting/periods',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAccountingLedgerRoute =
   AuthenticatedAccountingLedgerRouteImport.update({
     id: '/accounting/ledger',
@@ -560,6 +567,7 @@ export interface FileRoutesByFullPath {
   '/accounting/chart': typeof AuthenticatedAccountingChartRoute
   '/accounting/journals': typeof AuthenticatedAccountingJournalsRoute
   '/accounting/ledger': typeof AuthenticatedAccountingLedgerRoute
+  '/accounting/periods': typeof AuthenticatedAccountingPeriodsRoute
   '/accounting/profit-loss': typeof AuthenticatedAccountingProfitLossRoute
   '/accounting/reconciliation': typeof AuthenticatedAccountingReconciliationRoute
   '/accounting/trial-balance': typeof AuthenticatedAccountingTrialBalanceRoute
@@ -638,6 +646,7 @@ export interface FileRoutesByTo {
   '/accounting/chart': typeof AuthenticatedAccountingChartRoute
   '/accounting/journals': typeof AuthenticatedAccountingJournalsRoute
   '/accounting/ledger': typeof AuthenticatedAccountingLedgerRoute
+  '/accounting/periods': typeof AuthenticatedAccountingPeriodsRoute
   '/accounting/profit-loss': typeof AuthenticatedAccountingProfitLossRoute
   '/accounting/reconciliation': typeof AuthenticatedAccountingReconciliationRoute
   '/accounting/trial-balance': typeof AuthenticatedAccountingTrialBalanceRoute
@@ -719,6 +728,7 @@ export interface FileRoutesById {
   '/_authenticated/accounting/chart': typeof AuthenticatedAccountingChartRoute
   '/_authenticated/accounting/journals': typeof AuthenticatedAccountingJournalsRoute
   '/_authenticated/accounting/ledger': typeof AuthenticatedAccountingLedgerRoute
+  '/_authenticated/accounting/periods': typeof AuthenticatedAccountingPeriodsRoute
   '/_authenticated/accounting/profit-loss': typeof AuthenticatedAccountingProfitLossRoute
   '/_authenticated/accounting/reconciliation': typeof AuthenticatedAccountingReconciliationRoute
   '/_authenticated/accounting/trial-balance': typeof AuthenticatedAccountingTrialBalanceRoute
@@ -799,6 +809,7 @@ export interface FileRouteTypes {
     | '/accounting/chart'
     | '/accounting/journals'
     | '/accounting/ledger'
+    | '/accounting/periods'
     | '/accounting/profit-loss'
     | '/accounting/reconciliation'
     | '/accounting/trial-balance'
@@ -877,6 +888,7 @@ export interface FileRouteTypes {
     | '/accounting/chart'
     | '/accounting/journals'
     | '/accounting/ledger'
+    | '/accounting/periods'
     | '/accounting/profit-loss'
     | '/accounting/reconciliation'
     | '/accounting/trial-balance'
@@ -957,6 +969,7 @@ export interface FileRouteTypes {
     | '/_authenticated/accounting/chart'
     | '/_authenticated/accounting/journals'
     | '/_authenticated/accounting/ledger'
+    | '/_authenticated/accounting/periods'
     | '/_authenticated/accounting/profit-loss'
     | '/_authenticated/accounting/reconciliation'
     | '/_authenticated/accounting/trial-balance'
@@ -1345,6 +1358,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAccountingProfitLossRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/accounting/periods': {
+      id: '/_authenticated/accounting/periods'
+      path: '/accounting/periods'
+      fullPath: '/accounting/periods'
+      preLoaderRoute: typeof AuthenticatedAccountingPeriodsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/accounting/ledger': {
       id: '/_authenticated/accounting/ledger'
       path: '/accounting/ledger'
@@ -1607,6 +1627,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAccountingChartRoute: typeof AuthenticatedAccountingChartRoute
   AuthenticatedAccountingJournalsRoute: typeof AuthenticatedAccountingJournalsRoute
   AuthenticatedAccountingLedgerRoute: typeof AuthenticatedAccountingLedgerRoute
+  AuthenticatedAccountingPeriodsRoute: typeof AuthenticatedAccountingPeriodsRoute
   AuthenticatedAccountingProfitLossRoute: typeof AuthenticatedAccountingProfitLossRoute
   AuthenticatedAccountingReconciliationRoute: typeof AuthenticatedAccountingReconciliationRoute
   AuthenticatedAccountingTrialBalanceRoute: typeof AuthenticatedAccountingTrialBalanceRoute
@@ -1681,6 +1702,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAccountingChartRoute: AuthenticatedAccountingChartRoute,
   AuthenticatedAccountingJournalsRoute: AuthenticatedAccountingJournalsRoute,
   AuthenticatedAccountingLedgerRoute: AuthenticatedAccountingLedgerRoute,
+  AuthenticatedAccountingPeriodsRoute: AuthenticatedAccountingPeriodsRoute,
   AuthenticatedAccountingProfitLossRoute:
     AuthenticatedAccountingProfitLossRoute,
   AuthenticatedAccountingReconciliationRoute:
