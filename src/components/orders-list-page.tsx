@@ -228,7 +228,7 @@ export function OrdersListPage({ kind }: OrdersListPageProps) {
   };
 
   const openDetail = (id: string) =>
-    navigate({ to: `${detailBase}/$id` as any, params: { id } });
+    navigate({ to: `${detailBase}/$id` as any, params: { id } as any });
 
   return (
     <TooltipProvider delayDuration={200}>

@@ -20,7 +20,7 @@ import { PostingDetailsDrawer } from "@/components/posting-details-drawer";
 import { useDocumentBranding } from "@/hooks/use-document-branding";
 import { logDocumentEvent } from "@/lib/document-events";
 import { fetchRow, insertRow, updateRow, db, type Row } from "@/lib/typed-db";
-import type { Package, PackageInsert, PackageLine, PackageLineInsert, SalesOrder, Customer } from "@/lib/db-types";
+import type { PackageInsert, PackageLine, PackageLineInsert, SalesOrder, Customer } from "@/lib/db-types";
 
 const STATUSES = ["Draft", "Packed", "Shipped", "Delivered", "Cancelled"] as const;
 
@@ -220,7 +220,7 @@ export function PackageEditor({ id }: { id: string }) {
           lines.map(
             (l, i): PackageLineInsert => ({
               tenant_id: tenant.id,
-              document_id: docId,
+              document_id: docId!,
               line_no: i + 1,
               item_id: l.item_id || null,
               description: l.description,

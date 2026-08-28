@@ -355,7 +355,7 @@ export function InvoicesListPage({ kind }: InvoicesListPageProps) {
       return n;
     });
 
-  const openDetail = (id: string) => navigate({ to: `${detailBase}/$id` as any, params: { id } });
+  const openDetail = (id: string) => navigate({ to: `${detailBase}/$id` as any, params: { id } as any });
 
   // ─── Render ───────────────────────────────────────────────────────────────
 

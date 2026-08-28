@@ -386,7 +386,7 @@ export function DocumentEditor({
       if (cfg.partyRequired !== false && !header[cfg.partyField])
         throw new Error(`Please select a ${cfg.partyLabel.toLowerCase()}`);
 
-      const headerPayload = { ...header, ...totals, amount: totals.grand_total, tenant_id: tenant.id };
+      const headerPayload: Row = { ...header, ...totals, amount: totals.grand_total, tenant_id: tenant.id };
       if (kind === "invoice" || kind === "bill") {
         headerPayload.balance_due = totals.grand_total - (header.amount_paid ?? 0);
         headerPayload.balance = headerPayload.balance_due;
@@ -500,7 +500,7 @@ export function DocumentEditor({
         _permission: voidPermission,
         _reason: `Voided ${cfg.label}`,
       });
-      return data as Row;
+      return data as unknown as Row;
     },
     onSuccess: () => {
       setVoidOpen(false);
@@ -659,7 +659,7 @@ export function DocumentEditor({
 
   const buildPdf = (): PdfDocInput => ({
     title: cfg.label,
-    number: header.number ?? "",
+    number: String(header.number ?? ""),
     companyName: tenant?.name ?? "Company",
     partyLabel: cfg.partyLabel,
     partyName: party?.name ?? "—",
@@ -1163,11 +1163,11 @@ export function DocumentEditor({
             </div>
             {(kind === "invoice" || kind === "bill") && Number(doc?.amount_paid ?? 0) > 0 && (
               <>
-                <Row label="Paid" v={-Number(doc.amount_paid)} />
+                <Row label="Paid" v={-Number(doc?.amount_paid)} />
                 <div className="flex justify-between font-medium">
                   <span>Balance Due</span>
                   <span className="font-mono tabular-nums">
-                    {money(totals.grand_total - Number(doc.amount_paid || 0))}
+                    {money(totals.grand_total - Number(doc?.amount_paid || 0))}
                   </span>
                 </div>
               </>
@@ -1353,7 +1353,7 @@ export function DocumentEditor({
           open={emailOpen}
           onOpenChange={setEmailOpen}
           defaultTo={party?.email ?? ""}
-          defaultSubject={`${cfg.label} ${header.number ?? ""}`}
+          defaultSubject={`${cfg.label} ${String(header.number ?? "")}`}
           defaultMessage={`Dear ${party?.name ?? "Customer"},\n\nPlease find attached ${cfg.label.toLowerCase()} ${header.number ?? ""} for ${header.currency ?? "USD"} ${money(totals.grand_total)}.\n\nKind regards,\n${tenant?.name ?? ""}`}
           pdf={buildPdf}
           entityType={kind}

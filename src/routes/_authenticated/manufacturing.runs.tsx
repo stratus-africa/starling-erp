@@ -42,7 +42,7 @@ function ProductionRunsPage() {
       return (orders ?? []).map((o: any) => ({
         ...o,
         bom: bomMap.get(o.bom_id),
-        product: productMap.get(bomMap.get(o.bom_id)?.product_id),
+        product: productMap.get((bomMap.get(o.bom_id) as any)?.product_id),
       }));
     },
   });

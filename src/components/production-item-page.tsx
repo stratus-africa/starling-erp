@@ -255,7 +255,7 @@ export function ProductionItemPage({ id }: { id: string }) {
     onSuccess: (newId) => {
       toast.success(isNew ? "Item created" : "Item saved");
       qc.invalidateQueries({ queryKey: ["items"] });
-      if (isNew) nav({ to: "/manufacturing/items/$id" as any, params: { id: newId } });
+      if (isNew) nav({ to: "/manufacturing/items/$id" as any, params: { id: newId } as any });
     },
     onError: (e: any) => toast.error(e.message ?? "Save failed"),
   });

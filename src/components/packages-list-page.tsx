@@ -255,7 +255,7 @@ export function PackagesListPage() {
     setSelected((s) => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
 
   const openDetail = (id: string) =>
-    navigate({ to: "/sales/packages/$id" as any, params: { id } });
+    navigate({ to: "/sales/packages/$id" as any, params: { id } as any });
 
   // ─── Render ───────────────────────────────────────────────────────────────
 

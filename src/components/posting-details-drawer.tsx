@@ -74,11 +74,11 @@ export function PostingDetailsDrawer({
       const acctMap = new Map((accounts as Row[]).map((a) => [a.id, a]));
 
       return {
-        entries: entryRows.map((e) => ({
+        entries: entryRows.map((e): Row => ({
           ...e,
           lines: lines.filter((l) => l.journal_id === e.id).map((l) => ({ ...l, account: acctMap.get(l.account_id) })),
         })),
-        movements: movementRows.map((m) => ({ ...m, item: itemMap.get(m.item_id) })),
+        movements: movementRows.map((m): Row => ({ ...m, item: itemMap.get(m.item_id) })),
       };
     },
   });

@@ -117,6 +117,7 @@ export function ShipmentEditor({ id }: { id: string }) {
     mutationFn: async () => {
       if (!tenant?.id) throw new Error("No workspace");
       const payload: ShipmentInsert = {
+        tenant_id: tenant.id,
         number: header.number || `SHP-${Date.now().toString().slice(-8)}`,
         sales_order_id: header.sales_order_id || null,
         package_id: header.package_id || null,
