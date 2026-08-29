@@ -44,6 +44,7 @@ import { Route as AdminPlansRouteImport } from './routes/_admin/plans'
 import { Route as AdminAuditRouteImport } from './routes/_admin/audit'
 import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authenticated/settings.index'
 import { Route as AuthenticatedAccountingIndexRouteImport } from './routes/_authenticated/accounting.index'
+import { Route as SuperAdminTenantsIdRouteImport } from './routes/super-admin/tenants_.$id'
 import { Route as AuthenticatedSettingsWorkflowsRouteImport } from './routes/_authenticated/settings.workflows'
 import { Route as AuthenticatedSettingsWarehousesRouteImport } from './routes/_authenticated/settings.warehouses'
 import { Route as AuthenticatedSettingsUsersRouteImport } from './routes/_authenticated/settings.users'
@@ -296,6 +297,11 @@ const AuthenticatedAccountingIndexRoute =
     path: '/accounting/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const SuperAdminTenantsIdRoute = SuperAdminTenantsIdRouteImport.update({
+  id: '/tenants_/$id',
+  path: '/tenants/$id',
+  getParentRoute: () => SuperAdminRouteRoute,
+} as any)
 const AuthenticatedSettingsWorkflowsRoute =
   AuthenticatedSettingsWorkflowsRouteImport.update({
     id: '/settings/workflows',
@@ -812,6 +818,7 @@ export interface FileRoutesByFullPath {
   '/settings/users': typeof AuthenticatedSettingsUsersRoute
   '/settings/warehouses': typeof AuthenticatedSettingsWarehousesRoute
   '/settings/workflows': typeof AuthenticatedSettingsWorkflowsRoute
+  '/super-admin/tenants/$id': typeof SuperAdminTenantsIdRoute
   '/accounting/': typeof AuthenticatedAccountingIndexRoute
   '/settings/': typeof AuthenticatedSettingsIndexRoute
   '/crm/customers/$id': typeof AuthenticatedCrmCustomersIdRoute
@@ -919,6 +926,7 @@ export interface FileRoutesByTo {
   '/settings/users': typeof AuthenticatedSettingsUsersRoute
   '/settings/warehouses': typeof AuthenticatedSettingsWarehousesRoute
   '/settings/workflows': typeof AuthenticatedSettingsWorkflowsRoute
+  '/super-admin/tenants/$id': typeof SuperAdminTenantsIdRoute
   '/accounting': typeof AuthenticatedAccountingIndexRoute
   '/crm/customers/$id': typeof AuthenticatedCrmCustomersIdRoute
   '/manufacturing/bom/$id': typeof AuthenticatedManufacturingBomIdRoute
@@ -1029,6 +1037,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/users': typeof AuthenticatedSettingsUsersRoute
   '/_authenticated/settings/warehouses': typeof AuthenticatedSettingsWarehousesRoute
   '/_authenticated/settings/workflows': typeof AuthenticatedSettingsWorkflowsRoute
+  '/super-admin/tenants_/$id': typeof SuperAdminTenantsIdRoute
   '/_authenticated/accounting/': typeof AuthenticatedAccountingIndexRoute
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
   '/_authenticated/crm/customers/$id': typeof AuthenticatedCrmCustomersIdRoute
@@ -1139,6 +1148,7 @@ export interface FileRouteTypes {
     | '/settings/users'
     | '/settings/warehouses'
     | '/settings/workflows'
+    | '/super-admin/tenants/$id'
     | '/accounting/'
     | '/settings/'
     | '/crm/customers/$id'
@@ -1246,6 +1256,7 @@ export interface FileRouteTypes {
     | '/settings/users'
     | '/settings/warehouses'
     | '/settings/workflows'
+    | '/super-admin/tenants/$id'
     | '/accounting'
     | '/crm/customers/$id'
     | '/manufacturing/bom/$id'
@@ -1355,6 +1366,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/users'
     | '/_authenticated/settings/warehouses'
     | '/_authenticated/settings/workflows'
+    | '/super-admin/tenants_/$id'
     | '/_authenticated/accounting/'
     | '/_authenticated/settings/'
     | '/_authenticated/crm/customers/$id'
@@ -1640,6 +1652,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/accounting/'
       preLoaderRoute: typeof AuthenticatedAccountingIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/super-admin/tenants_/$id': {
+      id: '/super-admin/tenants_/$id'
+      path: '/tenants/$id'
+      fullPath: '/super-admin/tenants/$id'
+      preLoaderRoute: typeof SuperAdminTenantsIdRouteImport
+      parentRoute: typeof SuperAdminRouteRoute
     }
     '/_authenticated/settings/workflows': {
       id: '/_authenticated/settings/workflows'
@@ -2385,6 +2404,7 @@ interface SuperAdminRouteRouteChildren {
   SuperAdminUsageRoute: typeof SuperAdminUsageRoute
   SuperAdminUsersRoute: typeof SuperAdminUsersRoute
   SuperAdminIndexRoute: typeof SuperAdminIndexRoute
+  SuperAdminTenantsIdRoute: typeof SuperAdminTenantsIdRoute
 }
 
 const SuperAdminRouteRouteChildren: SuperAdminRouteRouteChildren = {
@@ -2410,6 +2430,7 @@ const SuperAdminRouteRouteChildren: SuperAdminRouteRouteChildren = {
   SuperAdminUsageRoute: SuperAdminUsageRoute,
   SuperAdminUsersRoute: SuperAdminUsersRoute,
   SuperAdminIndexRoute: SuperAdminIndexRoute,
+  SuperAdminTenantsIdRoute: SuperAdminTenantsIdRoute,
 }
 
 const SuperAdminRouteRouteWithChildren = SuperAdminRouteRoute._addFileChildren(
