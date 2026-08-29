@@ -309,7 +309,7 @@ export function AccountingDashboard() {
         .gte("entry_date", mo6);
       if (!entries?.length) return [];
       const jIds = entries.map((r: any) => r.id);
-      const dateMap = new Map(entries.map((r: any) => [r.id, r.entry_date as string]));
+      const dateMap = new Map<string, string>(entries.map((r: any) => [r.id as string, r.entry_date as string]));
       const { data: lines } = await db
         .from("journal_lines")
         .select("journal_id,credit,debit")

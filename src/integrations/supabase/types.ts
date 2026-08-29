@@ -2819,6 +2819,392 @@ export type Database = {
         }
         Relationships: []
       }
+      plan_features: {
+        Row: {
+          feature: string
+          plan_id: string
+        }
+        Insert: {
+          feature: string
+          plan_id: string
+        }
+        Update: {
+          feature?: string
+          plan_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plan_features_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      plans: {
+        Row: {
+          code: string
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          is_public: boolean
+          max_storage_gb: number | null
+          max_users: number | null
+          name: string
+          price_usd: number
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          is_public?: boolean
+          max_storage_gb?: number | null
+          max_users?: number | null
+          name: string
+          price_usd?: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          is_public?: boolean
+          max_storage_gb?: number | null
+          max_users?: number | null
+          name?: string
+          price_usd?: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      platform_admins: {
+        Row: {
+          created_at: string
+          email: string
+          full_name: string | null
+          granted_at: string
+          granted_by: string | null
+          is_active: boolean
+          last_seen_at: string | null
+          notes: string | null
+          platform_role: string
+          revoked_at: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          full_name?: string | null
+          granted_at?: string
+          granted_by?: string | null
+          is_active?: boolean
+          last_seen_at?: string | null
+          notes?: string | null
+          platform_role?: string
+          revoked_at?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          full_name?: string | null
+          granted_at?: string
+          granted_by?: string | null
+          is_active?: boolean
+          last_seen_at?: string | null
+          notes?: string | null
+          platform_role?: string
+          revoked_at?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "platform_admins_platform_role_fkey"
+            columns: ["platform_role"]
+            isOneToOne: false
+            referencedRelation: "platform_roles"
+            referencedColumns: ["name"]
+          },
+        ]
+      }
+      platform_audit_log: {
+        Row: {
+          acting_as_tenant_id: string | null
+          action: string
+          actor_email: string
+          actor_id: string | null
+          actor_role: string | null
+          created_at: string
+          detail: Json
+          id: string
+          ip_address: unknown
+          support_session_id: string | null
+          target_id: string | null
+          target_label: string | null
+          target_type: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          acting_as_tenant_id?: string | null
+          action: string
+          actor_email: string
+          actor_id?: string | null
+          actor_role?: string | null
+          created_at?: string
+          detail?: Json
+          id?: string
+          ip_address?: unknown
+          support_session_id?: string | null
+          target_id?: string | null
+          target_label?: string | null
+          target_type?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          acting_as_tenant_id?: string | null
+          action?: string
+          actor_email?: string
+          actor_id?: string | null
+          actor_role?: string | null
+          created_at?: string
+          detail?: Json
+          id?: string
+          ip_address?: unknown
+          support_session_id?: string | null
+          target_id?: string | null
+          target_label?: string | null
+          target_type?: string | null
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "platform_audit_log_acting_as_tenant_id_fkey"
+            columns: ["acting_as_tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "platform_audit_log_session_fkey"
+            columns: ["support_session_id"]
+            isOneToOne: false
+            referencedRelation: "platform_support_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      platform_permissions: {
+        Row: {
+          action: string
+          code: string
+          description: string | null
+          module: string
+        }
+        Insert: {
+          action: string
+          code: string
+          description?: string | null
+          module: string
+        }
+        Update: {
+          action?: string
+          code?: string
+          description?: string | null
+          module?: string
+        }
+        Relationships: []
+      }
+      platform_role_permissions: {
+        Row: {
+          permission_code: string
+          role_name: string
+        }
+        Insert: {
+          permission_code: string
+          role_name: string
+        }
+        Update: {
+          permission_code?: string
+          role_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "platform_role_permissions_permission_code_fkey"
+            columns: ["permission_code"]
+            isOneToOne: false
+            referencedRelation: "platform_permissions"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "platform_role_permissions_role_name_fkey"
+            columns: ["role_name"]
+            isOneToOne: false
+            referencedRelation: "platform_roles"
+            referencedColumns: ["name"]
+          },
+        ]
+      }
+      platform_roles: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_system: boolean
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_system?: boolean
+          name: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_system?: boolean
+          name?: string
+        }
+        Relationships: []
+      }
+      platform_security_events: {
+        Row: {
+          actor_email: string | null
+          actor_id: string | null
+          created_at: string
+          detail: Json
+          event_type: string
+          id: string
+          ip_address: unknown
+          resolution_note: string | null
+          resolved: boolean
+          resolved_at: string | null
+          resolved_by: string | null
+          severity: string
+          tenant_id: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          actor_email?: string | null
+          actor_id?: string | null
+          created_at?: string
+          detail?: Json
+          event_type: string
+          id?: string
+          ip_address?: unknown
+          resolution_note?: string | null
+          resolved?: boolean
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: string
+          tenant_id?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          actor_email?: string | null
+          actor_id?: string | null
+          created_at?: string
+          detail?: Json
+          event_type?: string
+          id?: string
+          ip_address?: unknown
+          resolution_note?: string | null
+          resolved?: boolean
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: string
+          tenant_id?: string | null
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "platform_security_events_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      platform_support_sessions: {
+        Row: {
+          admin_email: string
+          admin_id: string
+          authorised_by: string | null
+          created_at: string
+          end_reason: string | null
+          ended_at: string | null
+          ended_by: string | null
+          expires_at: string
+          id: string
+          reason: string
+          started_at: string
+          status: string
+          target_tenant_id: string
+          target_tenant_name: string
+          tenant_snapshot: Json
+          updated_at: string
+        }
+        Insert: {
+          admin_email: string
+          admin_id: string
+          authorised_by?: string | null
+          created_at?: string
+          end_reason?: string | null
+          ended_at?: string | null
+          ended_by?: string | null
+          expires_at?: string
+          id?: string
+          reason: string
+          started_at?: string
+          status?: string
+          target_tenant_id: string
+          target_tenant_name: string
+          tenant_snapshot?: Json
+          updated_at?: string
+        }
+        Update: {
+          admin_email?: string
+          admin_id?: string
+          authorised_by?: string | null
+          created_at?: string
+          end_reason?: string | null
+          ended_at?: string | null
+          ended_by?: string | null
+          expires_at?: string
+          id?: string
+          reason?: string
+          started_at?: string
+          status?: string
+          target_tenant_id?: string
+          target_tenant_name?: string
+          tenant_snapshot?: Json
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "platform_support_sessions_target_tenant_id_fkey"
+            columns: ["target_tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       posting_audit_events: {
         Row: {
           action: string
@@ -4081,6 +4467,78 @@ export type Database = {
           },
         ]
       }
+      tenant_subscriptions: {
+        Row: {
+          cancelled_at: string | null
+          created_at: string
+          created_by: string | null
+          current_period_end: string | null
+          current_period_start: string
+          external_id: string | null
+          external_meta: Json
+          id: string
+          notes: string | null
+          override_max_storage: number | null
+          override_max_users: number | null
+          plan_id: string
+          status: string
+          tenant_id: string
+          trial_ends_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          cancelled_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          current_period_end?: string | null
+          current_period_start?: string
+          external_id?: string | null
+          external_meta?: Json
+          id?: string
+          notes?: string | null
+          override_max_storage?: number | null
+          override_max_users?: number | null
+          plan_id: string
+          status?: string
+          tenant_id: string
+          trial_ends_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          cancelled_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          current_period_end?: string | null
+          current_period_start?: string
+          external_id?: string | null
+          external_meta?: Json
+          id?: string
+          notes?: string | null
+          override_max_storage?: number | null
+          override_max_users?: number | null
+          plan_id?: string
+          status?: string
+          tenant_id?: string
+          trial_ends_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_subscriptions_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tenant_subscriptions_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tenants: {
         Row: {
           created_at: string
@@ -4320,6 +4778,32 @@ export type Database = {
         }
         Returns: string
       }
+      admin_grant_platform_access: {
+        Args: { _notes?: string; _platform_role?: string; _user_id: string }
+        Returns: undefined
+      }
+      admin_ping: { Args: never; Returns: boolean }
+      admin_revoke_platform_access: {
+        Args: { _reason?: string; _user_id: string }
+        Returns: undefined
+      }
+      admin_set_feature_flag: {
+        Args: {
+          _enabled: boolean
+          _feature: string
+          _reason?: string
+          _tenant_id: string
+        }
+        Returns: undefined
+      }
+      admin_set_tenant_plan: {
+        Args: { _notes?: string; _plan_id: string; _tenant_id: string }
+        Returns: string
+      }
+      admin_set_tenant_status: {
+        Args: { _new_status: string; _reason?: string; _tenant_id: string }
+        Returns: undefined
+      }
       admin_set_user_roles: {
         Args: {
           new_roles: Database["public"]["Enums"]["app_role"][]
@@ -4352,6 +4836,14 @@ export type Database = {
       }
       audit_request_ip: { Args: never; Returns: unknown }
       audit_request_user_agent: { Args: never; Returns: string }
+      begin_support_session: {
+        Args: {
+          _reason: string
+          _target_tenant_id: string
+          _ttl_minutes?: number
+        }
+        Returns: string
+      }
       check_inventory_stock_integrity: {
         Args: { _item_id?: string }
         Returns: {
@@ -4419,7 +4911,23 @@ export type Database = {
         Returns: number
       }
       current_tenant_id: { Args: never; Returns: string }
+      end_support_session: {
+        Args: { _reason?: string; _session_id?: string }
+        Returns: undefined
+      }
       get_accounting_dashboard: { Args: never; Returns: Json }
+      get_active_support_session: {
+        Args: never
+        Returns: {
+          expires_at: string
+          minutes_remaining: number
+          reason: string
+          session_id: string
+          started_at: string
+          target_tenant_id: string
+          target_tenant_name: string
+        }[]
+      }
       get_business_events: {
         Args: {
           _action?: string
@@ -4491,6 +4999,47 @@ export type Database = {
         }[]
       }
       get_my_permissions: { Args: never; Returns: string[] }
+      get_my_platform_permissions: {
+        Args: never
+        Returns: {
+          permission_code: string
+        }[]
+      }
+      get_platform_audit_log: {
+        Args: {
+          _action?: string
+          _actor_id?: string
+          _from?: string
+          _limit?: number
+          _target_id?: string
+          _target_type?: string
+          _tenant_id?: string
+          _to?: string
+        }
+        Returns: {
+          acting_as_tenant_id: string | null
+          action: string
+          actor_email: string
+          actor_id: string | null
+          actor_role: string | null
+          created_at: string
+          detail: Json
+          id: string
+          ip_address: unknown
+          support_session_id: string | null
+          target_id: string | null
+          target_label: string | null
+          target_type: string | null
+          user_agent: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "platform_audit_log"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      get_platform_dashboard_stats: { Args: never; Returns: Json }
       get_sales_dashboard: { Args: never; Returns: Json }
       global_search: {
         Args: {
@@ -4513,6 +5062,10 @@ export type Database = {
         Args: { _permission: string; _user_id?: string }
         Returns: boolean
       }
+      has_platform_permission: {
+        Args: { _code: string; _user_id?: string }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -4520,6 +5073,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_platform_admin: { Args: { _user_id?: string }; Returns: boolean }
       is_super_admin: { Args: never; Returns: boolean }
       manage_accounting_period: {
         Args: {
@@ -4536,6 +5090,16 @@ export type Database = {
         Returns: undefined
       }
       next_journal_number: { Args: { _tenant_id: string }; Returns: string }
+      platform_audit: {
+        Args: {
+          _action: string
+          _detail?: Json
+          _target_id?: string
+          _target_label?: string
+          _target_type?: string
+        }
+        Returns: string
+      }
       post_adjustment: { Args: { _adjustment_id: string }; Returns: string }
       post_adjustment_unchecked: {
         Args: { _adjustment_id: string }
