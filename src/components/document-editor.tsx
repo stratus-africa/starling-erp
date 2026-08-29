@@ -236,8 +236,8 @@ export function DocumentEditor({
       ? [
           "accounting.journal.create",
           "accounting.journal.update",
-          "accounting.create", // legacy
-          "accounting.update", // legacy
+          "accounting.create",   // legacy
+          "accounting.update",   // legacy
         ]
       : []),
   ]);
@@ -248,7 +248,7 @@ export function DocumentEditor({
         ? can([
             "purchasing.post",
             "accounting.journal.post",
-            "accounting.post", // legacy
+            "accounting.post",   // legacy
           ])
         : false;
   const canRecordPayment = can(["payments.create", "payments.post"]);
@@ -273,8 +273,7 @@ export function DocumentEditor({
     queryKey: [cfg.lines, id],
     enabled: !isNew,
     queryFn: async () => {
-      const { data, error } = await db
-        .from(cfg.lines)
+      const { data, error } = await db.from(cfg.lines)
         .select("*")
         .eq("document_id", id)
         .is("deleted_at", null)
@@ -304,8 +303,7 @@ export function DocumentEditor({
     queryKey: ["customers", "document-prefill", selectedCustomerId],
     enabled: !!selectedCustomerId,
     queryFn: async () => {
-      const { data, error } = await db
-        .from("customers")
+      const { data, error } = await db.from("customers")
         .select("id,name,contact_person,email,phone,currency,billing_address,shipping_address")
         .eq("id", selectedCustomerId!)
         .maybeSingle();
@@ -322,8 +320,7 @@ export function DocumentEditor({
   const { data: items = [] } = useQuery({
     queryKey: ["items", "picker"],
     queryFn: async () => {
-      const { data, error } = await db
-        .from("items")
+      const { data, error } = await db.from("items")
         .select("id,name,sku,price,cost")
         .is("deleted_at", null)
         .order("name");
@@ -561,8 +558,7 @@ export function DocumentEditor({
       if (!reqApproved) throw new Error("Requisition must be approved first");
       if (!header.supplier_id) throw new Error("Select a preferred supplier before converting");
       const number = `PO-${Date.now().toString().slice(-8)}`;
-      const { data: po, error } = await db
-        .from("purchase_orders")
+      const { data: po, error } = await db.from("purchase_orders")
         .insert({
           tenant_id: tenant.id,
           number,
@@ -624,7 +620,10 @@ export function DocumentEditor({
     queryKey: [cfg.partyTable, "detail", partyId],
     enabled: !!partyId,
     queryFn: async () => {
-      const { data, error } = await db.from(cfg.partyTable).select("id,name,email").eq("id", partyId).maybeSingle();
+      const { data, error } = await db.from(cfg.partyTable)
+        .select("id,name,email")
+        .eq("id", partyId)
+        .maybeSingle();
       if (error) throw error;
       return data as unknown as Record<string, string | number | null | undefined>;
     },
@@ -634,8 +633,7 @@ export function DocumentEditor({
     queryKey: ["packages", "by-order", id],
     enabled: kind === "order" && !isNew,
     queryFn: async () => {
-      const { data, error } = await db
-        .from("packages")
+      const { data, error } = await db.from("packages")
         .select("id,number,date,status,tracking,carrier,posted_at")
         .eq("sales_order_id", id)
         .is("deleted_at", null)
@@ -649,8 +647,7 @@ export function DocumentEditor({
     queryKey: ["shipments", "by-order", id],
     enabled: kind === "order" && !isNew,
     queryFn: async () => {
-      const { data, error } = await db
-        .from("shipments")
+      const { data, error } = await db.from("shipments")
         .select("id,number,ship_date,delivery_date,status,tracking,carrier,posted_at")
         .eq("sales_order_id", id)
         .is("deleted_at", null)
@@ -712,7 +709,21 @@ export function DocumentEditor({
     Number(doc?.balance_due ?? doc?.balance ?? 0) > 0.001;
 
   return (
-    <div className="flex flex-col gap-4 p-4 md:p-6 w-full">
+    <div className={`flex gap-4 p-4 md:p-6 w-full ${kind === "quote" && !isNew ? "flex-row items-start" : "flex-col"}`}>
+      {/* ── Left column: Status timeline for quotes ── */}
+      {kind === "quote" && !isNew && (
+        <div className="w-[40%] shrink-0 flex flex-col gap-4">
+          <DocumentTimeline
+            entityType={kind}
+            entityId={id}
+            stages={cfg.timelineStages ?? [...cfg.statuses]}
+            currentStage={header.status ?? null}
+          />
+        </div>
+      )}
+
+      {/* ── Right column (or full width for non-quote docs) ── */}
+      <div className={`flex flex-col gap-4 ${kind === "quote" && !isNew ? "flex-1 min-w-0" : "w-full"}`}>
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-3 min-w-0">
           <Button
@@ -1332,10 +1343,11 @@ export function DocumentEditor({
                 <AlertDialogDescription asChild>
                   <div className="space-y-3 text-sm">
                     <p>
-                      The original posted document will remain unchanged for audit purposes. A balanced reversal journal{" "}
-                      <span className="font-mono font-semibold text-foreground">VOID-{header.number}</span> will be
-                      created with every debit and credit exactly swapped, and the original will be marked{" "}
-                      <span className="font-semibold text-destructive">VOIDED</span>.
+                      The original posted document will remain unchanged for audit purposes.
+                      A balanced reversal journal <span className="font-mono font-semibold text-foreground">
+                        VOID-{header.number}
+                      </span> will be created with every debit and credit exactly swapped,
+                      and the original will be marked <span className="font-semibold text-destructive">VOIDED</span>.
                     </p>
                     <ul className="space-y-1 text-xs text-muted-foreground list-disc list-inside">
                       <li>All journal lines are inverted — every DR becomes CR and vice versa</li>
