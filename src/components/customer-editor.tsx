@@ -150,7 +150,8 @@ function TransactionAccordion({
   const { data: rows = [], isLoading } = useQuery({
     queryKey: [table, "by-customer", customerId],
     queryFn: async () => {
-      const { data, error } = await db.from(table as any)
+      const { data, error } = await db
+        .from(table as any)
         .select("*")
         .eq("customer_id", customerId)
         .is("deleted_at", null)
@@ -222,7 +223,8 @@ function AuditTrail({ customerId }: { customerId: string }) {
   const { data: logs = [], isLoading } = useQuery({
     queryKey: ["audit_logs", "customers", customerId],
     queryFn: async () => {
-      const { data, error } = await db.from("audit_logs")
+      const { data, error } = await db
+        .from("audit_logs")
         .select("*")
         .eq("table_name", "customers")
         .eq("record_id", customerId)
@@ -312,7 +314,8 @@ export function CustomerEditor({ id, fields }: { id: string; fields: FieldDef[] 
     queryKey: ["sales_orders", "ytd", id],
     enabled: !isNew,
     queryFn: async () => {
-      const { data, error } = await db.from("sales_orders")
+      const { data, error } = await db
+        .from("sales_orders")
         .select("grand_total, currency")
         .eq("customer_id", id)
         .is("deleted_at", null)
@@ -331,10 +334,7 @@ export function CustomerEditor({ id, fields }: { id: string; fields: FieldDef[] 
     queryKey: ["profiles", "name", record?.salesperson_id],
     enabled: !!record?.salesperson_id,
     queryFn: async () => {
-      const { data } = await db.from("profiles")
-        .select("full_name")
-        .eq("id", record.salesperson_id)
-        .maybeSingle();
+      const { data } = await db.from("profiles").select("full_name").eq("id", record.salesperson_id).maybeSingle();
       return data?.full_name ?? null;
     },
   });
@@ -396,7 +396,8 @@ export function CustomerEditor({ id, fields }: { id: string; fields: FieldDef[] 
       if (!validated.success) throw new Error(formatZodError(validated.error));
 
       if (isNew) {
-        const { data, error } = await db.from("customers")
+        const { data, error } = await db
+          .from("customers")
           .insert(validated.data as any)
           .select("id")
           .single();
@@ -601,7 +602,7 @@ export function CustomerEditor({ id, fields }: { id: string; fields: FieldDef[] 
             </CardHeader>
             <Separator />
             <CardContent className="p-4">
-              <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                 <AddressBlock
                   label="Billing Address"
                   addrKey="billing_address"
@@ -609,7 +610,6 @@ export function CustomerEditor({ id, fields }: { id: string; fields: FieldDef[] 
                   canWrite={canWrite}
                   onChange={set}
                 />
-                <div className="hidden md:block w-px bg-border self-stretch" />
                 <AddressBlock
                   label="Shipping Address"
                   addrKey="shipping_address"
