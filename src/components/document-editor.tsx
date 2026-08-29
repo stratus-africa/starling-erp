@@ -236,8 +236,8 @@ export function DocumentEditor({
       ? [
           "accounting.journal.create",
           "accounting.journal.update",
-          "accounting.create",   // legacy
-          "accounting.update",   // legacy
+          "accounting.create", // legacy
+          "accounting.update", // legacy
         ]
       : []),
   ]);
@@ -248,7 +248,7 @@ export function DocumentEditor({
         ? can([
             "purchasing.post",
             "accounting.journal.post",
-            "accounting.post",   // legacy
+            "accounting.post", // legacy
           ])
         : false;
   const canRecordPayment = can(["payments.create", "payments.post"]);
@@ -273,7 +273,8 @@ export function DocumentEditor({
     queryKey: [cfg.lines, id],
     enabled: !isNew,
     queryFn: async () => {
-      const { data, error } = await db.from(cfg.lines)
+      const { data, error } = await db
+        .from(cfg.lines)
         .select("*")
         .eq("document_id", id)
         .is("deleted_at", null)
@@ -303,8 +304,9 @@ export function DocumentEditor({
     queryKey: ["customers", "document-prefill", selectedCustomerId],
     enabled: !!selectedCustomerId,
     queryFn: async () => {
-      const { data, error } = await db.from("customers")
-        .select("id,name,contact_person,email,phone,currency,billing_address,shipping_address")
+      const { data, error } = await db
+        .from("customers")
+        .select("id,name,contact_person,email,phone,currency,billing_address,shipping_address,payment_terms")
         .eq("id", selectedCustomerId!)
         .maybeSingle();
       if (error) throw error;
@@ -312,15 +314,48 @@ export function DocumentEditor({
     },
   });
 
+  // Supplier autofill for purchasing docs
+  const selectedSupplierId =
+    kind === "po" || kind === "bill" || kind === "requisition" ? header.supplier_id || null : null;
+  const { data: selectedSupplier } = useQuery({
+    queryKey: ["suppliers", "document-prefill", selectedSupplierId],
+    enabled: !!selectedSupplierId,
+    queryFn: async () => {
+      const { data, error } = await db
+        .from("suppliers")
+        .select("id,name,email,phone,currency")
+        .eq("id", selectedSupplierId!)
+        .maybeSingle();
+      if (error) throw error;
+      return data as unknown as Record<string, string | number | null | undefined>;
+    },
+  });
+
+  // ── Autofill: customer → currency, notes, payment_terms ──────────────────
   useEffect(() => {
-    if (isNew && selectedCustomer?.currency) {
-      setHeader((h) => (h.currency === selectedCustomer.currency ? h : { ...h, currency: selectedCustomer.currency }));
-    }
-  }, [isNew, selectedCustomer?.currency]);
+    if (!isNew || !selectedCustomer) return;
+    setHeader((h) => ({
+      ...h,
+      currency: selectedCustomer.currency ?? h.currency ?? "USD",
+      ...(selectedCustomer.payment_terms ? { payment_terms: selectedCustomer.payment_terms } : {}),
+    }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isNew, selectedCustomer?.currency, selectedCustomer?.payment_terms]);
+
+  // ── Autofill: supplier → currency ─────────────────────────────────────────
+  useEffect(() => {
+    if (!isNew || !selectedSupplier) return;
+    setHeader((h) => ({
+      ...h,
+      currency: selectedSupplier.currency ?? h.currency ?? "USD",
+    }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isNew, selectedSupplier?.currency]);
   const { data: items = [] } = useQuery({
     queryKey: ["items", "picker"],
     queryFn: async () => {
-      const { data, error } = await db.from("items")
+      const { data, error } = await db
+        .from("items")
         .select("id,name,sku,price,cost")
         .is("deleted_at", null)
         .order("name");
@@ -558,7 +593,8 @@ export function DocumentEditor({
       if (!reqApproved) throw new Error("Requisition must be approved first");
       if (!header.supplier_id) throw new Error("Select a preferred supplier before converting");
       const number = `PO-${Date.now().toString().slice(-8)}`;
-      const { data: po, error } = await db.from("purchase_orders")
+      const { data: po, error } = await db
+        .from("purchase_orders")
         .insert({
           tenant_id: tenant.id,
           number,
@@ -620,10 +656,7 @@ export function DocumentEditor({
     queryKey: [cfg.partyTable, "detail", partyId],
     enabled: !!partyId,
     queryFn: async () => {
-      const { data, error } = await db.from(cfg.partyTable)
-        .select("id,name,email")
-        .eq("id", partyId)
-        .maybeSingle();
+      const { data, error } = await db.from(cfg.partyTable).select("id,name,email").eq("id", partyId).maybeSingle();
       if (error) throw error;
       return data as unknown as Record<string, string | number | null | undefined>;
     },
@@ -633,7 +666,8 @@ export function DocumentEditor({
     queryKey: ["packages", "by-order", id],
     enabled: kind === "order" && !isNew,
     queryFn: async () => {
-      const { data, error } = await db.from("packages")
+      const { data, error } = await db
+        .from("packages")
         .select("id,number,date,status,tracking,carrier,posted_at")
         .eq("sales_order_id", id)
         .is("deleted_at", null)
@@ -647,7 +681,8 @@ export function DocumentEditor({
     queryKey: ["shipments", "by-order", id],
     enabled: kind === "order" && !isNew,
     queryFn: async () => {
-      const { data, error } = await db.from("shipments")
+      const { data, error } = await db
+        .from("shipments")
         .select("id,number,ship_date,delivery_date,status,tracking,carrier,posted_at")
         .eq("sales_order_id", id)
         .is("deleted_at", null)
@@ -710,9 +745,622 @@ export function DocumentEditor({
 
   return (
     <div className={`flex gap-4 p-4 md:p-6 w-full ${kind === "quote" && !isNew ? "flex-row items-start" : "flex-col"}`}>
-      {/* ── Left column: Status timeline for quotes ── */}
+      {/* ── Left column: Quote details (65%) or full width for other docs ── */}
+      <div className={`flex flex-col gap-4 ${kind === "quote" && !isNew ? "w-[65%] min-w-0" : "w-full"}`}>
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => (embedded && onClose ? onClose() : nav({ to: cfg.listPath as never }))}
+            >
+              <ArrowLeft className="h-4 w-4 mr-1" /> Back
+            </Button>
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <FileText className="h-4 w-4 text-muted-foreground" />
+                <h1 className="text-xl font-semibold truncate">
+                  {isNew ? `New ${cfg.label}` : header.number || cfg.label}
+                </h1>
+                {header.status && <Badge variant="secondary">{header.status}</Badge>}
+              </div>
+              {!isNew && (
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Grand total {header.currency ?? "USD"} {money(totals.grand_total)}
+                </p>
+              )}
+            </div>
+          </div>
+          <div className="flex items-center gap-2 flex-wrap justify-end">
+            {!isNew && <EmailStatus entityType={kind} entityId={id} />}
+            {!isNew && (
+              <>
+                <Button variant="outline" size="sm" onClick={() => downloadDocumentPdf(buildPdf())}>
+                  <Printer className="h-4 w-4 mr-1.5" /> Print PDF
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => setEmailOpen(true)}>
+                  <Mail className="h-4 w-4 mr-1.5" /> Email
+                </Button>
+              </>
+            )}
+            {!isNew && (doc?.posted_at || kind === "credit_note") && (
+              <Button variant="outline" size="sm" onClick={() => setPostOpen(true)}>
+                <Receipt className="h-4 w-4 mr-1.5" /> {kind === "credit_note" ? "Inventory movements" : "Post details"}
+              </Button>
+            )}
+
+            {canWrite && kind === "order" && !isNew && (
+              <Button variant="outline" size="sm" asChild>
+                <Link to={"/sales/packages/new" as never} search={{ order: id } as never}>
+                  <PackageIcon className="h-4 w-4 mr-1.5" /> New Package
+                </Link>
+              </Button>
+            )}
+            {canWrite && kind === "quote" && !isNew && (
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={runRpc.isPending}
+                onClick={() => runRpc.mutate("convert_quote_to_order")}
+              >
+                <Send className="h-4 w-4 mr-1.5" /> Convert to Order
+              </Button>
+            )}
+            {canWrite && kind === "order" && !isNew && (
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={runRpc.isPending}
+                onClick={() => runRpc.mutate("convert_order_to_invoice")}
+              >
+                <Send className="h-4 w-4 mr-1.5" /> Convert to Invoice
+              </Button>
+            )}
+            {isReq && !isNew && canWrite && header.status === "Draft" && (
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={setReqStatus.isPending}
+                onClick={() => setReqStatus.mutate({ status: "Submitted", note: "Submitted for approval" })}
+              >
+                <Send className="h-4 w-4 mr-1.5" /> Submit for Approval
+              </Button>
+            )}
+            {isReq && !isNew && canApprove && header.status === "Submitted" && (
+              <>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={setReqStatus.isPending}
+                  onClick={() => setReqStatus.mutate({ status: "Rejected", note: "Rejected by approver" })}
+                >
+                  Reject
+                </Button>
+                <Button
+                  variant="default"
+                  size="sm"
+                  disabled={setReqStatus.isPending}
+                  onClick={() => setReqStatus.mutate({ status: "Approved", note: "Approved" })}
+                >
+                  <CheckCircle2 className="h-4 w-4 mr-1.5" /> Approve
+                </Button>
+              </>
+            )}
+            {isReq && !isNew && canWrite && (
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={!reqApproved || convertReqToPo.isPending}
+                title={reqApproved ? undefined : "Requires approval"}
+                onClick={() => convertReqToPo.mutate()}
+              >
+                <Send className="h-4 w-4 mr-1.5" /> Convert to PO
+              </Button>
+            )}
+            {canWrite && kind === "po" && !isNew && (
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={runRpc.isPending}
+                onClick={() => runRpc.mutate("convert_po_to_bill")}
+              >
+                <Send className="h-4 w-4 mr-1.5" /> Convert to Bill
+              </Button>
+            )}
+            {canPost && kind === "invoice" && !isNew && !doc?.posted_at && (
+              <Button
+                variant="default"
+                size="sm"
+                disabled={runRpc.isPending}
+                onClick={() => runRpc.mutate("post_invoice")}
+              >
+                <DollarSign className="h-4 w-4 mr-1.5" /> Post Invoice
+              </Button>
+            )}
+            {canPost && kind === "bill" && !isNew && !doc?.posted_at && (
+              <Button
+                variant="default"
+                size="sm"
+                disabled={runRpc.isPending}
+                onClick={() => runRpc.mutate("post_bill")}
+              >
+                <DollarSign className="h-4 w-4 mr-1.5" /> Post Bill
+              </Button>
+            )}
+            {canPost && kind === "credit_note" && !isNew && !doc?.posted_at && (
+              <Button
+                variant="default"
+                size="sm"
+                disabled={runRpc.isPending}
+                onClick={() => runRpc.mutate("post_credit_note")}
+              >
+                <DollarSign className="h-4 w-4 mr-1.5" /> Post Credit Note
+              </Button>
+            )}
+            {canRecordPayment && showRecordPayment && (
+              <Button variant="secondary" size="sm" onClick={() => setPayOpen(true)}>
+                <DollarSign className="h-4 w-4 mr-1.5" /> Record Payment
+              </Button>
+            )}
+            {canVoid && (
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={() => setVoidOpen(true)}
+                disabled={voidDocument.isPending}
+              >
+                <Ban className="h-4 w-4 mr-1.5" /> Void & Reverse
+              </Button>
+            )}
+            {canWrite && (
+              <Button size="sm" disabled={save.isPending || !!doc?.posted_at} onClick={() => save.mutate()}>
+                {save.isPending ? (
+                  <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
+                ) : (
+                  <Save className="h-4 w-4 mr-1.5" />
+                )}{" "}
+                Save
+              </Button>
+            )}
+          </div>
+        </div>
+
+        <Card className="p-4 grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid gap-1.5">
+            <Label>Number</Label>
+            <Input
+              value={header.number ?? ""}
+              onChange={(e) => setHeader({ ...header, number: e.target.value })}
+              placeholder="Auto"
+              disabled={!canWrite}
+            />
+          </div>
+          <div className="grid gap-1.5">
+            <Label>{cfg.partyLabel}</Label>
+            <Select
+              value={header[cfg.partyField] ?? ""}
+              onValueChange={(v) => setHeader({ ...header, [cfg.partyField]: v })}
+              disabled={!canWrite}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder={`Select ${cfg.partyLabel.toLowerCase()}…`} />
+              </SelectTrigger>
+              <SelectContent>
+                {parties.map((c) => (
+                  <SelectItem key={c.id} value={c.id}>
+                    {c.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="grid gap-1.5">
+            <Label>Date</Label>
+            <Input
+              type="date"
+              value={header[cfg.dateField] ?? ""}
+              onChange={(e) => setHeader({ ...header, [cfg.dateField]: e.target.value })}
+              disabled={!canWrite}
+            />
+          </div>
+          {cfg.extraDate && (
+            <div className="grid gap-1.5">
+              <Label>{cfg.extraDate.label}</Label>
+              <Input
+                type="date"
+                value={header[cfg.extraDate.field] ?? ""}
+                onChange={(e) => setHeader({ ...header, [cfg.extraDate!.field]: e.target.value })}
+                disabled={!canWrite}
+              />
+            </div>
+          )}
+          {cfg.linkFk && (
+            <div className="grid gap-1.5">
+              <Label>{cfg.linkFk.label}</Label>
+              <Select
+                value={header[cfg.linkFk.field] ?? ""}
+                onValueChange={(v) => setHeader({ ...header, [cfg.linkFk!.field]: v })}
+                disabled={!canWrite}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select invoice…" />
+                </SelectTrigger>
+                <SelectContent>
+                  {linkOptions.map((o) => (
+                    <SelectItem key={o.id} value={o.id}>
+                      {o[cfg.linkFk!.labelKey] ?? o.id.slice(0, 8)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+          <div className="grid gap-1.5">
+            <Label>Currency</Label>
+            <Select
+              value={header.currency ?? "USD"}
+              onValueChange={(v) => setHeader({ ...header, currency: v })}
+              disabled={!canWrite}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {["USD", "EUR", "GBP", "KES", "AED", "EGP", "INR", "ZAR"].map((c) => (
+                  <SelectItem key={c} value={c}>
+                    {c}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="grid gap-1.5">
+            <Label>Status</Label>
+            <Select
+              value={header.status ?? cfg.statuses[0]}
+              onValueChange={(v) => setHeader({ ...header, status: v })}
+              disabled={!canWrite}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {cfg.statuses
+                  .filter((s) => !(isReq && !canApprove && (s === "Approved" || s === "Rejected")))
+                  .map((s) => (
+                    <SelectItem key={s} value={s}>
+                      {s}
+                    </SelectItem>
+                  ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="grid gap-1.5 md:col-span-2">
+            <Label>Notes</Label>
+            <Textarea
+              rows={1}
+              value={header.notes ?? ""}
+              onChange={(e) => setHeader({ ...header, notes: e.target.value })}
+              disabled={!canWrite}
+            />
+          </div>
+        </Card>
+
+        {(kind === "quote" || kind === "order" || kind === "invoice") && selectedCustomer && (
+          <Card className="p-4">
+            <div className="flex items-center justify-between gap-3 border-b pb-3">
+              <div>
+                <p className="text-sm font-semibold">Customer Details</p>
+                <p className="text-xs text-muted-foreground">
+                  Details are automatically loaded from the selected customer.
+                </p>
+              </div>
+              <Badge variant="outline">{selectedCustomer.currency ?? header.currency ?? "USD"}</Badge>
+            </div>
+            <div className="grid grid-cols-1 gap-4 pt-4 md:grid-cols-2">
+              <div className="space-y-2 text-sm">
+                <div>
+                  <span className="text-xs text-muted-foreground">Customer</span>
+                  <div className="font-medium">{selectedCustomer.name || "—"}</div>
+                </div>
+                <div>
+                  <span className="text-xs text-muted-foreground">Contact Person</span>
+                  <div>{selectedCustomer.contact_person || "—"}</div>
+                </div>
+                <div>
+                  <span className="text-xs text-muted-foreground">Email / Phone</span>
+                  <div>{[selectedCustomer.email, selectedCustomer.phone].filter(Boolean).join(" · ") || "—"}</div>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div>
+                  <span className="text-xs text-muted-foreground">Billing Address</span>
+                  <div className="mt-1 whitespace-pre-line text-sm">{selectedCustomer.billing_address || "—"}</div>
+                </div>
+                <div>
+                  <span className="text-xs text-muted-foreground">Shipping Address</span>
+                  <div className="mt-1 whitespace-pre-line text-sm">{selectedCustomer.shipping_address || "—"}</div>
+                </div>
+              </div>
+            </div>
+          </Card>
+        )}
+
+        <Card className="p-0 overflow-hidden">
+          <div className="flex items-center justify-between px-4 py-2 border-b bg-muted/30">
+            <div className="text-sm font-medium">Line items</div>
+            {canWrite && (
+              <Button size="sm" variant="outline" onClick={addLine}>
+                <Plus className="h-3.5 w-3.5 mr-1" /> Add line
+              </Button>
+            )}
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b bg-muted/10 text-xs uppercase tracking-wide text-muted-foreground">
+                  <th className="text-left px-3 py-2 w-8">#</th>
+                  <th className="text-left px-3 py-2 min-w-[200px]">Item</th>
+                  <th className="text-left px-3 py-2 min-w-[220px]">Description</th>
+                  <th className="text-right px-3 py-2 w-20">Qty</th>
+                  <th className="text-right px-3 py-2 w-28">Unit Price</th>
+                  <th className="text-right px-3 py-2 w-20">Disc %</th>
+                  <th className="text-right px-3 py-2 w-20">Tax %</th>
+                  <th className="text-right px-3 py-2 w-28">Total</th>
+                  <th className="w-10" />
+                </tr>
+              </thead>
+              <tbody>
+                {lines.length === 0 && (
+                  <tr>
+                    <td colSpan={9} className="text-center text-sm text-muted-foreground py-10">
+                      No lines yet. {canWrite && "Click Add line to begin."}
+                    </td>
+                  </tr>
+                )}
+                {lines.map((l, idx) => (
+                  <tr key={idx} className="border-b hover:bg-muted/20">
+                    <td className="px-3 py-1.5 text-muted-foreground">{idx + 1}</td>
+                    <td className="px-2 py-1.5">
+                      <Select
+                        value={l.item_id ?? ""}
+                        onValueChange={(v) => {
+                          const it = items.find((i) => i.id === v);
+                          const price =
+                            kind === "po" || kind === "bill" ? Number(it?.cost ?? 0) : Number(it?.price ?? 0);
+                          updateLine(idx, {
+                            item_id: v,
+                            description: l.description || it?.name || "",
+                            unit_price: l.unit_price || price,
+                          });
+                        }}
+                        disabled={!canWrite}
+                      >
+                        <SelectTrigger className="h-8">
+                          <SelectValue placeholder="Pick item…" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {items.map((i) => (
+                            <SelectItem key={i.id} value={i.id}>
+                              {i.sku ? `${i.sku} — ` : ""}
+                              {i.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </td>
+                    <td className="px-2 py-1.5">
+                      <Input
+                        className="h-8"
+                        value={l.description}
+                        onChange={(e) => updateLine(idx, { description: e.target.value })}
+                        disabled={!canWrite}
+                      />
+                    </td>
+                    <td className="px-2 py-1.5">
+                      <Input
+                        className="h-8 text-right"
+                        type="number"
+                        step="any"
+                        value={l.quantity}
+                        onChange={(e) => updateLine(idx, { quantity: Number(e.target.value) })}
+                        disabled={!canWrite}
+                      />
+                    </td>
+                    <td className="px-2 py-1.5">
+                      <Input
+                        className="h-8 text-right"
+                        type="number"
+                        step="any"
+                        value={l.unit_price}
+                        onChange={(e) => updateLine(idx, { unit_price: Number(e.target.value) })}
+                        disabled={!canWrite}
+                      />
+                    </td>
+                    <td className="px-2 py-1.5">
+                      <Input
+                        className="h-8 text-right"
+                        type="number"
+                        step="any"
+                        value={l.discount_pct}
+                        onChange={(e) => updateLine(idx, { discount_pct: Number(e.target.value) })}
+                        disabled={!canWrite}
+                      />
+                    </td>
+                    <td className="px-2 py-1.5">
+                      <Input
+                        className="h-8 text-right"
+                        type="number"
+                        step="any"
+                        value={l.tax_pct}
+                        onChange={(e) => updateLine(idx, { tax_pct: Number(e.target.value) })}
+                        disabled={!canWrite}
+                      />
+                    </td>
+                    <td className="px-3 py-1.5 text-right font-mono tabular-nums">{money(computeLine(l))}</td>
+                    <td className="px-2 py-1.5">
+                      {canWrite && (
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => removeLine(idx)}>
+                          <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                        </Button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div className="flex justify-end border-t bg-muted/10 px-4 py-3">
+            <div className="w-72 space-y-1 text-sm">
+              <Row label="Subtotal" v={totals.subtotal} />
+              <Row label="Discount" v={-totals.discount_total} />
+              <Row label="Tax" v={totals.tax_total} />
+              <div className="border-t mt-1 pt-1 flex justify-between font-semibold text-base">
+                <span>Grand Total</span>
+                <span className="font-mono tabular-nums">
+                  {header.currency ?? "USD"} {money(totals.grand_total)}
+                </span>
+              </div>
+              {(kind === "invoice" || kind === "bill") && Number(doc?.amount_paid ?? 0) > 0 && (
+                <>
+                  <Row label="Paid" v={-Number(doc?.amount_paid)} />
+                  <div className="flex justify-between font-medium">
+                    <span>Balance Due</span>
+                    <span className="font-mono tabular-nums">
+                      {money(totals.grand_total - Number(doc?.amount_paid || 0))}
+                    </span>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </Card>
+
+        {kind === "order" && !isNew && (
+          <Card className="p-0 overflow-hidden">
+            <div className="flex items-center justify-between px-4 py-2 border-b bg-muted/30">
+              <div className="text-sm font-medium flex items-center gap-2">
+                <PackageIcon className="h-4 w-4 text-muted-foreground" /> Fulfillment · Packages
+              </div>
+              {canWrite && (
+                <Button size="sm" variant="outline" asChild>
+                  <Link to={"/sales/packages/new" as never} search={{ order: id } as never}>
+                    <Plus className="h-3.5 w-3.5 mr-1" /> New Package
+                  </Link>
+                </Button>
+              )}
+            </div>
+            {packages.length === 0 ? (
+              <div className="text-center text-sm text-muted-foreground py-8">No packages for this order yet.</div>
+            ) : (
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b bg-muted/10 text-xs uppercase tracking-wide text-muted-foreground">
+                    <th className="text-left px-3 py-2">Package #</th>
+                    <th className="text-left px-3 py-2">Date</th>
+                    <th className="text-left px-3 py-2">Carrier</th>
+                    <th className="text-left px-3 py-2">Tracking</th>
+                    <th className="text-left px-3 py-2">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {packages.map((p) => (
+                    <tr
+                      key={p.id}
+                      className="border-b hover:bg-muted/20 cursor-pointer"
+                      onClick={() => nav({ to: `/sales/packages/${p.id}` as never })}
+                    >
+                      <td className="px-3 py-2 font-medium">{p.number}</td>
+                      <td className="px-3 py-2">{p.date ?? "—"}</td>
+                      <td className="px-3 py-2">{p.carrier || "—"}</td>
+                      <td className="px-3 py-2 font-mono text-xs">{p.tracking || "—"}</td>
+                      <td className="px-3 py-2">
+                        <Badge variant="secondary">{p.posted_at ? "Confirmed" : p.status}</Badge>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </Card>
+        )}
+
+        {kind === "order" && !isNew && (
+          <Card className="p-0 overflow-hidden">
+            <div className="flex items-center justify-between px-4 py-2 border-b bg-muted/30">
+              <div className="text-sm font-medium flex items-center gap-2">
+                <Truck className="h-4 w-4 text-muted-foreground" /> Fulfillment · Shipments
+              </div>
+              {canWrite && (
+                <Button size="sm" variant="outline" asChild>
+                  <Link to={"/sales/shipments/new" as never} search={{ order: id } as never}>
+                    <Plus className="h-3.5 w-3.5 mr-1" /> New Shipment
+                  </Link>
+                </Button>
+              )}
+            </div>
+            {shipments.length === 0 ? (
+              <div className="text-center text-sm text-muted-foreground py-8">No shipments for this order yet.</div>
+            ) : (
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b bg-muted/10 text-xs uppercase tracking-wide text-muted-foreground">
+                    <th className="text-left px-3 py-2">Shipment #</th>
+                    <th className="text-left px-3 py-2">Ship Date</th>
+                    <th className="text-left px-3 py-2">Carrier</th>
+                    <th className="text-left px-3 py-2">Tracking</th>
+                    <th className="text-left px-3 py-2">Delivered</th>
+                    <th className="text-left px-3 py-2">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {shipments.map((s) => (
+                    <tr
+                      key={s.id}
+                      className="border-b hover:bg-muted/20 cursor-pointer"
+                      onClick={() => nav({ to: `/sales/shipments/${s.id}` as never })}
+                    >
+                      <td className="px-3 py-2 font-medium">{s.number}</td>
+                      <td className="px-3 py-2">{s.ship_date ?? "—"}</td>
+                      <td className="px-3 py-2">{s.carrier || "—"}</td>
+                      <td className="px-3 py-2 font-mono text-xs">{s.tracking || "—"}</td>
+                      <td className="px-3 py-2">{s.delivery_date ?? "—"}</td>
+                      <td className="px-3 py-2">
+                        <Badge variant="secondary">{s.posted_at ? "Confirmed" : s.status}</Badge>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </Card>
+        )}
+
+        {kind === "order" && !isNew && <FulfillmentTimeline orderId={id} />}
+
+        {/* Non-quote docs: timeline inline */}
+        {!isNew && kind !== "quote" && (
+          <DocumentTimeline
+            entityType={kind}
+            entityId={id}
+            stages={cfg.timelineStages ?? [...cfg.statuses]}
+            currentStage={
+              cfg.timelineStages
+                ? doc?.posted_at
+                  ? "Posted"
+                  : (header.status ?? "Draft") === "Draft"
+                    ? "Draft"
+                    : "Confirmed"
+                : (header.status ?? null)
+            }
+          />
+        )}
+      </div>
+      {/* end left / main column */}
+
+      {/* ── Right column: Status timeline for quotes (35%) ── */}
       {kind === "quote" && !isNew && (
-        <div className="w-[40%] shrink-0 flex flex-col gap-4">
+        <div className="w-[35%] shrink-0 flex flex-col gap-4">
           <DocumentTimeline
             entityType={kind}
             entityId={id}
@@ -722,588 +1370,7 @@ export function DocumentEditor({
         </div>
       )}
 
-      {/* ── Right column (or full width for non-quote docs) ── */}
-      <div className={`flex flex-col gap-4 ${kind === "quote" && !isNew ? "flex-1 min-w-0" : "w-full"}`}>
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-3 min-w-0">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => (embedded && onClose ? onClose() : nav({ to: cfg.listPath as never }))}
-          >
-            <ArrowLeft className="h-4 w-4 mr-1" /> Back
-          </Button>
-          <div className="min-w-0">
-            <div className="flex items-center gap-2">
-              <FileText className="h-4 w-4 text-muted-foreground" />
-              <h1 className="text-xl font-semibold truncate">
-                {isNew ? `New ${cfg.label}` : header.number || cfg.label}
-              </h1>
-              {header.status && <Badge variant="secondary">{header.status}</Badge>}
-            </div>
-            {!isNew && (
-              <p className="text-xs text-muted-foreground mt-0.5">
-                Grand total {header.currency ?? "USD"} {money(totals.grand_total)}
-              </p>
-            )}
-          </div>
-        </div>
-        <div className="flex items-center gap-2 flex-wrap justify-end">
-          {!isNew && <EmailStatus entityType={kind} entityId={id} />}
-          {!isNew && (
-            <>
-              <Button variant="outline" size="sm" onClick={() => downloadDocumentPdf(buildPdf())}>
-                <Printer className="h-4 w-4 mr-1.5" /> Print PDF
-              </Button>
-              <Button variant="outline" size="sm" onClick={() => setEmailOpen(true)}>
-                <Mail className="h-4 w-4 mr-1.5" /> Email
-              </Button>
-            </>
-          )}
-          {!isNew && (doc?.posted_at || kind === "credit_note") && (
-            <Button variant="outline" size="sm" onClick={() => setPostOpen(true)}>
-              <Receipt className="h-4 w-4 mr-1.5" /> {kind === "credit_note" ? "Inventory movements" : "Post details"}
-            </Button>
-          )}
-
-          {canWrite && kind === "order" && !isNew && (
-            <Button variant="outline" size="sm" asChild>
-              <Link to={"/sales/packages/new" as never} search={{ order: id } as never}>
-                <PackageIcon className="h-4 w-4 mr-1.5" /> New Package
-              </Link>
-            </Button>
-          )}
-          {canWrite && kind === "quote" && !isNew && (
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={runRpc.isPending}
-              onClick={() => runRpc.mutate("convert_quote_to_order")}
-            >
-              <Send className="h-4 w-4 mr-1.5" /> Convert to Order
-            </Button>
-          )}
-          {canWrite && kind === "order" && !isNew && (
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={runRpc.isPending}
-              onClick={() => runRpc.mutate("convert_order_to_invoice")}
-            >
-              <Send className="h-4 w-4 mr-1.5" /> Convert to Invoice
-            </Button>
-          )}
-          {isReq && !isNew && canWrite && header.status === "Draft" && (
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={setReqStatus.isPending}
-              onClick={() => setReqStatus.mutate({ status: "Submitted", note: "Submitted for approval" })}
-            >
-              <Send className="h-4 w-4 mr-1.5" /> Submit for Approval
-            </Button>
-          )}
-          {isReq && !isNew && canApprove && header.status === "Submitted" && (
-            <>
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={setReqStatus.isPending}
-                onClick={() => setReqStatus.mutate({ status: "Rejected", note: "Rejected by approver" })}
-              >
-                Reject
-              </Button>
-              <Button
-                variant="default"
-                size="sm"
-                disabled={setReqStatus.isPending}
-                onClick={() => setReqStatus.mutate({ status: "Approved", note: "Approved" })}
-              >
-                <CheckCircle2 className="h-4 w-4 mr-1.5" /> Approve
-              </Button>
-            </>
-          )}
-          {isReq && !isNew && canWrite && (
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={!reqApproved || convertReqToPo.isPending}
-              title={reqApproved ? undefined : "Requires approval"}
-              onClick={() => convertReqToPo.mutate()}
-            >
-              <Send className="h-4 w-4 mr-1.5" /> Convert to PO
-            </Button>
-          )}
-          {canWrite && kind === "po" && !isNew && (
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={runRpc.isPending}
-              onClick={() => runRpc.mutate("convert_po_to_bill")}
-            >
-              <Send className="h-4 w-4 mr-1.5" /> Convert to Bill
-            </Button>
-          )}
-          {canPost && kind === "invoice" && !isNew && !doc?.posted_at && (
-            <Button
-              variant="default"
-              size="sm"
-              disabled={runRpc.isPending}
-              onClick={() => runRpc.mutate("post_invoice")}
-            >
-              <DollarSign className="h-4 w-4 mr-1.5" /> Post Invoice
-            </Button>
-          )}
-          {canPost && kind === "bill" && !isNew && !doc?.posted_at && (
-            <Button variant="default" size="sm" disabled={runRpc.isPending} onClick={() => runRpc.mutate("post_bill")}>
-              <DollarSign className="h-4 w-4 mr-1.5" /> Post Bill
-            </Button>
-          )}
-          {canPost && kind === "credit_note" && !isNew && !doc?.posted_at && (
-            <Button
-              variant="default"
-              size="sm"
-              disabled={runRpc.isPending}
-              onClick={() => runRpc.mutate("post_credit_note")}
-            >
-              <DollarSign className="h-4 w-4 mr-1.5" /> Post Credit Note
-            </Button>
-          )}
-          {canRecordPayment && showRecordPayment && (
-            <Button variant="secondary" size="sm" onClick={() => setPayOpen(true)}>
-              <DollarSign className="h-4 w-4 mr-1.5" /> Record Payment
-            </Button>
-          )}
-          {canVoid && (
-            <Button variant="destructive" size="sm" onClick={() => setVoidOpen(true)} disabled={voidDocument.isPending}>
-              <Ban className="h-4 w-4 mr-1.5" /> Void & Reverse
-            </Button>
-          )}
-          {canWrite && (
-            <Button size="sm" disabled={save.isPending || !!doc?.posted_at} onClick={() => save.mutate()}>
-              {save.isPending ? (
-                <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
-              ) : (
-                <Save className="h-4 w-4 mr-1.5" />
-              )}{" "}
-              Save
-            </Button>
-          )}
-        </div>
-      </div>
-
-      <Card className="p-4 grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="grid gap-1.5">
-          <Label>Number</Label>
-          <Input
-            value={header.number ?? ""}
-            onChange={(e) => setHeader({ ...header, number: e.target.value })}
-            placeholder="Auto"
-            disabled={!canWrite}
-          />
-        </div>
-        <div className="grid gap-1.5">
-          <Label>{cfg.partyLabel}</Label>
-          <Select
-            value={header[cfg.partyField] ?? ""}
-            onValueChange={(v) => setHeader({ ...header, [cfg.partyField]: v })}
-            disabled={!canWrite}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder={`Select ${cfg.partyLabel.toLowerCase()}…`} />
-            </SelectTrigger>
-            <SelectContent>
-              {parties.map((c) => (
-                <SelectItem key={c.id} value={c.id}>
-                  {c.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="grid gap-1.5">
-          <Label>Date</Label>
-          <Input
-            type="date"
-            value={header[cfg.dateField] ?? ""}
-            onChange={(e) => setHeader({ ...header, [cfg.dateField]: e.target.value })}
-            disabled={!canWrite}
-          />
-        </div>
-        {cfg.extraDate && (
-          <div className="grid gap-1.5">
-            <Label>{cfg.extraDate.label}</Label>
-            <Input
-              type="date"
-              value={header[cfg.extraDate.field] ?? ""}
-              onChange={(e) => setHeader({ ...header, [cfg.extraDate!.field]: e.target.value })}
-              disabled={!canWrite}
-            />
-          </div>
-        )}
-        {cfg.linkFk && (
-          <div className="grid gap-1.5">
-            <Label>{cfg.linkFk.label}</Label>
-            <Select
-              value={header[cfg.linkFk.field] ?? ""}
-              onValueChange={(v) => setHeader({ ...header, [cfg.linkFk!.field]: v })}
-              disabled={!canWrite}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select invoice…" />
-              </SelectTrigger>
-              <SelectContent>
-                {linkOptions.map((o) => (
-                  <SelectItem key={o.id} value={o.id}>
-                    {o[cfg.linkFk!.labelKey] ?? o.id.slice(0, 8)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        )}
-        <div className="grid gap-1.5">
-          <Label>Currency</Label>
-          <Select
-            value={header.currency ?? "USD"}
-            onValueChange={(v) => setHeader({ ...header, currency: v })}
-            disabled={!canWrite}
-          >
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {["USD", "EUR", "GBP", "KES", "AED", "EGP", "INR", "ZAR"].map((c) => (
-                <SelectItem key={c} value={c}>
-                  {c}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="grid gap-1.5">
-          <Label>Status</Label>
-          <Select
-            value={header.status ?? cfg.statuses[0]}
-            onValueChange={(v) => setHeader({ ...header, status: v })}
-            disabled={!canWrite}
-          >
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {cfg.statuses
-                .filter((s) => !(isReq && !canApprove && (s === "Approved" || s === "Rejected")))
-                .map((s) => (
-                  <SelectItem key={s} value={s}>
-                    {s}
-                  </SelectItem>
-                ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="grid gap-1.5 md:col-span-2">
-          <Label>Notes</Label>
-          <Textarea
-            rows={1}
-            value={header.notes ?? ""}
-            onChange={(e) => setHeader({ ...header, notes: e.target.value })}
-            disabled={!canWrite}
-          />
-        </div>
-      </Card>
-
-      {(kind === "quote" || kind === "order" || kind === "invoice") && selectedCustomer && (
-        <Card className="p-4">
-          <div className="flex items-center justify-between gap-3 border-b pb-3">
-            <div>
-              <p className="text-sm font-semibold">Customer Details</p>
-              <p className="text-xs text-muted-foreground">
-                Details are automatically loaded from the selected customer.
-              </p>
-            </div>
-            <Badge variant="outline">{selectedCustomer.currency ?? header.currency ?? "USD"}</Badge>
-          </div>
-          <div className="grid grid-cols-1 gap-4 pt-4 md:grid-cols-2">
-            <div className="space-y-2 text-sm">
-              <div>
-                <span className="text-xs text-muted-foreground">Customer</span>
-                <div className="font-medium">{selectedCustomer.name || "—"}</div>
-              </div>
-              <div>
-                <span className="text-xs text-muted-foreground">Contact Person</span>
-                <div>{selectedCustomer.contact_person || "—"}</div>
-              </div>
-              <div>
-                <span className="text-xs text-muted-foreground">Email / Phone</span>
-                <div>{[selectedCustomer.email, selectedCustomer.phone].filter(Boolean).join(" · ") || "—"}</div>
-              </div>
-            </div>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <div>
-                <span className="text-xs text-muted-foreground">Billing Address</span>
-                <div className="mt-1 whitespace-pre-line text-sm">{selectedCustomer.billing_address || "—"}</div>
-              </div>
-              <div>
-                <span className="text-xs text-muted-foreground">Shipping Address</span>
-                <div className="mt-1 whitespace-pre-line text-sm">{selectedCustomer.shipping_address || "—"}</div>
-              </div>
-            </div>
-          </div>
-        </Card>
-      )}
-
-      <Card className="p-0 overflow-hidden">
-        <div className="flex items-center justify-between px-4 py-2 border-b bg-muted/30">
-          <div className="text-sm font-medium">Line items</div>
-          {canWrite && (
-            <Button size="sm" variant="outline" onClick={addLine}>
-              <Plus className="h-3.5 w-3.5 mr-1" /> Add line
-            </Button>
-          )}
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b bg-muted/10 text-xs uppercase tracking-wide text-muted-foreground">
-                <th className="text-left px-3 py-2 w-8">#</th>
-                <th className="text-left px-3 py-2 min-w-[200px]">Item</th>
-                <th className="text-left px-3 py-2 min-w-[220px]">Description</th>
-                <th className="text-right px-3 py-2 w-20">Qty</th>
-                <th className="text-right px-3 py-2 w-28">Unit Price</th>
-                <th className="text-right px-3 py-2 w-20">Disc %</th>
-                <th className="text-right px-3 py-2 w-20">Tax %</th>
-                <th className="text-right px-3 py-2 w-28">Total</th>
-                <th className="w-10" />
-              </tr>
-            </thead>
-            <tbody>
-              {lines.length === 0 && (
-                <tr>
-                  <td colSpan={9} className="text-center text-sm text-muted-foreground py-10">
-                    No lines yet. {canWrite && "Click Add line to begin."}
-                  </td>
-                </tr>
-              )}
-              {lines.map((l, idx) => (
-                <tr key={idx} className="border-b hover:bg-muted/20">
-                  <td className="px-3 py-1.5 text-muted-foreground">{idx + 1}</td>
-                  <td className="px-2 py-1.5">
-                    <Select
-                      value={l.item_id ?? ""}
-                      onValueChange={(v) => {
-                        const it = items.find((i) => i.id === v);
-                        const price = kind === "po" || kind === "bill" ? Number(it?.cost ?? 0) : Number(it?.price ?? 0);
-                        updateLine(idx, {
-                          item_id: v,
-                          description: l.description || it?.name || "",
-                          unit_price: l.unit_price || price,
-                        });
-                      }}
-                      disabled={!canWrite}
-                    >
-                      <SelectTrigger className="h-8">
-                        <SelectValue placeholder="Pick item…" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {items.map((i) => (
-                          <SelectItem key={i.id} value={i.id}>
-                            {i.sku ? `${i.sku} — ` : ""}
-                            {i.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </td>
-                  <td className="px-2 py-1.5">
-                    <Input
-                      className="h-8"
-                      value={l.description}
-                      onChange={(e) => updateLine(idx, { description: e.target.value })}
-                      disabled={!canWrite}
-                    />
-                  </td>
-                  <td className="px-2 py-1.5">
-                    <Input
-                      className="h-8 text-right"
-                      type="number"
-                      step="any"
-                      value={l.quantity}
-                      onChange={(e) => updateLine(idx, { quantity: Number(e.target.value) })}
-                      disabled={!canWrite}
-                    />
-                  </td>
-                  <td className="px-2 py-1.5">
-                    <Input
-                      className="h-8 text-right"
-                      type="number"
-                      step="any"
-                      value={l.unit_price}
-                      onChange={(e) => updateLine(idx, { unit_price: Number(e.target.value) })}
-                      disabled={!canWrite}
-                    />
-                  </td>
-                  <td className="px-2 py-1.5">
-                    <Input
-                      className="h-8 text-right"
-                      type="number"
-                      step="any"
-                      value={l.discount_pct}
-                      onChange={(e) => updateLine(idx, { discount_pct: Number(e.target.value) })}
-                      disabled={!canWrite}
-                    />
-                  </td>
-                  <td className="px-2 py-1.5">
-                    <Input
-                      className="h-8 text-right"
-                      type="number"
-                      step="any"
-                      value={l.tax_pct}
-                      onChange={(e) => updateLine(idx, { tax_pct: Number(e.target.value) })}
-                      disabled={!canWrite}
-                    />
-                  </td>
-                  <td className="px-3 py-1.5 text-right font-mono tabular-nums">{money(computeLine(l))}</td>
-                  <td className="px-2 py-1.5">
-                    {canWrite && (
-                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => removeLine(idx)}>
-                        <Trash2 className="h-3.5 w-3.5 text-destructive" />
-                      </Button>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        <div className="flex justify-end border-t bg-muted/10 px-4 py-3">
-          <div className="w-72 space-y-1 text-sm">
-            <Row label="Subtotal" v={totals.subtotal} />
-            <Row label="Discount" v={-totals.discount_total} />
-            <Row label="Tax" v={totals.tax_total} />
-            <div className="border-t mt-1 pt-1 flex justify-between font-semibold text-base">
-              <span>Grand Total</span>
-              <span className="font-mono tabular-nums">
-                {header.currency ?? "USD"} {money(totals.grand_total)}
-              </span>
-            </div>
-            {(kind === "invoice" || kind === "bill") && Number(doc?.amount_paid ?? 0) > 0 && (
-              <>
-                <Row label="Paid" v={-Number(doc?.amount_paid)} />
-                <div className="flex justify-between font-medium">
-                  <span>Balance Due</span>
-                  <span className="font-mono tabular-nums">
-                    {money(totals.grand_total - Number(doc?.amount_paid || 0))}
-                  </span>
-                </div>
-              </>
-            )}
-          </div>
-        </div>
-      </Card>
-
-      {kind === "order" && !isNew && (
-        <Card className="p-0 overflow-hidden">
-          <div className="flex items-center justify-between px-4 py-2 border-b bg-muted/30">
-            <div className="text-sm font-medium flex items-center gap-2">
-              <PackageIcon className="h-4 w-4 text-muted-foreground" /> Fulfillment · Packages
-            </div>
-            {canWrite && (
-              <Button size="sm" variant="outline" asChild>
-                <Link to={"/sales/packages/new" as never} search={{ order: id } as never}>
-                  <Plus className="h-3.5 w-3.5 mr-1" /> New Package
-                </Link>
-              </Button>
-            )}
-          </div>
-          {packages.length === 0 ? (
-            <div className="text-center text-sm text-muted-foreground py-8">No packages for this order yet.</div>
-          ) : (
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b bg-muted/10 text-xs uppercase tracking-wide text-muted-foreground">
-                  <th className="text-left px-3 py-2">Package #</th>
-                  <th className="text-left px-3 py-2">Date</th>
-                  <th className="text-left px-3 py-2">Carrier</th>
-                  <th className="text-left px-3 py-2">Tracking</th>
-                  <th className="text-left px-3 py-2">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {packages.map((p) => (
-                  <tr
-                    key={p.id}
-                    className="border-b hover:bg-muted/20 cursor-pointer"
-                    onClick={() => nav({ to: `/sales/packages/${p.id}` as never })}
-                  >
-                    <td className="px-3 py-2 font-medium">{p.number}</td>
-                    <td className="px-3 py-2">{p.date ?? "—"}</td>
-                    <td className="px-3 py-2">{p.carrier || "—"}</td>
-                    <td className="px-3 py-2 font-mono text-xs">{p.tracking || "—"}</td>
-                    <td className="px-3 py-2">
-                      <Badge variant="secondary">{p.posted_at ? "Confirmed" : p.status}</Badge>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </Card>
-      )}
-
-      {kind === "order" && !isNew && (
-        <Card className="p-0 overflow-hidden">
-          <div className="flex items-center justify-between px-4 py-2 border-b bg-muted/30">
-            <div className="text-sm font-medium flex items-center gap-2">
-              <Truck className="h-4 w-4 text-muted-foreground" /> Fulfillment · Shipments
-            </div>
-            {canWrite && (
-              <Button size="sm" variant="outline" asChild>
-                <Link to={"/sales/shipments/new" as never} search={{ order: id } as never}>
-                  <Plus className="h-3.5 w-3.5 mr-1" /> New Shipment
-                </Link>
-              </Button>
-            )}
-          </div>
-          {shipments.length === 0 ? (
-            <div className="text-center text-sm text-muted-foreground py-8">No shipments for this order yet.</div>
-          ) : (
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b bg-muted/10 text-xs uppercase tracking-wide text-muted-foreground">
-                  <th className="text-left px-3 py-2">Shipment #</th>
-                  <th className="text-left px-3 py-2">Ship Date</th>
-                  <th className="text-left px-3 py-2">Carrier</th>
-                  <th className="text-left px-3 py-2">Tracking</th>
-                  <th className="text-left px-3 py-2">Delivered</th>
-                  <th className="text-left px-3 py-2">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {shipments.map((s) => (
-                  <tr
-                    key={s.id}
-                    className="border-b hover:bg-muted/20 cursor-pointer"
-                    onClick={() => nav({ to: `/sales/shipments/${s.id}` as never })}
-                  >
-                    <td className="px-3 py-2 font-medium">{s.number}</td>
-                    <td className="px-3 py-2">{s.ship_date ?? "—"}</td>
-                    <td className="px-3 py-2">{s.carrier || "—"}</td>
-                    <td className="px-3 py-2 font-mono text-xs">{s.tracking || "—"}</td>
-                    <td className="px-3 py-2">{s.delivery_date ?? "—"}</td>
-                    <td className="px-3 py-2">
-                      <Badge variant="secondary">{s.posted_at ? "Confirmed" : s.status}</Badge>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </Card>
-      )}
-
-      {kind === "order" && !isNew && <FulfillmentTimeline orderId={id} />}
-
+      {/* ── Portals/dialogs — outside columns, always rendered at root level ── */}
       {showRecordPayment && (
         <RecordPaymentDialog
           open={payOpen}
@@ -1318,23 +1385,6 @@ export function DocumentEditor({
       )}
 
       {!isNew && (
-        <DocumentTimeline
-          entityType={kind}
-          entityId={id}
-          stages={cfg.timelineStages ?? [...cfg.statuses]}
-          currentStage={
-            cfg.timelineStages
-              ? doc?.posted_at
-                ? "Posted"
-                : (header.status ?? "Draft") === "Draft"
-                  ? "Draft"
-                  : "Confirmed"
-              : (header.status ?? null)
-          }
-        />
-      )}
-
-      {!isNew && (
         <>
           <AlertDialog open={voidOpen} onOpenChange={setVoidOpen}>
             <AlertDialogContent className="max-w-md">
@@ -1343,11 +1393,10 @@ export function DocumentEditor({
                 <AlertDialogDescription asChild>
                   <div className="space-y-3 text-sm">
                     <p>
-                      The original posted document will remain unchanged for audit purposes.
-                      A balanced reversal journal <span className="font-mono font-semibold text-foreground">
-                        VOID-{header.number}
-                      </span> will be created with every debit and credit exactly swapped,
-                      and the original will be marked <span className="font-semibold text-destructive">VOIDED</span>.
+                      The original posted document will remain unchanged for audit purposes. A balanced reversal journal{" "}
+                      <span className="font-mono font-semibold text-foreground">VOID-{header.number}</span> will be
+                      created with every debit and credit exactly swapped, and the original will be marked{" "}
+                      <span className="font-semibold text-destructive">VOIDED</span>.
                     </p>
                     <ul className="space-y-1 text-xs text-muted-foreground list-disc list-inside">
                       <li>All journal lines are inverted — every DR becomes CR and vice versa</li>
@@ -1403,9 +1452,7 @@ export function DocumentEditor({
           entityId={id}
         />
       )}
-      </div>
     </div>
-
   );
 }
 
