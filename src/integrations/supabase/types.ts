@@ -5041,6 +5041,7 @@ export type Database = {
       }
       get_platform_dashboard_stats: { Args: never; Returns: Json }
       get_sales_dashboard: { Args: never; Returns: Json }
+      get_tenant_detail: { Args: { _tenant_id: string }; Returns: Json }
       global_search: {
         Args: {
           date_from?: string
