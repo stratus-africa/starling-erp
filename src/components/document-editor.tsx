@@ -1403,7 +1403,9 @@ export function DocumentEditor({
           entityId={id}
         />
       )}
+      </div>
     </div>
+
   );
 }
 
