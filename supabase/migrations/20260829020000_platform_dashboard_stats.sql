@@ -139,22 +139,37 @@ BEGIN
     'tenant_growth', (
       SELECT jsonb_agg(
         jsonb_build_object(
-          'month',       to_char(m.month_start, 'Mon YY'),
-          'month_iso',   to_char(m.month_start, 'YYYY-MM'),
-          'new_tenants', COALESCE(cnt.new_count, 0),
-          'cumulative',  SUM(COALESCE(cnt.new_count, 0)) OVER (ORDER BY m.month_start)
+          'month',       month_label,
+          'month_iso',   month_iso,
+          'new_tenants', new_tenants,
+          'cumulative',  cumulative
         )
-        ORDER BY m.month_start
+        ORDER BY month_start
       )
       FROM (
-        SELECT generate_series(v_12m_start, date_trunc('month', CURRENT_DATE)::date, interval '1 month')::date AS month_start
-      ) m
-      LEFT JOIN (
-        SELECT date_trunc('month', created_at)::date AS month_start, COUNT(*) AS new_count
-        FROM   public.tenants
-        WHERE  deleted_at IS NULL
-        GROUP  BY 1
-      ) cnt USING (month_start)
+        -- Window function computed in inner query, jsonb_agg in outer query
+        SELECT
+          m.month_start,
+          to_char(m.month_start, 'Mon YY')   AS month_label,
+          to_char(m.month_start, 'YYYY-MM')  AS month_iso,
+          COALESCE(cnt.new_count, 0)          AS new_tenants,
+          SUM(COALESCE(cnt.new_count, 0))
+            OVER (ORDER BY m.month_start)     AS cumulative
+        FROM (
+          SELECT generate_series(
+            v_12m_start,
+            date_trunc('month', CURRENT_DATE)::date,
+            interval '1 month'
+          )::date AS month_start
+        ) m
+        LEFT JOIN (
+          SELECT date_trunc('month', created_at)::date AS month_start,
+                 COUNT(*) AS new_count
+          FROM   public.tenants
+          WHERE  deleted_at IS NULL
+          GROUP  BY 1
+        ) cnt USING (month_start)
+      ) windowed
     ),
 
     -- ── RECENT TENANTS ──────────────────────────────────────────────────────
