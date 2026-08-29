@@ -36,6 +36,12 @@ const SECTIONS: SettingSection[] = [
     heading: "Organization Settings",
     groups: [
       {
+        title: "General",
+        icon: Settings,
+        color: "bg-blue-500/10 text-blue-700 dark:text-blue-400",
+        links: [{ label: "Customers & Vendors", url: "/crm/customers" }],
+      },
+      {
         title: "Organization",
         icon: Building2,
         color: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400",
