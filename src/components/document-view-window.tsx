@@ -3,7 +3,8 @@ import { useModuleList } from "@/hooks/use-module-data";
 import { useAuth } from "@/hooks/use-auth";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { DocumentEditor, type DocKind } from "@/components/document-editor";
+import { type DocKind } from "@/components/document-editor";
+import { DocViewPanel } from "@/components/doc-view-panel";
 import type { FieldDef } from "@/components/data-module-page";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -230,7 +231,7 @@ export function DocumentViewWindow({
 
         <main className="min-w-0 flex-1 overflow-y-auto bg-muted/10">
           {creating ? (
-            <DocumentEditor
+            <DocViewPanel
               kind={kind}
               id="new"
               embedded
@@ -241,7 +242,7 @@ export function DocumentViewWindow({
               }}
             />
           ) : selectedId ? (
-            <DocumentEditor key={selectedId} kind={kind} id={selectedId} embedded onClose={() => setSelectedId(null)} />
+            <DocViewPanel key={selectedId} kind={kind} id={selectedId} embedded onClose={() => setSelectedId(null)} />
           ) : (
             <div className="flex h-full items-center justify-center p-8 text-sm text-muted-foreground">
               Select a document from the list.
