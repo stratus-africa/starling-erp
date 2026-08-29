@@ -243,14 +243,16 @@ export function CreatePaymentDialog({
         }
 
         // Insert individual payment allocation record for audit trail
-        await supabase.from("payment_allocations" as any).insert({
-          tenant_id: tenant.id,
-          payment_id: paymentId,
-          [docField]: doc.id,
-          amount: amt,
-        } as any).throwOnError().then(() => {}).catch(() => {
+        try {
+          await supabase.from("payment_allocations" as any).insert({
+            tenant_id: tenant.id,
+            payment_id: paymentId,
+            [docField]: doc.id,
+            amount: amt,
+          } as any).throwOnError();
+        } catch {
           // payment_allocations table may not exist yet — skip gracefully
-        });
+        }
       }
 
       return paymentId;
