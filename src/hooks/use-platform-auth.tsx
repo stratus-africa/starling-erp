@@ -21,6 +21,7 @@
 import { createContext, useContext, useEffect, useState, useCallback, type ReactNode } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/typed-db";
 import type { PlatformPermission, PlatformRole } from "@/lib/platform-permissions";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -83,7 +84,7 @@ export function PlatformAuthProvider({ children }: { children: ReactNode }) {
     try {
       // admin_ping() verifies platform admin status, expires stale sessions,
       // updates last_seen_at, and returns false if not a platform admin.
-      const { data: isAdmin, error: pingErr } = await supabase.rpc("admin_ping");
+      const { data: isAdmin, error: pingErr } = await db.rpc("admin_ping");
 
       if (pingErr || !isAdmin) {
         setIsPlatformAdmin(false);
@@ -96,7 +97,7 @@ export function PlatformAuthProvider({ children }: { children: ReactNode }) {
       setIsPlatformAdmin(true);
 
       // Fetch admin profile row
-      const { data: adminRow } = await (supabase as any)
+      const { data: adminRow } = await db
         .from("platform_admins")
         .select("user_id,email,full_name,platform_role,is_active,last_seen_at")
         .eq("user_id", uid)
@@ -114,11 +115,11 @@ export function PlatformAuthProvider({ children }: { children: ReactNode }) {
       }
 
       // Fetch granular platform permissions
-      const { data: permsData } = await (supabase as any).rpc("get_my_platform_permissions");
+      const { data: permsData } = await db.rpc("get_my_platform_permissions");
       setPlatformPermissions((permsData ?? []) as PlatformPermission[]);
 
       // Fetch active support session if any
-      const { data: sessionData } = await supabase.rpc("get_active_support_session");
+      const { data: sessionData } = await db.rpc("get_active_support_session");
       const row = Array.isArray(sessionData) ? sessionData[0] : sessionData;
       setSupportSession(
         row
@@ -200,7 +201,7 @@ export function PlatformAuthProvider({ children }: { children: ReactNode }) {
   // ── beginSupportSession ───────────────────────────────────────────────────
   const beginSupportSession = useCallback(
     async (tenantId: string, reason: string, ttlMinutes = 240): Promise<string> => {
-      const { data, error } = await supabase.rpc("begin_support_session", {
+      const { data, error } = await db.rpc("begin_support_session", {
         _target_tenant_id: tenantId,
         _reason: reason,
         _ttl_minutes: ttlMinutes,
@@ -216,7 +217,7 @@ export function PlatformAuthProvider({ children }: { children: ReactNode }) {
   // ── endSupportSession ─────────────────────────────────────────────────────
   const endSupportSession = useCallback(
     async (reason = "Session ended by admin") => {
-      const { error } = await supabase.rpc("end_support_session", {
+      const { error } = await db.rpc("end_support_session", {
         _session_id: null,
         _reason: reason,
       });
