@@ -15,6 +15,18 @@ export const Route = createFileRoute("/_authenticated/manufacturing/items/")({
       attachments={false}
       rowHref={(r) => `/manufacturing/items/${r.id}`}
       createHref="/manufacturing/items/new"
+      filterFields={[
+        {
+          key: "type",
+          label: "Type",
+          options: ["Finished Good", "Raw Material", "Sub-assembly", "Service", "Consumable"],
+        },
+        {
+          key: "status",
+          label: "Status",
+          options: ["Active", "Inactive"],
+        },
+      ]}
     />
   ),
 });
