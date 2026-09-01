@@ -1,16 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { DataModulePage } from "@/components/data-module-page";
-import { itemFields } from "@/lib/module-field-definitions";
+import { Item360Page } from "@/components/item360-page";
 
-export const Route = createFileRoute("/_authenticated/inventory/items")({
-  component: () => (
-    <DataModulePage
-      title="Items"
-      description="Products, raw materials, assemblies and services."
-      table="items"
-      fields={itemFields}
-      entityLabel="Item"
-      attachments={false}
-    />
-  ),
+export const Route = createFileRoute("/_authenticated/inventory/items/$id")({
+  component: InventoryItemDetailPage,
 });
+
+function InventoryItemDetailPage() {
+  const { id } = Route.useParams();
+  return (
+    <div className="flex h-full flex-col overflow-hidden">
+      <Item360Page id={id} backTo="/inventory/items" backLabel="Items" />
+    </div>
+  );
+}
