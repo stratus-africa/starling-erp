@@ -129,8 +129,10 @@ export const warehouseFields: FieldDef[] = [
 ];
 
 export const itemFields: FieldDef[] = [
+  // ── Table columns (visible in list view) ──────────────────────────────────
   { key: "sku", label: "SKU", render: mono },
   { key: "name", label: "Item", required: true, render: bold },
+  { key: "brand", label: "Brand" },
   {
     key: "type",
     label: "Type",
@@ -139,17 +141,188 @@ export const itemFields: FieldDef[] = [
     defaultValue: "Finished Good",
   },
   {
-    key: "uom",
-    label: "UoM",
+    key: "status",
+    label: "Status",
     type: "select",
-    options: ["pc", "kg", "g", "lb", "m", "cm", "l", "ml", "box", "pack"],
-    defaultValue: "pc",
+    options: ["Active", "Inactive"],
+    defaultValue: "Active",
   },
   { key: "stock", label: "On Hand", type: "number", className: "text-right", render: monoRight },
-  { key: "reorder", label: "Reorder", type: "number", className: "text-right", render: monoRight },
   { key: "cost", label: "Avg Cost", type: "number", className: "text-right", render: moneyRight },
   { key: "price", label: "Sell Price", type: "number", className: "text-right", render: moneyRight },
-  { key: "description", label: "Description", type: "textarea", hideInTable: true },
+
+  // ── Identity (form only) ─────────────────────────────────────────────────
+  {
+    key: "category_id",
+    label: "Category",
+    type: "fk",
+    fkTable: "item_categories",
+    fkLabel: "name",
+    hideInTable: true,
+    group: "Identity",
+  },
+  { key: "barcode", label: "Barcode", hideInTable: true, group: "Identity" },
+  { key: "manufacturer", label: "Manufacturer", hideInTable: true, group: "Identity" },
+  { key: "model", label: "Model", hideInTable: true, group: "Identity" },
+  { key: "description", label: "Description", type: "textarea", hideInTable: true, group: "Identity" },
+
+  // ── Units of Measure ─────────────────────────────────────────────────────
+  {
+    key: "uom",
+    label: "Stock UoM",
+    type: "select",
+    options: ["pc", "kg", "g", "lb", "m", "cm", "l", "ml", "box", "pack", "pcs", "doz", "pair", "roll", "sheet"],
+    defaultValue: "pc",
+    group: "Units",
+  },
+  {
+    key: "purchase_uom",
+    label: "Purchase UoM",
+    type: "select",
+    options: ["pc", "kg", "g", "lb", "m", "cm", "l", "ml", "box", "pack", "pcs", "doz", "pair", "roll", "sheet"],
+    hideInTable: true,
+    group: "Units",
+  },
+  {
+    key: "sales_uom",
+    label: "Sales UoM",
+    type: "select",
+    options: ["pc", "kg", "g", "lb", "m", "cm", "l", "ml", "box", "pack", "pcs", "doz", "pair", "roll", "sheet"],
+    hideInTable: true,
+    group: "Units",
+  },
+  {
+    key: "manufacturing_uom",
+    label: "Manufacturing UoM",
+    type: "select",
+    options: ["pc", "kg", "g", "lb", "m", "cm", "l", "ml", "box", "pack", "pcs", "doz", "pair", "roll", "sheet"],
+    hideInTable: true,
+    group: "Units",
+  },
+
+  // ── Stock Levels ─────────────────────────────────────────────────────────
+  {
+    key: "reorder",
+    label: "Reorder Point",
+    type: "number",
+    className: "text-right",
+    render: monoRight,
+    hideInTable: true,
+    group: "Stock Levels",
+    validate: (v) => (v == null || v === "" || Number(v) >= 0 ? null : "Reorder point cannot be negative"),
+  },
+  {
+    key: "reorder_qty",
+    label: "Reorder Qty",
+    type: "number",
+    className: "text-right",
+    render: monoRight,
+    hideInTable: true,
+    group: "Stock Levels",
+    validate: (v) => (v == null || v === "" || Number(v) >= 0 ? null : "Reorder qty cannot be negative"),
+  },
+  {
+    key: "min_stock",
+    label: "Min Stock",
+    type: "number",
+    className: "text-right",
+    render: monoRight,
+    hideInTable: true,
+    group: "Stock Levels",
+    validate: (v) => (v == null || v === "" || Number(v) >= 0 ? null : "Min stock cannot be negative"),
+  },
+  {
+    key: "max_stock",
+    label: "Max Stock",
+    type: "number",
+    className: "text-right",
+    render: monoRight,
+    hideInTable: true,
+    group: "Stock Levels",
+  },
+  {
+    key: "safety_stock",
+    label: "Safety Stock",
+    type: "number",
+    className: "text-right",
+    render: monoRight,
+    hideInTable: true,
+    group: "Stock Levels",
+    validate: (v) => (v == null || v === "" || Number(v) >= 0 ? null : "Safety stock cannot be negative"),
+  },
+
+  // ── Pricing ───────────────────────────────────────────────────────────────
+  {
+    key: "cost",
+    label: "Avg Cost",
+    type: "number",
+    className: "text-right",
+    render: moneyRight,
+    hideInTable: true,
+    group: "Pricing",
+    validate: (v) => (v == null || v === "" || Number(v) >= 0 ? null : "Cost cannot be negative"),
+  },
+  {
+    key: "standard_cost",
+    label: "Standard Cost",
+    type: "number",
+    className: "text-right",
+    render: moneyRight,
+    hideInTable: true,
+    group: "Pricing",
+    validate: (v) => (v == null || v === "" || Number(v) >= 0 ? null : "Standard cost cannot be negative"),
+  },
+  {
+    key: "price",
+    label: "Sell Price",
+    type: "number",
+    className: "text-right",
+    render: moneyRight,
+    hideInTable: true,
+    group: "Pricing",
+    validate: (v) => (v == null || v === "" || Number(v) >= 0 ? null : "Sell price cannot be negative"),
+  },
+
+  // ── Procurement ───────────────────────────────────────────────────────────
+  {
+    key: "preferred_supplier_id",
+    label: "Preferred Supplier",
+    type: "fk",
+    fkTable: "suppliers",
+    fkLabel: "name",
+    hideInTable: true,
+    group: "Procurement",
+  },
+  {
+    key: "supplier_lead_time_days",
+    label: "Lead Time (days)",
+    type: "number",
+    className: "text-right",
+    hideInTable: true,
+    group: "Procurement",
+    validate: (v) => (v == null || v === "" || Number(v) >= 0 ? null : "Lead time cannot be negative"),
+  },
+  {
+    key: "purchase_description",
+    label: "Purchase Description",
+    type: "textarea",
+    hideInTable: true,
+    group: "Procurement",
+  },
+
+  // ── Sales ─────────────────────────────────────────────────────────────────
+  { key: "sales_description", label: "Sales Description", type: "textarea", hideInTable: true, group: "Sales" },
+
+  // ── Inventory Tracking ────────────────────────────────────────────────────
+  {
+    key: "inventory_tracking",
+    label: "Costing Method",
+    type: "select",
+    options: ["AVCO", "FIFO", "None"],
+    defaultValue: "AVCO",
+    hideInTable: true,
+    group: "Tracking",
+  },
 ];
 
 export const salesQuoteFields: FieldDef[] = [
