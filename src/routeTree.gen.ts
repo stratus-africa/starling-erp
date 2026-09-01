@@ -117,6 +117,7 @@ import { Route as AuthenticatedPurchasingExpensesIdRouteImport } from './routes/
 import { Route as AuthenticatedPurchasingBillsIdRouteImport } from './routes/_authenticated/purchasing.bills.$id'
 import { Route as AuthenticatedManufacturingItemsIdRouteImport } from './routes/_authenticated/manufacturing.items.$id'
 import { Route as AuthenticatedManufacturingBomIdRouteImport } from './routes/_authenticated/manufacturing.bom.$id'
+import { Route as AuthenticatedInventoryItemsIdRouteImport } from './routes/_authenticated/inventory.items.$id'
 import { Route as AuthenticatedCrmCustomersIdRouteImport } from './routes/_authenticated/crm.customers.$id'
 
 const AuthRoute = AuthRouteImport.update({
@@ -734,6 +735,12 @@ const AuthenticatedManufacturingBomIdRoute =
     path: '/manufacturing/bom/$id',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedInventoryItemsIdRoute =
+  AuthenticatedInventoryItemsIdRouteImport.update({
+    id: '/$id',
+    path: '/$id',
+    getParentRoute: () => AuthenticatedInventoryItemsRoute,
+  } as any)
 const AuthenticatedCrmCustomersIdRoute =
   AuthenticatedCrmCustomersIdRouteImport.update({
     id: '/crm/customers/$id',
@@ -791,7 +798,7 @@ export interface FileRoutesByFullPath {
   '/dashboards/production': typeof AuthenticatedDashboardsProductionRoute
   '/dashboards/sales': typeof AuthenticatedDashboardsSalesRoute
   '/inventory/adjustments': typeof AuthenticatedInventoryAdjustmentsRoute
-  '/inventory/items': typeof AuthenticatedInventoryItemsRoute
+  '/inventory/items': typeof AuthenticatedInventoryItemsRouteWithChildren
   '/inventory/ledger': typeof AuthenticatedInventoryLedgerRoute
   '/inventory/transfers': typeof AuthenticatedInventoryTransfersRoute
   '/inventory/warehouses': typeof AuthenticatedInventoryWarehousesRoute
@@ -822,6 +829,7 @@ export interface FileRoutesByFullPath {
   '/accounting/': typeof AuthenticatedAccountingIndexRoute
   '/settings/': typeof AuthenticatedSettingsIndexRoute
   '/crm/customers/$id': typeof AuthenticatedCrmCustomersIdRoute
+  '/inventory/items/$id': typeof AuthenticatedInventoryItemsIdRoute
   '/manufacturing/bom/$id': typeof AuthenticatedManufacturingBomIdRoute
   '/manufacturing/items/$id': typeof AuthenticatedManufacturingItemsIdRoute
   '/purchasing/bills/$id': typeof AuthenticatedPurchasingBillsIdRoute
@@ -899,7 +907,7 @@ export interface FileRoutesByTo {
   '/dashboards/production': typeof AuthenticatedDashboardsProductionRoute
   '/dashboards/sales': typeof AuthenticatedDashboardsSalesRoute
   '/inventory/adjustments': typeof AuthenticatedInventoryAdjustmentsRoute
-  '/inventory/items': typeof AuthenticatedInventoryItemsRoute
+  '/inventory/items': typeof AuthenticatedInventoryItemsRouteWithChildren
   '/inventory/ledger': typeof AuthenticatedInventoryLedgerRoute
   '/inventory/transfers': typeof AuthenticatedInventoryTransfersRoute
   '/inventory/warehouses': typeof AuthenticatedInventoryWarehousesRoute
@@ -929,6 +937,7 @@ export interface FileRoutesByTo {
   '/super-admin/tenants/$id': typeof SuperAdminTenantsIdRoute
   '/accounting': typeof AuthenticatedAccountingIndexRoute
   '/crm/customers/$id': typeof AuthenticatedCrmCustomersIdRoute
+  '/inventory/items/$id': typeof AuthenticatedInventoryItemsIdRoute
   '/manufacturing/bom/$id': typeof AuthenticatedManufacturingBomIdRoute
   '/manufacturing/items/$id': typeof AuthenticatedManufacturingItemsIdRoute
   '/purchasing/bills/$id': typeof AuthenticatedPurchasingBillsIdRoute
@@ -1010,7 +1019,7 @@ export interface FileRoutesById {
   '/_authenticated/dashboards/production': typeof AuthenticatedDashboardsProductionRoute
   '/_authenticated/dashboards/sales': typeof AuthenticatedDashboardsSalesRoute
   '/_authenticated/inventory/adjustments': typeof AuthenticatedInventoryAdjustmentsRoute
-  '/_authenticated/inventory/items': typeof AuthenticatedInventoryItemsRoute
+  '/_authenticated/inventory/items': typeof AuthenticatedInventoryItemsRouteWithChildren
   '/_authenticated/inventory/ledger': typeof AuthenticatedInventoryLedgerRoute
   '/_authenticated/inventory/transfers': typeof AuthenticatedInventoryTransfersRoute
   '/_authenticated/inventory/warehouses': typeof AuthenticatedInventoryWarehousesRoute
@@ -1041,6 +1050,7 @@ export interface FileRoutesById {
   '/_authenticated/accounting/': typeof AuthenticatedAccountingIndexRoute
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
   '/_authenticated/crm/customers/$id': typeof AuthenticatedCrmCustomersIdRoute
+  '/_authenticated/inventory/items/$id': typeof AuthenticatedInventoryItemsIdRoute
   '/_authenticated/manufacturing/bom/$id': typeof AuthenticatedManufacturingBomIdRoute
   '/_authenticated/manufacturing/items/$id': typeof AuthenticatedManufacturingItemsIdRoute
   '/_authenticated/purchasing/bills/$id': typeof AuthenticatedPurchasingBillsIdRoute
@@ -1152,6 +1162,7 @@ export interface FileRouteTypes {
     | '/accounting/'
     | '/settings/'
     | '/crm/customers/$id'
+    | '/inventory/items/$id'
     | '/manufacturing/bom/$id'
     | '/manufacturing/items/$id'
     | '/purchasing/bills/$id'
@@ -1259,6 +1270,7 @@ export interface FileRouteTypes {
     | '/super-admin/tenants/$id'
     | '/accounting'
     | '/crm/customers/$id'
+    | '/inventory/items/$id'
     | '/manufacturing/bom/$id'
     | '/manufacturing/items/$id'
     | '/purchasing/bills/$id'
@@ -1370,6 +1382,7 @@ export interface FileRouteTypes {
     | '/_authenticated/accounting/'
     | '/_authenticated/settings/'
     | '/_authenticated/crm/customers/$id'
+    | '/_authenticated/inventory/items/$id'
     | '/_authenticated/manufacturing/bom/$id'
     | '/_authenticated/manufacturing/items/$id'
     | '/_authenticated/purchasing/bills/$id'
@@ -2164,6 +2177,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedManufacturingBomIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/inventory/items/$id': {
+      id: '/_authenticated/inventory/items/$id'
+      path: '/$id'
+      fullPath: '/inventory/items/$id'
+      preLoaderRoute: typeof AuthenticatedInventoryItemsIdRouteImport
+      parentRoute: typeof AuthenticatedInventoryItemsRoute
+    }
     '/_authenticated/crm/customers/$id': {
       id: '/_authenticated/crm/customers/$id'
       path: '/crm/customers/$id'
@@ -2194,6 +2214,20 @@ const AdminRouteRouteWithChildren = AdminRouteRoute._addFileChildren(
   AdminRouteRouteChildren,
 )
 
+interface AuthenticatedInventoryItemsRouteChildren {
+  AuthenticatedInventoryItemsIdRoute: typeof AuthenticatedInventoryItemsIdRoute
+}
+
+const AuthenticatedInventoryItemsRouteChildren: AuthenticatedInventoryItemsRouteChildren =
+  {
+    AuthenticatedInventoryItemsIdRoute: AuthenticatedInventoryItemsIdRoute,
+  }
+
+const AuthenticatedInventoryItemsRouteWithChildren =
+  AuthenticatedInventoryItemsRoute._addFileChildren(
+    AuthenticatedInventoryItemsRouteChildren,
+  )
+
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAuditEventsRoute: typeof AuthenticatedAuditEventsRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
@@ -2215,7 +2249,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedDashboardsProductionRoute: typeof AuthenticatedDashboardsProductionRoute
   AuthenticatedDashboardsSalesRoute: typeof AuthenticatedDashboardsSalesRoute
   AuthenticatedInventoryAdjustmentsRoute: typeof AuthenticatedInventoryAdjustmentsRoute
-  AuthenticatedInventoryItemsRoute: typeof AuthenticatedInventoryItemsRoute
+  AuthenticatedInventoryItemsRoute: typeof AuthenticatedInventoryItemsRouteWithChildren
   AuthenticatedInventoryLedgerRoute: typeof AuthenticatedInventoryLedgerRoute
   AuthenticatedInventoryTransfersRoute: typeof AuthenticatedInventoryTransfersRoute
   AuthenticatedInventoryWarehousesRoute: typeof AuthenticatedInventoryWarehousesRoute
@@ -2304,7 +2338,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDashboardsSalesRoute: AuthenticatedDashboardsSalesRoute,
   AuthenticatedInventoryAdjustmentsRoute:
     AuthenticatedInventoryAdjustmentsRoute,
-  AuthenticatedInventoryItemsRoute: AuthenticatedInventoryItemsRoute,
+  AuthenticatedInventoryItemsRoute:
+    AuthenticatedInventoryItemsRouteWithChildren,
   AuthenticatedInventoryLedgerRoute: AuthenticatedInventoryLedgerRoute,
   AuthenticatedInventoryTransfersRoute: AuthenticatedInventoryTransfersRoute,
   AuthenticatedInventoryWarehousesRoute: AuthenticatedInventoryWarehousesRoute,
