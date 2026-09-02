@@ -11,6 +11,10 @@ export const Route = createFileRoute("/_authenticated/inventory/warehouses")({
       fields={warehouseFields}
       entityLabel="Warehouse"
       attachments={false}
+      searchColumn="name"
+      rowHref={(row) => `/inventory/warehouses/${row.id}`}
+      createHref="/inventory/warehouses/new"
+      filterFields={[{ key: "status", label: "Status", options: ["Active", "Inactive"] }]}
     />
   ),
 });
