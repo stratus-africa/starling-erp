@@ -986,6 +986,8 @@ export type Database = {
           quantity: number;
           tenant_id: string;
           unit_cost: number;
+          uom: string | null;
+          uom_factor: number | null;
           updated_at: string;
         };
         Insert: {
@@ -999,6 +1001,8 @@ export type Database = {
           quantity?: number;
           tenant_id: string;
           unit_cost?: number;
+          uom?: string | null;
+          uom_factor?: number | null;
           updated_at?: string;
         };
         Update: {
@@ -1012,6 +1016,8 @@ export type Database = {
           quantity?: number;
           tenant_id?: string;
           unit_cost?: number;
+          uom?: string | null;
+          uom_factor?: number | null;
           updated_at?: string;
         };
         Relationships: [
@@ -1814,6 +1820,8 @@ export type Database = {
           reversal_id: string | null;
           status: string | null;
           tenant_id: string;
+          uom: string | null;
+          uom_factor: number | null;
           updated_at: string;
           voided_at: string | null;
           voided_by: string | null;
@@ -1833,6 +1841,8 @@ export type Database = {
           reversal_id?: string | null;
           status?: string | null;
           tenant_id: string;
+          uom?: string | null;
+          uom_factor?: number | null;
           updated_at?: string;
           voided_at?: string | null;
           voided_by?: string | null;
@@ -1852,6 +1862,8 @@ export type Database = {
           reversal_id?: string | null;
           status?: string | null;
           tenant_id?: string;
+          uom?: string | null;
+          uom_factor?: number | null;
           updated_at?: string;
           voided_at?: string | null;
           voided_by?: string | null;
@@ -1898,6 +1910,8 @@ export type Database = {
           status: string | null;
           tenant_id: string;
           to_warehouse_id: string | null;
+          uom: string | null;
+          uom_factor: number | null;
           updated_at: string;
           voided_at: string | null;
           voided_by: string | null;
@@ -1918,6 +1932,8 @@ export type Database = {
           status?: string | null;
           tenant_id: string;
           to_warehouse_id?: string | null;
+          uom?: string | null;
+          uom_factor?: number | null;
           updated_at?: string;
           voided_at?: string | null;
           voided_by?: string | null;
@@ -1938,6 +1954,8 @@ export type Database = {
           status?: string | null;
           tenant_id?: string;
           to_warehouse_id?: string | null;
+          uom?: string | null;
+          uom_factor?: number | null;
           updated_at?: string;
           voided_at?: string | null;
           voided_by?: string | null;
@@ -2372,6 +2390,62 @@ export type Database = {
           },
         ];
       };
+      units_of_measure: {
+        Row: {
+          code: string;
+          created_at: string;
+          decimal_places: number;
+          deleted_at: string | null;
+          id: string;
+          is_active: boolean;
+          is_base_unit: boolean;
+          name: string;
+          notes: string | null;
+          symbol: string | null;
+          tenant_id: string;
+          uom_class: string;
+          updated_at: string;
+        };
+        Insert: {
+          code: string;
+          created_at?: string;
+          decimal_places?: number;
+          deleted_at?: string | null;
+          id?: string;
+          is_active?: boolean;
+          is_base_unit?: boolean;
+          name: string;
+          notes?: string | null;
+          symbol?: string | null;
+          tenant_id: string;
+          uom_class: string;
+          updated_at?: string;
+        };
+        Update: {
+          code?: string;
+          created_at?: string;
+          decimal_places?: number;
+          deleted_at?: string | null;
+          id?: string;
+          is_active?: boolean;
+          is_base_unit?: boolean;
+          name?: string;
+          notes?: string | null;
+          symbol?: string | null;
+          tenant_id?: string;
+          uom_class?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "units_of_measure_tenant_id_fkey";
+            columns: ["tenant_id"];
+            isOneToOne: false;
+            referencedRelation: "tenants";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       uom_conversions: {
         Row: {
           created_at: string;
@@ -2382,6 +2456,7 @@ export type Database = {
           item_id: string | null;
           tenant_id: string;
           to_uom: string;
+          uom_class: string | null;
           updated_at: string;
         };
         Insert: {
@@ -2393,6 +2468,7 @@ export type Database = {
           item_id?: string | null;
           tenant_id: string;
           to_uom: string;
+          uom_class?: string | null;
           updated_at?: string;
         };
         Update: {
@@ -2404,6 +2480,7 @@ export type Database = {
           item_id?: string | null;
           tenant_id?: string;
           to_uom?: string;
+          uom_class?: string | null;
           updated_at?: string;
         };
         Relationships: [
@@ -3503,9 +3580,11 @@ export type Database = {
           number: string;
           posted_at: string | null;
           quantity: number;
+          quantity_uom: string | null;
           reversal_id: string | null;
           status: string | null;
           tenant_id: string;
+          uom_factor: number | null;
           updated_at: string;
           voided_at: string | null;
           voided_by: string | null;
@@ -3522,9 +3601,11 @@ export type Database = {
           number: string;
           posted_at?: string | null;
           quantity?: number;
+          quantity_uom?: string | null;
           reversal_id?: string | null;
           status?: string | null;
           tenant_id: string;
+          uom_factor?: number | null;
           updated_at?: string;
           voided_at?: string | null;
           voided_by?: string | null;
@@ -3541,9 +3622,11 @@ export type Database = {
           number?: string;
           posted_at?: string | null;
           quantity?: number;
+          quantity_uom?: string | null;
           reversal_id?: string | null;
           status?: string | null;
           tenant_id?: string;
+          uom_factor?: number | null;
           updated_at?: string;
           voided_at?: string | null;
           voided_by?: string | null;
@@ -4388,8 +4471,11 @@ export type Database = {
           quantity: number;
           ref_id: string | null;
           ref_type: string;
+          source_quantity: number | null;
+          source_uom: string | null;
           tenant_id: string;
           unit_cost: number;
+          uom: string | null;
           warehouse_id: string | null;
         };
         Insert: {
@@ -4401,8 +4487,11 @@ export type Database = {
           quantity: number;
           ref_id?: string | null;
           ref_type: string;
+          source_quantity?: number | null;
+          source_uom?: string | null;
           tenant_id: string;
           unit_cost?: number;
+          uom?: string | null;
           warehouse_id?: string | null;
         };
         Update: {
@@ -4414,8 +4503,11 @@ export type Database = {
           quantity?: number;
           ref_id?: string | null;
           ref_type?: string;
+          source_quantity?: number | null;
+          source_uom?: string | null;
           tenant_id?: string;
           unit_cost?: number;
+          uom?: string | null;
           warehouse_id?: string | null;
         };
         Relationships: [
