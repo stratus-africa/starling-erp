@@ -288,7 +288,6 @@ export function Item360Page({ id, backTo = "/inventory/items", backLabel = "Item
 
   const { data: productionOrders = [] } = useQuery({
     queryKey: ["production_orders", "for-item", id],
-    enabled: !isNew,
     queryFn: async () => {
       if (!bomHeaders.length) return [];
       const bomIds = bomHeaders.map((b: any) => b.id);
@@ -1141,7 +1140,11 @@ export function Item360Page({ id, backTo = "/inventory/items", backLabel = "Item
                         { field: "purchase_uom", label: "Purchase UoM" },
                         { field: "sales_uom", label: "Sales UoM" },
                         { field: "manufacturing_uom", label: "Mfg UoM" },
-                      ] as const
+                      ] as readonly {
+                        field: "uom" | "purchase_uom" | "sales_uom" | "manufacturing_uom";
+                        label: string;
+                        required?: boolean;
+                      }[]
                     ).map(({ field, label, required }) => {
                       const code = values[field] as string | undefined;
                       const stockUom = values.uom as string | undefined;
