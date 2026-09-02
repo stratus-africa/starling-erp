@@ -10,13 +10,14 @@
  * while ProductionItemPage is preserved for backward compatibility.
  */
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useNavigate, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { db } from "@/lib/typed-db";
 import { useAuth } from "@/hooks/use-auth";
 import { useFkOptions } from "@/hooks/use-module-data";
 import { toast } from "sonner";
+import { buildUomEngine, UOM_CLASS_COLORS, type UomMaster, type UomConversionRow } from "@/lib/uom";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,27 +28,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 import {
   ArrowLeft,
@@ -79,16 +62,35 @@ import {
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const UOM_OPTIONS = [
-  "pc", "pcs", "kg", "g", "lb", "oz",
-  "m", "cm", "mm", "ft", "in",
-  "l", "ml", "gal",
-  "box", "pack", "doz", "pair", "roll", "sheet", "bag", "can", "bottle",
+// Kept as static fallback when the DB master list hasn't loaded yet
+const FALLBACK_UOM_OPTIONS = [
+  "pc",
+  "pcs",
+  "kg",
+  "g",
+  "lb",
+  "oz",
+  "m",
+  "cm",
+  "mm",
+  "ft",
+  "in",
+  "l",
+  "ml",
+  "gal",
+  "box",
+  "pack",
+  "ctn",
+  "doz",
+  "pair",
+  "roll",
+  "sheet",
+  "bag",
+  "can",
+  "bottle",
 ];
 
-const ITEM_TYPES = [
-  "Finished Good", "Raw Material", "Sub-assembly", "Service", "Consumable",
-];
+const ITEM_TYPES = ["Finished Good", "Raw Material", "Sub-assembly", "Service", "Consumable"];
 
 const TRACKING_METHODS = ["AVCO", "FIFO", "None"];
 
@@ -181,18 +183,12 @@ function FieldRow({
 }
 
 function ReadValue({ value }: { value: any }) {
-  return (
-    <span className="text-sm">{value == null || value === "" ? "—" : String(value)}</span>
-  );
+  return <span className="text-sm">{value == null || value === "" ? "—" : String(value)}</span>;
 }
 
 function StockBadge({ value, warn, uom }: { value: number; warn?: boolean; uom?: string }) {
   return (
-    <span
-      className={`font-mono tabular-nums text-sm ${
-        warn ? "text-destructive font-semibold" : ""
-      }`}
-    >
+    <span className={`font-mono tabular-nums text-sm ${warn ? "text-destructive font-semibold" : ""}`}>
       {qty(value)} {uom ?? ""}
     </span>
   );
@@ -215,11 +211,7 @@ interface Item360PageProps {
   backLabel?: string;
 }
 
-export function Item360Page({
-  id,
-  backTo = "/inventory/items",
-  backLabel = "Items",
-}: Item360PageProps) {
+export function Item360Page({ id, backTo = "/inventory/items", backLabel = "Items" }: Item360PageProps) {
   const isNew = id === "new";
   const { tenant, can, hasRole } = useAuth();
   const nav = useNavigate();
@@ -319,7 +311,7 @@ export function Item360Page({
       const { data } = await db
         .from("sales_order_lines")
         .select(
-          "id, quantity, unit_price, line_total, sales_orders!document_id(number, date, status, customer_id, customers(name))"
+          "id, quantity, unit_price, line_total, sales_orders!document_id(number, date, status, customer_id, customers(name))",
         )
         .eq("item_id", id)
         .is("deleted_at", null)
@@ -336,7 +328,7 @@ export function Item360Page({
       const { data } = await db
         .from("invoice_lines")
         .select(
-          "id, quantity, unit_price, line_total, invoices!document_id(number, date, status, customer_id, customers(name))"
+          "id, quantity, unit_price, line_total, invoices!document_id(number, date, status, customer_id, customers(name))",
         )
         .eq("item_id", id)
         .is("deleted_at", null)
@@ -353,7 +345,7 @@ export function Item360Page({
       const { data } = await db
         .from("bill_lines")
         .select(
-          "id, quantity, unit_price, line_total, bills!document_id(number, date, status, supplier_id, suppliers(name))"
+          "id, quantity, unit_price, line_total, bills!document_id(number, date, status, supplier_id, suppliers(name))",
         )
         .eq("item_id", id)
         .is("deleted_at", null)
@@ -382,12 +374,40 @@ export function Item360Page({
   const { data: suppliers = [] } = useFkOptions("suppliers", "name");
   const { data: coaAccounts = [] } = useFkOptions("chart_of_accounts", "name");
 
+  // UOM master + all conversions (global + item-specific for this item)
+  const { data: uomMaster = [] } = useQuery({
+    queryKey: ["units_of_measure", "master"],
+    queryFn: async () => {
+      const { data } = await db
+        .from("units_of_measure")
+        .select("*")
+        .is("deleted_at", null)
+        .eq("is_active", true)
+        .order("uom_class")
+        .order("name");
+      return (data ?? []) as UomMaster[];
+    },
+    staleTime: 60_000,
+  });
+
+  const { data: allConversions = [] } = useQuery({
+    queryKey: ["uom_conversions", "all"],
+    queryFn: async () => {
+      const { data } = await db.from("uom_conversions").select("*").is("deleted_at", null);
+      return (data ?? []) as UomConversionRow[];
+    },
+    staleTime: 30_000,
+  });
+
+  // Build client-side engine for instant preview
+  const uomEngine = useMemo(() => buildUomEngine(uomMaster, allConversions), [uomMaster, allConversions]);
+
+  // Merged option list: live master codes + fallback
+  const uomOptions = uomMaster.length > 0 ? uomMaster.map((u) => u.code) : FALLBACK_UOM_OPTIONS;
+
   // ── Derived metrics ────────────────────────────────────────────────────────
 
-  const stockOnHand = movements.reduce(
-    (sum: number, m: any) => sum + Number(m.quantity ?? 0),
-    0
-  );
+  const stockOnHand = movements.reduce((sum: number, m: any) => sum + Number(m.quantity ?? 0), 0);
 
   const stockByWarehouse = movements.reduce(
     (acc: Record<string, { name: string; code: string; qty: number }>, m: any) => {
@@ -396,45 +416,29 @@ export function Item360Page({
       acc[wid].qty += Number(m.quantity ?? 0);
       return acc;
     },
-    {}
+    {},
   );
 
   const totalCostValue = stockOnHand * Number(item?.cost ?? 0);
 
   const pendingShip = salesOrderLines
-    .filter((l: any) =>
-      ["Confirmed", "Processing", "Packed"].includes(l.sales_orders?.status)
-    )
+    .filter((l: any) => ["Confirmed", "Processing", "Packed"].includes(l.sales_orders?.status))
     .reduce((s: number, l: any) => s + Number(l.quantity ?? 0), 0);
 
   const pendingReceive = productionOrders
     .filter((o: any) => ["Planned", "In Progress"].includes(o.status))
     .reduce((s: number, o: any) => s + Number(o.quantity ?? 0), 0);
 
-  const totalSalesQty = invoiceLines.reduce(
-    (s: number, l: any) => s + Number(l.quantity ?? 0),
-    0
-  );
+  const totalSalesQty = invoiceLines.reduce((s: number, l: any) => s + Number(l.quantity ?? 0), 0);
 
-  const totalSalesValue = invoiceLines.reduce(
-    (s: number, l: any) => s + Number(l.line_total ?? 0),
-    0
-  );
+  const totalSalesValue = invoiceLines.reduce((s: number, l: any) => s + Number(l.line_total ?? 0), 0);
 
-  const totalPurchaseQty = billLines.reduce(
-    (s: number, l: any) => s + Number(l.quantity ?? 0),
-    0
-  );
+  const totalPurchaseQty = billLines.reduce((s: number, l: any) => s + Number(l.quantity ?? 0), 0);
 
-  const totalPurchaseValue = billLines.reduce(
-    (s: number, l: any) => s + Number(l.line_total ?? 0),
-    0
-  );
+  const totalPurchaseValue = billLines.reduce((s: number, l: any) => s + Number(l.line_total ?? 0), 0);
 
-  const isLowStock =
-    item?.reorder != null && stockOnHand <= Number(item.reorder);
-  const isBelowMin =
-    item?.min_stock != null && stockOnHand < Number(item.min_stock);
+  const isLowStock = item?.reorder != null && stockOnHand <= Number(item.reorder);
+  const isBelowMin = item?.min_stock != null && stockOnHand < Number(item.min_stock);
 
   // ── Form state ─────────────────────────────────────────────────────────────
 
@@ -529,7 +533,12 @@ export function Item360Page({
 
   const set = (k: string, v: any) => {
     setValues((p) => ({ ...p, [k]: v }));
-    if (errors[k]) setErrors((e) => { const c = { ...e }; delete c[k]; return c; });
+    if (errors[k])
+      setErrors((e) => {
+        const c = { ...e };
+        delete c[k];
+        return c;
+      });
   };
 
   // ── Validation ─────────────────────────────────────────────────────────────
@@ -551,10 +560,8 @@ export function Item360Page({
     ];
     for (const [k, label] of numFields) {
       const v = values[k];
-      if (v !== "" && v != null && isNaN(Number(v)))
-        errs[k] = `${label} must be a number`;
-      else if (v !== "" && v != null && Number(v) < 0)
-        errs[k] = `${label} cannot be negative`;
+      if (v !== "" && v != null && isNaN(Number(v))) errs[k] = `${label} must be a number`;
+      else if (v !== "" && v != null && Number(v) < 0) errs[k] = `${label} cannot be negative`;
     }
     if (
       values.min_stock !== "" &&
@@ -571,10 +578,8 @@ export function Item360Page({
 
   // ── Save mutation ──────────────────────────────────────────────────────────
 
-  const toNumOrNull = (v: any) =>
-    v === "" || v == null ? null : Number(v);
-  const toStrOrNull = (v: any) =>
-    v === "" || v == null ? null : String(v).trim() || null;
+  const toNumOrNull = (v: any) => (v === "" || v == null ? null : Number(v));
+  const toStrOrNull = (v: any) => (v === "" || v == null ? null : String(v).trim() || null);
 
   const save = useMutation({
     mutationFn: async () => {
@@ -636,7 +641,7 @@ export function Item360Page({
     onSuccess: (newId) => {
       toast.success(isNew ? "Item created" : "Item saved");
       qc.invalidateQueries({ queryKey: ["items"] });
-      if (isNew) nav({ to: backTo + "/$id" as any, params: { id: newId } as any });
+      if (isNew) nav({ to: (backTo + "/$id") as any, params: { id: newId } as any });
       else {
         setSynced(false); // re-sync from server
         qc.invalidateQueries({ queryKey: ["items", id] });
@@ -653,8 +658,11 @@ export function Item360Page({
     mutationFn: async () => {
       if (!newConv.from_uom || !newConv.to_uom || !newConv.factor)
         throw new Error("All conversion fields are required");
-      if (Number(newConv.factor) <= 0)
-        throw new Error("Factor must be greater than 0");
+      if (Number(newConv.factor) <= 0) throw new Error("Factor must be greater than 0");
+      if (newConv.from_uom === newConv.to_uom) throw new Error("From and To UoM must be different");
+      // Client-side circular check before hitting the DB
+      const cycleErr = uomEngine.checkCircular(newConv.from_uom, newConv.to_uom, id);
+      if (cycleErr) throw new Error(cycleErr);
       if (!tenant?.id) throw new Error("No workspace");
       const { error } = await db.from("uom_conversions").insert({
         tenant_id: tenant.id,
@@ -718,27 +726,15 @@ export function Item360Page({
           value={values[field] ?? ""}
           onChange={(e) => set(field, e.target.value)}
           placeholder={placeholder}
-          className={`h-8 text-sm ${isMono ? "font-mono" : ""} ${
-            errors[field] ? "border-destructive" : ""
-          }`}
+          className={`h-8 text-sm ${isMono ? "font-mono" : ""} ${errors[field] ? "border-destructive" : ""}`}
         />
-        {errors[field] && (
-          <p className="text-xs text-destructive mt-0.5">{errors[field]}</p>
-        )}
+        {errors[field] && <p className="text-xs text-destructive mt-0.5">{errors[field]}</p>}
       </div>
     ) : (
       <ReadValue value={values[field]} />
     );
 
-  const SelectInput = ({
-    field,
-    options,
-    placeholder,
-  }: {
-    field: string;
-    options: string[];
-    placeholder?: string;
-  }) =>
+  const SelectInput = ({ field, options, placeholder }: { field: string; options: string[]; placeholder?: string }) =>
     canWrite ? (
       <Select value={values[field] || ""} onValueChange={(v) => set(field, v)}>
         <SelectTrigger className="h-8 text-sm">
@@ -782,20 +778,10 @@ export function Item360Page({
         </SelectContent>
       </Select>
     ) : (
-      <ReadValue
-        value={opts.find((o: any) => o.id === values[field])?.[labelKey]}
-      />
+      <ReadValue value={opts.find((o: any) => o.id === values[field])?.[labelKey]} />
     );
 
-  const SwitchInput = ({
-    field,
-    label,
-    description,
-  }: {
-    field: string;
-    label: string;
-    description?: string;
-  }) => (
+  const SwitchInput = ({ field, label, description }: { field: string; label: string; description?: string }) => (
     <div className="flex items-start gap-3 py-1.5">
       <Switch
         id={`switch-${field}`}
@@ -808,17 +794,13 @@ export function Item360Page({
         <Label htmlFor={`switch-${field}`} className="text-sm font-medium cursor-pointer">
           {label}
         </Label>
-        {description && (
-          <p className="text-xs text-muted-foreground">{description}</p>
-        )}
+        {description && <p className="text-xs text-muted-foreground">{description}</p>}
       </div>
     </div>
   );
 
-  const categoryName =
-    (categories as any[]).find((c: any) => c.id === values.category_id)?.name;
-  const supplierName =
-    (suppliers as any[]).find((s: any) => s.id === values.preferred_supplier_id)?.name;
+  const categoryName = (categories as any[]).find((c: any) => c.id === values.category_id)?.name;
+  const supplierName = (suppliers as any[]).find((s: any) => s.id === values.preferred_supplier_id)?.name;
 
   // ── Render ─────────────────────────────────────────────────────────────────
 
@@ -870,11 +852,7 @@ export function Item360Page({
 
         <div className="flex items-center gap-2 shrink-0">
           {canWrite && (
-            <Button
-              size="sm"
-              disabled={save.isPending}
-              onClick={() => save.mutate()}
-            >
+            <Button size="sm" disabled={save.isPending} onClick={() => save.mutate()}>
               {save.isPending ? (
                 <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
               ) : (
@@ -1002,20 +980,12 @@ export function Item360Page({
                 {/* Image placeholder */}
                 <div className="flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-muted-foreground/30 p-8 text-center">
                   {values.image_url ? (
-                    <img
-                      src={values.image_url}
-                      alt={values.name}
-                      className="max-h-40 object-contain rounded"
-                    />
+                    <img src={values.image_url} alt={values.name} className="max-h-40 object-contain rounded" />
                   ) : (
                     <>
                       <ImagePlus className="h-8 w-8 text-muted-foreground/40" />
-                      <p className="text-sm text-muted-foreground">
-                        Item image will appear here
-                      </p>
-                      <p className="text-xs text-muted-foreground/60">
-                        Upload via image_url field
-                      </p>
+                      <p className="text-sm text-muted-foreground">Item image will appear here</p>
+                      <p className="text-xs text-muted-foreground/60">Upload via image_url field</p>
                     </>
                   )}
                 </div>
@@ -1029,11 +999,7 @@ export function Item360Page({
                     <CardContent className="px-4 pb-4 space-y-1.5">
                       <div className="flex justify-between text-sm">
                         <span className="text-muted-foreground">On Hand</span>
-                        <StockBadge
-                          value={stockOnHand}
-                          warn={isBelowMin}
-                          uom={item?.uom}
-                        />
+                        <StockBadge value={stockOnHand} warn={isBelowMin} uom={item?.uom} />
                       </div>
                       <div className="flex justify-between text-sm">
                         <span className="text-muted-foreground">Pending Ship</span>
@@ -1056,9 +1022,7 @@ export function Item360Page({
                       <Separator />
                       <div className="flex justify-between text-sm">
                         <span className="text-muted-foreground">Stock Value</span>
-                        <span className="font-mono tabular-nums text-sm font-semibold">
-                          {money(totalCostValue)}
-                        </span>
+                        <span className="font-mono tabular-nums text-sm font-semibold">{money(totalCostValue)}</span>
                       </div>
                     </CardContent>
                   </Card>
@@ -1108,16 +1072,10 @@ export function Item360Page({
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="px-4 pb-4">
-                  <FieldRow
-                    label="Reorder Point"
-                    hint="An alert is raised when on-hand falls to or below this level."
-                  >
+                  <FieldRow label="Reorder Point" hint="An alert is raised when on-hand falls to or below this level.">
                     <TextInput field="reorder" type="number" placeholder="0" />
                   </FieldRow>
-                  <FieldRow
-                    label="Reorder Qty"
-                    hint="Suggested purchase/production quantity when reordering."
-                  >
+                  <FieldRow label="Reorder Qty" hint="Suggested purchase/production quantity when reordering.">
                     <TextInput field="reorder_qty" type="number" placeholder="0" />
                   </FieldRow>
                   <FieldRow label="Min Stock" hint="Minimum acceptable on-hand quantity.">
@@ -1126,10 +1084,7 @@ export function Item360Page({
                   <FieldRow label="Max Stock" hint="Maximum stock you want to hold.">
                     <TextInput field="max_stock" type="number" placeholder="0" />
                   </FieldRow>
-                  <FieldRow
-                    label="Safety Stock"
-                    hint="Buffer stock to absorb unexpected demand or supply delays."
-                  >
+                  <FieldRow label="Safety Stock" hint="Buffer stock to absorb unexpected demand or supply delays.">
                     <TextInput field="safety_stock" type="number" placeholder="0" />
                   </FieldRow>
                 </CardContent>
@@ -1178,82 +1133,190 @@ export function Item360Page({
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="px-4 pb-4">
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
-                    <FieldRow label="Stock UoM">
-                      <SelectInput field="uom" options={UOM_OPTIONS} />
-                    </FieldRow>
-                    <FieldRow label="Purchase UoM">
-                      <SelectInput field="purchase_uom" options={["", ...UOM_OPTIONS]} placeholder="Same as stock" />
-                    </FieldRow>
-                    <FieldRow label="Sales UoM">
-                      <SelectInput field="sales_uom" options={["", ...UOM_OPTIONS]} placeholder="Same as stock" />
-                    </FieldRow>
-                    <FieldRow label="Mfg UoM">
-                      <SelectInput field="manufacturing_uom" options={["", ...UOM_OPTIONS]} placeholder="Same as stock" />
-                    </FieldRow>
+                  {/* ── 4 UOM pickers with class badge + path validation ── */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+                    {(
+                      [
+                        { field: "uom", label: "Stock UoM", required: true },
+                        { field: "purchase_uom", label: "Purchase UoM" },
+                        { field: "sales_uom", label: "Sales UoM" },
+                        { field: "manufacturing_uom", label: "Mfg UoM" },
+                      ] as const
+                    ).map(({ field, label, required }) => {
+                      const code = values[field] as string | undefined;
+                      const stockUom = values.uom as string | undefined;
+                      const uomMeta = uomMaster.find((u) => u.code === code);
+                      const classLabel = uomMeta?.uom_class;
+                      const classColor = classLabel
+                        ? UOM_CLASS_COLORS[classLabel as keyof typeof UOM_CLASS_COLORS]
+                        : undefined;
+
+                      // Path check: non-stock UOM must be convertible to stock UOM
+                      let pathError: string | null = null;
+                      if (field !== "uom" && code && stockUom && code !== stockUom && uomMaster.length > 0) {
+                        if (!uomEngine.hasPath(code, stockUom, isNew ? null : id)) {
+                          pathError = `No conversion path from "${code}" to stock UoM "${stockUom}"`;
+                        }
+                      }
+
+                      return (
+                        <div key={field} className="flex flex-col gap-1">
+                          <Label className="text-xs text-muted-foreground">
+                            {label}
+                            {required && <span className="text-destructive ml-0.5">*</span>}
+                          </Label>
+                          {canWrite ? (
+                            <Select value={values[field] || ""} onValueChange={(v) => set(field, v || null)}>
+                              <SelectTrigger
+                                className={`h-8 text-sm ${pathError || (required && errors[field]) ? "border-destructive" : ""}`}
+                              >
+                                <SelectValue placeholder={required ? "Required" : "Same as stock"} />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {!required && (
+                                  <SelectItem value="">
+                                    <span className="text-muted-foreground text-xs">Same as stock UoM</span>
+                                  </SelectItem>
+                                )}
+                                {uomOptions.map((code) => {
+                                  const meta = uomMaster.find((u) => u.code === code);
+                                  return (
+                                    <SelectItem key={code} value={code}>
+                                      <span className="flex items-center gap-2">
+                                        <span className="font-mono text-xs">{code}</span>
+                                        {meta?.name && (
+                                          <span className="text-muted-foreground text-xs">{meta.name}</span>
+                                        )}
+                                        {meta?.uom_class && (
+                                          <span
+                                            className={`ml-auto text-[10px] rounded px-1.5 py-0.5 ${UOM_CLASS_COLORS[meta.uom_class as keyof typeof UOM_CLASS_COLORS] ?? "bg-muted text-muted-foreground"}`}
+                                          >
+                                            {meta.uom_class}
+                                          </span>
+                                        )}
+                                      </span>
+                                    </SelectItem>
+                                  );
+                                })}
+                              </SelectContent>
+                            </Select>
+                          ) : (
+                            <span className="text-sm font-mono">{values[field] || "—"}</span>
+                          )}
+                          {classLabel && !pathError && (
+                            <span
+                              className={`self-start text-[10px] rounded px-1.5 py-0.5 ${classColor ?? "bg-muted text-muted-foreground"}`}
+                            >
+                              {classLabel}
+                              {uomMaster.find((u) => u.code === code)?.symbol &&
+                                ` · ${uomMaster.find((u) => u.code === code)?.symbol}`}
+                            </span>
+                          )}
+                          {pathError && <p className="text-[10px] text-destructive leading-tight">{pathError}</p>}
+                          {required && errors[field] && <p className="text-[10px] text-destructive">{errors[field]}</p>}
+                        </div>
+                      );
+                    })}
                   </div>
 
+                  {/* ── Item-specific conversion table ── */}
                   {!isNew && (
                     <>
                       <Separator className="mb-3" />
-                      <p className="text-xs text-muted-foreground mb-2">
-                        Conversion factors — 1 From UoM = Factor × To UoM
-                      </p>
+                      <div className="flex items-center justify-between mb-2">
+                        <p className="text-xs text-muted-foreground">
+                          Item-specific conversions — 1 From UoM = Factor × To UoM
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          Global conversions (e.g. g → kg) are managed in{" "}
+                          <Link to="/settings/uom" className="underline text-primary">
+                            Settings → UoM
+                          </Link>
+                        </p>
+                      </div>
                       <Table>
                         <TableHeader>
                           <TableRow className="bg-muted/20">
-                            <TableHead className="text-xs">From</TableHead>
-                            <TableHead className="text-xs">To</TableHead>
-                            <TableHead className="text-xs text-right">Factor</TableHead>
+                            <TableHead className="text-xs">From UoM</TableHead>
+                            <TableHead className="text-xs">To UoM</TableHead>
+                            <TableHead className="text-xs text-right w-28">Factor</TableHead>
+                            <TableHead className="text-xs">Preview</TableHead>
                             {canWrite && <TableHead className="text-xs w-10" />}
                           </TableRow>
                         </TableHeader>
                         <TableBody>
                           {uomConversions.length === 0 && (
                             <TableRow>
-                              <TableCell colSpan={4} className="text-center text-sm text-muted-foreground py-6">
-                                No conversions defined.
+                              <TableCell
+                                colSpan={canWrite ? 5 : 4}
+                                className="text-center text-sm text-muted-foreground py-6"
+                              >
+                                No item-specific conversions. Add one below (e.g. 1 Box = 12 pc).
                               </TableCell>
                             </TableRow>
                           )}
-                          {uomConversions.map((c: any) => (
-                            <TableRow key={c.id}>
-                              <TableCell className="font-mono text-sm">{c.from_uom}</TableCell>
-                              <TableCell className="font-mono text-sm">{c.to_uom}</TableCell>
-                              <TableCell className="text-right font-mono tabular-nums">{c.factor}</TableCell>
-                              {canWrite && (
-                                <TableCell>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-7 w-7"
-                                    onClick={() => removeConversion.mutate(c.id)}
-                                  >
-                                    <Trash2 className="h-3.5 w-3.5 text-destructive" />
-                                  </Button>
+                          {uomConversions.map((c: any) => {
+                            const preview = uomEngine.convert(1, c.from_uom, c.to_uom, id);
+                            return (
+                              <TableRow key={c.id}>
+                                <TableCell className="font-mono text-sm">{c.from_uom}</TableCell>
+                                <TableCell className="font-mono text-sm">{c.to_uom}</TableCell>
+                                <TableCell className="text-right font-mono tabular-nums">
+                                  {Number(c.factor)
+                                    .toFixed(8)
+                                    .replace(/\.?0+$/, "")}
                                 </TableCell>
-                              )}
-                            </TableRow>
-                          ))}
+                                <TableCell className="text-xs text-muted-foreground">
+                                  {preview ? `1 ${c.from_uom} = ${preview.qty} ${c.to_uom}` : "—"}
+                                </TableCell>
+                                {canWrite && (
+                                  <TableCell>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-7 w-7"
+                                      onClick={() => removeConversion.mutate(c.id)}
+                                    >
+                                      <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                                    </Button>
+                                  </TableCell>
+                                )}
+                              </TableRow>
+                            );
+                          })}
                           {canWrite && (
                             <TableRow>
                               <TableCell>
-                                <Select value={newConv.from_uom} onValueChange={(v) => setNewConv(p => ({ ...p, from_uom: v }))}>
+                                <Select
+                                  value={newConv.from_uom}
+                                  onValueChange={(v) => setNewConv((p) => ({ ...p, from_uom: v }))}
+                                >
                                   <SelectTrigger className="h-7 text-xs">
                                     <SelectValue placeholder="From…" />
                                   </SelectTrigger>
                                   <SelectContent>
-                                    {UOM_OPTIONS.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+                                    {uomOptions.map((o) => (
+                                      <SelectItem key={o} value={o}>
+                                        {o}
+                                      </SelectItem>
+                                    ))}
                                   </SelectContent>
                                 </Select>
                               </TableCell>
                               <TableCell>
-                                <Select value={newConv.to_uom} onValueChange={(v) => setNewConv(p => ({ ...p, to_uom: v }))}>
+                                <Select
+                                  value={newConv.to_uom}
+                                  onValueChange={(v) => setNewConv((p) => ({ ...p, to_uom: v }))}
+                                >
                                   <SelectTrigger className="h-7 text-xs">
                                     <SelectValue placeholder="To…" />
                                   </SelectTrigger>
                                   <SelectContent>
-                                    {UOM_OPTIONS.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+                                    {uomOptions.map((o) => (
+                                      <SelectItem key={o} value={o}>
+                                        {o}
+                                      </SelectItem>
+                                    ))}
                                   </SelectContent>
                                 </Select>
                               </TableCell>
@@ -1261,11 +1324,25 @@ export function Item360Page({
                                 <Input
                                   type="number"
                                   step="any"
+                                  min="0.00000001"
                                   value={newConv.factor}
-                                  onChange={(e) => setNewConv(p => ({ ...p, factor: e.target.value }))}
-                                  placeholder="1"
+                                  onChange={(e) => setNewConv((p) => ({ ...p, factor: e.target.value }))}
+                                  placeholder="e.g. 12"
                                   className="h-7 text-xs text-right"
                                 />
+                              </TableCell>
+                              <TableCell className="text-xs text-muted-foreground">
+                                {/* Live preview of the entered conversion */}
+                                {newConv.from_uom && newConv.to_uom && newConv.factor && Number(newConv.factor) > 0 && (
+                                  <span>
+                                    1 {newConv.from_uom} = {Number(newConv.factor)} {newConv.to_uom}
+                                  </span>
+                                )}
+                                {newConv.from_uom &&
+                                  newConv.to_uom &&
+                                  uomEngine.checkCircular(newConv.from_uom, newConv.to_uom, id) && (
+                                    <span className="text-destructive block text-[10px]">⚠ Circular</span>
+                                  )}
                               </TableCell>
                               <TableCell>
                                 <Button
@@ -1330,7 +1407,9 @@ export function Item360Page({
                           </TableCell>
                           <TableCell className="text-center">
                             {w.qty <= 0 ? (
-                              <Badge variant="destructive" className="text-xs">Out</Badge>
+                              <Badge variant="destructive" className="text-xs">
+                                Out
+                              </Badge>
                             ) : item?.reorder && w.qty <= Number(item.reorder) ? (
                               <Badge className="bg-warning/15 text-warning border-0 text-xs">Low</Badge>
                             ) : (
@@ -1354,9 +1433,7 @@ export function Item360Page({
               <CardHeader className="border-b px-4 py-3">
                 <CardTitle className="text-sm">
                   Stock Movements
-                  <span className="ml-2 text-muted-foreground font-normal text-xs">
-                    ({movements.length} entries)
-                  </span>
+                  <span className="ml-2 text-muted-foreground font-normal text-xs">({movements.length} entries)</span>
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-0">
@@ -1387,23 +1464,14 @@ export function Item360Page({
                           const isIn = q > 0;
                           return (
                             <TableRow key={m.id}>
-                              <TableCell className="text-xs whitespace-nowrap">
-                                {fmtDateTime(m.created_at)}
-                              </TableCell>
+                              <TableCell className="text-xs whitespace-nowrap">{fmtDateTime(m.created_at)}</TableCell>
                               <TableCell>
-                                <Badge
-                                  variant={isIn ? "secondary" : "outline"}
-                                  className="text-xs"
-                                >
+                                <Badge variant={isIn ? "secondary" : "outline"} className="text-xs">
                                   {REF_LABELS[m.ref_type] ?? m.ref_type}
                                 </Badge>
                               </TableCell>
-                              <TableCell className="text-xs">
-                                {m.warehouses?.name ?? "—"}
-                              </TableCell>
-                              <TableCell className="text-xs font-mono text-muted-foreground">
-                                {m.note ?? "—"}
-                              </TableCell>
+                              <TableCell className="text-xs">{m.warehouses?.name ?? "—"}</TableCell>
+                              <TableCell className="text-xs font-mono text-muted-foreground">{m.note ?? "—"}</TableCell>
                               <TableCell className="text-right font-mono tabular-nums text-xs text-success">
                                 {isIn ? qty(Math.abs(q)) : "—"}
                               </TableCell>
@@ -1445,9 +1513,7 @@ export function Item360Page({
                       <Icon className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
                       <div>
                         <p className="text-xs text-muted-foreground">{label}</p>
-                        <p className="text-lg font-semibold font-mono tabular-nums leading-tight">
-                          {value}
-                        </p>
+                        <p className="text-lg font-semibold font-mono tabular-nums leading-tight">{value}</p>
                       </div>
                     </CardContent>
                   </Card>
@@ -1490,9 +1556,15 @@ export function Item360Page({
                                 {l.invoices?.status ?? "—"}
                               </Badge>
                             </TableCell>
-                            <TableCell className="text-right font-mono tabular-nums text-xs">{qty(l.quantity)}</TableCell>
-                            <TableCell className="text-right font-mono tabular-nums text-xs">{money(l.unit_price)}</TableCell>
-                            <TableCell className="text-right font-mono tabular-nums text-xs font-medium">{money(l.line_total)}</TableCell>
+                            <TableCell className="text-right font-mono tabular-nums text-xs">
+                              {qty(l.quantity)}
+                            </TableCell>
+                            <TableCell className="text-right font-mono tabular-nums text-xs">
+                              {money(l.unit_price)}
+                            </TableCell>
+                            <TableCell className="text-right font-mono tabular-nums text-xs font-medium">
+                              {money(l.line_total)}
+                            </TableCell>
                           </TableRow>
                         ))
                       )}
@@ -1536,8 +1608,12 @@ export function Item360Page({
                                 {l.sales_orders?.status ?? "—"}
                               </Badge>
                             </TableCell>
-                            <TableCell className="text-right font-mono tabular-nums text-xs">{qty(l.quantity)}</TableCell>
-                            <TableCell className="text-right font-mono tabular-nums text-xs">{money(l.line_total)}</TableCell>
+                            <TableCell className="text-right font-mono tabular-nums text-xs">
+                              {qty(l.quantity)}
+                            </TableCell>
+                            <TableCell className="text-right font-mono tabular-nums text-xs">
+                              {money(l.line_total)}
+                            </TableCell>
                           </TableRow>
                         ))
                       )}
@@ -1609,9 +1685,15 @@ export function Item360Page({
                                 {l.bills?.status ?? "—"}
                               </Badge>
                             </TableCell>
-                            <TableCell className="text-right font-mono tabular-nums text-xs">{qty(l.quantity)}</TableCell>
-                            <TableCell className="text-right font-mono tabular-nums text-xs">{money(l.unit_price)}</TableCell>
-                            <TableCell className="text-right font-mono tabular-nums text-xs font-medium">{money(l.line_total)}</TableCell>
+                            <TableCell className="text-right font-mono tabular-nums text-xs">
+                              {qty(l.quantity)}
+                            </TableCell>
+                            <TableCell className="text-right font-mono tabular-nums text-xs">
+                              {money(l.unit_price)}
+                            </TableCell>
+                            <TableCell className="text-right font-mono tabular-nums text-xs font-medium">
+                              {money(l.line_total)}
+                            </TableCell>
                           </TableRow>
                         ))
                       )}
@@ -1635,10 +1717,7 @@ export function Item360Page({
                   <FieldRow label="Preferred Supplier">
                     <FkSelect field="preferred_supplier_id" opts={suppliers as any[]} placeholder="Select supplier…" />
                   </FieldRow>
-                  <FieldRow
-                    label="Lead Time (days)"
-                    hint="Average days from order placement to receipt."
-                  >
+                  <FieldRow label="Lead Time (days)" hint="Average days from order placement to receipt.">
                     <TextInput field="supplier_lead_time_days" type="number" placeholder="0" />
                   </FieldRow>
                   <FieldRow label="Purchase Description">
@@ -1674,7 +1753,8 @@ export function Item360Page({
                     </TableHeader>
                     <TableBody>
                       {(() => {
-                        const bySupplier: Record<string, { name: string; count: number; qty: number; spend: number }> = {};
+                        const bySupplier: Record<string, { name: string; count: number; qty: number; spend: number }> =
+                          {};
                         for (const l of billLines as any[]) {
                           const sid = l.bills?.supplier_id ?? "__none";
                           const sname = l.bills?.suppliers?.name ?? "Unknown";
@@ -1801,8 +1881,12 @@ export function Item360Page({
                           <TableRow key={l.id}>
                             <TableCell className="font-mono tabular-nums text-sm">{qty(l.quantity)}</TableCell>
                             <TableCell className="text-sm">{l.items?.uom ?? item?.uom ?? "—"}</TableCell>
-                            <TableCell className="text-right font-mono tabular-nums text-sm">{money(l.unit_cost)}</TableCell>
-                            <TableCell className="text-right font-mono tabular-nums text-sm">{money(l.line_total)}</TableCell>
+                            <TableCell className="text-right font-mono tabular-nums text-sm">
+                              {money(l.unit_cost)}
+                            </TableCell>
+                            <TableCell className="text-right font-mono tabular-nums text-sm">
+                              {money(l.line_total)}
+                            </TableCell>
                           </TableRow>
                         ))
                       )}
@@ -1821,8 +1905,22 @@ export function Item360Page({
               {/* KPIs */}
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                 {[
-                  { label: "Total Produced", value: qty(productionOrders.filter((o: any) => o.status === "Completed").reduce((s: number, o: any) => s + Number(o.quantity), 0)), icon: Factory },
-                  { label: "Open Orders", value: String(productionOrders.filter((o: any) => ["Planned", "In Progress"].includes(o.status)).length), icon: RefreshCw },
+                  {
+                    label: "Total Produced",
+                    value: qty(
+                      productionOrders
+                        .filter((o: any) => o.status === "Completed")
+                        .reduce((s: number, o: any) => s + Number(o.quantity), 0),
+                    ),
+                    icon: Factory,
+                  },
+                  {
+                    label: "Open Orders",
+                    value: String(
+                      productionOrders.filter((o: any) => ["Planned", "In Progress"].includes(o.status)).length,
+                    ),
+                    icon: RefreshCw,
+                  },
                   { label: "Pending Qty", value: qty(pendingReceive), icon: TrendingUp },
                 ].map(({ label, value, icon: Icon }) => (
                   <Card key={label}>
@@ -1873,7 +1971,9 @@ export function Item360Page({
                             <TableCell className="text-xs">{fmtDate(o.date)}</TableCell>
                             <TableCell className="text-right font-mono tabular-nums">{qty(o.quantity)}</TableCell>
                             <TableCell>
-                              <Badge variant="secondary" className="text-xs">{o.status}</Badge>
+                              <Badge variant="secondary" className="text-xs">
+                                {o.status}
+                              </Badge>
                             </TableCell>
                             <TableCell className="text-xs text-muted-foreground">
                               {o.posted_at ? fmtDate(o.posted_at) : "—"}
@@ -1912,10 +2012,7 @@ export function Item360Page({
                   >
                     <TextInput field="standard_cost" type="number" placeholder="0.00" />
                   </FieldRow>
-                  <FieldRow
-                    label="Selling Price"
-                    hint="Default price shown on sales orders and invoices."
-                  >
+                  <FieldRow label="Selling Price" hint="Default price shown on sales orders and invoices.">
                     <TextInput field="price" type="number" placeholder="0.00" />
                   </FieldRow>
                   {!isNew && item?.cost != null && item?.price != null && (
@@ -1932,11 +2029,7 @@ export function Item360Page({
                           <span className="text-muted-foreground">Margin %</span>
                           <span className="font-mono tabular-nums font-medium">
                             {Number(item.price) > 0
-                              ? (
-                                  ((Number(item.price) - Number(item.cost)) /
-                                    Number(item.price)) *
-                                  100
-                                ).toFixed(1) + "%"
+                              ? (((Number(item.price) - Number(item.cost)) / Number(item.price)) * 100).toFixed(1) + "%"
                               : "—"}
                           </span>
                         </div>
@@ -1944,11 +2037,7 @@ export function Item360Page({
                           <span className="text-muted-foreground">Markup %</span>
                           <span className="font-mono tabular-nums font-medium">
                             {Number(item.cost) > 0
-                              ? (
-                                  ((Number(item.price) - Number(item.cost)) /
-                                    Number(item.cost)) *
-                                  100
-                                ).toFixed(1) + "%"
+                              ? (((Number(item.price) - Number(item.cost)) / Number(item.cost)) * 100).toFixed(1) + "%"
                               : "—"}
                           </span>
                         </div>
@@ -1966,7 +2055,9 @@ export function Item360Page({
                   <CardContent className="px-4 pb-4 space-y-1.5 text-sm">
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">On Hand</span>
-                      <span className="font-mono tabular-nums">{qty(stockOnHand)} {item?.uom}</span>
+                      <span className="font-mono tabular-nums">
+                        {qty(stockOnHand)} {item?.uom}
+                      </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Avg Cost</span>
@@ -2004,8 +2095,8 @@ export function Item360Page({
                 </CardHeader>
                 <CardContent className="px-4 pb-4">
                   <p className="text-xs text-muted-foreground mb-4">
-                    Leave blank to use the tenant-wide default accounts (1200 Inventory, 5000 COGS, 4000 Revenue,
-                    6000 Expense). These per-item overrides take precedence when set.
+                    Leave blank to use the tenant-wide default accounts (1200 Inventory, 5000 COGS, 4000 Revenue, 6000
+                    Expense). These per-item overrides take precedence when set.
                   </p>
                   <FieldRow label="Inventory Account" hint="Asset account for this item's stock value.">
                     <FkSelect
@@ -2015,11 +2106,7 @@ export function Item360Page({
                     />
                   </FieldRow>
                   <FieldRow label="COGS Account" hint="Expense account debited when this item is invoiced.">
-                    <FkSelect
-                      field="cogs_account_id"
-                      opts={coaAccounts as any[]}
-                      placeholder="Default (5000 COGS)…"
-                    />
+                    <FkSelect field="cogs_account_id" opts={coaAccounts as any[]} placeholder="Default (5000 COGS)…" />
                   </FieldRow>
                   <FieldRow label="Sales Account" hint="Income account credited when this item is invoiced.">
                     <FkSelect
@@ -2070,9 +2157,7 @@ export function Item360Page({
                 </CardHeader>
                 <CardContent className="p-4">
                   {movements.length === 0 ? (
-                    <p className="text-sm text-muted-foreground text-center py-6">
-                      No activity recorded yet.
-                    </p>
+                    <p className="text-sm text-muted-foreground text-center py-6">No activity recorded yet.</p>
                   ) : (
                     <ol className="relative border-l border-muted ml-2 space-y-0">
                       {movements.slice(0, 50).map((m: any, idx: number) => {
@@ -2085,31 +2170,19 @@ export function Item360Page({
                                 isIn ? "bg-success" : "bg-destructive"
                               }`}
                             />
-                            <p className="text-xs text-muted-foreground leading-tight">
-                              {fmtDateTime(m.created_at)}
-                            </p>
+                            <p className="text-xs text-muted-foreground leading-tight">{fmtDateTime(m.created_at)}</p>
                             <p className="text-sm leading-snug mt-0.5">
-                              <span className="font-medium">
-                                {REF_LABELS[m.ref_type] ?? m.ref_type}
-                              </span>
+                              <span className="font-medium">{REF_LABELS[m.ref_type] ?? m.ref_type}</span>
                               {" — "}
-                              <span
-                                className={`font-mono font-semibold ${
-                                  isIn ? "text-success" : "text-destructive"
-                                }`}
-                              >
+                              <span className={`font-mono font-semibold ${isIn ? "text-success" : "text-destructive"}`}>
                                 {isIn ? "+" : "−"}
                                 {qty(Math.abs(q))} {item?.uom}
                               </span>
                               {m.warehouses?.name && (
-                                <span className="text-muted-foreground text-xs">
-                                  {" "}@ {m.warehouses.name}
-                                </span>
+                                <span className="text-muted-foreground text-xs"> @ {m.warehouses.name}</span>
                               )}
                             </p>
-                            {m.note && (
-                              <p className="text-xs text-muted-foreground mt-0.5">{m.note}</p>
-                            )}
+                            {m.note && <p className="text-xs text-muted-foreground mt-0.5">{m.note}</p>}
                           </li>
                         );
                       })}
