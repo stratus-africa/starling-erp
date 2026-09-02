@@ -288,7 +288,6 @@ export function Item360Page({ id, backTo = "/inventory/items", backLabel = "Item
 
   const { data: productionOrders = [] } = useQuery({
     queryKey: ["production_orders", "for-item", id],
-    enabled: !isNew,
     queryFn: async () => {
       if (!bomHeaders.length) return [];
       const bomIds = bomHeaders.map((b: any) => b.id);
