@@ -288,6 +288,7 @@ export function Item360Page({ id, backTo = "/inventory/items", backLabel = "Item
 
   const { data: productionOrders = [] } = useQuery({
     queryKey: ["production_orders", "for-item", id],
+    enabled: !isNew,
     queryFn: async () => {
       if (!bomHeaders.length) return [];
       const bomIds = bomHeaders.map((b: any) => b.id);
@@ -419,7 +420,36 @@ export function Item360Page({ id, backTo = "/inventory/items", backLabel = "Item
     },
   });
 
-  // Keep legacy stockByWarehouse for backward-compat (stock snapshot card uses it)
+  // ── Live availability from the reservation system ─────────────────────────
+  // This replaces the old client-side pendingShip calculation with a DB-
+  // authoritative query that accounts for actual stock_reservations rows.
+  const { data: availabilityRows = [] } = useQuery({
+    queryKey: ["inventory_available", "item", id],
+    enabled: !isNew,
+    queryFn: async () => {
+      const { data, error } = await db.rpc("get_item_availability", {
+        _item_id: id,
+      });
+      if (error) throw error;
+      return (data ?? []) as any[];
+    },
+    // Refresh when movements change
+    staleTime: 15_000,
+  });
+
+  // Aggregate across all warehouses for item-level totals
+  const availability = availabilityRows.reduce(
+    (acc: { on_hand: number; reserved: number; available: number; on_order: number; projected: number }, r: any) => ({
+      on_hand: acc.on_hand + Number(r.on_hand ?? 0),
+      reserved: acc.reserved + Number(r.reserved ?? 0),
+      available: acc.available + Number(r.available ?? 0),
+      on_order: acc.on_order + Number(r.on_order ?? 0),
+      projected: acc.projected + Number(r.projected ?? 0),
+    }),
+    { on_hand: 0, reserved: 0, available: 0, on_order: 0, projected: 0 },
+  );
+
+  // Keep legacy stockByWarehouse for backward-compat (warehouse tab uses it)
   const stockByWarehouse = movements.reduce(
     (acc: Record<string, { name: string; code: string; qty: number }>, m: any) => {
       const wid = m.warehouse_id ?? "__none";
@@ -430,11 +460,10 @@ export function Item360Page({ id, backTo = "/inventory/items", backLabel = "Item
     {},
   );
 
-  const totalCostValue = stockOnHand * Number(item?.cost ?? 0);
+  const totalCostValue = availability.on_hand * Number(item?.cost ?? 0);
 
-  const pendingShip = salesOrderLines
-    .filter((l: any) => ["Confirmed", "Processing", "Packed"].includes(l.sales_orders?.status))
-    .reduce((s: number, l: any) => s + Number(l.quantity ?? 0), 0);
+  // pendingShip derived from reservations (for Sales tab KPI cards)
+  const pendingShip = availability.reserved;
 
   const pendingReceive = productionOrders
     .filter((o: any) => ["Planned", "In Progress"].includes(o.status))
@@ -448,8 +477,9 @@ export function Item360Page({ id, backTo = "/inventory/items", backLabel = "Item
 
   const totalPurchaseValue = billLines.reduce((s: number, l: any) => s + Number(l.line_total ?? 0), 0);
 
-  const isLowStock = item?.reorder != null && stockOnHand <= Number(item.reorder);
-  const isBelowMin = item?.min_stock != null && stockOnHand < Number(item.min_stock);
+  const isLowStock = item?.reorder != null && availability.on_hand <= Number(item.reorder);
+  const isBelowMin = item?.min_stock != null && availability.on_hand < Number(item.min_stock);
+  const isOverReserved = availability.available < 0;
 
   // ── Form state ─────────────────────────────────────────────────────────────
 
@@ -1005,36 +1035,108 @@ export function Item360Page({ id, backTo = "/inventory/items", backLabel = "Item
                 {!isNew && (
                   <Card>
                     <CardHeader className="pb-2 pt-4 px-4">
-                      <CardTitle className="text-sm">Stock Snapshot</CardTitle>
+                      <CardTitle className="text-sm flex items-center gap-2">
+                        Stock Snapshot
+                        {isOverReserved && (
+                          <span className="text-[10px] rounded px-1.5 py-0.5 bg-destructive/15 text-destructive font-medium">
+                            Over-reserved
+                          </span>
+                        )}
+                      </CardTitle>
                     </CardHeader>
                     <CardContent className="px-4 pb-4 space-y-1.5">
+                      {/* On Hand */}
                       <div className="flex justify-between text-sm">
                         <span className="text-muted-foreground">On Hand</span>
-                        <StockBadge value={stockOnHand} warn={isBelowMin} uom={item?.uom} />
+                        <StockBadge value={availability.on_hand} warn={isBelowMin} uom={item?.uom} />
                       </div>
+
+                      {/* Reserved */}
                       <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">Pending Ship</span>
-                        <span className="font-mono tabular-nums text-sm">
-                          {qty(pendingShip)} {item?.uom}
+                        <span className="text-muted-foreground flex items-center gap-1">
+                          Reserved
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Info className="h-3 w-3 cursor-help text-muted-foreground/60" />
+                              </TooltipTrigger>
+                              <TooltipContent side="left" className="max-w-52 text-xs">
+                                Quantity held by confirmed sales orders and planned production orders. Physical stock is
+                                unchanged until shipped/posted.
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </span>
+                        <span
+                          className={`font-mono tabular-nums text-sm ${availability.reserved > 0 ? "text-amber-600" : ""}`}
+                        >
+                          {qty(availability.reserved)} {item?.uom}
                         </span>
                       </div>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">Available</span>
-                        <span className="font-mono tabular-nums text-sm font-semibold">
-                          {qty(Math.max(0, stockOnHand - pendingShip))} {item?.uom}
+
+                      {/* Available = On Hand - Reserved */}
+                      <div className="flex justify-between text-sm border-t pt-1.5">
+                        <span className="font-medium">Available</span>
+                        <span
+                          className={`font-mono tabular-nums text-sm font-semibold ${
+                            isOverReserved
+                              ? "text-destructive"
+                              : availability.available === 0
+                                ? "text-muted-foreground"
+                                : ""
+                          }`}
+                        >
+                          {qty(availability.available)} {item?.uom}
                         </span>
                       </div>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">Pending Receive</span>
-                        <span className="font-mono tabular-nums text-sm text-blue-500">
-                          {qty(pendingReceive)} {item?.uom}
-                        </span>
-                      </div>
+
                       <Separator />
+
+                      {/* On Order (open POs) */}
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground flex items-center gap-1">
+                          On Order
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Info className="h-3 w-3 cursor-help text-muted-foreground/60" />
+                              </TooltipTrigger>
+                              <TooltipContent side="left" className="max-w-52 text-xs">
+                                Quantity on confirmed or processing purchase orders. Not yet received into stock.
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </span>
+                        <span className="font-mono tabular-nums text-sm text-blue-500">
+                          {qty(availability.on_order)} {item?.uom}
+                        </span>
+                      </div>
+
+                      {/* Projected = Available + On Order */}
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Projected</span>
+                        <span className="font-mono tabular-nums text-sm">
+                          {qty(availability.projected)} {item?.uom}
+                        </span>
+                      </div>
+
+                      <Separator />
+
+                      {/* Stock value */}
                       <div className="flex justify-between text-sm">
                         <span className="text-muted-foreground">Stock Value</span>
                         <span className="font-mono tabular-nums text-sm font-semibold">{money(totalCostValue)}</span>
                       </div>
+
+                      {/* Pending production receive */}
+                      {pendingReceive > 0 && (
+                        <div className="flex justify-between text-sm">
+                          <span className="text-muted-foreground">Pending Produce</span>
+                          <span className="font-mono tabular-nums text-sm text-blue-500">
+                            {qty(pendingReceive)} {item?.uom}
+                          </span>
+                        </div>
+                      )}
                     </CardContent>
                   </Card>
                 )}
@@ -1149,9 +1251,9 @@ export function Item360Page({ id, backTo = "/inventory/items", backLabel = "Item
                     {(
                       [
                         { field: "uom", label: "Stock UoM", required: true },
-                        { field: "purchase_uom", label: "Purchase UoM", required: false },
-                        { field: "sales_uom", label: "Sales UoM", required: false },
-                        { field: "manufacturing_uom", label: "Mfg UoM", required: false },
+                        { field: "purchase_uom", label: "Purchase UoM" },
+                        { field: "sales_uom", label: "Sales UoM" },
+                        { field: "manufacturing_uom", label: "Mfg UoM" },
                       ] as const
                     ).map(({ field, label, required }) => {
                       const code = values[field] as string | undefined;
@@ -1611,7 +1713,7 @@ export function Item360Page({ id, backTo = "/inventory/items", backLabel = "Item
                 {[
                   { label: "Total Sold (Qty)", value: qty(totalSalesQty), icon: TrendingUp },
                   { label: "Total Revenue", value: money(totalSalesValue), icon: DollarSign },
-                  { label: "Open Orders (Qty)", value: qty(pendingShip), icon: ShoppingCart },
+                  { label: "Reserved (Qty)", value: qty(availability.reserved), icon: ShoppingCart },
                   { label: "Invoices", value: String(invoiceLines.length), icon: FileText },
                 ].map(({ label, value, icon: Icon }) => (
                   <Card key={label}>
@@ -2162,7 +2264,21 @@ export function Item360Page({ id, backTo = "/inventory/items", backLabel = "Item
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">On Hand</span>
                       <span className="font-mono tabular-nums">
-                        {qty(stockOnHand)} {item?.uom}
+                        {qty(availability.on_hand)} {item?.uom}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Reserved</span>
+                      <span className={`font-mono tabular-nums ${availability.reserved > 0 ? "text-amber-600" : ""}`}>
+                        {qty(availability.reserved)} {item?.uom}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground font-medium">Available</span>
+                      <span
+                        className={`font-mono tabular-nums font-medium ${isOverReserved ? "text-destructive" : ""}`}
+                      >
+                        {qty(availability.available)} {item?.uom}
                       </span>
                     </div>
                     <div className="flex justify-between">
@@ -2178,7 +2294,7 @@ export function Item360Page({ id, backTo = "/inventory/items", backLabel = "Item
                       <div className="flex justify-between text-muted-foreground">
                         <span>At Standard Cost</span>
                         <span className="font-mono tabular-nums">
-                          {money(stockOnHand * Number(item.standard_cost))}
+                          {money(availability.on_hand * Number(item.standard_cost))}
                         </span>
                       </div>
                     )}
