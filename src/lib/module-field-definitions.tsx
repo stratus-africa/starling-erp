@@ -122,10 +122,139 @@ export const supplierFields: FieldDef[] = [
 ];
 
 export const warehouseFields: FieldDef[] = [
+  // ── Table columns ──────────────────────────────────────────────────────────
   { key: "code", label: "Code", render: mono },
   { key: "name", label: "Warehouse", required: true, render: bold },
-  { key: "location", label: "Location" },
+  { key: "city", label: "City" },
   { key: "status", label: "Status", type: "select", options: ["Active", "Inactive"], defaultValue: "Active" },
+  // ── Form-only fields ───────────────────────────────────────────────────────
+  { key: "address", label: "Address", hideInTable: true, group: "Location" },
+  { key: "location", label: "State / Region", hideInTable: true, group: "Location" },
+  { key: "country", label: "Country", hideInTable: true, group: "Location" },
+  { key: "manager_name", label: "Manager", hideInTable: true, group: "Details" },
+  {
+    key: "capacity_sqm",
+    label: "Capacity (m²)",
+    type: "number",
+    className: "text-right",
+    hideInTable: true,
+    group: "Details",
+    validate: (v) => (v == null || v === "" || Number(v) >= 0 ? null : "Capacity cannot be negative"),
+  },
+];
+
+export const zoneFields: FieldDef[] = [
+  {
+    key: "code",
+    label: "Code",
+    required: true,
+    render: mono,
+    validate: (v) => (!v?.trim() ? "Code is required" : v.length > 20 ? "Max 20 chars" : null),
+  },
+  {
+    key: "name",
+    label: "Zone",
+    required: true,
+    render: bold,
+    validate: (v) => (!v?.trim() ? "Name is required" : null),
+  },
+  {
+    key: "zone_type",
+    label: "Type",
+    type: "select",
+    options: ["Receiving", "Storage", "Picking", "Dispatch", "Quarantine", "Returns", "Custom"],
+    defaultValue: "Storage",
+  },
+  {
+    key: "is_active",
+    label: "Active",
+    type: "select",
+    options: ["true", "false"],
+    defaultValue: "true",
+    hideInTable: true,
+    render: (v) =>
+      String(v) !== "false" ? (
+        <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs bg-success/15 text-success">
+          Active
+        </span>
+      ) : (
+        <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs bg-muted text-muted-foreground">
+          Inactive
+        </span>
+      ),
+  },
+  { key: "sort_order", label: "Order", type: "number", className: "text-right", defaultValue: "0", hideInTable: true },
+  { key: "description", label: "Description", type: "textarea", hideInTable: true },
+];
+
+export const locationFields: FieldDef[] = [
+  // ── Table columns ──────────────────────────────────────────────────────────
+  {
+    key: "code",
+    label: "Bin Code",
+    required: true,
+    render: mono,
+    validate: (v) => (!v?.trim() ? "Code is required" : null),
+  },
+  { key: "name", label: "Label", render: bold },
+  {
+    key: "location_type",
+    label: "Type",
+    type: "select",
+    options: ["Bin", "Rack", "Shelf", "Floor", "Pallet", "Bulk", "Staging", "Custom"],
+    defaultValue: "Bin",
+  },
+  {
+    key: "is_active",
+    label: "Active",
+    type: "select",
+    options: ["true", "false"],
+    defaultValue: "true",
+    render: (v) =>
+      String(v) !== "false" ? (
+        <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs bg-success/15 text-success">
+          Active
+        </span>
+      ) : (
+        <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs bg-muted text-muted-foreground">
+          Inactive
+        </span>
+      ),
+  },
+  // ── Form-only fields ───────────────────────────────────────────────────────
+  { key: "aisle", label: "Aisle", hideInTable: true, group: "Coordinates", render: mono },
+  { key: "rack", label: "Rack", hideInTable: true, group: "Coordinates", render: mono },
+  { key: "level", label: "Level", hideInTable: true, group: "Coordinates", render: mono },
+  { key: "bin", label: "Bin", hideInTable: true, group: "Coordinates", render: mono },
+  {
+    key: "max_weight_kg",
+    label: "Max Weight (kg)",
+    type: "number",
+    className: "text-right",
+    hideInTable: true,
+    group: "Capacity",
+    validate: (v) => (v == null || v === "" || Number(v) >= 0 ? null : "Cannot be negative"),
+  },
+  {
+    key: "max_volume_m3",
+    label: "Max Volume (m³)",
+    type: "number",
+    className: "text-right",
+    hideInTable: true,
+    group: "Capacity",
+    validate: (v) => (v == null || v === "" || Number(v) >= 0 ? null : "Cannot be negative"),
+  },
+  {
+    key: "max_units",
+    label: "Max Units",
+    type: "number",
+    className: "text-right",
+    hideInTable: true,
+    group: "Capacity",
+    validate: (v) => (v == null || v === "" || Number(v) >= 0 ? null : "Cannot be negative"),
+  },
+  { key: "sort_order", label: "Sort Order", type: "number", defaultValue: "0", hideInTable: true, group: "Capacity" },
+  { key: "notes", label: "Notes", type: "textarea", hideInTable: true, group: "Capacity" },
 ];
 
 export const itemFields: FieldDef[] = [
@@ -709,6 +838,14 @@ export const inventoryAdjustmentFields: FieldDef[] = [
   { key: "date", label: "Date", type: "date", render: dateFmt },
   { key: "item_id", label: "Item", type: "fk", fkTable: "items", required: true, hideInTable: true },
   { key: "warehouse_id", label: "Warehouse", type: "fk", fkTable: "warehouses", required: true, hideInTable: true },
+  {
+    key: "location_id",
+    label: "Bin / Location",
+    type: "fk",
+    fkTable: "warehouse_locations",
+    fkLabel: "code",
+    hideInTable: true,
+  },
   { key: "quantity", label: "Qty", type: "number", className: "text-right", render: monoRight },
   { key: "reason", label: "Reason" },
   { key: "status", label: "Status", type: "select", options: ["Draft", "Posted", "Void"], defaultValue: "Draft" },
@@ -718,8 +855,24 @@ export const inventoryTransferFields: FieldDef[] = [
   { key: "number", label: "Transfer #", required: true, render: mono },
   { key: "date", label: "Date", type: "date", render: dateFmt },
   { key: "item_id", label: "Item", type: "fk", fkTable: "items", required: true, hideInTable: true },
-  { key: "from_warehouse_id", label: "From", type: "fk", fkTable: "warehouses", required: true, hideInTable: true },
-  { key: "to_warehouse_id", label: "To", type: "fk", fkTable: "warehouses", required: true, hideInTable: true },
+  { key: "from_warehouse_id", label: "From WH", type: "fk", fkTable: "warehouses", required: true, hideInTable: true },
+  {
+    key: "from_location_id",
+    label: "From Bin",
+    type: "fk",
+    fkTable: "warehouse_locations",
+    fkLabel: "code",
+    hideInTable: true,
+  },
+  { key: "to_warehouse_id", label: "To WH", type: "fk", fkTable: "warehouses", required: true, hideInTable: true },
+  {
+    key: "to_location_id",
+    label: "To Bin",
+    type: "fk",
+    fkTable: "warehouse_locations",
+    fkLabel: "code",
+    hideInTable: true,
+  },
   { key: "quantity", label: "Qty", type: "number", className: "text-right", render: monoRight },
   {
     key: "status",
