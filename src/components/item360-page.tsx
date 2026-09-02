@@ -240,7 +240,7 @@ export function Item360Page({ id, backTo = "/inventory/items", backLabel = "Item
     queryFn: async () => {
       const { data, error } = await db
         .from("stock_movements")
-        .select("*, warehouses(name, code)")
+        .select("*, warehouses(name, code), warehouse_locations(code, name, aisle, rack, level, bin)")
         .eq("item_id", id)
         .order("created_at", { ascending: false })
         .limit(500);
@@ -288,6 +288,7 @@ export function Item360Page({ id, backTo = "/inventory/items", backLabel = "Item
 
   const { data: productionOrders = [] } = useQuery({
     queryKey: ["production_orders", "for-item", id],
+    enabled: !isNew,
     queryFn: async () => {
       if (!bomHeaders.length) return [];
       const bomIds = bomHeaders.map((b: any) => b.id);
@@ -408,6 +409,18 @@ export function Item360Page({ id, backTo = "/inventory/items", backLabel = "Item
 
   const stockOnHand = movements.reduce((sum: number, m: any) => sum + Number(m.quantity ?? 0), 0);
 
+  // Live stock by warehouse + zone + location from canonical view
+  const { data: locationStock = [] } = useQuery({
+    queryKey: ["inventory_location_stock", "item", id],
+    enabled: !isNew,
+    queryFn: async () => {
+      const { data, error } = await db.from("inventory_location_stock").select("*").eq("item_id", id).neq("on_hand", 0);
+      if (error) throw error;
+      return (data ?? []) as any[];
+    },
+  });
+
+  // Keep legacy stockByWarehouse for backward-compat (stock snapshot card uses it)
   const stockByWarehouse = movements.reduce(
     (acc: Record<string, { name: string; code: string; qty: number }>, m: any) => {
       const wid = m.warehouse_id ?? "__none";
@@ -1140,11 +1153,7 @@ export function Item360Page({ id, backTo = "/inventory/items", backLabel = "Item
                         { field: "purchase_uom", label: "Purchase UoM" },
                         { field: "sales_uom", label: "Sales UoM" },
                         { field: "manufacturing_uom", label: "Mfg UoM" },
-                      ] as readonly {
-                        field: "uom" | "purchase_uom" | "sales_uom" | "manufacturing_uom";
-                        label: string;
-                        required?: boolean;
-                      }[]
+                      ] as const
                     ).map(({ field, label, required }) => {
                       const code = values[field] as string | undefined;
                       const stockUom = values.uom as string | undefined;
@@ -1373,59 +1382,150 @@ export function Item360Page({ id, backTo = "/inventory/items", backLabel = "Item
               TAB 3: WAREHOUSES
           ════════════════════════════════════════════════════════════════ */}
           <TabsContent value="warehouses" className="mt-0 flex-1 overflow-auto p-6">
-            <Card className="overflow-hidden p-0 max-w-3xl">
-              <CardHeader className="border-b px-4 py-3">
-                <CardTitle className="text-sm">Stock by Warehouse</CardTitle>
-              </CardHeader>
-              <CardContent className="p-0">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="bg-muted/20">
-                      <TableHead className="text-xs">Warehouse</TableHead>
-                      <TableHead className="text-xs">Code</TableHead>
-                      <TableHead className="text-xs text-right">On Hand</TableHead>
-                      <TableHead className="text-xs text-right">Value</TableHead>
-                      <TableHead className="text-xs text-center">Status</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {Object.keys(stockByWarehouse).length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={5} className="py-10 text-center text-sm text-muted-foreground">
-                          No warehouse stock recorded yet.
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      Object.entries(stockByWarehouse).map(([wid, w]: any) => (
-                        <TableRow key={wid}>
-                          <TableCell className="font-medium text-sm">{w.name}</TableCell>
-                          <TableCell className="font-mono text-xs text-muted-foreground">{w.code || "—"}</TableCell>
-                          <TableCell className="text-right font-mono tabular-nums">
-                            <span className={w.qty < 0 ? "text-destructive" : ""}>
-                              {qty(w.qty)} {item?.uom}
-                            </span>
-                          </TableCell>
-                          <TableCell className="text-right font-mono tabular-nums text-sm">
-                            {money(w.qty * Number(item?.cost ?? 0))}
-                          </TableCell>
-                          <TableCell className="text-center">
-                            {w.qty <= 0 ? (
-                              <Badge variant="destructive" className="text-xs">
-                                Out
-                              </Badge>
-                            ) : item?.reorder && w.qty <= Number(item.reorder) ? (
-                              <Badge className="bg-warning/15 text-warning border-0 text-xs">Low</Badge>
-                            ) : (
-                              <Badge className="bg-success/15 text-success border-0 text-xs">In Stock</Badge>
-                            )}
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
+            <div className="space-y-5 max-w-4xl">
+              {/* ── Warehouse-level summary ─────────────────────────────── */}
+              {(() => {
+                // Group location stock rows by warehouse
+                const byWh: Record<string, { name: string; code: string; qty: number }> = {};
+                for (const r of locationStock as any[]) {
+                  const wid = r.warehouse_id ?? "__none";
+                  // Warehouse name comes from movements join since inventory_location_stock view doesn't carry it
+                  if (!byWh[wid]) {
+                    const mv = movements.find((m: any) => m.warehouse_id === wid);
+                    byWh[wid] = {
+                      name: mv?.warehouses?.name ?? "Unassigned",
+                      code: mv?.warehouses?.code ?? "",
+                      qty: 0,
+                    };
+                  }
+                  byWh[wid].qty += Number(r.on_hand ?? 0);
+                }
+                return (
+                  <Card className="overflow-hidden p-0">
+                    <CardHeader className="border-b px-4 py-3">
+                      <CardTitle className="text-sm">Stock by Warehouse</CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-0">
+                      <Table>
+                        <TableHeader>
+                          <TableRow className="bg-muted/20">
+                            <TableHead className="text-xs">Warehouse</TableHead>
+                            <TableHead className="text-xs">Code</TableHead>
+                            <TableHead className="text-xs text-right">On Hand</TableHead>
+                            <TableHead className="text-xs text-right">Value</TableHead>
+                            <TableHead className="text-xs text-center">Status</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {Object.keys(byWh).length === 0 ? (
+                            <TableRow>
+                              <TableCell colSpan={5} className="py-10 text-center text-sm text-muted-foreground">
+                                No warehouse stock recorded yet.
+                              </TableCell>
+                            </TableRow>
+                          ) : (
+                            Object.entries(byWh).map(([wid, w]: any) => (
+                              <TableRow key={wid}>
+                                <TableCell className="font-medium text-sm">{w.name}</TableCell>
+                                <TableCell className="font-mono text-xs text-muted-foreground">
+                                  {w.code || "—"}
+                                </TableCell>
+                                <TableCell className="text-right font-mono tabular-nums">
+                                  <span className={w.qty < 0 ? "text-destructive" : ""}>
+                                    {qty(w.qty)} {item?.uom}
+                                  </span>
+                                </TableCell>
+                                <TableCell className="text-right font-mono tabular-nums text-sm">
+                                  {money(w.qty * Number(item?.cost ?? 0))}
+                                </TableCell>
+                                <TableCell className="text-center">
+                                  {w.qty <= 0 ? (
+                                    <Badge variant="destructive" className="text-xs">
+                                      Out
+                                    </Badge>
+                                  ) : item?.reorder && w.qty <= Number(item.reorder) ? (
+                                    <Badge className="bg-warning/15 text-warning border-0 text-xs">Low</Badge>
+                                  ) : (
+                                    <Badge className="bg-success/15 text-success border-0 text-xs">In Stock</Badge>
+                                  )}
+                                </TableCell>
+                              </TableRow>
+                            ))
+                          )}
+                        </TableBody>
+                      </Table>
+                    </CardContent>
+                  </Card>
+                );
+              })()}
+
+              {/* ── Zone + bin breakdown ────────────────────────────────── */}
+              {locationStock.length > 0 && (
+                <Card className="overflow-hidden p-0">
+                  <CardHeader className="border-b px-4 py-3">
+                    <CardTitle className="text-sm">
+                      Stock by Zone &amp; Bin
+                      <span className="ml-2 text-muted-foreground font-normal text-xs">
+                        ({locationStock.filter((r: any) => r.location_id).length} binned
+                        {locationStock.filter((r: any) => !r.location_id).length > 0 &&
+                          ` · ${locationStock.filter((r: any) => !r.location_id).length} unlocated`}
+                        )
+                      </span>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-0">
+                    <div className="overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow className="bg-muted/20">
+                            <TableHead className="text-xs">Zone</TableHead>
+                            <TableHead className="text-xs">Bin / Location</TableHead>
+                            <TableHead className="text-xs">Aisle</TableHead>
+                            <TableHead className="text-xs">Rack</TableHead>
+                            <TableHead className="text-xs">Level</TableHead>
+                            <TableHead className="text-xs text-right">On Hand</TableHead>
+                            <TableHead className="text-xs text-right">Value</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {(locationStock as any[]).map((r, i) => (
+                            <TableRow key={i}>
+                              <TableCell>
+                                {r.zone_name ? (
+                                  <span className="text-xs bg-muted text-muted-foreground rounded px-1.5 py-0.5">
+                                    {r.zone_name}
+                                  </span>
+                                ) : (
+                                  <span className="text-xs text-muted-foreground">—</span>
+                                )}
+                              </TableCell>
+                              <TableCell className="font-mono text-xs font-medium">
+                                {r.location_code ?? <span className="text-muted-foreground italic">Unlocated</span>}
+                              </TableCell>
+                              <TableCell className="font-mono text-xs text-muted-foreground">
+                                {r.aisle ?? "—"}
+                              </TableCell>
+                              <TableCell className="font-mono text-xs text-muted-foreground">{r.rack ?? "—"}</TableCell>
+                              <TableCell className="font-mono text-xs text-muted-foreground">
+                                {r.level ?? "—"}
+                              </TableCell>
+                              <TableCell className="text-right font-mono tabular-nums">
+                                <span className={Number(r.on_hand) < 0 ? "text-destructive" : ""}>
+                                  {qty(r.on_hand)} {item?.uom}
+                                </span>
+                              </TableCell>
+                              <TableCell className="text-right font-mono tabular-nums text-sm">
+                                {money(Number(r.on_hand) * Number(item?.cost ?? 0))}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
           </TabsContent>
 
           {/* ════════════════════════════════════════════════════════════════
@@ -1447,6 +1547,7 @@ export function Item360Page({ id, backTo = "/inventory/items", backLabel = "Item
                         <TableHead className="text-xs">Date</TableHead>
                         <TableHead className="text-xs">Type</TableHead>
                         <TableHead className="text-xs">Warehouse</TableHead>
+                        <TableHead className="text-xs">Bin</TableHead>
                         <TableHead className="text-xs">Reference</TableHead>
                         <TableHead className="text-xs text-right w-24">In</TableHead>
                         <TableHead className="text-xs text-right w-24">Out</TableHead>
@@ -1457,7 +1558,7 @@ export function Item360Page({ id, backTo = "/inventory/items", backLabel = "Item
                     <TableBody>
                       {movements.length === 0 ? (
                         <TableRow>
-                          <TableCell colSpan={8} className="py-10 text-center text-sm text-muted-foreground">
+                          <TableCell colSpan={9} className="py-10 text-center text-sm text-muted-foreground">
                             No stock movements yet. Post a bill, invoice, adjustment, or production order.
                           </TableCell>
                         </TableRow>
@@ -1474,6 +1575,9 @@ export function Item360Page({ id, backTo = "/inventory/items", backLabel = "Item
                                 </Badge>
                               </TableCell>
                               <TableCell className="text-xs">{m.warehouses?.name ?? "—"}</TableCell>
+                              <TableCell className="font-mono text-xs text-muted-foreground">
+                                {m.warehouse_locations?.code ?? "—"}
+                              </TableCell>
                               <TableCell className="text-xs font-mono text-muted-foreground">{m.note ?? "—"}</TableCell>
                               <TableCell className="text-right font-mono tabular-nums text-xs text-success">
                                 {isIn ? qty(Math.abs(q)) : "—"}
