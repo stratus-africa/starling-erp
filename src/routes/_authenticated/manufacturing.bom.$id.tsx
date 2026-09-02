@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { db } from "@/lib/typed-db";
@@ -14,6 +14,7 @@ import { Card } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ArrowLeft, Loader2, Plus, Save, Trash2 } from "lucide-react";
+import { buildUomEngine, roundQty, type UomMaster, type UomConversionRow } from "@/lib/uom";
 
 const money = (n: number) => (n || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
@@ -31,8 +32,12 @@ interface BomLine {
   line_no: number;
   item_id: string;
   quantity: number;
+  uom: string; // UOM the quantity is specified in
   unit_cost: number;
   line_total: number;
+  // derived — shown in table but not persisted directly
+  stock_uom?: string; // item's stock UOM
+  uom_factor?: number; // pre-computed conversion factor to stock UOM
 }
 
 function BomEditor({ id }: { id: string }) {
@@ -66,7 +71,8 @@ function BomEditor({ id }: { id: string }) {
     queryKey: ["bom_lines", id],
     enabled: !isNew,
     queryFn: async () => {
-      const { data, error } = await db.from("bom_lines")
+      const { data, error } = await db
+        .from("bom_lines")
         .select("*")
         .eq("bom_id", id)
         .is("deleted_at", null)
@@ -96,16 +102,50 @@ function BomEditor({ id }: { id: string }) {
           line_no: l.line_no,
           item_id: l.item_id ?? "",
           quantity: Number(l.quantity) || 0,
+          uom: l.uom ?? "",
           unit_cost: Number(l.unit_cost) || 0,
           line_total: Number(l.line_total) || 0,
+          stock_uom: undefined,
+          uom_factor: l.uom_factor ? Number(l.uom_factor) : undefined,
         })),
       );
   }, [existingLines]);
 
   const { data: items = [] } = useFkOptions("items", "name");
 
+  // UOM master + global conversions for conversion preview
+  const { data: uomMaster = [] } = useQuery({
+    queryKey: ["units_of_measure", "master"],
+    queryFn: async () => {
+      const { data } = await db
+        .from("units_of_measure")
+        .select("*")
+        .is("deleted_at", null)
+        .eq("is_active", true)
+        .order("name");
+      return (data ?? []) as UomMaster[];
+    },
+    staleTime: 60_000,
+  });
+
+  const { data: allConversions = [] } = useQuery({
+    queryKey: ["uom_conversions", "all"],
+    queryFn: async () => {
+      const { data } = await db.from("uom_conversions").select("*").is("deleted_at", null);
+      return (data ?? []) as UomConversionRow[];
+    },
+    staleTime: 30_000,
+  });
+
+  const uomEngine = useMemo(() => buildUomEngine(uomMaster, allConversions), [uomMaster, allConversions]);
+
+  const uomOptions =
+    uomMaster.length > 0
+      ? uomMaster.map((u) => u.code)
+      : ["pc", "pcs", "kg", "g", "lb", "m", "cm", "l", "ml", "box", "ctn", "pack", "doz", "pair", "roll", "sheet"];
+
   const addLine = () => {
-    setLines([...lines, { line_no: lines.length + 1, item_id: "", quantity: 1, unit_cost: 0, line_total: 0 }]);
+    setLines([...lines, { line_no: lines.length + 1, item_id: "", quantity: 1, uom: "", unit_cost: 0, line_total: 0 }]);
   };
 
   const updateLine = (idx: number, field: keyof BomLine, value: any) => {
@@ -115,7 +155,17 @@ function BomEditor({ id }: { id: string }) {
         const updated = { ...l, [field]: value };
         if (field === "item_id") {
           const item = items.find((it: any) => it.id === value);
-          if (item) updated.unit_cost = Number((item as any).cost) || 0;
+          if (item) {
+            updated.unit_cost = Number((item as any).cost) || 0;
+            updated.stock_uom = (item as any).uom ?? "pc";
+            // Default UOM to item's stock UOM if not set
+            if (!updated.uom) updated.uom = updated.stock_uom ?? "";
+          }
+        }
+        // Recompute uom_factor when UOM or item changes
+        if ((field === "uom" || field === "item_id") && updated.uom && updated.stock_uom) {
+          const result = uomEngine.convert(1, updated.uom, updated.stock_uom);
+          updated.uom_factor = result?.factor ?? 1;
         }
         updated.line_total = Math.round(Number(updated.quantity) * Number(updated.unit_cost) * 100) / 100;
         return updated;
@@ -151,7 +201,8 @@ function BomEditor({ id }: { id: string }) {
       };
 
       if (isNew) {
-        const { data, error } = await db.from("bom_headers")
+        const { data, error } = await db
+          .from("bom_headers")
           .insert({ ...payload, tenant_id: tenant.id })
           .select()
           .single();
@@ -170,6 +221,8 @@ function BomEditor({ id }: { id: string }) {
           line_no: line.line_no,
           item_id: line.item_id,
           quantity: Number(line.quantity),
+          uom: line.uom || null,
+          uom_factor: line.uom_factor != null ? Number(line.uom_factor) : null,
           unit_cost: Number(line.unit_cost),
           line_total: Number(line.line_total),
         };
@@ -306,7 +359,9 @@ function BomEditor({ id }: { id: string }) {
               <TableRow className="bg-muted/20">
                 <TableHead className="w-12 text-xs">#</TableHead>
                 <TableHead className="text-xs">Component</TableHead>
-                <TableHead className="text-right text-xs w-28">Qty</TableHead>
+                <TableHead className="text-right text-xs w-24">Qty</TableHead>
+                <TableHead className="text-xs w-24">UoM</TableHead>
+                <TableHead className="text-right text-xs w-28">Stock Qty</TableHead>
                 <TableHead className="text-right text-xs w-32">Unit Cost</TableHead>
                 <TableHead className="text-right text-xs w-32">Line Total</TableHead>
                 {canWrite && <TableHead className="w-10" />}
@@ -315,67 +370,109 @@ function BomEditor({ id }: { id: string }) {
             <TableBody>
               {lines.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={canWrite ? 6 : 5} className="text-center text-sm text-muted-foreground py-8">
+                  <TableCell colSpan={canWrite ? 8 : 7} className="text-center text-sm text-muted-foreground py-8">
                     No components yet. Click "Add Component" to define the recipe.
                   </TableCell>
                 </TableRow>
               )}
-              {lines.map((line, idx) => (
-                <TableRow key={idx}>
-                  <TableCell className="font-mono text-xs text-muted-foreground">{line.line_no}</TableCell>
-                  <TableCell>
-                    <Select
-                      value={line.item_id || undefined}
-                      onValueChange={(v) => updateLine(idx, "item_id", v)}
-                      disabled={!canWrite}
-                    >
-                      <SelectTrigger className="h-8">
-                        <SelectValue placeholder="Select item…" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {items.map((it: any) => (
-                          <SelectItem key={it.id} value={it.id}>
-                            {it.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Input
-                      type="number"
-                      step="any"
-                      className="h-8 text-right"
-                      value={line.quantity}
-                      onChange={(e) => updateLine(idx, "quantity", Number(e.target.value))}
-                      disabled={!canWrite}
-                    />
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Input
-                      type="number"
-                      step="any"
-                      className="h-8 text-right"
-                      value={line.unit_cost}
-                      onChange={(e) => updateLine(idx, "unit_cost", Number(e.target.value))}
-                      disabled={!canWrite}
-                    />
-                  </TableCell>
-                  <TableCell className="text-right font-mono tabular-nums">{money(line.line_total)}</TableCell>
-                  {canWrite && (
+              {lines.map((line, idx) => {
+                const itemMeta = items.find((it: any) => it.id === line.item_id) as any;
+                const stockUom = line.stock_uom ?? itemMeta?.uom ?? "pc";
+                const lineUom = line.uom || stockUom;
+                const isDifferentUom = lineUom && stockUom && lineUom !== stockUom;
+                const uomError = isDifferentUom
+                  ? uomEngine.hasPath(lineUom, stockUom, line.item_id || null)
+                    ? null
+                    : "No path"
+                  : null;
+                let stockQtyDisplay: string | null = null;
+                if (isDifferentUom && line.quantity > 0 && !uomError) {
+                  const res = uomEngine.convert(line.quantity, lineUom, stockUom, line.item_id || null);
+                  stockQtyDisplay = res ? `${roundQty(res.qty)} ${stockUom}` : null;
+                }
+
+                return (
+                  <TableRow key={idx}>
+                    <TableCell className="font-mono text-xs text-muted-foreground">{line.line_no}</TableCell>
                     <TableCell>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7 text-destructive"
-                        onClick={() => removeLine(idx)}
+                      <Select
+                        value={line.item_id || undefined}
+                        onValueChange={(v) => updateLine(idx, "item_id", v)}
+                        disabled={!canWrite}
                       >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </Button>
+                        <SelectTrigger className="h-8">
+                          <SelectValue placeholder="Select item…" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {items.map((it: any) => (
+                            <SelectItem key={it.id} value={it.id}>
+                              {it.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </TableCell>
-                  )}
-                </TableRow>
-              ))}
+                    <TableCell className="text-right">
+                      <Input
+                        type="number"
+                        step="any"
+                        min="0"
+                        className="h-8 text-right"
+                        value={line.quantity}
+                        onChange={(e) => updateLine(idx, "quantity", Number(e.target.value))}
+                        disabled={!canWrite}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Select value={lineUom} onValueChange={(v) => updateLine(idx, "uom", v)} disabled={!canWrite}>
+                        <SelectTrigger className={`h-8 text-xs ${uomError ? "border-destructive" : ""}`}>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {uomOptions.map((o) => (
+                            <SelectItem key={o} value={o}>
+                              {o}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {uomError && <p className="text-[10px] text-destructive mt-0.5">{uomError}</p>}
+                    </TableCell>
+                    <TableCell className="text-right font-mono tabular-nums text-xs text-muted-foreground">
+                      {stockQtyDisplay ? (
+                        <span title="Converted to stock UoM">{stockQtyDisplay}</span>
+                      ) : (
+                        <span className="text-foreground">
+                          {line.quantity} {stockUom}
+                        </span>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Input
+                        type="number"
+                        step="any"
+                        className="h-8 text-right"
+                        value={line.unit_cost}
+                        onChange={(e) => updateLine(idx, "unit_cost", Number(e.target.value))}
+                        disabled={!canWrite}
+                      />
+                    </TableCell>
+                    <TableCell className="text-right font-mono tabular-nums">{money(line.line_total)}</TableCell>
+                    {canWrite && (
+                      <TableCell>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 text-destructive"
+                          onClick={() => removeLine(idx)}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </TableCell>
+                    )}
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         </div>
