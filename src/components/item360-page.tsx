@@ -1141,7 +1141,7 @@ export function Item360Page({ id, backTo = "/inventory/items", backLabel = "Item
                         { field: "purchase_uom", label: "Purchase UoM" },
                         { field: "sales_uom", label: "Sales UoM" },
                         { field: "manufacturing_uom", label: "Mfg UoM" },
-                      ] as const
+                      ] as { field: string; label: string; required?: boolean }[]
                     ).map(({ field, label, required }) => {
                       const code = values[field] as string | undefined;
                       const stockUom = values.uom as string | undefined;
