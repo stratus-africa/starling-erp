@@ -834,7 +834,13 @@ export const journalEntryFields: FieldDef[] = [
 ];
 
 export const inventoryAdjustmentFields: FieldDef[] = [
-  { key: "number", label: "Adj #", required: true, render: mono },
+  {
+    key: "number",
+    label: "Adj #",
+    required: true,
+    render: mono,
+    validate: (v) => (!v?.trim() ? "Adjustment number is required" : v.length > 50 ? "Max 50 characters" : null),
+  },
   { key: "date", label: "Date", type: "date", render: dateFmt },
   { key: "item_id", label: "Item", type: "fk", fkTable: "items", required: true, hideInTable: true },
   { key: "warehouse_id", label: "Warehouse", type: "fk", fkTable: "warehouses", required: true, hideInTable: true },
@@ -846,9 +852,29 @@ export const inventoryAdjustmentFields: FieldDef[] = [
     fkLabel: "code",
     hideInTable: true,
   },
-  { key: "quantity", label: "Qty", type: "number", className: "text-right", render: monoRight },
-  { key: "reason", label: "Reason" },
-  { key: "status", label: "Status", type: "select", options: ["Draft", "Posted", "Void"], defaultValue: "Draft" },
+  {
+    key: "quantity",
+    label: "Qty",
+    type: "number",
+    className: "text-right",
+    render: monoRight,
+    validate: (v) => {
+      if (v === "" || v == null) return "Quantity is required";
+      if (isNaN(Number(v))) return "Quantity must be a number";
+      if (Number(v) === 0) return "Quantity cannot be zero";
+      return null;
+    },
+  },
+  { key: "reason", label: "Reason", validate: (v) => (!v?.trim() ? "Reason is required for audit purposes" : null) },
+  {
+    key: "status",
+    label: "Status",
+    type: "select",
+    // 'Void' = manual/pre-post cancel; 'Posted' and 'Voided' are machine-set.
+    // 'Void' is blocked from posting by validate_posting_target.
+    options: ["Draft", "Posted", "Void", "Voided"],
+    defaultValue: "Draft",
+  },
 ];
 
 export const inventoryTransferFields: FieldDef[] = [
