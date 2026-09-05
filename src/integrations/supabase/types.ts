@@ -4420,6 +4420,7 @@ export type Database = {
           created_by: string | null
           id: string
           item_id: string
+          location_id: string | null
           note: string | null
           quantity: number
           ref_id: string | null
@@ -4436,6 +4437,7 @@ export type Database = {
           created_by?: string | null
           id?: string
           item_id: string
+          location_id?: string | null
           note?: string | null
           quantity: number
           ref_id?: string | null
@@ -4452,6 +4454,7 @@ export type Database = {
           created_by?: string | null
           id?: string
           item_id?: string
+          location_id?: string | null
           note?: string | null
           quantity?: number
           ref_id?: string | null
@@ -4479,6 +4482,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "stock_movements_location_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "warehouse_locations"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "stock_movements_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
@@ -4487,6 +4497,90 @@ export type Database = {
           },
           {
             foreignKeyName: "stock_movements_warehouse_id_fkey"
+            columns: ["warehouse_id"]
+            isOneToOne: false
+            referencedRelation: "warehouses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stock_reservations: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          id: string
+          item_id: string
+          location_id: string | null
+          quantity: number
+          ref_id: string | null
+          ref_type: string | null
+          status: string
+          tenant_id: string
+          updated_at: string
+          warehouse_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          id?: string
+          item_id: string
+          location_id?: string | null
+          quantity?: number
+          ref_id?: string | null
+          ref_type?: string | null
+          status?: string
+          tenant_id: string
+          updated_at?: string
+          warehouse_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          id?: string
+          item_id?: string
+          location_id?: string | null
+          quantity?: number
+          ref_id?: string | null
+          ref_type?: string | null
+          status?: string
+          tenant_id?: string
+          updated_at?: string
+          warehouse_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_reservations_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_item_stock"
+            referencedColumns: ["item_id"]
+          },
+          {
+            foreignKeyName: "stock_reservations_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_reservations_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "warehouse_locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_reservations_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_reservations_warehouse_id_fkey"
             columns: ["warehouse_id"]
             isOneToOne: false
             referencedRelation: "warehouses"
@@ -4811,6 +4905,65 @@ export type Database = {
         }
         Relationships: []
       }
+      units_of_measure: {
+        Row: {
+          code: string
+          created_at: string
+          created_by: string | null
+          decimal_places: number
+          deleted_at: string | null
+          id: string
+          is_active: boolean
+          is_base_unit: boolean
+          name: string
+          notes: string | null
+          symbol: string | null
+          tenant_id: string
+          uom_class: string
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          created_by?: string | null
+          decimal_places?: number
+          deleted_at?: string | null
+          id?: string
+          is_active?: boolean
+          is_base_unit?: boolean
+          name: string
+          notes?: string | null
+          symbol?: string | null
+          tenant_id: string
+          uom_class?: string
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          created_by?: string | null
+          decimal_places?: number
+          deleted_at?: string | null
+          id?: string
+          is_active?: boolean
+          is_base_unit?: boolean
+          name?: string
+          notes?: string | null
+          symbol?: string | null
+          tenant_id?: string
+          uom_class?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "units_of_measure_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       uom_conversions: {
         Row: {
           created_at: string
@@ -4901,6 +5054,127 @@ export type Database = {
           },
         ]
       }
+      warehouse_locations: {
+        Row: {
+          aisle: string | null
+          bin: string | null
+          code: string
+          created_at: string
+          deleted_at: string | null
+          id: string
+          is_active: boolean
+          level: string | null
+          name: string | null
+          rack: string | null
+          tenant_id: string
+          updated_at: string
+          warehouse_id: string
+          zone_id: string | null
+        }
+        Insert: {
+          aisle?: string | null
+          bin?: string | null
+          code: string
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          is_active?: boolean
+          level?: string | null
+          name?: string | null
+          rack?: string | null
+          tenant_id: string
+          updated_at?: string
+          warehouse_id: string
+          zone_id?: string | null
+        }
+        Update: {
+          aisle?: string | null
+          bin?: string | null
+          code?: string
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          is_active?: boolean
+          level?: string | null
+          name?: string | null
+          rack?: string | null
+          tenant_id?: string
+          updated_at?: string
+          warehouse_id?: string
+          zone_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "warehouse_locations_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "warehouse_locations_warehouse_id_fkey"
+            columns: ["warehouse_id"]
+            isOneToOne: false
+            referencedRelation: "warehouses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "warehouse_locations_zone_id_fkey"
+            columns: ["zone_id"]
+            isOneToOne: false
+            referencedRelation: "warehouse_zones"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      warehouse_zones: {
+        Row: {
+          code: string
+          created_at: string
+          deleted_at: string | null
+          id: string
+          name: string
+          tenant_id: string
+          updated_at: string
+          warehouse_id: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          name: string
+          tenant_id: string
+          updated_at?: string
+          warehouse_id: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          name?: string
+          tenant_id?: string
+          updated_at?: string
+          warehouse_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "warehouse_zones_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "warehouse_zones_warehouse_id_fkey"
+            columns: ["warehouse_id"]
+            isOneToOne: false
+            referencedRelation: "warehouses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       warehouses: {
         Row: {
           code: string | null
@@ -4985,6 +5259,58 @@ export type Database = {
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inventory_location_stock: {
+        Row: {
+          aisle: string | null
+          bin: string | null
+          item_id: string | null
+          level: string | null
+          location_code: string | null
+          location_id: string | null
+          on_hand: number | null
+          rack: string | null
+          tenant_id: string | null
+          warehouse_id: string | null
+          zone_name: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_movements_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_item_stock"
+            referencedColumns: ["item_id"]
+          },
+          {
+            foreignKeyName: "stock_movements_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_movements_location_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "warehouse_locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_movements_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_movements_warehouse_id_fkey"
+            columns: ["warehouse_id"]
+            isOneToOne: false
+            referencedRelation: "warehouses"
             referencedColumns: ["id"]
           },
         ]
@@ -5289,6 +5615,17 @@ export type Database = {
           isOneToOne: false
           isSetofReturn: true
         }
+      }
+      get_item_availability: {
+        Args: { _item_id: string }
+        Returns: {
+          available: number
+          on_hand: number
+          on_order: number
+          projected: number
+          reserved: number
+          warehouse_id: string
+        }[]
       }
       get_my_approval_inbox: {
         Args: never
