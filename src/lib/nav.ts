@@ -54,6 +54,7 @@ import {
   LayoutList,
   CalendarRange,
   GitBranch,
+  PackageSearch,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -78,6 +79,7 @@ export const navGroups: NavGroup[] = [
       { title: "Logistics", url: "/dashboards/logistics", icon: TruckIcon },
       { title: "Production", url: "/dashboards/production", icon: HardHat, feature: "manufacturing" },
       { title: "Procurement", url: "/dashboards/procurement", icon: Gauge },
+      { title: "Inventory", url: "/dashboards/inventory", icon: PackageSearch },
     ],
   },
   {
