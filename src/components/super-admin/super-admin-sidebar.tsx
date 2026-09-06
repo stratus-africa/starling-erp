@@ -44,7 +44,7 @@ interface NavItem {
   title: string;
   url: string;
   icon: React.ElementType;
-  permission?: string; // if set, item is hidden when canPlatform returns false
+  permission?: string;
 }
 
 interface NavGroup {
@@ -67,8 +67,18 @@ const NAV: NavGroup[] = [
   {
     label: "Customers",
     items: [
-      { title: "Tenants", url: "/super-admin/tenants", icon: Building2, permission: PLATFORM_PERMISSIONS.tenantsView },
-      { title: "Users", url: "/super-admin/users", icon: Users, permission: PLATFORM_PERMISSIONS.usersView },
+      {
+        title: "Tenants",
+        url: "/super-admin/tenants",
+        icon: Building2,
+        permission: PLATFORM_PERMISSIONS.tenantsView,
+      },
+      {
+        title: "Users",
+        url: "/super-admin/users",
+        icon: Users,
+        permission: PLATFORM_PERMISSIONS.usersView,
+      },
       {
         title: "Support Sessions",
         url: "/super-admin/support-sessions",
@@ -80,10 +90,15 @@ const NAV: NavGroup[] = [
   {
     label: "Billing",
     items: [
-      { title: "Plans", url: "/super-admin/billing/plans", icon: Layers, permission: PLATFORM_PERMISSIONS.plansView },
+      {
+        title: "Plans",
+        url: "/super-admin/billing/plans",
+        icon: Layers,
+        permission: PLATFORM_PERMISSIONS.plansView,
+      },
       {
         title: "Subscriptions",
-        url: "/super-admin/subscriptions",
+        url: "/super-admin/billing/subscriptions",
         icon: ReceiptText,
         permission: PLATFORM_PERMISSIONS.billingView,
       },
@@ -93,7 +108,12 @@ const NAV: NavGroup[] = [
         icon: CreditCard,
         permission: PLATFORM_PERMISSIONS.billingView,
       },
-      { title: "Invoices", url: "/super-admin/invoices", icon: FileText, permission: PLATFORM_PERMISSIONS.billingView },
+      {
+        title: "Invoices",
+        url: "/super-admin/invoices",
+        icon: FileText,
+        permission: PLATFORM_PERMISSIONS.billingView,
+      },
     ],
   },
   {
@@ -101,7 +121,7 @@ const NAV: NavGroup[] = [
     items: [
       {
         title: "Feature Flags",
-        url: "/super-admin/features",
+        url: "/super-admin/platform/features",
         icon: Flag,
         permission: PLATFORM_PERMISSIONS.featuresView,
       },
@@ -134,10 +154,30 @@ const NAV: NavGroup[] = [
         icon: Activity,
         permission: PLATFORM_PERMISSIONS.systemView,
       },
-      { title: "Errors", url: "/super-admin/errors", icon: AlertTriangle, permission: PLATFORM_PERMISSIONS.systemView },
-      { title: "Background Jobs", url: "/super-admin/jobs", icon: Loader, permission: PLATFORM_PERMISSIONS.systemView },
-      { title: "API", url: "/super-admin/api", icon: Terminal, permission: PLATFORM_PERMISSIONS.systemView },
-      { title: "Usage", url: "/super-admin/usage", icon: BarChart3, permission: PLATFORM_PERMISSIONS.systemView },
+      {
+        title: "Errors",
+        url: "/super-admin/errors",
+        icon: AlertTriangle,
+        permission: PLATFORM_PERMISSIONS.systemView,
+      },
+      {
+        title: "Background Jobs",
+        url: "/super-admin/jobs",
+        icon: Loader,
+        permission: PLATFORM_PERMISSIONS.systemView,
+      },
+      {
+        title: "API",
+        url: "/super-admin/api",
+        icon: Terminal,
+        permission: PLATFORM_PERMISSIONS.systemView,
+      },
+      {
+        title: "Usage",
+        url: "/super-admin/usage",
+        icon: BarChart3,
+        permission: PLATFORM_PERMISSIONS.systemView,
+      },
     ],
   },
   {
@@ -155,14 +195,24 @@ const NAV: NavGroup[] = [
         icon: Layers,
         permission: PLATFORM_PERMISSIONS.adminsView,
       },
-      { title: "Sessions", url: "/super-admin/sessions", icon: Globe, permission: PLATFORM_PERMISSIONS.securityView },
+      {
+        title: "Sessions",
+        url: "/super-admin/sessions",
+        icon: Globe,
+        permission: PLATFORM_PERMISSIONS.securityView,
+      },
       {
         title: "Security Events",
         url: "/super-admin/security-events",
         icon: Siren,
         permission: PLATFORM_PERMISSIONS.securityView,
       },
-      { title: "Audit Log", url: "/super-admin/audit", icon: Server, permission: PLATFORM_PERMISSIONS.auditView },
+      {
+        title: "Audit Log",
+        url: "/super-admin/audit",
+        icon: Server,
+        permission: PLATFORM_PERMISSIONS.auditView,
+      },
     ],
   },
 ];
@@ -170,58 +220,55 @@ const NAV: NavGroup[] = [
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function SuperAdminSidebar() {
-  const { state } = useSidebar();
-  const collapsed = state === "collapsed";
-  const pathname = useRouterState({ select: (r) => r.location.pathname });
   const { canPlatform } = usePlatformAuth();
+  const pathname = useRouterState({ select: (r) => r.location.pathname });
 
   return (
-    <Sidebar collapsible="icon" className="border-r">
-      {/* Logo / brand */}
-      <SidebarHeader className="border-b border-sidebar-border">
-        <div className="flex items-center gap-2.5 px-2 py-2">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-amber-500/20 text-amber-600 dark:text-amber-400 ring-1 ring-amber-500/30">
-            <ShieldCheck className="h-4 w-4" />
+    <Sidebar className="border-r border-border/70 bg-card">
+      <SidebarHeader className="h-14 flex items-center px-4 border-b border-border/70">
+        <div className="flex items-center gap-2 font-bold text-sm text-foreground">
+          <div className="h-7 w-7 rounded-md bg-primary flex items-center justify-center text-primary-foreground font-extrabold text-xs">
+            N
           </div>
-          {!collapsed && (
-            <div className="flex flex-col min-w-0">
-              <span className="text-sm font-semibold text-sidebar-foreground truncate">NimbusERP</span>
-              <span className="text-[10px] uppercase tracking-wider text-amber-600 dark:text-amber-400">
-                Super Admin
-              </span>
-            </div>
-          )}
+          <span>Nimbus Super Admin</span>
         </div>
       </SidebarHeader>
 
-      <SidebarContent>
+      <SidebarContent className="py-2">
         {NAV.map((group) => {
-          // Filter items the current admin has permission for
-          const visibleItems = group.items.filter((item) => !item.permission || canPlatform(item.permission as any));
+          const visibleItems = group.items.filter((item) => {
+            if (!item.permission) return true;
+            return canPlatform(item.permission as any);
+          });
+
           if (visibleItems.length === 0) return null;
 
           return (
-            <SidebarGroup key={group.label}>
-              {!collapsed && (
-                <SidebarGroupLabel className="text-[10px] uppercase tracking-wider text-sidebar-foreground/50">
-                  {group.label}
-                </SidebarGroupLabel>
-              )}
+            <SidebarGroup key={group.label} className="py-1">
+              <SidebarGroupLabel className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/70 px-3 py-1">
+                {group.label}
+              </SidebarGroupLabel>
               <SidebarGroupContent>
                 <SidebarMenu>
                   {visibleItems.map((item) => {
-                    // Exact match for dashboard, prefix match for children
                     const isActive =
-                      item.url === "/super-admin"
-                        ? pathname === "/super-admin" || pathname === "/super-admin/"
-                        : pathname.startsWith(item.url);
+                      pathname === item.url || (item.url !== "/super-admin" && pathname.startsWith(item.url));
+                    const Icon = item.icon;
 
                     return (
                       <SidebarMenuItem key={item.url}>
-                        <SidebarMenuButton asChild isActive={isActive} tooltip={item.title}>
-                          <Link to={item.url as never} className="flex items-center gap-2.5">
-                            <item.icon className="h-4 w-4 shrink-0" />
-                            <span className="truncate">{item.title}</span>
+                        <SidebarMenuButton
+                          asChild
+                          isActive={isActive}
+                          className={`text-xs h-8 px-3 rounded-md transition-colors ${
+                            isActive
+                              ? "bg-primary/10 text-primary font-semibold"
+                              : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                          }`}
+                        >
+                          <Link to={item.url as any}>
+                            <Icon className="h-4 w-4 mr-2 shrink-0" />
+                            <span>{item.title}</span>
                           </Link>
                         </SidebarMenuButton>
                       </SidebarMenuItem>
