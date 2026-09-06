@@ -3,6 +3,8 @@ import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { AppTopbar } from "@/components/app-topbar";
 import { AuthProvider, useAuth } from "@/hooks/use-auth";
+import { PlatformAuthProvider } from "@/hooks/use-platform-auth";
+import { SupportSessionBanner } from "@/components/support-session-banner";
 import { Loader2 } from "lucide-react";
 import { useRouterState } from "@tanstack/react-router";
 import { featureForPath } from "@/lib/features";
@@ -11,7 +13,9 @@ export const Route = createFileRoute("/_authenticated")({
   ssr: false,
   component: () => (
     <AuthProvider>
-      <Gate />
+      <PlatformAuthProvider>
+        <Gate />
+      </PlatformAuthProvider>
     </AuthProvider>
   ),
 });
@@ -44,12 +48,15 @@ function Gate() {
   }
   return (
     <SidebarProvider>
-      <div className="flex min-h-screen w-full bg-background">
-        <AppSidebar />
-        <SidebarInset className="min-w-0 flex-1">
-          <AppTopbar />
-          <main className="flex-1 min-w-0"><Outlet /></main>
-        </SidebarInset>
+      <div className="flex min-h-screen w-full bg-background flex-col">
+        <SupportSessionBanner />
+        <div className="flex flex-1 w-full">
+          <AppSidebar />
+          <SidebarInset className="min-w-0 flex-1">
+            <AppTopbar />
+            <main className="flex-1 min-w-0"><Outlet /></main>
+          </SidebarInset>
+        </div>
       </div>
     </SidebarProvider>
   );
