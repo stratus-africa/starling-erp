@@ -1,32 +1,45 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { DataModulePage } from "@/components/data-module-page";
-import { itemFields } from "@/lib/module-field-definitions";
+import { productionOrderFields } from "@/lib/module-field-definitions";
 
-export const Route = createFileRoute("/_authenticated/manufacturing/items/")({
+export const Route = createFileRoute("/_authenticated/manufacturing/orders/")({
   component: () => (
     <DataModulePage
-      title="Production Items"
-      description="Finished goods and sub-assemblies produced in-house."
-      table="items"
-      entityLabel="Item"
-      fields={itemFields}
+      title="Production Orders"
+      description="Plan and track manufacturing runs."
+      table="production_orders"
+      entityLabel="Production Order"
+      fields={productionOrderFields}
       writeRoles={["manufacturing"]}
-      searchColumn="name"
-      attachments={false}
-      rowHref={(r) => `/manufacturing/items/${r.id}`}
-      createHref="/manufacturing/items/new"
+      searchColumn="number"
+      rowHref={(row) => `/manufacturing/orders/${row.id}`}
+      createHref="/manufacturing/orders/new"
       filterFields={[
-        {
-          key: "type",
-          label: "Type",
-          options: ["Finished Good", "Raw Material", "Sub-assembly", "Service", "Consumable"],
-        },
         {
           key: "status",
           label: "Status",
-          options: ["Active", "Inactive"],
+          options: [
+            "Draft",
+            "Planned",
+            "Confirmed",
+            "Material Reserved",
+            "Released",
+            "In Progress",
+            "Paused",
+            "Quality Check",
+            "Completed",
+            "Closed",
+            "Cancelled",
+          ],
         },
       ]}
+      postAction={{
+        rpc: "post_production_order",
+        paramName: "_order_id",
+        label: "Complete & Post",
+        showWhen: (row) => row.status === "Quality Check",
+      }}
+      voidAction={{ entityType: "production_order", permission: "manufacturing.void" }}
     />
   ),
 });
