@@ -62,6 +62,7 @@ type LotRow = {
   source_ref_id: string | null;
   notes: string | null;
   tenant_id: string;
+  deleted_at?: string | null;
 };
 
 type SerialRow = {
