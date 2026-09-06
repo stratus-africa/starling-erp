@@ -249,6 +249,7 @@ export function DocumentEditor({
   onClose?: () => void;
 }) {
   const cfg = CFG[kind];
+  const isReq = kind === "requisition";
   const qc = useQueryClient();
   const nav = useNavigate();
   const { tenant, user, profile, can } = useAuth();
@@ -611,7 +612,6 @@ export function DocumentEditor({
     onError: (e: Error) => toast.error(e.message ?? "Void failed"),
   });
 
-  const isReq = kind === "requisition";
   const canApprove = can(["purchasing.create", "purchasing.update"]);
   const reqApproved = header.status === "Approved" || header.status === "Ordered";
   const isStockReq = isReq && header.requisition_type === "stock";
