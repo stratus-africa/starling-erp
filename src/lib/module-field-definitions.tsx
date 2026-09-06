@@ -122,10 +122,25 @@ export const supplierFields: FieldDef[] = [
 ];
 
 export const warehouseFields: FieldDef[] = [
+  // ── Table columns ──────────────────────────────────────────────────────────
   { key: "code", label: "Code", render: mono },
   { key: "name", label: "Warehouse", required: true, render: bold },
+  { key: "city", label: "City" },
   { key: "status", label: "Status", type: "select", options: ["Active", "Inactive"], defaultValue: "Active" },
-  { key: "location", label: "Location", hideInTable: true },
+  // ── Form-only fields ───────────────────────────────────────────────────────
+  { key: "address", label: "Address", hideInTable: true, group: "Location" },
+  { key: "location", label: "State / Region", hideInTable: true, group: "Location" },
+  { key: "country", label: "Country", hideInTable: true, group: "Location" },
+  { key: "manager_name", label: "Manager", hideInTable: true, group: "Details" },
+  {
+    key: "capacity_sqm",
+    label: "Capacity (m²)",
+    type: "number",
+    className: "text-right",
+    hideInTable: true,
+    group: "Details",
+    validate: (v) => (v == null || v === "" || Number(v) >= 0 ? null : "Capacity cannot be negative"),
+  },
 ];
 
 export const zoneFields: FieldDef[] = [
@@ -896,12 +911,40 @@ export const inventoryTransferFields: FieldDef[] = [
 ];
 
 export const bomFields: FieldDef[] = [
+  // Table columns
   { key: "code", label: "BOM Code", required: true, render: mono },
-  { key: "product_id", label: "Product", type: "fk", fkTable: "items", required: true, hideInTable: true },
-  { key: "version", label: "Version" },
+  { key: "version", label: "Version", render: mono },
+  {
+    key: "approval_status",
+    label: "Status",
+    type: "select",
+    options: ["Draft", "Pending Approval", "Approved", "Active", "Inactive", "Obsolete"],
+    defaultValue: "Draft",
+    render: (v) => {
+      const colors: Record<string, string> = {
+        Draft: "bg-muted text-muted-foreground",
+        "Pending Approval": "bg-warning/15 text-warning",
+        Approved: "bg-info/15 text-info",
+        Active: "bg-success/15 text-success",
+        Inactive: "bg-muted text-muted-foreground",
+        Obsolete: "bg-destructive/15 text-destructive",
+      };
+      return (
+        <span
+          className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${colors[v] ?? colors.Draft}`}
+        >
+          {v}
+        </span>
+      );
+    },
+  },
   { key: "yield_qty", label: "Yield", type: "number", className: "text-right", render: monoRight },
-  { key: "status", label: "Status", type: "select", options: ["Active", "Draft", "Archived"], defaultValue: "Active" },
-  { key: "notes", label: "Notes", type: "textarea", hideInTable: true },
+  // Form-only fields
+  { key: "product_id", label: "Product", type: "fk", fkTable: "items", required: true, hideInTable: true },
+  { key: "effective_from", label: "Effective From", type: "date", hideInTable: true },
+  { key: "effective_to", label: "Effective To", type: "date", hideInTable: true },
+  { key: "revision_notes", label: "Revision Notes", type: "textarea", hideInTable: true },
+  { key: "notes", label: "Internal Notes", type: "textarea", hideInTable: true },
 ];
 
 export const productionOrderFields: FieldDef[] = [
