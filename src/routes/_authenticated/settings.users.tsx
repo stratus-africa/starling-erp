@@ -15,7 +15,6 @@ import { toast } from "sonner";
 const ALL_ROLES: AppRole[] = [
   "tenant_admin",
   "sales",
-  "cashier",
   "purchasing",
   "inventory",
   "accounting",
