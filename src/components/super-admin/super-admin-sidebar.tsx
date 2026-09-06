@@ -16,6 +16,7 @@ import {
   ReceiptText,
   Server,
   Settings2,
+  ShieldAlert,
   ShieldCheck,
   Siren,
   Terminal,
