@@ -209,7 +209,7 @@ const NAV: NavGroup[] = [
       },
       {
         title: "Audit Log",
-        url: "/super-admin/audit",
+        url: "/super-admin/security/audit",
         icon: Server,
         permission: PLATFORM_PERMISSIONS.auditView,
       },
