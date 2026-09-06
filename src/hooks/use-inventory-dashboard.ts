@@ -168,7 +168,7 @@ export function useInventoryDashboard() {
   return useQuery({
     queryKey: ["dashboard", "inventory"],
     queryFn: async (): Promise<InventoryDashboardData> => {
-      const { data, error } = await supabase.rpc("get_inventory_dashboard");
+      const { data, error } = await (supabase as any).rpc("get_inventory_dashboard");
       if (error) throw error;
       return (data as unknown as InventoryDashboardData) ?? EMPTY_INVENTORY_DASHBOARD;
     },
