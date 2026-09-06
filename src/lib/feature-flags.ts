@@ -168,8 +168,8 @@ export async function getAllEvaluatedFlags(
  * Hook to evaluate a single feature flag in the current tenant/user context
  */
 export function useFeatureFlag(flagCode: string, fallback = false): boolean {
-  const { currentTenant, session } = useAuth();
-  const tenantId = currentTenant?.id;
+  const { tenant, session } = useAuth();
+  const tenantId = tenant?.id;
   const userId = session?.user?.id;
 
   const { data: evaluatedFlags } = useQuery({
@@ -186,8 +186,8 @@ export function useFeatureFlag(flagCode: string, fallback = false): boolean {
  * Hook to access all evaluated feature flags
  */
 export function useFeatureFlags() {
-  const { currentTenant, session } = useAuth();
-  const tenantId = currentTenant?.id;
+  const { tenant, session } = useAuth();
+  const tenantId = tenant?.id;
   const userId = session?.user?.id;
 
   const { data: flags = {}, isLoading, isError, refetch } = useQuery({
@@ -225,8 +225,8 @@ export function FeatureFlagGuard({
   const isEnabled = useFeatureFlag(flag);
 
   if (!isEnabled) {
-    return <>{fallback}</>;
+    return fallback as any;
   }
 
-  return <>{children}</>;
+  return children as any;
 }

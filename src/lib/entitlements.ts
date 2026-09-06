@@ -175,8 +175,8 @@ export async function checkTenantLimit(
 // ─── React Hook: useEntitlements ──────────────────────────────────────────────
 
 export function useEntitlements(tenantIdProp?: string) {
-  const { currentTenant } = useAuth();
-  const activeTenantId = tenantIdProp || currentTenant?.id;
+  const { tenant } = useAuth();
+  const activeTenantId = tenantIdProp || tenant?.id;
 
   const {
     data,
@@ -260,7 +260,7 @@ export function EntitlementGuard({
   const { can, loading } = useEntitlements(tenantId);
 
   if (loading) return null;
-  if (!can(feature)) return <>{fallback}</>;
+  if (!can(feature)) return fallback as any;
 
-  return <>{children}</>;
+  return children as any;
 }
