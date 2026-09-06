@@ -122,25 +122,10 @@ export const supplierFields: FieldDef[] = [
 ];
 
 export const warehouseFields: FieldDef[] = [
-  // ── Table columns ──────────────────────────────────────────────────────────
   { key: "code", label: "Code", render: mono },
   { key: "name", label: "Warehouse", required: true, render: bold },
-  { key: "city", label: "City" },
   { key: "status", label: "Status", type: "select", options: ["Active", "Inactive"], defaultValue: "Active" },
-  // ── Form-only fields ───────────────────────────────────────────────────────
-  { key: "address", label: "Address", hideInTable: true, group: "Location" },
-  { key: "location", label: "State / Region", hideInTable: true, group: "Location" },
-  { key: "country", label: "Country", hideInTable: true, group: "Location" },
-  { key: "manager_name", label: "Manager", hideInTable: true, group: "Details" },
-  {
-    key: "capacity_sqm",
-    label: "Capacity (m²)",
-    type: "number",
-    className: "text-right",
-    hideInTable: true,
-    group: "Details",
-    validate: (v) => (v == null || v === "" || Number(v) >= 0 ? null : "Capacity cannot be negative"),
-  },
+  { key: "location", label: "Location", hideInTable: true },
 ];
 
 export const zoneFields: FieldDef[] = [
