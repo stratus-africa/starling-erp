@@ -15,6 +15,7 @@ const ROUTE_LABELS: Record<string, string> = {
   "/super-admin/payments": "Payments",
   "/super-admin/invoices": "Invoices",
   "/super-admin/features": "Feature Flags",
+  "/super-admin/platform/features": "Feature Flags",
   "/super-admin/announcements": "Announcements",
   "/super-admin/settings": "Settings",
   "/super-admin/integrations": "Integrations",
