@@ -4834,6 +4834,48 @@ export type Database = {
           },
         ]
       }
+      tenant_role_permission_overrides: {
+        Row: {
+          enabled: boolean
+          permission_code: string
+          role: string
+          tenant_id: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          enabled: boolean
+          permission_code: string
+          role: string
+          tenant_id: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          enabled?: boolean
+          permission_code?: string
+          role?: string
+          tenant_id?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_role_permission_overrides_permission_code_fkey"
+            columns: ["permission_code"]
+            isOneToOne: false
+            referencedRelation: "permissions"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "tenant_role_permission_overrides_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tenant_subscriptions: {
         Row: {
           cancelled_at: string | null
@@ -5898,6 +5940,10 @@ export type Database = {
         }
         Returns: string
       }
+      set_role_permission_override: {
+        Args: { _enabled: boolean; _permission_code: string; _role: string }
+        Returns: undefined
+      }
       switch_tenant: { Args: { target_tenant: string }; Returns: string }
       tenant_write_ok: {
         Args: { _roles: Database["public"]["Enums"]["app_role"][] }
@@ -5981,7 +6027,6 @@ export type Database = {
         | "accounting"
         | "manufacturing"
         | "viewer"
-        | "cashier"
         | "accountant"
         | "finance_clerk"
         | "auditor"
@@ -6121,7 +6166,6 @@ export const Constants = {
         "accounting",
         "manufacturing",
         "viewer",
-        "cashier",
         "accountant",
         "finance_clerk",
         "auditor",
