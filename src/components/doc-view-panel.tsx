@@ -50,6 +50,8 @@ import {
   Send,
   ArrowRight,
 } from "lucide-react";
+import { Link } from "@tanstack/react-router";
+import { ExternalLink } from "lucide-react";
 import { DocumentEditor, type DocKind } from "@/components/document-editor";
 import { DocumentTimeline } from "@/components/document-timeline";
 import { buildDocumentPdf } from "@/lib/document-pdf";
@@ -280,6 +282,28 @@ function DetailsView({ kind, id }: { kind: DocKind; id: string }) {
     },
   });
 
+  // Source quote lookup — for Sales Orders that were created from a Quote
+  const sourceQuoteId = kind === "order" ? (doc?.source_quote_id ?? null) : null;
+  const { data: sourceQuote } = useQuery({
+    queryKey: ["sales_quotes", "source-quote", sourceQuoteId],
+    enabled: !!sourceQuoteId,
+    queryFn: async () => {
+      const { data } = await db.from("sales_quotes").select("id, number").eq("id", sourceQuoteId!).maybeSingle();
+      return data as { id: string; number: string | null } | null;
+    },
+  });
+
+  // Source order lookup — for Invoices that were created from a Sales Order
+  const sourceOrderId = kind === "invoice" ? (doc?.source_order_id ?? null) : null;
+  const { data: sourceOrder } = useQuery({
+    queryKey: ["sales_orders", "source-order", sourceOrderId],
+    enabled: !!sourceOrderId,
+    queryFn: async () => {
+      const { data } = await db.from("sales_orders").select("id, number").eq("id", sourceOrderId!).maybeSingle();
+      return data as { id: string; number: string | null } | null;
+    },
+  });
+
   // Warehouse name lookup for stock requisitions
   const { data: warehouseDoc } = useQuery({
     queryKey: ["warehouses", "detail-view", doc?.from_warehouse_id],
@@ -353,6 +377,31 @@ function DetailsView({ kind, id }: { kind: DocKind; id: string }) {
         {isReq && doc.department && <MetaRow label="Department" value={String(doc.department)} />}
         {isReq && doc.requested_by && <MetaRow label="Requested By" value={String(doc.requested_by)} />}
         {isReq && doc.converted_po_id && <MetaRow label="Converted PO" value="See Purchase Orders" />}
+        {/* Source document links */}
+        {kind === "order" && sourceQuote && (
+          <div className="col-span-2 flex items-center gap-2">
+            <span className="text-[11px] uppercase tracking-wide text-muted-foreground">Source Quote</span>
+            <Link
+              to={`/sales/quotes/${sourceQuote.id}` as any}
+              className="flex items-center gap-1 text-sm font-medium text-primary hover:underline"
+            >
+              {sourceQuote.number || "Quote"}
+              <ExternalLink className="h-3 w-3" />
+            </Link>
+          </div>
+        )}
+        {kind === "invoice" && sourceOrder && (
+          <div className="col-span-2 flex items-center gap-2">
+            <span className="text-[11px] uppercase tracking-wide text-muted-foreground">Source Sales Order</span>
+            <Link
+              to={`/sales/orders/${sourceOrder.id}` as any}
+              className="flex items-center gap-1 text-sm font-medium text-primary hover:underline"
+            >
+              {sourceOrder.number || "Sales Order"}
+              <ExternalLink className="h-3 w-3" />
+            </Link>
+          </div>
+        )}
       </div>
 
       {/* ── Party details (hidden for requisitions) ── */}

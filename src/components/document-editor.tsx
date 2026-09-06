@@ -54,6 +54,14 @@ import { callRpc } from "@/lib/db-rpc";
 import type { TableName } from "@/lib/typed-db";
 import type { TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
 import { ConvertReqToPoDialog } from "@/components/convert-req-to-po-dialog";
+import {
+  useEligibleQuotesForSalesOrder,
+  useEligibleOrdersForInvoice,
+  useEligibleQuotesForInvoice,
+  type EligibleQuote,
+  type EligibleOrder,
+} from "@/hooks/use-source-documents";
+import { SourceDocumentSuggestionBanner } from "@/components/sales/source-document-suggestion-banner";
 
 export type DocKind = "quote" | "order" | "invoice" | "po" | "bill" | "credit_note" | "requisition";
 
@@ -389,6 +397,68 @@ export function DocumentEditor({
     }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isNew, selectedSupplier?.currency]);
+
+  // ── Source document integration (Quotes -> Orders, Orders/Quotes -> Invoices) ──
+  const [importedSource, setImportedSource] = useState<{
+    type: "quote" | "order";
+    id: string;
+    number: string;
+    snapshot: Line[];
+    maxQuantities?: Record<string, number>;
+  } | null>(null);
+
+  const [customerChangeModalOpen, setCustomerChangeModalOpen] = useState(false);
+  const [pendingCustomerId, setPendingCustomerId] = useState<string | null>(null);
+
+  const isOrderKind = kind === "order";
+  const isInvoiceKind = kind === "invoice";
+
+  const { data: eligibleQuotes = [] } = useEligibleQuotesForSalesOrder(
+    isNew && isOrderKind ? selectedCustomerId : null
+  );
+
+  const { data: eligibleOrders = [] } = useEligibleOrdersForInvoice(
+    isNew && isInvoiceKind ? selectedCustomerId : null
+  );
+
+  const hasOpenOrders = (eligibleOrders?.length ?? 0) > 0;
+
+  const { data: fallbackQuotes = [] } = useEligibleQuotesForInvoice(
+    isNew && isInvoiceKind ? selectedCustomerId : null,
+    hasOpenOrders
+  );
+
+  // Fetch linked source quote / order numbers if already linked
+  const linkedQuoteId = kind === "order" ? header.source_quote_id || null : null;
+  const { data: linkedQuote } = useQuery({
+    queryKey: ["sales_quotes", "linked-quote", linkedQuoteId],
+    enabled: !!linkedQuoteId,
+    queryFn: async () => {
+      const { data, error } = await db
+        .from("sales_quotes")
+        .select("id, number")
+        .eq("id", linkedQuoteId!)
+        .maybeSingle();
+      if (error) throw error;
+      return data as { id: string; number: string | null } | null;
+    },
+  });
+
+  const linkedOrderId = kind === "invoice" ? header.source_order_id || null : null;
+  const { data: linkedOrder } = useQuery({
+    queryKey: ["sales_orders", "linked-order", linkedOrderId],
+    enabled: !!linkedOrderId,
+    queryFn: async () => {
+      const { data, error } = await db
+        .from("sales_orders")
+        .select("id, number")
+        .eq("id", linkedOrderId!)
+        .maybeSingle();
+      if (error) throw error;
+      return data as { id: string; number: string | null } | null;
+    },
+  });
+
   const { data: items = [] } = useQuery({
     queryKey: ["items", "picker"],
     queryFn: async () => {
@@ -480,6 +550,158 @@ export function DocumentEditor({
   const removeLine = (idx: number) =>
     setLines((prev) => prev.filter((_, i) => i !== idx).map((l, i) => ({ ...l, line_no: i + 1, _dirty: true })));
 
+  const handleIncludeQuote = (quote: EligibleQuote) => {
+    const newLines: Line[] = quote.lines.map((l, idx) => ({
+      line_no: idx + 1,
+      item_id: l.item_id,
+      description: l.description,
+      quantity: l.quantity,
+      unit_price: l.unit_price,
+      discount_pct: l.discount_pct || 0,
+      tax_pct: l.tax_pct || 0,
+      line_total: l.line_total,
+      _dirty: true,
+    }));
+
+    setLines(newLines);
+    setHeader((prev) => ({
+      ...prev,
+      ...(kind === "order" ? { source_quote_id: quote.id } : {}),
+      currency: quote.currency || prev.currency,
+      notes: prev.notes
+        ? `${prev.notes}\nImported from Quote ${quote.number}`
+        : (quote.notes || `Imported from Quote ${quote.number}`),
+    }));
+
+    setImportedSource({
+      type: "quote",
+      id: quote.id,
+      number: quote.number,
+      snapshot: newLines.map((l) => ({ ...l })),
+    });
+
+    toast.success(`Imported ${newLines.length} item(s) from Quote ${quote.number}`);
+  };
+
+  const handleIncludeOrder = (order: EligibleOrder) => {
+    const billableLines = order.lines.filter((l) => l.remaining_quantity > 0);
+    if (billableLines.length === 0) {
+      toast.info("All items on this Sales Order have already been invoiced.");
+      return;
+    }
+
+    const maxQuantities: Record<string, number> = {};
+    const newLines: Line[] = billableLines.map((l, idx) => {
+      const lineKey = l.item_id ? `item_${l.item_id}` : `desc_${l.description}`;
+      maxQuantities[lineKey] = l.remaining_quantity;
+      const initialLine: Line = {
+        line_no: idx + 1,
+        item_id: l.item_id,
+        description: l.description,
+        quantity: l.remaining_quantity,
+        unit_price: l.unit_price,
+        discount_pct: l.discount_pct || 0,
+        tax_pct: l.tax_pct || 0,
+        line_total: 0,
+        _dirty: true,
+      };
+      initialLine.line_total = computeLine(initialLine);
+      return initialLine;
+    });
+
+    setLines(newLines);
+    setHeader((prev) => ({
+      ...prev,
+      source_order_id: order.id,
+      currency: order.currency || prev.currency,
+      notes: prev.notes
+        ? `${prev.notes}\nImported from Sales Order ${order.number}`
+        : (order.notes || `Imported from Sales Order ${order.number}`),
+    }));
+
+    setImportedSource({
+      type: "order",
+      id: order.id,
+      number: order.number,
+      snapshot: newLines.map((l) => ({ ...l })),
+      maxQuantities,
+    });
+
+    toast.success(`Imported ${newLines.length} billable item(s) from Sales Order ${order.number}`);
+  };
+
+  const handleUnlink = () => {
+    setHeader((prev) => {
+      const next = { ...prev };
+      if (kind === "order") delete next.source_quote_id;
+      if (kind === "invoice") delete next.source_order_id;
+      return next;
+    });
+    setImportedSource(null);
+    toast.info("Document unlinked from source. Line items were preserved.");
+  };
+
+  const areImportedLinesModified = (currentLines: Line[], snapshot?: Line[]) => {
+    if (!snapshot) return false;
+    if (currentLines.length !== snapshot.length) return true;
+    for (let i = 0; i < currentLines.length; i++) {
+      const c = currentLines[i];
+      const s = snapshot[i];
+      if (
+        c.item_id !== s.item_id ||
+        c.description !== s.description ||
+        c.quantity !== s.quantity ||
+        c.unit_price !== s.unit_price ||
+        (c.discount_pct || 0) !== (s.discount_pct || 0) ||
+        (c.tax_pct || 0) !== (s.tax_pct || 0)
+      ) {
+        return true;
+      }
+    }
+    return false;
+  };
+
+  const handlePartyChange = (newPartyId: string) => {
+    if (newPartyId === header[cfg.partyField]) return;
+
+    if (cfg.partyField === "customer_id" && importedSource) {
+      const isModified = areImportedLinesModified(lines, importedSource.snapshot);
+      if (isModified) {
+        setPendingCustomerId(newPartyId);
+        setCustomerChangeModalOpen(true);
+        return;
+      } else {
+        // Silently reset lines & source link if unmodified
+        setLines([]);
+        setImportedSource(null);
+        setHeader((prev) => {
+          const next = { ...prev, [cfg.partyField]: newPartyId };
+          delete next.source_quote_id;
+          delete next.source_order_id;
+          return next;
+        });
+        return;
+      }
+    }
+
+    setHeader({ ...header, [cfg.partyField]: newPartyId });
+  };
+
+  const confirmCustomerChange = () => {
+    if (pendingCustomerId) {
+      setLines([]);
+      setImportedSource(null);
+      setHeader((prev) => {
+        const next = { ...prev, [cfg.partyField]: pendingCustomerId };
+        delete next.source_quote_id;
+        delete next.source_order_id;
+        return next;
+      });
+      setPendingCustomerId(null);
+    }
+    setCustomerChangeModalOpen(false);
+  };
+
   const save = useMutation({
     mutationFn: async () => {
       if (!tenant?.id) throw new Error("No tenant");
@@ -487,11 +709,37 @@ export function DocumentEditor({
       if (cfg.partyRequired !== false && !header[cfg.partyField])
         throw new Error(`Please select a ${cfg.partyLabel.toLowerCase()}`);
 
+      // Enforce remaining quantity cap on invoice creation from a sales order
+      if (kind === "invoice" && header.source_order_id && importedSource?.type === "order" && importedSource.maxQuantities) {
+        for (const l of lines) {
+          const key = l.item_id ? `item_${l.item_id}` : `desc_${l.description}`;
+          const maxAllowed = importedSource.maxQuantities[key];
+          if (maxAllowed !== undefined && l.quantity > maxAllowed) {
+            throw new Error(
+              `Quantity for "${l.description || "item"}" (${l.quantity}) exceeds remaining un-invoiced quantity (${maxAllowed}) from Sales Order ${importedSource.number}.`
+            );
+          }
+        }
+      }
+
       const headerPayload: Row = { ...header, ...totals, amount: totals.grand_total, tenant_id: tenant.id };
       if (kind === "invoice" || kind === "bill") {
         headerPayload.balance_due = totals.grand_total - (header.amount_paid ?? 0);
         headerPayload.balance = headerPayload.balance_due;
       }
+
+      // Sanitize source foreign keys to only supported tables
+      if (kind === "order") {
+        headerPayload.source_quote_id = header.source_quote_id || null;
+      } else {
+        delete headerPayload.source_quote_id;
+      }
+      if (kind === "invoice") {
+        headerPayload.source_order_id = header.source_order_id || null;
+      } else {
+        delete headerPayload.source_order_id;
+      }
+
       delete headerPayload.id;
       delete headerPayload.created_at;
       delete headerPayload.updated_at;
@@ -934,7 +1182,7 @@ export function DocumentEditor({
               <Label>{cfg.partyLabel}</Label>
               <Select
                 value={header[cfg.partyField] ?? ""}
-                onValueChange={(v) => setHeader({ ...header, [cfg.partyField]: v })}
+                onValueChange={handlePartyChange}
                 disabled={!canWrite}
               >
                 <SelectTrigger>
@@ -1167,6 +1415,23 @@ export function DocumentEditor({
               </div>
             </div>
           </Card>
+        )}
+
+        {/* ── Source document suggestion banner (only when creating new sales orders / invoices) ── */}
+        {isNew && (kind === "order" || kind === "invoice") && (
+          <SourceDocumentSuggestionBanner
+            kind={kind as "order" | "invoice"}
+            eligibleQuotes={kind === "order" ? eligibleQuotes : []}
+            eligibleOrders={kind === "invoice" ? eligibleOrders : []}
+            fallbackQuotes={kind === "invoice" ? fallbackQuotes : []}
+            onIncludeQuote={handleIncludeQuote}
+            onIncludeOrder={handleIncludeOrder}
+            onUnlink={importedSource ? handleUnlink : undefined}
+            linkedQuoteId={importedSource?.type === "quote" ? importedSource.id : null}
+            linkedQuoteNumber={importedSource?.type === "quote" ? importedSource.number : null}
+            linkedOrderId={importedSource?.type === "order" ? importedSource.id : null}
+            linkedOrderNumber={importedSource?.type === "order" ? importedSource.number : null}
+          />
         )}
 
         <Card className="p-0 overflow-hidden">
@@ -1446,6 +1711,28 @@ export function DocumentEditor({
       {/* end left / main column */}
 
       {/* ── Portals/dialogs — outside columns, always rendered at root level ── */}
+
+      {/* Customer change confirmation when imported lines have been modified */}
+      <AlertDialog open={customerChangeModalOpen} onOpenChange={setCustomerChangeModalOpen}>
+        <AlertDialogContent className="max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Change customer and clear imported items?</AlertDialogTitle>
+            <AlertDialogDescription>
+              You have modified the line items imported from the source document. Changing the customer will clear all
+              current line items and unlink the source document. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => { setCustomerChangeModalOpen(false); setPendingCustomerId(null); }}>
+              Keep current customer
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={confirmCustomerChange}>
+              Change customer &amp; clear lines
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {showRecordPayment && (
         <RecordPaymentDialog
           open={payOpen}
