@@ -226,14 +226,17 @@ const money = (n: number | null | undefined, currency = "USD") =>
     maximumFractionDigits: 2,
   })}`;
 
-const fmtDate = (v: string | null | undefined) =>
-  v
-    ? new Date(v).toLocaleDateString(undefined, {
+const fmtDate = (v: string | null | undefined) => {
+  if (!v) return "—";
+  const d = new Date(v);
+  return isNaN(d.getTime())
+    ? "—"
+    : d.toLocaleDateString(undefined, {
         day: "2-digit",
         month: "short",
         year: "numeric",
-      })
-    : "—";
+      });
+};
 
 // ── DetailsView ───────────────────────────────────────────────────────────────
 

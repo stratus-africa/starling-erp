@@ -378,20 +378,26 @@ export function DataModulePage(props: DataModulePageProps) {
                   >
                     {tableFields.map((c) => {
                       const v = row[c.key];
-                      const content = c.render ? (
-                        c.render(v, row)
-                      ) : c.key === "status" && typeof v === "string" ? (
-                        <Badge
-                          variant="secondary"
-                          className={"font-medium " + (statusVariant[v] ?? "bg-muted text-muted-foreground")}
-                        >
-                          {v}
-                        </Badge>
-                      ) : v == null || v === "" ? (
-                        <span className="text-muted-foreground">—</span>
-                      ) : (
-                        String(v)
-                      );
+                      let content: ReactNode;
+                      try {
+                        content = c.render ? (
+                          c.render(v, row)
+                        ) : c.key === "status" && typeof v === "string" ? (
+                          <Badge
+                            variant="secondary"
+                            className={"font-medium " + (statusVariant[v] ?? "bg-muted text-muted-foreground")}
+                          >
+                            {v}
+                          </Badge>
+                        ) : v == null || v === "" ? (
+                          <span className="text-muted-foreground">—</span>
+                        ) : (
+                          String(v)
+                        );
+                      } catch (renderErr) {
+                        console.error(`Error rendering column "${c.key}":`, renderErr);
+                        content = <span className="text-muted-foreground">—</span>;
+                      }
                       return (
                         <TableCell key={c.key} className={"text-sm " + (c.className ?? "")}>
                           {content}

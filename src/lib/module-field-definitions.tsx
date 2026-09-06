@@ -6,8 +6,13 @@ export const mono = (v: any) => (v == null ? "—" : <span className="font-mono 
 export const monoRight = (v: any) => (v == null ? "—" : <span className="font-mono tabular-nums">{v}</span>);
 export const moneyRight = (v: any) => (v == null ? "—" : <span className="font-mono tabular-nums">{money(v)}</span>);
 export const bold = (v: any) => <span className="font-medium text-foreground">{v}</span>;
-export const dateFmt = (v: any) =>
-  !v ? "—" : new Date(v).toLocaleDateString(undefined, { day: "2-digit", month: "short", year: "numeric" });
+export const dateFmt = (v: any) => {
+  if (!v) return "—";
+  const d = new Date(v);
+  return isNaN(d.getTime())
+    ? "—"
+    : d.toLocaleDateString(undefined, { day: "2-digit", month: "short", year: "numeric" });
+};
 
 const emailRule = (v: any) =>
   !v || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(v)) ? null : "Enter a valid email address";

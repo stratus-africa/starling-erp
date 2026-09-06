@@ -202,14 +202,17 @@ const STATUS_SELECT_COLORS: Record<string, string> = {
 };
 
 const formatStatusEvent = (createdAt: string, actorEmail: string | null) => {
-  const timestamp = new Date(createdAt).toLocaleString(undefined, {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-  return `${timestamp} · ${actorEmail ?? "System"}`;
+  const d = new Date(createdAt);
+  const timestamp = isNaN(d.getTime())
+    ? "—"
+    : d.toLocaleString(undefined, {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+  return `${timestamp}${actorEmail ? ` by ${actorEmail}` : ""}`;
 };
 
 interface Line {
