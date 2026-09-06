@@ -58,7 +58,10 @@ import {
   RefreshCw,
   Plus,
   Trash2,
+  MapPin,
 } from "lucide-react";
+
+import { InventoryLocationStock } from "@/components/inventory-location-stock";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -776,10 +779,7 @@ export function Item360Page({ id, backTo = "/inventory/items", backLabel = "Item
 
   const SelectInput = ({ field, options, placeholder }: { field: string; options: string[]; placeholder?: string }) =>
     canWrite ? (
-      <Select
-        value={values[field] || "__none__"}
-        onValueChange={(v) => set(field, v === "__none__" ? null : v)}
-      >
+      <Select value={values[field] || "__none__"} onValueChange={(v) => set(field, v === "__none__" ? null : v)}>
         <SelectTrigger className="h-8 text-sm">
           <SelectValue placeholder={placeholder ?? "Select…"} />
         </SelectTrigger>
@@ -916,7 +916,7 @@ export function Item360Page({ id, backTo = "/inventory/items", backLabel = "Item
               {[
                 { value: "overview", label: "Overview", icon: Info },
                 { value: "inventory", label: "Inventory", icon: Package },
-                { value: "warehouses", label: "Warehouses", icon: Warehouse },
+                { value: "warehouses", label: "Warehouses", icon: MapPin },
                 { value: "movements", label: "Movements", icon: ArrowLeftRight },
                 { value: "sales", label: "Sales", icon: ShoppingCart },
                 { value: "purchasing", label: "Purchasing", icon: ShoppingBag },
@@ -1566,71 +1566,23 @@ export function Item360Page({ id, backTo = "/inventory/items", backLabel = "Item
               })()}
 
               {/* ── Zone + bin breakdown ────────────────────────────────── */}
-              {locationStock.length > 0 && (
-                <Card className="overflow-hidden p-0">
-                  <CardHeader className="border-b px-4 py-3">
-                    <CardTitle className="text-sm">
-                      Stock by Zone &amp; Bin
-                      <span className="ml-2 text-muted-foreground font-normal text-xs">
-                        ({locationStock.filter((r: any) => r.location_id).length} binned
-                        {locationStock.filter((r: any) => !r.location_id).length > 0 &&
-                          ` · ${locationStock.filter((r: any) => !r.location_id).length} unlocated`}
-                        )
-                      </span>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-0">
-                    <div className="overflow-x-auto">
-                      <Table>
-                        <TableHeader>
-                          <TableRow className="bg-muted/20">
-                            <TableHead className="text-xs">Zone</TableHead>
-                            <TableHead className="text-xs">Bin / Location</TableHead>
-                            <TableHead className="text-xs">Aisle</TableHead>
-                            <TableHead className="text-xs">Rack</TableHead>
-                            <TableHead className="text-xs">Level</TableHead>
-                            <TableHead className="text-xs text-right">On Hand</TableHead>
-                            <TableHead className="text-xs text-right">Value</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {(locationStock as any[]).map((r, i) => (
-                            <TableRow key={i}>
-                              <TableCell>
-                                {r.zone_name ? (
-                                  <span className="text-xs bg-muted text-muted-foreground rounded px-1.5 py-0.5">
-                                    {r.zone_name}
-                                  </span>
-                                ) : (
-                                  <span className="text-xs text-muted-foreground">—</span>
-                                )}
-                              </TableCell>
-                              <TableCell className="font-mono text-xs font-medium">
-                                {r.location_code ?? <span className="text-muted-foreground italic">Unlocated</span>}
-                              </TableCell>
-                              <TableCell className="font-mono text-xs text-muted-foreground">
-                                {r.aisle ?? "—"}
-                              </TableCell>
-                              <TableCell className="font-mono text-xs text-muted-foreground">{r.rack ?? "—"}</TableCell>
-                              <TableCell className="font-mono text-xs text-muted-foreground">
-                                {r.level ?? "—"}
-                              </TableCell>
-                              <TableCell className="text-right font-mono tabular-nums">
-                                <span className={Number(r.on_hand) < 0 ? "text-destructive" : ""}>
-                                  {qty(r.on_hand)} {item?.uom}
-                                </span>
-                              </TableCell>
-                              <TableCell className="text-right font-mono tabular-nums text-sm">
-                                {money(Number(r.on_hand) * Number(item?.cost ?? 0))}
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
+              <Card className="overflow-hidden p-0">
+                <CardHeader className="border-b px-4 py-3">
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <MapPin className="h-4 w-4" />
+                    Stock by Zone &amp; Bin
+                    <span className="ml-1 text-muted-foreground font-normal text-xs">
+                      ({locationStock.filter((r: any) => r.location_id).length} binned
+                      {locationStock.filter((r: any) => !r.location_id).length > 0 &&
+                        ` · ${locationStock.filter((r: any) => !r.location_id).length} unlocated`}
+                      )
+                    </span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-4">
+                  <InventoryLocationStock itemId={id} compact={false} />
+                </CardContent>
+              </Card>
             </div>
           </TabsContent>
 
