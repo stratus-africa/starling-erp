@@ -48,6 +48,10 @@ import { Route as AuthenticatedAccountingIndexRouteImport } from './routes/_auth
 import { Route as SuperAdminTenantsIdRouteImport } from './routes/super-admin/tenants_.$id'
 import { Route as SuperAdminSecurityAuditRouteImport } from './routes/super-admin/security/audit'
 import { Route as SuperAdminPlatformFeaturesRouteImport } from './routes/super-admin/platform/features'
+import { Route as SuperAdminMonitoringJobsRouteImport } from './routes/super-admin/monitoring/jobs'
+import { Route as SuperAdminMonitoringHealthRouteImport } from './routes/super-admin/monitoring/health'
+import { Route as SuperAdminMonitoringErrorsRouteImport } from './routes/super-admin/monitoring/errors'
+import { Route as SuperAdminMonitoringApiRouteImport } from './routes/super-admin/monitoring/api'
 import { Route as SuperAdminBillingSubscriptionsRouteImport } from './routes/super-admin/billing/subscriptions'
 import { Route as SuperAdminBillingPlansRouteImport } from './routes/super-admin/billing/plans'
 import { Route as AuthenticatedSettingsWorkflowsRouteImport } from './routes/_authenticated/settings.workflows'
@@ -331,6 +335,29 @@ const SuperAdminPlatformFeaturesRoute =
     path: '/platform/features',
     getParentRoute: () => SuperAdminRouteRoute,
   } as any)
+const SuperAdminMonitoringJobsRoute =
+  SuperAdminMonitoringJobsRouteImport.update({
+    id: '/monitoring/jobs',
+    path: '/monitoring/jobs',
+    getParentRoute: () => SuperAdminRouteRoute,
+  } as any)
+const SuperAdminMonitoringHealthRoute =
+  SuperAdminMonitoringHealthRouteImport.update({
+    id: '/monitoring/health',
+    path: '/monitoring/health',
+    getParentRoute: () => SuperAdminRouteRoute,
+  } as any)
+const SuperAdminMonitoringErrorsRoute =
+  SuperAdminMonitoringErrorsRouteImport.update({
+    id: '/monitoring/errors',
+    path: '/monitoring/errors',
+    getParentRoute: () => SuperAdminRouteRoute,
+  } as any)
+const SuperAdminMonitoringApiRoute = SuperAdminMonitoringApiRouteImport.update({
+  id: '/monitoring/api',
+  path: '/monitoring/api',
+  getParentRoute: () => SuperAdminRouteRoute,
+} as any)
 const SuperAdminBillingSubscriptionsRoute =
   SuperAdminBillingSubscriptionsRouteImport.update({
     id: '/billing/subscriptions',
@@ -908,6 +935,10 @@ export interface FileRoutesByFullPath {
   '/settings/workflows': typeof AuthenticatedSettingsWorkflowsRoute
   '/super-admin/billing/plans': typeof SuperAdminBillingPlansRoute
   '/super-admin/billing/subscriptions': typeof SuperAdminBillingSubscriptionsRoute
+  '/super-admin/monitoring/api': typeof SuperAdminMonitoringApiRoute
+  '/super-admin/monitoring/errors': typeof SuperAdminMonitoringErrorsRoute
+  '/super-admin/monitoring/health': typeof SuperAdminMonitoringHealthRoute
+  '/super-admin/monitoring/jobs': typeof SuperAdminMonitoringJobsRoute
   '/super-admin/platform/features': typeof SuperAdminPlatformFeaturesRoute
   '/super-admin/security/audit': typeof SuperAdminSecurityAuditRoute
   '/super-admin/tenants/$id': typeof SuperAdminTenantsIdRoute
@@ -1029,6 +1060,10 @@ export interface FileRoutesByTo {
   '/settings/workflows': typeof AuthenticatedSettingsWorkflowsRoute
   '/super-admin/billing/plans': typeof SuperAdminBillingPlansRoute
   '/super-admin/billing/subscriptions': typeof SuperAdminBillingSubscriptionsRoute
+  '/super-admin/monitoring/api': typeof SuperAdminMonitoringApiRoute
+  '/super-admin/monitoring/errors': typeof SuperAdminMonitoringErrorsRoute
+  '/super-admin/monitoring/health': typeof SuperAdminMonitoringHealthRoute
+  '/super-admin/monitoring/jobs': typeof SuperAdminMonitoringJobsRoute
   '/super-admin/platform/features': typeof SuperAdminPlatformFeaturesRoute
   '/super-admin/security/audit': typeof SuperAdminSecurityAuditRoute
   '/super-admin/tenants/$id': typeof SuperAdminTenantsIdRoute
@@ -1153,6 +1188,10 @@ export interface FileRoutesById {
   '/_authenticated/settings/workflows': typeof AuthenticatedSettingsWorkflowsRoute
   '/super-admin/billing/plans': typeof SuperAdminBillingPlansRoute
   '/super-admin/billing/subscriptions': typeof SuperAdminBillingSubscriptionsRoute
+  '/super-admin/monitoring/api': typeof SuperAdminMonitoringApiRoute
+  '/super-admin/monitoring/errors': typeof SuperAdminMonitoringErrorsRoute
+  '/super-admin/monitoring/health': typeof SuperAdminMonitoringHealthRoute
+  '/super-admin/monitoring/jobs': typeof SuperAdminMonitoringJobsRoute
   '/super-admin/platform/features': typeof SuperAdminPlatformFeaturesRoute
   '/super-admin/security/audit': typeof SuperAdminSecurityAuditRoute
   '/super-admin/tenants_/$id': typeof SuperAdminTenantsIdRoute
@@ -1277,6 +1316,10 @@ export interface FileRouteTypes {
     | '/settings/workflows'
     | '/super-admin/billing/plans'
     | '/super-admin/billing/subscriptions'
+    | '/super-admin/monitoring/api'
+    | '/super-admin/monitoring/errors'
+    | '/super-admin/monitoring/health'
+    | '/super-admin/monitoring/jobs'
     | '/super-admin/platform/features'
     | '/super-admin/security/audit'
     | '/super-admin/tenants/$id'
@@ -1398,6 +1441,10 @@ export interface FileRouteTypes {
     | '/settings/workflows'
     | '/super-admin/billing/plans'
     | '/super-admin/billing/subscriptions'
+    | '/super-admin/monitoring/api'
+    | '/super-admin/monitoring/errors'
+    | '/super-admin/monitoring/health'
+    | '/super-admin/monitoring/jobs'
     | '/super-admin/platform/features'
     | '/super-admin/security/audit'
     | '/super-admin/tenants/$id'
@@ -1521,6 +1568,10 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/workflows'
     | '/super-admin/billing/plans'
     | '/super-admin/billing/subscriptions'
+    | '/super-admin/monitoring/api'
+    | '/super-admin/monitoring/errors'
+    | '/super-admin/monitoring/health'
+    | '/super-admin/monitoring/jobs'
     | '/super-admin/platform/features'
     | '/super-admin/security/audit'
     | '/super-admin/tenants_/$id'
@@ -1845,6 +1896,34 @@ declare module '@tanstack/react-router' {
       path: '/platform/features'
       fullPath: '/super-admin/platform/features'
       preLoaderRoute: typeof SuperAdminPlatformFeaturesRouteImport
+      parentRoute: typeof SuperAdminRouteRoute
+    }
+    '/super-admin/monitoring/jobs': {
+      id: '/super-admin/monitoring/jobs'
+      path: '/monitoring/jobs'
+      fullPath: '/super-admin/monitoring/jobs'
+      preLoaderRoute: typeof SuperAdminMonitoringJobsRouteImport
+      parentRoute: typeof SuperAdminRouteRoute
+    }
+    '/super-admin/monitoring/health': {
+      id: '/super-admin/monitoring/health'
+      path: '/monitoring/health'
+      fullPath: '/super-admin/monitoring/health'
+      preLoaderRoute: typeof SuperAdminMonitoringHealthRouteImport
+      parentRoute: typeof SuperAdminRouteRoute
+    }
+    '/super-admin/monitoring/errors': {
+      id: '/super-admin/monitoring/errors'
+      path: '/monitoring/errors'
+      fullPath: '/super-admin/monitoring/errors'
+      preLoaderRoute: typeof SuperAdminMonitoringErrorsRouteImport
+      parentRoute: typeof SuperAdminRouteRoute
+    }
+    '/super-admin/monitoring/api': {
+      id: '/super-admin/monitoring/api'
+      path: '/monitoring/api'
+      fullPath: '/super-admin/monitoring/api'
+      preLoaderRoute: typeof SuperAdminMonitoringApiRouteImport
       parentRoute: typeof SuperAdminRouteRoute
     }
     '/super-admin/billing/subscriptions': {
@@ -2695,6 +2774,10 @@ interface SuperAdminRouteRouteChildren {
   SuperAdminIndexRoute: typeof SuperAdminIndexRoute
   SuperAdminBillingPlansRoute: typeof SuperAdminBillingPlansRoute
   SuperAdminBillingSubscriptionsRoute: typeof SuperAdminBillingSubscriptionsRoute
+  SuperAdminMonitoringApiRoute: typeof SuperAdminMonitoringApiRoute
+  SuperAdminMonitoringErrorsRoute: typeof SuperAdminMonitoringErrorsRoute
+  SuperAdminMonitoringHealthRoute: typeof SuperAdminMonitoringHealthRoute
+  SuperAdminMonitoringJobsRoute: typeof SuperAdminMonitoringJobsRoute
   SuperAdminPlatformFeaturesRoute: typeof SuperAdminPlatformFeaturesRoute
   SuperAdminTenantsIdRoute: typeof SuperAdminTenantsIdRoute
   SuperAdminTenantsTenantIdUsersRoute: typeof SuperAdminTenantsTenantIdUsersRoute
@@ -2726,6 +2809,10 @@ const SuperAdminRouteRouteChildren: SuperAdminRouteRouteChildren = {
   SuperAdminIndexRoute: SuperAdminIndexRoute,
   SuperAdminBillingPlansRoute: SuperAdminBillingPlansRoute,
   SuperAdminBillingSubscriptionsRoute: SuperAdminBillingSubscriptionsRoute,
+  SuperAdminMonitoringApiRoute: SuperAdminMonitoringApiRoute,
+  SuperAdminMonitoringErrorsRoute: SuperAdminMonitoringErrorsRoute,
+  SuperAdminMonitoringHealthRoute: SuperAdminMonitoringHealthRoute,
+  SuperAdminMonitoringJobsRoute: SuperAdminMonitoringJobsRoute,
   SuperAdminPlatformFeaturesRoute: SuperAdminPlatformFeaturesRoute,
   SuperAdminTenantsIdRoute: SuperAdminTenantsIdRoute,
   SuperAdminTenantsTenantIdUsersRoute: SuperAdminTenantsTenantIdUsersRoute,

@@ -5,9 +5,9 @@ import { warehouseFields } from "@/lib/module-field-definitions";
 export const Route = createFileRoute("/_authenticated/inventory/warehouses/$id")({
   head: () => ({
     meta: [
-      { title: "Warehouse | Nexus ERP" },
+      { title: "Warehouse | AURORA ERP" },
       { name: "description", content: "Create, view, and update a warehouse." },
-      { property: "og:title", content: "Warehouse | Nexus ERP" },
+      { property: "og:title", content: "Warehouse | AURORA ERP" },
       { property: "og:description", content: "Create, view, and update a warehouse." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },

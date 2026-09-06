@@ -235,9 +235,9 @@ export function SuperAdminSidebar() {
       <SidebarHeader className="h-14 flex items-center px-4 border-b border-border/70">
         <div className="flex items-center gap-2 font-bold text-sm text-foreground">
           <div className="h-7 w-7 rounded-md bg-primary flex items-center justify-center text-primary-foreground font-extrabold text-xs">
-            N
+            A
           </div>
-          <span>Nimbus Super Admin</span>
+          <span>AURORA Super Admin</span>
         </div>
       </SidebarHeader>
 

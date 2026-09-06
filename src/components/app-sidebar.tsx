@@ -22,7 +22,7 @@ export function AppSidebar() {
           </div>
           {!collapsed && (
             <div className="flex flex-col min-w-0">
-              <span className="text-sm font-semibold text-sidebar-foreground truncate">Nexus ERP</span>
+              <span className="text-sm font-semibold text-sidebar-foreground truncate">AURORA ERP</span>
               <span className="text-[10px] uppercase tracking-wider text-sidebar-foreground/60">Enterprise Suite</span>
             </div>
           )}

@@ -570,7 +570,7 @@ function TenantsContent() {
           <h1 className="text-2xl font-semibold tracking-tight flex items-center gap-2">
             <Building2 className="h-5 w-5" /> Tenants
           </h1>
-          <p className="text-sm text-muted-foreground mt-0.5">All business workspaces on the NimbusERP platform.</p>
+          <p className="text-sm text-muted-foreground mt-0.5">All business workspaces on the AURORA platform.</p>
         </div>
         <Button
           size="sm"

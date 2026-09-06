@@ -73,7 +73,7 @@ function AuthPage() {
       <div className="hidden lg:flex flex-col justify-between p-12 bg-primary text-primary-foreground">
         <div className="flex items-center gap-3">
           <div className="h-10 w-10 rounded-md bg-primary-foreground/10 flex items-center justify-center"><Boxes className="h-6 w-6" /></div>
-          <div><div className="text-lg font-semibold">Nexus ERP</div><div className="text-xs opacity-70 uppercase tracking-wider">Enterprise Suite</div></div>
+          <div><div className="text-lg font-semibold">AURORA ERP</div><div className="text-xs opacity-70 uppercase tracking-wider">Enterprise Suite</div></div>
         </div>
         <div className="space-y-6">
           <h1 className="text-4xl font-semibold leading-tight">One platform.<br/>Every business process.</h1>
@@ -84,7 +84,7 @@ function AuthPage() {
             <li>• Real-time dashboards for every department</li>
           </ul>
         </div>
-        <div className="text-xs opacity-60">© {new Date().getFullYear()} Nexus ERP</div>
+        <div className="text-xs opacity-60">© {new Date().getFullYear()} AURORA ERP</div>
       </div>
 
       <div className="flex items-center justify-center p-6">

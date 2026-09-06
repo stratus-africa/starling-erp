@@ -117,6 +117,8 @@ export const PERMISSIONS = {
   reportsExport: "reports.export",
 
   // ── Settings ─────────────────────────────────────────────────────────────────
+  settingsCompanyView: "settings.company.view",
+  settingsCompanyUpdate: "settings.company.update",
   settingsFeaturesManage: "settings.features.manage",
   settingsUsers: "settings.users",
   settingsRoles: "settings.roles",

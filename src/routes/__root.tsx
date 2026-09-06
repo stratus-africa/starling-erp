@@ -51,9 +51,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Nexus ERP — Multi-Tenant Cloud ERP for Modern Businesses" },
-      { name: "description", content: "Nexus ERP unifies CRM, sales, inventory, manufacturing, and accounting in one multi-tenant cloud platform for growing enterprises." },
-      { property: "og:title", content: "Nexus ERP — Multi-Tenant Cloud ERP" },
+      { title: "AURORA ERP — Multi-Tenant Cloud ERP for Modern Businesses" },
+      { name: "description", content: "AURORA ERP unifies CRM, sales, inventory, manufacturing, and accounting in one multi-tenant cloud platform for growing enterprises." },
+      { property: "og:title", content: "AURORA ERP — Multi-Tenant Cloud ERP" },
       { property: "og:description", content: "One suite for CRM, sales, inventory, manufacturing, and accounting." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },

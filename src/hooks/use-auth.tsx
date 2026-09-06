@@ -9,7 +9,8 @@ export type { AppRole } from "@/lib/db-types";
 import type { Feature } from "@/lib/features";
 
 export type Profile = import("@/integrations/supabase/types").Tables<"profiles">;
-export type Tenant = import("@/integrations/supabase/types").Tables<"tenants">;
+export type { Tenant } from "@/lib/db-types";
+import type { Tenant } from "@/lib/db-types";
 
 interface AuthCtx {
   user: User | null;
