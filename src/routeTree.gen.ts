@@ -45,6 +45,7 @@ import { Route as AdminAuditRouteImport } from './routes/_admin/audit'
 import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authenticated/settings.index'
 import { Route as AuthenticatedAccountingIndexRouteImport } from './routes/_authenticated/accounting.index'
 import { Route as SuperAdminTenantsIdRouteImport } from './routes/super-admin/tenants_.$id'
+import { Route as SuperAdminBillingSubscriptionsRouteImport } from './routes/super-admin/billing/subscriptions'
 import { Route as SuperAdminBillingPlansRouteImport } from './routes/super-admin/billing/plans'
 import { Route as AuthenticatedSettingsWorkflowsRouteImport } from './routes/_authenticated/settings.workflows'
 import { Route as AuthenticatedSettingsUsersRouteImport } from './routes/_authenticated/settings.users'
@@ -311,6 +312,12 @@ const SuperAdminTenantsIdRoute = SuperAdminTenantsIdRouteImport.update({
   path: '/tenants/$id',
   getParentRoute: () => SuperAdminRouteRoute,
 } as any)
+const SuperAdminBillingSubscriptionsRoute =
+  SuperAdminBillingSubscriptionsRouteImport.update({
+    id: '/billing/subscriptions',
+    path: '/billing/subscriptions',
+    getParentRoute: () => SuperAdminRouteRoute,
+  } as any)
 const SuperAdminBillingPlansRoute = SuperAdminBillingPlansRouteImport.update({
   id: '/billing/plans',
   path: '/billing/plans',
@@ -880,6 +887,7 @@ export interface FileRoutesByFullPath {
   '/settings/users': typeof AuthenticatedSettingsUsersRoute
   '/settings/workflows': typeof AuthenticatedSettingsWorkflowsRoute
   '/super-admin/billing/plans': typeof SuperAdminBillingPlansRoute
+  '/super-admin/billing/subscriptions': typeof SuperAdminBillingSubscriptionsRoute
   '/super-admin/tenants/$id': typeof SuperAdminTenantsIdRoute
   '/accounting/': typeof AuthenticatedAccountingIndexRoute
   '/settings/': typeof AuthenticatedSettingsIndexRoute
@@ -997,6 +1005,7 @@ export interface FileRoutesByTo {
   '/settings/users': typeof AuthenticatedSettingsUsersRoute
   '/settings/workflows': typeof AuthenticatedSettingsWorkflowsRoute
   '/super-admin/billing/plans': typeof SuperAdminBillingPlansRoute
+  '/super-admin/billing/subscriptions': typeof SuperAdminBillingSubscriptionsRoute
   '/super-admin/tenants/$id': typeof SuperAdminTenantsIdRoute
   '/accounting': typeof AuthenticatedAccountingIndexRoute
   '/crm/customers/$id': typeof AuthenticatedCrmCustomersIdRoute
@@ -1117,6 +1126,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/users': typeof AuthenticatedSettingsUsersRoute
   '/_authenticated/settings/workflows': typeof AuthenticatedSettingsWorkflowsRoute
   '/super-admin/billing/plans': typeof SuperAdminBillingPlansRoute
+  '/super-admin/billing/subscriptions': typeof SuperAdminBillingSubscriptionsRoute
   '/super-admin/tenants_/$id': typeof SuperAdminTenantsIdRoute
   '/_authenticated/accounting/': typeof AuthenticatedAccountingIndexRoute
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
@@ -1237,6 +1247,7 @@ export interface FileRouteTypes {
     | '/settings/users'
     | '/settings/workflows'
     | '/super-admin/billing/plans'
+    | '/super-admin/billing/subscriptions'
     | '/super-admin/tenants/$id'
     | '/accounting/'
     | '/settings/'
@@ -1354,6 +1365,7 @@ export interface FileRouteTypes {
     | '/settings/users'
     | '/settings/workflows'
     | '/super-admin/billing/plans'
+    | '/super-admin/billing/subscriptions'
     | '/super-admin/tenants/$id'
     | '/accounting'
     | '/crm/customers/$id'
@@ -1473,6 +1485,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/users'
     | '/_authenticated/settings/workflows'
     | '/super-admin/billing/plans'
+    | '/super-admin/billing/subscriptions'
     | '/super-admin/tenants_/$id'
     | '/_authenticated/accounting/'
     | '/_authenticated/settings/'
@@ -1774,6 +1787,13 @@ declare module '@tanstack/react-router' {
       path: '/tenants/$id'
       fullPath: '/super-admin/tenants/$id'
       preLoaderRoute: typeof SuperAdminTenantsIdRouteImport
+      parentRoute: typeof SuperAdminRouteRoute
+    }
+    '/super-admin/billing/subscriptions': {
+      id: '/super-admin/billing/subscriptions'
+      path: '/billing/subscriptions'
+      fullPath: '/super-admin/billing/subscriptions'
+      preLoaderRoute: typeof SuperAdminBillingSubscriptionsRouteImport
       parentRoute: typeof SuperAdminRouteRoute
     }
     '/super-admin/billing/plans': {
@@ -2604,6 +2624,7 @@ interface SuperAdminRouteRouteChildren {
   SuperAdminUsersRoute: typeof SuperAdminUsersRoute
   SuperAdminIndexRoute: typeof SuperAdminIndexRoute
   SuperAdminBillingPlansRoute: typeof SuperAdminBillingPlansRoute
+  SuperAdminBillingSubscriptionsRoute: typeof SuperAdminBillingSubscriptionsRoute
   SuperAdminTenantsIdRoute: typeof SuperAdminTenantsIdRoute
   SuperAdminTenantsTenantIdUsersRoute: typeof SuperAdminTenantsTenantIdUsersRoute
 }
@@ -2632,6 +2653,7 @@ const SuperAdminRouteRouteChildren: SuperAdminRouteRouteChildren = {
   SuperAdminUsersRoute: SuperAdminUsersRoute,
   SuperAdminIndexRoute: SuperAdminIndexRoute,
   SuperAdminBillingPlansRoute: SuperAdminBillingPlansRoute,
+  SuperAdminBillingSubscriptionsRoute: SuperAdminBillingSubscriptionsRoute,
   SuperAdminTenantsIdRoute: SuperAdminTenantsIdRoute,
   SuperAdminTenantsTenantIdUsersRoute: SuperAdminTenantsTenantIdUsersRoute,
 }
