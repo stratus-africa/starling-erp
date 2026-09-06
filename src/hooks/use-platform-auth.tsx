@@ -39,6 +39,9 @@ export interface ActiveSupportSession {
   sessionId: string;
   targetTenantId: string;
   targetTenantName: string;
+  targetUserId?: string | null;
+  targetUserEmail?: string | null;
+  targetUserName?: string | null;
   reason: string;
   startedAt: string;
   expiresAt: string;
@@ -60,9 +63,16 @@ interface PlatformAuthCtx {
   /** Refresh all platform context (call after grant/revoke) */
   refresh: () => Promise<void>;
   /** Begin a timed support session inside a tenant */
-  beginSupportSession: (tenantId: string, reason: string, ttlMinutes?: number) => Promise<string>;
+  beginSupportSession: (
+    tenantId: string,
+    reason: string,
+    ttlMinutes?: number,
+    targetUserId?: string | null,
+  ) => Promise<string>;
   /** End the current support session and return to admin context */
-  endSupportSession: (reason?: string) => Promise<void>;
+  endSupportSession: (reason?: string, sessionId?: string | null) => Promise<void>;
+  /** Administrative emergency revocation of any support session */
+  revokeSupportSession: (sessionId: string, reason?: string) => Promise<void>;
 }
 
 // ─── Context ──────────────────────────────────────────────────────────────────
@@ -127,6 +137,9 @@ export function PlatformAuthProvider({ children }: { children: ReactNode }) {
               sessionId: row.session_id,
               targetTenantId: row.target_tenant_id,
               targetTenantName: row.target_tenant_name,
+              targetUserId: row.target_user_id ?? null,
+              targetUserEmail: row.target_user_email ?? null,
+              targetUserName: row.target_user_name ?? null,
               reason: row.reason,
               startedAt: row.started_at,
               expiresAt: row.expires_at,
@@ -200,11 +213,12 @@ export function PlatformAuthProvider({ children }: { children: ReactNode }) {
 
   // ── beginSupportSession ───────────────────────────────────────────────────
   const beginSupportSession = useCallback(
-    async (tenantId: string, reason: string, ttlMinutes = 240): Promise<string> => {
+    async (tenantId: string, reason: string, ttlMinutes = 240, targetUserId?: string | null): Promise<string> => {
       const { data, error } = await db.rpc("begin_support_session", {
         _target_tenant_id: tenantId,
         _reason: reason,
         _ttl_minutes: ttlMinutes,
+        _target_user_id: targetUserId ?? null,
       });
       if (error) throw new Error(error.message);
       // Refresh to pick up the new session context
@@ -216,9 +230,22 @@ export function PlatformAuthProvider({ children }: { children: ReactNode }) {
 
   // ── endSupportSession ─────────────────────────────────────────────────────
   const endSupportSession = useCallback(
-    async (reason = "Session ended by admin") => {
+    async (reason = "Session ended by admin", sessionId: string | null = null) => {
       const { error } = await db.rpc("end_support_session", {
-        _session_id: null,
+        _session_id: sessionId,
+        _reason: reason,
+      });
+      if (error) throw new Error(error.message);
+      await refresh();
+    },
+    [refresh],
+  );
+
+  // ── revokeSupportSession ──────────────────────────────────────────────────
+  const revokeSupportSession = useCallback(
+    async (sessionId: string, reason = "Revoked by administrator") => {
+      const { error } = await db.rpc("revoke_support_session", {
+        _session_id: sessionId,
         _reason: reason,
       });
       if (error) throw new Error(error.message);
@@ -239,6 +266,7 @@ export function PlatformAuthProvider({ children }: { children: ReactNode }) {
         refresh,
         beginSupportSession,
         endSupportSession,
+        revokeSupportSession,
       }}
     >
       {children}
