@@ -2,37 +2,36 @@
  * MaterialAvailabilityPanel
  *
  * Reusable panel that calls check_material_availability() and displays
- * per-component Required / On Hand / Reserved / Available / Shortage.
+ * per-component Required / On Hand / Reserved (other) / Reserved (this order)
+ * / Available / Shortage.
  *
  * Props:
- *   orderId          – production_orders.id
- *   orderQty         – shown in the header summary
- *   productName      – shown in the header summary
- *   allowShortage    – from inventory_config allow_production_shortage
- *   compact          – when true, renders a condensed single-card view
- *                      (used inside the runs page row expansion)
- *   onReserve        – optional callback — triggers create_production_reservations
- *   onRelease        – optional callback — triggers release_production_reservations
- *   reservedAlready  – when true, "Reserve Materials" button is suppressed
+ *   orderId               – production_orders.id
+ *   orderQty              – shown in the header summary
+ *   productName           – shown in the header summary
+ *   allowShortage         – from inventory_config allow_production_shortage
+ *   compact               – condensed single-card view for row-embedded use
+ *   orderStatus           – current production order status; drives which
+ *                           action buttons are shown
+ *   reservedAlready       – true when active stock_reservations exist for
+ *                           this order; suppresses "Reserve Materials" button
+ *   canWrite              – true when the user has manufacturing.update
+ *   onReserveSuccess      – callback after create_production_reservations
+ *   onReleaseSuccess      – callback after release_production_reservations
+ *   onReleaseToFloor      – callback to trigger release_production_order
+ *                           (injected from parent, only at Material Reserved)
+ *   releaseToFloorPending – true while parent's releaseToFloor mutation runs
  */
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { db } from "@/lib/typed-db";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
-import {
-  AlertTriangle,
-  CheckCircle2,
-  Loader2,
-  Lock,
-  Package,
-  RefreshCw,
-  Unlock,
-} from "lucide-react";
+import { AlertTriangle, CheckCircle2, Loader2, Lock, Package, RefreshCw, Send, Unlock } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -44,6 +43,8 @@ export type AvailabilityRow = {
   required_qty: number;
   on_hand: number;
   reserved: number;
+  /** Reservations held specifically by this production order */
+  reserved_this_order: number;
   available: number;
   shortage: number;
   warehouse_id: string | null;
@@ -62,16 +63,11 @@ const n = (v: number | null | undefined, dp = 4) =>
 function AvailabilityBar({ available, required }: { available: number; required: number }) {
   if (required <= 0) return null;
   const pct = Math.min(100, Math.max(0, (available / required) * 100));
-  const color =
-    pct <= 0 ? "[&>div]:bg-destructive" :
-    pct < 100 ? "[&>div]:bg-warning" :
-    "[&>div]:bg-success";
+  const color = pct <= 0 ? "[&>div]:bg-destructive" : pct < 100 ? "[&>div]:bg-warning" : "[&>div]:bg-success";
   return (
     <div className="flex items-center gap-2 min-w-[80px]">
       <Progress value={pct} className={`h-1.5 flex-1 ${color}`} />
-      <span className="text-xs tabular-nums text-muted-foreground w-8 text-right">
-        {Math.round(pct)}%
-      </span>
+      <span className="text-xs tabular-nums text-muted-foreground w-8 text-right">{Math.round(pct)}%</span>
     </div>
   );
 }
@@ -82,10 +78,12 @@ function StatusBanner({
   rows,
   allowShortage,
   loading,
+  reserved,
 }: {
   rows: AvailabilityRow[];
   allowShortage: boolean;
   loading: boolean;
+  reserved: boolean;
 }) {
   if (loading) {
     return (
@@ -113,9 +111,11 @@ function StatusBanner({
       <div className="flex items-center gap-3 rounded-lg border border-success/40 bg-success/5 px-4 py-3">
         <CheckCircle2 className="h-5 w-5 text-success shrink-0" />
         <div>
-          <p className="text-sm font-semibold text-success">READY TO PRODUCE</p>
+          <p className="text-sm font-semibold text-success">{reserved ? "MATERIALS RESERVED" : "READY TO PRODUCE"}</p>
           <p className="text-xs text-muted-foreground mt-0.5">
-            All {rows.length} component{rows.length !== 1 ? "s" : ""} have sufficient available inventory.
+            {reserved
+              ? `All ${rows.length} component${rows.length !== 1 ? "s" : ""} reserved. Inventory held for this order.`
+              : `All ${rows.length} component${rows.length !== 1 ? "s" : ""} have sufficient available inventory.`}
           </p>
         </div>
       </div>
@@ -128,13 +128,17 @@ function StatusBanner({
       <div className="min-w-0">
         <p className="text-sm font-semibold text-destructive">MATERIAL SHORTAGE</p>
         <p className="text-xs text-muted-foreground mt-0.5">
-          {shortageRows.length} component{shortageRows.length !== 1 ? "s are" : " is"} short:&nbsp;
-          {shortageRows.slice(0, 3).map((r) => r.item_name).join(", ")}
+          {shortageRows.length} component
+          {shortageRows.length !== 1 ? "s are" : " is"} short:&nbsp;
+          {shortageRows
+            .slice(0, 3)
+            .map((r) => r.item_name)
+            .join(", ")}
           {shortageRows.length > 3 ? ` and ${shortageRows.length - 3} more` : ""}.
         </p>
         {allowShortage && (
           <p className="text-xs text-warning mt-1 font-medium">
-            ⚠ Allow Production Shortage is enabled — release is still permitted.
+            ⚠ Allow Production Shortage is enabled — reservation is still permitted.
           </p>
         )}
       </div>
@@ -150,10 +154,15 @@ export interface MaterialAvailabilityPanelProps {
   productName?: string;
   allowShortage?: boolean;
   compact?: boolean;
+  /** Current status of the production order */
+  orderStatus?: string;
   reservedAlready?: boolean;
   canWrite?: boolean;
   onReserveSuccess?: (rows: AvailabilityRow[]) => void;
   onReleaseSuccess?: () => void;
+  /** Called when user clicks "Release to Shop Floor" (Material Reserved → Released) */
+  onReleaseToFloor?: () => void;
+  releaseToFloorPending?: boolean;
 }
 
 export function MaterialAvailabilityPanel({
@@ -162,21 +171,27 @@ export function MaterialAvailabilityPanel({
   productName,
   allowShortage = false,
   compact = false,
+  orderStatus,
   reservedAlready = false,
   canWrite = false,
   onReserveSuccess,
   onReleaseSuccess,
+  onReleaseToFloor,
+  releaseToFloorPending = false,
 }: MaterialAvailabilityPanelProps) {
   const qc = useQueryClient();
 
-  // ── Fetch availability (read-only, never consumes stock) ──────────────────
-  const { data: rows = [], isLoading, isFetching, refetch } = useQuery({
+  // ── Fetch availability (read-only, never consumes stock) ──────────────
+  const {
+    data: rows = [],
+    isLoading,
+    isFetching,
+    refetch,
+  } = useQuery({
     queryKey: ["material_availability", orderId],
     enabled: !!orderId,
     queryFn: async () => {
-      const { data, error } = await (db as any).rpc("check_material_availability", {
-        _order_id: orderId,
-      });
+      const { data, error } = await (db as any).rpc("check_material_availability", { _order_id: orderId });
       if (error) throw error;
       return (data ?? []) as AvailabilityRow[];
     },
@@ -185,32 +200,35 @@ export function MaterialAvailabilityPanel({
   });
 
   const hasShortage = rows.some((r) => Number(r.shortage) > 0);
-  const canRelease = !hasShortage || allowShortage;
+  const canReserve = !hasShortage || allowShortage;
 
-  // ── Reserve materials mutation ────────────────────────────────────────────
+  // Does this order's own reservations cover all requirements?
+  const allCoveredByThisOrder =
+    rows.length > 0 && rows.every((r) => Number(r.reserved_this_order) >= Number(r.required_qty));
+
+  // ── Reserve materials ─────────────────────────────────────────────────
   const reserveMutation = useMutation({
     mutationFn: async () => {
-      const { data, error } = await (db as any).rpc("create_production_reservations", {
-        _order_id: orderId,
-      });
+      const { data, error } = await (db as any).rpc("create_production_reservations", { _order_id: orderId });
       if (error) throw error;
       return (data ?? []) as AvailabilityRow[];
     },
     onSuccess: (updated) => {
-      toast.success("Materials reserved. Production order released.");
+      toast.success("Materials reserved successfully.");
       qc.invalidateQueries({ queryKey: ["material_availability", orderId] });
       qc.invalidateQueries({ queryKey: ["production_orders"] });
+      qc.invalidateQueries({
+        queryKey: ["stock_reservations", "production_order", orderId],
+      });
       onReserveSuccess?.(updated);
     },
     onError: (e: any) => toast.error(e.message ?? "Reservation failed"),
   });
 
-  // ── Release reservations mutation ─────────────────────────────────────────
+  // ── Release reservations ──────────────────────────────────────────────
   const releaseMutation = useMutation({
     mutationFn: async () => {
-      const { data, error } = await (db as any).rpc("release_production_reservations", {
-        _order_id: orderId,
-      });
+      const { data, error } = await (db as any).rpc("release_production_reservations", { _order_id: orderId });
       if (error) throw error;
       return data as number;
     },
@@ -218,22 +236,54 @@ export function MaterialAvailabilityPanel({
       toast.success(`${count} reservation${count !== 1 ? "s" : ""} released.`);
       qc.invalidateQueries({ queryKey: ["material_availability", orderId] });
       qc.invalidateQueries({ queryKey: ["production_orders"] });
+      qc.invalidateQueries({
+        queryKey: ["stock_reservations", "production_order", orderId],
+      });
       onReleaseSuccess?.();
     },
     onError: (e: any) => toast.error(e.message ?? "Release failed"),
   });
 
-  const pending = reserveMutation.isPending || releaseMutation.isPending;
+  const pending = reserveMutation.isPending || releaseMutation.isPending || releaseToFloorPending;
 
-  // ─── Render ───────────────────────────────────────────────────────────────
+  // Whether to show the reserve button:
+  //   – only on Confirmed status (or legacy Planned)
+  //   – only when no reservation exists yet
+  const showReserveBtn =
+    canWrite &&
+    !reservedAlready &&
+    !isLoading &&
+    rows.length > 0 &&
+    ["Confirmed", "Planned"].includes(orderStatus ?? "");
+
+  // Whether to show release-reservation button:
+  //   – when reservations exist and order hasn't posted yet
+  const showReleaseReservationBtn =
+    canWrite &&
+    reservedAlready &&
+    !isLoading &&
+    rows.length > 0 &&
+    !["Completed", "Closed", "Cancelled"].includes(orderStatus ?? "");
+
+  // Whether to show the "Release to Floor" step button (Material Reserved → Released)
+  const showReleaseToFloorBtn =
+    canWrite &&
+    reservedAlready &&
+    !isLoading &&
+    rows.length > 0 &&
+    orderStatus === "Material Reserved" &&
+    typeof onReleaseToFloor === "function";
+
+  // ─── Render ───────────────────────────────────────────────────────────
   return (
     <div className={`flex flex-col gap-3 ${compact ? "" : ""}`}>
       {/* Status banner */}
-      <StatusBanner rows={rows} allowShortage={allowShortage} loading={isLoading} />
+      <StatusBanner rows={rows} allowShortage={allowShortage} loading={isLoading} reserved={reservedAlready} />
 
-      {/* Table header row */}
+      {/* Table */}
       {!isLoading && rows.length > 0 && (
         <Card className="overflow-hidden border shadow-sm p-0">
+          {/* Header bar */}
           <div className="flex items-center justify-between gap-2 border-b px-4 py-2 bg-muted/30">
             <div className="flex items-center gap-2">
               <Package className="h-3.5 w-3.5 text-muted-foreground" />
@@ -248,13 +298,7 @@ export function MaterialAvailabilityPanel({
               <span className="text-xs text-muted-foreground">
                 {rows.length} component{rows.length !== 1 ? "s" : ""}
               </span>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-7 gap-1"
-                onClick={() => refetch()}
-                disabled={isFetching}
-              >
+              <Button variant="ghost" size="sm" className="h-7 gap-1" onClick={() => refetch()} disabled={isFetching}>
                 <RefreshCw className={`h-3 w-3 ${isFetching ? "animate-spin" : ""}`} />
                 Refresh
               </Button>
@@ -269,7 +313,12 @@ export function MaterialAvailabilityPanel({
                   <TableHead className="text-xs">Warehouse</TableHead>
                   <TableHead className="text-right text-xs">Required</TableHead>
                   <TableHead className="text-right text-xs">On Hand</TableHead>
-                  <TableHead className="text-right text-xs">Reserved</TableHead>
+                  <TableHead className="text-right text-xs">
+                    <span title="Reserved by other orders">Reserved (others)</span>
+                  </TableHead>
+                  <TableHead className="text-right text-xs">
+                    <span title="Reserved specifically for this order">This Order</span>
+                  </TableHead>
                   <TableHead className="text-right text-xs">Available</TableHead>
                   <TableHead className="text-xs min-w-[120px]">Coverage</TableHead>
                   <TableHead className="text-right text-xs">Shortage</TableHead>
@@ -279,32 +328,22 @@ export function MaterialAvailabilityPanel({
               <TableBody>
                 {rows.map((row) => {
                   const short = Number(row.shortage) > 0;
+                  const thisOrderReserved = Number(row.reserved_this_order ?? 0);
                   return (
-                    <TableRow
-                      key={row.item_id}
-                      className={short ? "bg-destructive/3" : ""}
-                    >
+                    <TableRow key={row.item_id} className={short ? "bg-destructive/3" : ""}>
                       {/* Component */}
                       <TableCell>
                         <div className="flex items-center gap-1.5">
-                          {short && (
-                            <AlertTriangle className="h-3.5 w-3.5 text-destructive shrink-0" />
-                          )}
+                          {short && <AlertTriangle className="h-3.5 w-3.5 text-destructive shrink-0" />}
                           <div>
                             <div className="text-sm font-medium">{row.item_name}</div>
-                            {row.sku && (
-                              <div className="text-xs text-muted-foreground font-mono">
-                                {row.sku}
-                              </div>
-                            )}
+                            {row.sku && <div className="text-xs text-muted-foreground font-mono">{row.sku}</div>}
                           </div>
                         </div>
                       </TableCell>
 
                       {/* Warehouse */}
-                      <TableCell className="text-xs text-muted-foreground">
-                        {row.warehouse_name ?? "—"}
-                      </TableCell>
+                      <TableCell className="text-xs text-muted-foreground">{row.warehouse_name ?? "—"}</TableCell>
 
                       {/* Required */}
                       <TableCell className="text-right font-mono tabular-nums text-sm font-semibold">
@@ -313,14 +352,24 @@ export function MaterialAvailabilityPanel({
 
                       {/* On hand */}
                       <TableCell className="text-right font-mono tabular-nums text-sm">
-                        <span className={Number(row.on_hand) <= 0 ? "text-destructive" : ""}>
-                          {n(row.on_hand)}
-                        </span>
+                        <span className={Number(row.on_hand) <= 0 ? "text-destructive" : ""}>{n(row.on_hand)}</span>
                       </TableCell>
 
-                      {/* Reserved */}
+                      {/* Reserved (others) */}
                       <TableCell className="text-right font-mono tabular-nums text-sm text-muted-foreground">
                         {n(row.reserved)}
+                      </TableCell>
+
+                      {/* Reserved — this order */}
+                      <TableCell className="text-right font-mono tabular-nums text-sm">
+                        {thisOrderReserved > 0 ? (
+                          <span className="text-violet-600 dark:text-violet-400 font-semibold flex items-center justify-end gap-1">
+                            <Lock className="h-3 w-3" />
+                            {n(thisOrderReserved)}
+                          </span>
+                        ) : (
+                          <span className="text-muted-foreground">—</span>
+                        )}
                       </TableCell>
 
                       {/* Available */}
@@ -338,27 +387,20 @@ export function MaterialAvailabilityPanel({
 
                       {/* Coverage bar */}
                       <TableCell>
-                        <AvailabilityBar
-                          available={Number(row.available)}
-                          required={Number(row.required_qty)}
-                        />
+                        <AvailabilityBar available={Number(row.available)} required={Number(row.required_qty)} />
                       </TableCell>
 
                       {/* Shortage */}
                       <TableCell className="text-right font-mono tabular-nums text-sm">
                         {short ? (
-                          <span className="font-bold text-destructive">
-                            {n(row.shortage)}
-                          </span>
+                          <span className="font-bold text-destructive">{n(row.shortage)}</span>
                         ) : (
                           <span className="text-success">0</span>
                         )}
                       </TableCell>
 
                       {/* UoM */}
-                      <TableCell className="text-xs text-muted-foreground">
-                        {row.uom ?? "—"}
-                      </TableCell>
+                      <TableCell className="text-xs text-muted-foreground">{row.uom ?? "—"}</TableCell>
                     </TableRow>
                   );
                 })}
@@ -366,7 +408,7 @@ export function MaterialAvailabilityPanel({
             </Table>
           </div>
 
-          {/* Shortage summary footer */}
+          {/* Shortage footer */}
           {hasShortage && (
             <div className="border-t px-4 py-2 bg-destructive/5 flex items-center gap-2 text-xs text-destructive">
               <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
@@ -374,8 +416,8 @@ export function MaterialAvailabilityPanel({
                 {rows.filter((r) => Number(r.shortage) > 0).length} component
                 {rows.filter((r) => Number(r.shortage) > 0).length !== 1 ? "s" : ""} short.
                 {!allowShortage
-                  ? " Production cannot be released until materials are available or the Allow Production Shortage setting is enabled."
-                  : " Production can be released because Allow Production Shortage is enabled."}
+                  ? " Materials must be available before reserving, or enable Allow Production Shortage in Inventory Settings."
+                  : " Allow Production Shortage is enabled — reservation is permitted."}
               </span>
             </div>
           )}
@@ -383,32 +425,32 @@ export function MaterialAvailabilityPanel({
       )}
 
       {/* Action buttons */}
-      {canWrite && !isLoading && rows.length > 0 && (
-        <div className="flex items-center gap-2">
-          {!reservedAlready && (
+      {(showReserveBtn || showReleaseReservationBtn || showReleaseToFloorBtn) && (
+        <div className="flex items-center gap-2 flex-wrap">
+          {/* Reserve Materials (Confirmed → Material Reserved) */}
+          {showReserveBtn && (
             <Button
               onClick={() => reserveMutation.mutate()}
-              disabled={pending || (!canRelease)}
+              disabled={pending || !canReserve}
               className="gap-1.5"
-              variant={canRelease ? "default" : "outline"}
+              variant={canReserve ? "default" : "outline"}
             >
-              {reserveMutation.isPending ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Lock className="h-4 w-4" />
-              )}
-              {canRelease
-                ? "Reserve Materials & Release"
-                : "Cannot Release — Shortage"}
+              {reserveMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Lock className="h-4 w-4" />}
+              {canReserve ? "Reserve Materials" : "Cannot Reserve — Shortage"}
             </Button>
           )}
-          {reservedAlready && (
-            <Button
-              variant="outline"
-              onClick={() => releaseMutation.mutate()}
-              disabled={pending}
-              className="gap-1.5"
-            >
+
+          {/* Release to Shop Floor (Material Reserved → Released) */}
+          {showReleaseToFloorBtn && (
+            <Button onClick={onReleaseToFloor} disabled={pending} className="gap-1.5">
+              {releaseToFloorPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+              Release to Shop Floor
+            </Button>
+          )}
+
+          {/* Release Reservations (undo — any pre-completion status) */}
+          {showReleaseReservationBtn && (
+            <Button variant="outline" onClick={() => releaseMutation.mutate()} disabled={pending} className="gap-1.5">
               {releaseMutation.isPending ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
@@ -417,11 +459,10 @@ export function MaterialAvailabilityPanel({
               Release Reservations
             </Button>
           )}
-          {!canRelease && (
-            <Badge
-              variant="outline"
-              className="text-xs border-destructive/40 text-destructive bg-destructive/5"
-            >
+
+          {/* Shortage badge */}
+          {!canReserve && !reservedAlready && (
+            <Badge variant="outline" className="text-xs border-destructive/40 text-destructive bg-destructive/5">
               <AlertTriangle className="h-3 w-3 mr-1" />
               Blocked by shortage
             </Badge>

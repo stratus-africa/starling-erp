@@ -14,12 +14,29 @@ export const Route = createFileRoute("/_authenticated/manufacturing/orders/")({
       searchColumn="number"
       rowHref={(row) => `/manufacturing/orders/${row.id}`}
       createHref="/manufacturing/orders/new"
-      filterFields={[{ key: "status", label: "Status", options: ["Planned", "In Progress", "Completed", "Cancelled"] }]}
+      filterFields={[
+        {
+          key: "status",
+          label: "Status",
+          options: [
+            "Draft",
+            "Planned",
+            "Confirmed",
+            "Material Reserved",
+            "Released",
+            "In Progress",
+            "Quality Check",
+            "Completed",
+            "Closed",
+            "Cancelled",
+          ],
+        },
+      ]}
       postAction={{
         rpc: "post_production_order",
         paramName: "_order_id",
         label: "Complete & Post",
-        showWhen: (row) => row.status === "In Progress",
+        showWhen: (row) => row.status === "Quality Check",
       }}
       voidAction={{ entityType: "production_order", permission: "manufacturing.void" }}
     />
