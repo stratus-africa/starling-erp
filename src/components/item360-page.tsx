@@ -776,7 +776,10 @@ export function Item360Page({ id, backTo = "/inventory/items", backLabel = "Item
 
   const SelectInput = ({ field, options, placeholder }: { field: string; options: string[]; placeholder?: string }) =>
     canWrite ? (
-      <Select value={values[field] || ""} onValueChange={(v) => set(field, v)}>
+      <Select
+        value={values[field] || "__none__"}
+        onValueChange={(v) => set(field, v === "__none__" ? null : v)}
+      >
         <SelectTrigger className="h-8 text-sm">
           <SelectValue placeholder={placeholder ?? "Select…"} />
         </SelectTrigger>
@@ -809,7 +812,7 @@ export function Item360Page({ id, backTo = "/inventory/items", backLabel = "Item
           <SelectValue placeholder={placeholder ?? "Select…"} />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="">—</SelectItem>
+          <SelectItem value="__none__">—</SelectItem>
           {opts.map((o: any) => (
             <SelectItem key={o.id} value={o.id}>
               {o[labelKey]}
@@ -1278,7 +1281,10 @@ export function Item360Page({ id, backTo = "/inventory/items", backLabel = "Item
                             {required && <span className="text-destructive ml-0.5">*</span>}
                           </Label>
                           {canWrite ? (
-                            <Select value={values[field] || ""} onValueChange={(v) => set(field, v || null)}>
+                            <Select
+                              value={values[field] || "__same_as_stock__"}
+                              onValueChange={(v) => set(field, v === "__same_as_stock__" ? null : v)}
+                            >
                               <SelectTrigger
                                 className={`h-8 text-sm ${pathError || (required && errors[field]) ? "border-destructive" : ""}`}
                               >
@@ -1286,7 +1292,7 @@ export function Item360Page({ id, backTo = "/inventory/items", backLabel = "Item
                               </SelectTrigger>
                               <SelectContent>
                                 {!required && (
-                                  <SelectItem value="">
+                                  <SelectItem value="__same_as_stock__">
                                     <span className="text-muted-foreground text-xs">Same as stock UoM</span>
                                   </SelectItem>
                                 )}
