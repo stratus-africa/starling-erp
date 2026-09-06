@@ -184,6 +184,12 @@ const NAV: NavGroup[] = [
     label: "Security",
     items: [
       {
+        title: "Security Center",
+        url: "/super-admin/security",
+        icon: ShieldAlert,
+        permission: PLATFORM_PERMISSIONS.securityView,
+      },
+      {
         title: "Platform Admins",
         url: "/super-admin/admins",
         icon: ShieldCheck,
