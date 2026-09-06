@@ -4,28 +4,28 @@ import { useMemo } from "react";
 // ─── Route label map ──────────────────────────────────────────────────────────
 
 const ROUTE_LABELS: Record<string, string> = {
-  "/super-admin":                "Dashboard",
-  "/super-admin/tenants":        "Tenants",
-  "/super-admin/users":          "Users",
-  "/super-admin/support-sessions":"Support Sessions",
-  "/super-admin/plans":          "Plans",
-  "/super-admin/subscriptions":  "Subscriptions",
-  "/super-admin/payments":       "Payments",
-  "/super-admin/invoices":       "Invoices",
-  "/super-admin/features":       "Feature Flags",
-  "/super-admin/announcements":  "Announcements",
-  "/super-admin/settings":       "Settings",
-  "/super-admin/integrations":   "Integrations",
-  "/super-admin/system":         "System Health",
-  "/super-admin/errors":         "Errors",
-  "/super-admin/jobs":           "Background Jobs",
-  "/super-admin/api":            "API",
-  "/super-admin/usage":          "Usage",
-  "/super-admin/admins":         "Platform Admins",
-  "/super-admin/roles":          "Roles & Permissions",
-  "/super-admin/sessions":       "Sessions",
-  "/super-admin/security-events":"Security Events",
-  "/super-admin/audit":          "Audit Log",
+  "/super-admin": "Dashboard",
+  "/super-admin/tenants": "Tenants",
+  "/super-admin/users": "Users",
+  "/super-admin/support-sessions": "Support Sessions",
+  "/super-admin/plans": "Plans",
+  "/super-admin/subscriptions": "Subscriptions",
+  "/super-admin/payments": "Payments",
+  "/super-admin/invoices": "Invoices",
+  "/super-admin/features": "Feature Flags",
+  "/super-admin/announcements": "Announcements",
+  "/super-admin/settings": "Settings",
+  "/super-admin/integrations": "Integrations",
+  "/super-admin/system": "System Health",
+  "/super-admin/errors": "Errors",
+  "/super-admin/jobs": "Background Jobs",
+  "/super-admin/api": "API",
+  "/super-admin/usage": "Usage",
+  "/super-admin/admins": "Platform Admins",
+  "/super-admin/roles": "Roles & Permissions",
+  "/super-admin/sessions": "Sessions",
+  "/super-admin/security-events": "Security Events",
+  "/super-admin/audit": "Audit Log",
 };
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -43,16 +43,29 @@ export function SuperAdminBreadcrumbs() {
 
     const label = ROUTE_LABELS[clean];
 
-    // Handle dynamic segments like /super-admin/tenants/[id]
+    // Handle dynamic segments like /super-admin/tenants/[id] or /super-admin/tenants/[id]/users
     if (!label) {
-      const parts = clean.split("/").filter(Boolean); // ["super-admin", "tenants", "abc123"]
-      const section = "/" + parts.slice(0, 2).join("/"); // "/super-admin/tenants"
-      const sectionLabel = ROUTE_LABELS[section] ?? parts[1];
-      return [
-        base,
-        { label: sectionLabel, href: section },
-        { label: parts[2]?.slice(0, 8) + "…", href: clean },
-      ];
+      const parts = clean.split("/").filter(Boolean); // e.g. ["super-admin", "tenants", "abc123", "users"]
+      const result = [base];
+
+      if (parts.length >= 2) {
+        const section = "/" + parts.slice(0, 2).join("/"); // "/super-admin/tenants"
+        const sectionLabel = ROUTE_LABELS[section] ?? parts[1].charAt(0).toUpperCase() + parts[1].slice(1);
+        result.push({ label: sectionLabel, href: section });
+      }
+
+      if (parts.length >= 3) {
+        const tenantPart = "/" + parts.slice(0, 3).join("/");
+        result.push({ label: parts[2].slice(0, 8) + "…", href: tenantPart });
+      }
+
+      if (parts.length >= 4) {
+        const subSection = "/" + parts.slice(0, 4).join("/");
+        const subLabel = parts[3].charAt(0).toUpperCase() + parts[3].slice(1);
+        result.push({ label: subLabel, href: subSection });
+      }
+
+      return result;
     }
 
     return [base, { label, href: clean }];
@@ -66,9 +79,7 @@ export function SuperAdminBreadcrumbs() {
           <Link
             to={crumb.href as never}
             className={`truncate ${
-              i === crumbs.length - 1
-                ? "text-foreground font-medium"
-                : "hover:text-foreground transition-colors"
+              i === crumbs.length - 1 ? "text-foreground font-medium" : "hover:text-foreground transition-colors"
             }`}
           >
             {crumb.label}
