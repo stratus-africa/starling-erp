@@ -19,18 +19,20 @@ import { PlatformAuthProvider, usePlatformAuth } from "@/hooks/use-platform-auth
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { SuperAdminSidebar } from "@/components/super-admin/super-admin-sidebar";
 import { SuperAdminBreadcrumbs } from "@/components/super-admin/super-admin-breadcrumbs";
+import { SupportSessionBanner } from "@/components/support-session-banner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem,
-  DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  AlertTriangle, ExternalLink, Loader2, LogOut, ShieldAlert,
-  ShieldCheck,
-} from "lucide-react";
+import { AlertTriangle, ExternalLink, Loader2, LogOut, ShieldAlert, ShieldCheck } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
@@ -81,8 +83,8 @@ function SuperAdminGate() {
           </div>
           <h2 className="text-xl font-semibold">Access Denied</h2>
           <p className="text-sm text-muted-foreground">
-            The Super Admin area is restricted to platform administrators.
-            Your account has not been granted platform access.
+            The Super Admin area is restricted to platform administrators. Your account has not been granted platform
+            access.
           </p>
           <p className="text-xs text-muted-foreground/60">
             If you require access, contact a platform super administrator.
@@ -125,14 +127,23 @@ function SuperAdminTopbar() {
 
   const displayName = adminProfile?.fullName ?? adminProfile?.email ?? profile?.full_name ?? "Admin";
   const displayEmail = adminProfile?.email ?? profile?.email ?? "";
-  const initials = displayName.split(/\s+/).map((s: string) => s[0]).slice(0, 2).join("").toUpperCase();
+  const initials = displayName
+    .split(/\s+/)
+    .map((s: string) => s[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
   const roleLabel = adminProfile?.platformRole
     ? (PLATFORM_ROLE_LABELS[adminProfile.platformRole as PlatformRole] ?? adminProfile.platformRole)
     : "Platform Admin";
 
   const handleSignOut = async () => {
     if (supportSession) {
-      try { await endSupportSession("Signed out"); } catch { /* ignore */ }
+      try {
+        await endSupportSession("Signed out");
+      } catch {
+        /* ignore */
+      }
     }
     await supabase.auth.signOut();
     navigate({ to: "/auth", replace: true });
@@ -148,7 +159,10 @@ function SuperAdminTopbar() {
 
       <div className="ml-auto flex items-center gap-2">
         {/* Platform badge */}
-        <Badge variant="outline" className="hidden sm:flex gap-1 text-[10px] border-amber-500/40 bg-amber-500/8 text-amber-700 dark:text-amber-300">
+        <Badge
+          variant="outline"
+          className="hidden sm:flex gap-1 text-[10px] border-amber-500/40 bg-amber-500/8 text-amber-700 dark:text-amber-300"
+        >
           <ShieldCheck className="h-3 w-3" />
           Platform Admin
         </Badge>
@@ -204,49 +218,5 @@ function SuperAdminTopbar() {
         </DropdownMenu>
       </div>
     </header>
-  );
-}
-
-// ─── Support session banner ───────────────────────────────────────────────────
-
-function SupportSessionBanner() {
-  const { supportSession, endSupportSession } = usePlatformAuth();
-  if (!supportSession) return null;
-
-  const minsLeft = Math.round(supportSession.minutesRemaining);
-  const isExpiringSoon = minsLeft <= 15;
-
-  const handleEnd = async () => {
-    try {
-      await endSupportSession("Ended from banner");
-      toast.success("Support session ended. Returned to admin context.");
-    } catch (e: any) {
-      toast.error(e.message ?? "Failed to end support session");
-    }
-  };
-
-  return (
-    <div className={`flex items-center justify-between gap-3 px-4 py-2 text-xs font-medium border-b ${
-      isExpiringSoon
-        ? "bg-destructive/8 border-destructive/20 text-destructive"
-        : "bg-amber-500/8 border-amber-500/20 text-amber-700 dark:text-amber-300"
-    }`}>
-      <div className="flex items-center gap-2 min-w-0">
-        <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
-        <span className="truncate">
-          Viewing tenant{" "}
-          <span className="font-semibold">{supportSession.targetTenantName}</span>
-          {" "}— {supportSession.reason}
-        </span>
-      </div>
-      <div className="flex items-center gap-3 shrink-0">
-        <span className={`tabular-nums ${isExpiringSoon ? "font-semibold" : "opacity-70"}`}>
-          {minsLeft} min left
-        </span>
-        <Button size="sm" variant="outline" className="h-6 px-2 text-[10px]" onClick={handleEnd}>
-          End session
-        </Button>
-      </div>
-    </div>
   );
 }
