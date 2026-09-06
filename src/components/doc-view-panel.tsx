@@ -162,7 +162,7 @@ const DOC_CONFIG: Record<
     templateKind: "order",
     deletePermission: "purchasing.delete",
     statuses: ["Draft", "Submitted", "Approved", "Rejected", "Ordered", "Cancelled"],
-    converts: [{ label: "Convert to PO", action: "convert_req_to_po" }],
+    // No converts here — conversion is handled in the editor via ConvertReqToPoDialog
   },
   po: {
     table: "purchase_orders",
@@ -240,6 +240,7 @@ const fmtDate = (v: string | null | undefined) =>
 function DetailsView({ kind, id }: { kind: DocKind; id: string }) {
   const cfg = DOC_CONFIG[kind];
   const { tenant } = useAuth();
+  const isReq = kind === "requisition";
 
   const { data: doc, isLoading: loadingDoc } = useQuery({
     queryKey: [cfg.table, id, "full"],
@@ -262,14 +263,29 @@ function DetailsView({ kind, id }: { kind: DocKind; id: string }) {
     },
   });
 
+  // Party details — skip for requisitions (no supplier on a requisition)
   const { data: party } = useQuery({
     queryKey: [cfg.partyTable, "detail-view", doc?.[cfg.partyField]],
-    enabled: !!doc?.[cfg.partyField],
+    enabled: !isReq && !!doc?.[cfg.partyField],
     queryFn: async () => {
       const { data } = await db
         .from(cfg.partyTable)
         .select("id,name,email,phone,billing_address,shipping_address")
         .eq("id", doc![cfg.partyField])
+        .maybeSingle();
+      return data as Record<string, any> | null;
+    },
+  });
+
+  // Warehouse name lookup for stock requisitions
+  const { data: warehouseDoc } = useQuery({
+    queryKey: ["warehouses", "detail-view", doc?.from_warehouse_id],
+    enabled: isReq && !!doc?.from_warehouse_id,
+    queryFn: async () => {
+      const { data } = await db
+        .from("warehouses")
+        .select("id,name,code")
+        .eq("id", doc!.from_warehouse_id)
         .maybeSingle();
       return data as Record<string, any> | null;
     },
@@ -318,44 +334,62 @@ function DetailsView({ kind, id }: { kind: DocKind; id: string }) {
         {doc.notes && <MetaRow label="Reference / Notes" value={String(doc.notes)} />}
         <MetaRow label="Currency" value={currency} />
         {doc.payment_terms && <MetaRow label="Payment Terms" value={String(doc.payment_terms)} />}
+        {/* Requisition-specific meta */}
+        {isReq && doc.requisition_type && (
+          <MetaRow
+            label="Requisition Type"
+            value={doc.requisition_type === "stock" ? "Stock Requisition" : "Purchase Requisition"}
+          />
+        )}
+        {isReq && warehouseDoc && (
+          <MetaRow
+            label="From Warehouse"
+            value={warehouseDoc.code ? `${warehouseDoc.code} — ${warehouseDoc.name}` : warehouseDoc.name}
+          />
+        )}
+        {isReq && doc.department && <MetaRow label="Department" value={String(doc.department)} />}
+        {isReq && doc.requested_by && <MetaRow label="Requested By" value={String(doc.requested_by)} />}
+        {isReq && doc.converted_po_id && <MetaRow label="Converted PO" value="See Purchase Orders" />}
       </div>
 
-      {/* ── Party details ── */}
-      <section>
-        <h3 className="mb-3 text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-          {cfg.partyLabel} Details
-        </h3>
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-          <div className="space-y-1">
-            <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Name</p>
-            <p className="font-medium text-sm">{party?.name ?? "—"}</p>
+      {/* ── Party details (hidden for requisitions) ── */}
+      {!isReq && (
+        <section>
+          <h3 className="mb-3 text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+            {cfg.partyLabel} Details
+          </h3>
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+            <div className="space-y-1">
+              <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Name</p>
+              <p className="font-medium text-sm">{party?.name ?? "—"}</p>
+            </div>
+            {party?.email && (
+              <div className="space-y-1">
+                <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Email</p>
+                <p className="text-sm">{party.email}</p>
+              </div>
+            )}
+            {party?.phone && (
+              <div className="space-y-1">
+                <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Phone</p>
+                <p className="text-sm">{party.phone}</p>
+              </div>
+            )}
+            {party?.billing_address && (
+              <div className="space-y-1">
+                <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Billing Address</p>
+                <p className="text-sm whitespace-pre-line">{party.billing_address}</p>
+              </div>
+            )}
+            {party?.shipping_address && (
+              <div className="space-y-1">
+                <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Shipping Address</p>
+                <p className="text-sm whitespace-pre-line">{party.shipping_address}</p>
+              </div>
+            )}
           </div>
-          {party?.email && (
-            <div className="space-y-1">
-              <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Email</p>
-              <p className="text-sm">{party.email}</p>
-            </div>
-          )}
-          {party?.phone && (
-            <div className="space-y-1">
-              <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Phone</p>
-              <p className="text-sm">{party.phone}</p>
-            </div>
-          )}
-          {party?.billing_address && (
-            <div className="space-y-1">
-              <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Billing Address</p>
-              <p className="text-sm whitespace-pre-line">{party.billing_address}</p>
-            </div>
-          )}
-          {party?.shipping_address && (
-            <div className="space-y-1">
-              <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Shipping Address</p>
-              <p className="text-sm whitespace-pre-line">{party.shipping_address}</p>
-            </div>
-          )}
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* ── Items table ── */}
       <section>

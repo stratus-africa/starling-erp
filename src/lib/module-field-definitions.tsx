@@ -1082,10 +1082,18 @@ export const shipmentFields: FieldDef[] = [
 
 export const requisitionFields: FieldDef[] = [
   { key: "number", label: "Requisition #", render: mono },
+  {
+    key: "requisition_type",
+    label: "Type",
+    type: "select",
+    options: ["purchase", "stock"],
+    defaultValue: "purchase",
+    render: (v: string) => (v === "stock" ? "Stock" : "Purchase"),
+  },
   { key: "date", label: "Date", type: "date", render: dateFmt },
   { key: "required_date", label: "Required By", type: "date", render: dateFmt },
-  { key: "supplier_id", label: "Preferred Supplier", type: "fk", fkTable: "suppliers", hideInTable: true },
   { key: "department", label: "Department" },
+  { key: "requested_by", label: "Requested By", hideInTable: true },
   { key: "grand_total", label: "Est. Total", type: "number", className: "text-right", render: moneyRight },
   {
     key: "status",

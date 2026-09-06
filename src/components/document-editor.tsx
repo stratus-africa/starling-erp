@@ -53,6 +53,7 @@ import { fetchRow, insertRow, updateRow, db, type Row } from "@/lib/typed-db";
 import { callRpc } from "@/lib/db-rpc";
 import type { TableName } from "@/lib/typed-db";
 import type { TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
+import { ConvertReqToPoDialog } from "@/components/convert-req-to-po-dialog";
 
 export type DocKind = "quote" | "order" | "invoice" | "po" | "bill" | "credit_note" | "requisition";
 
@@ -324,7 +325,11 @@ export function DocumentEditor({
     currency: "USD",
     notes: "",
     status: cfg.statuses[0],
+    // Requisition-specific defaults
+    ...(kind === "requisition" ? { requisition_type: "purchase", department: "", requested_by: "", from_warehouse_id: "" } : {}),
   });
+  // Requisition: Convert to PO dialog state
+  const [convertPoOpen, setConvertPoOpen] = useState(false);
   const [lines, setLines] = useState<Line[]>([]);
 
   const selectedCustomerId =
@@ -392,6 +397,22 @@ export function DocumentEditor({
       return (data ?? []) as Row[];
     },
     staleTime: 30_000,
+  });
+
+  // Warehouses list — needed for stock requisitions
+  const { data: warehouses = [] } = useQuery({
+    queryKey: ["warehouses", "picker"],
+    enabled: isReq,
+    queryFn: async () => {
+      const { data, error } = await db
+        .from("warehouses")
+        .select("id,name,code")
+        .is("deleted_at", null)
+        .order("name");
+      if (error) throw error;
+      return (data ?? []) as Row[];
+    },
+    staleTime: 60_000,
   });
 
   const canWrite = canWriteBase && !doc?.posted_at && header.status !== "Voided";
@@ -590,6 +611,7 @@ export function DocumentEditor({
   const isReq = kind === "requisition";
   const canApprove = can(["purchasing.create", "purchasing.update"]);
   const reqApproved = header.status === "Approved" || header.status === "Ordered";
+  const isStockReq = isReq && header.requisition_type === "stock";
 
   const setReqStatus = useMutation({
     mutationFn: async ({ status, note }: { status: string; note: string }) => {
@@ -614,70 +636,6 @@ export function DocumentEditor({
       qc.invalidateQueries();
     },
     onError: (e: Error) => toast.error(e.message ?? "Update failed"),
-  });
-
-  const convertReqToPo = useMutation({
-    mutationFn: async () => {
-      if (!tenant?.id) throw new Error("No tenant");
-      if (!reqApproved) throw new Error("Requisition must be approved first");
-      if (!header.supplier_id) throw new Error("Select a preferred supplier before converting");
-      const number = `PO-${Date.now().toString().slice(-8)}`;
-      const { data: po, error } = await db
-        .from("purchase_orders")
-        .insert({
-          tenant_id: tenant.id,
-          number,
-          supplier_id: header.supplier_id,
-          date: new Date().toISOString().slice(0, 10),
-          expected_date: header.required_date || null,
-          status: "Draft",
-          currency: header.currency ?? "USD",
-          subtotal: totals.subtotal,
-          discount_total: totals.discount_total,
-          tax_total: totals.tax_total,
-          grand_total: totals.grand_total,
-          amount: totals.grand_total,
-          notes: header.notes || null,
-        })
-        .select("id")
-        .single();
-      if (error) throw error;
-      const poId = po.id;
-      if (lines.length) {
-        const { error: le } = await db.from("purchase_order_lines").insert(
-          lines.map((l, i) => ({
-            tenant_id: tenant.id,
-            document_id: poId,
-            line_no: i + 1,
-            item_id: l.item_id || null,
-            description: l.description,
-            quantity: l.quantity,
-            unit_price: l.unit_price,
-            discount_pct: l.discount_pct || 0,
-            tax_pct: l.tax_pct || 0,
-            line_total: computeLine(l),
-          })),
-        );
-        if (le) throw le;
-      }
-      await db.from("purchase_requisitions").update({ status: "Ordered", converted_po_id: poId }).eq("id", id);
-      await logDocumentEvent({
-        tenantId: tenant.id,
-        entityType: kind,
-        entityId: id,
-        status: "Ordered",
-        note: `Converted to purchase order ${number}`,
-        actorId: user?.id ?? null,
-        actorEmail: profile?.email ?? null,
-      });
-      return poId;
-    },
-    onSuccess: (poId) => {
-      toast.success("Converted to purchase order");
-      qc.invalidateQueries();
-      nav({ to: `/purchasing/orders/${poId}` as never });
-    },
-    onError: (e: Error) => toast.error(e.message ?? "Conversion failed"),
   });
 
   const partyId = header[cfg.partyField] || null;
@@ -882,9 +840,9 @@ export function DocumentEditor({
               <Button
                 variant="outline"
                 size="sm"
-                disabled={!reqApproved || convertReqToPo.isPending}
-                title={reqApproved ? undefined : "Requires approval"}
-                onClick={() => convertReqToPo.mutate()}
+                disabled={!reqApproved}
+                title={reqApproved ? undefined : "Requires approval before converting"}
+                onClick={() => setConvertPoOpen(true)}
               >
                 <Send className="h-4 w-4 mr-1.5" /> Convert to PO
               </Button>
@@ -967,25 +925,71 @@ export function DocumentEditor({
               disabled={!canWrite}
             />
           </div>
-          <div className="grid gap-1.5">
-            <Label>{cfg.partyLabel}</Label>
-            <Select
-              value={header[cfg.partyField] ?? ""}
-              onValueChange={(v) => setHeader({ ...header, [cfg.partyField]: v })}
-              disabled={!canWrite}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder={`Select ${cfg.partyLabel.toLowerCase()}…`} />
-              </SelectTrigger>
-              <SelectContent>
-                {parties.map((c) => (
-                  <SelectItem key={c.id} value={c.id}>
-                    {c.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          {/* Requisitions do NOT show a supplier — that is selected at PO conversion time */}
+          {!isReq && (
+            <div className="grid gap-1.5">
+              <Label>{cfg.partyLabel}</Label>
+              <Select
+                value={header[cfg.partyField] ?? ""}
+                onValueChange={(v) => setHeader({ ...header, [cfg.partyField]: v })}
+                disabled={!canWrite}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={`Select ${cfg.partyLabel.toLowerCase()}…`} />
+                </SelectTrigger>
+                <SelectContent>
+                  {parties.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>
+                      {c.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+          {/* Requisition type selector */}
+          {isReq && (
+            <div className="grid gap-1.5">
+              <Label>Requisition Type</Label>
+              <Select
+                value={header.requisition_type ?? "purchase"}
+                onValueChange={(v) =>
+                  setHeader({ ...header, requisition_type: v, from_warehouse_id: v === "purchase" ? "" : header.from_warehouse_id })
+                }
+                disabled={!canWrite}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="purchase">Purchase Requisition</SelectItem>
+                  <SelectItem value="stock">Stock Requisition</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+          {/* Warehouse selector — only for stock requisitions */}
+          {isStockReq && (
+            <div className="grid gap-1.5">
+              <Label>From Warehouse <span className="text-destructive">*</span></Label>
+              <Select
+                value={header.from_warehouse_id ?? ""}
+                onValueChange={(v) => setHeader({ ...header, from_warehouse_id: v })}
+                disabled={!canWrite}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select warehouse…" />
+                </SelectTrigger>
+                <SelectContent>
+                  {warehouses.map((w) => (
+                    <SelectItem key={w.id} value={w.id}>
+                      {w.code ? `${w.code} — ` : ""}{w.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
           <div className="grid gap-1.5">
             <Label>Date</Label>
             <Input
@@ -1088,6 +1092,29 @@ export function DocumentEditor({
               </SelectContent>
             </Select>
           </div>
+          {/* Requisition extra fields: department & requested_by */}
+          {isReq && (
+            <div className="grid gap-1.5">
+              <Label>Department</Label>
+              <Input
+                value={header.department ?? ""}
+                onChange={(e) => setHeader({ ...header, department: e.target.value })}
+                placeholder="e.g. Operations"
+                disabled={!canWrite}
+              />
+            </div>
+          )}
+          {isReq && (
+            <div className="grid gap-1.5">
+              <Label>Requested By</Label>
+              <Input
+                value={header.requested_by ?? ""}
+                onChange={(e) => setHeader({ ...header, requested_by: e.target.value })}
+                placeholder="Name of requester"
+                disabled={!canWrite}
+              />
+            </div>
+          )}
           <div className="grid gap-1.5 md:col-span-2">
             <Label>Notes</Label>
             <Textarea
@@ -1175,6 +1202,7 @@ export function DocumentEditor({
                   <tr key={idx} className="border-b hover:bg-muted/20">
                     <td className="px-3 py-1.5 text-muted-foreground">{idx + 1}</td>
                     <td className="px-2 py-1.5">
+                      {/* Stock requisitions require item pick; purchase requisitions allow free-text only */}
                       <Select
                         value={l.item_id ?? ""}
                         onValueChange={(v) => {
@@ -1182,7 +1210,7 @@ export function DocumentEditor({
                           const price =
                             kind === "po" || kind === "bill" ? Number(it?.cost ?? 0) : Number(it?.price ?? 0);
                           updateLine(idx, {
-                            item_id: v,
+                            item_id: v || null,
                             description: l.description || it?.name || "",
                             unit_price: l.unit_price || price,
                           });
@@ -1190,9 +1218,12 @@ export function DocumentEditor({
                         disabled={!canWrite}
                       >
                         <SelectTrigger className="h-8">
-                          <SelectValue placeholder="Pick item…" />
+                          <SelectValue placeholder={isStockReq ? "Pick item… *" : "Pick item (optional)"} />
                         </SelectTrigger>
                         <SelectContent>
+                          {!isStockReq && (
+                            <SelectItem value="">— No item (free-text) —</SelectItem>
+                          )}
                           {items.map((i) => (
                             <SelectItem key={i.id} value={i.id}>
                               {i.sku ? `${i.sku} — ` : ""}
@@ -1491,6 +1522,24 @@ export function DocumentEditor({
           pdf={buildPdf}
           entityType={kind}
           entityId={id}
+        />
+      )}
+
+      {/* Convert Requisition → PO dialog (opens when "Convert to PO" clicked) */}
+      {isReq && !isNew && (
+        <ConvertReqToPoDialog
+          open={convertPoOpen}
+          onOpenChange={setConvertPoOpen}
+          reqId={id}
+          reqNumber={header.number}
+          reqLines={lines}
+          reqCurrency={header.currency ?? "USD"}
+          reqRequiredDate={header.required_date ?? null}
+          onConverted={(poId) => {
+            setConvertPoOpen(false);
+            setHeader((h) => ({ ...h, status: "Ordered" }));
+            nav({ to: `/purchasing/orders/${poId}` as never });
+          }}
         />
       )}
     </div>

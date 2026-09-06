@@ -3911,12 +3911,14 @@ export type Database = {
           deleted_at: string | null
           department: string | null
           discount_total: number
+          from_warehouse_id: string | null
           grand_total: number
           id: string
           notes: string | null
           number: string | null
           requested_by: string | null
           required_date: string | null
+          requisition_type: string
           status: string | null
           subtotal: number
           supplier_id: string | null
@@ -3934,12 +3936,14 @@ export type Database = {
           deleted_at?: string | null
           department?: string | null
           discount_total?: number
+          from_warehouse_id?: string | null
           grand_total?: number
           id?: string
           notes?: string | null
           number?: string | null
           requested_by?: string | null
           required_date?: string | null
+          requisition_type?: string
           status?: string | null
           subtotal?: number
           supplier_id?: string | null
@@ -3957,12 +3961,14 @@ export type Database = {
           deleted_at?: string | null
           department?: string | null
           discount_total?: number
+          from_warehouse_id?: string | null
           grand_total?: number
           id?: string
           notes?: string | null
           number?: string | null
           requested_by?: string | null
           required_date?: string | null
+          requisition_type?: string
           status?: string | null
           subtotal?: number
           supplier_id?: string | null
