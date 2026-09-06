@@ -756,7 +756,7 @@ function OverviewTab({ data, tenant }: { data: DetailPayload; tenant: Tenant }) 
   );
 }
 
-function UsersTab({ users }: { users: TenantUser[] }) {
+function UsersTab({ users, tenantId }: { users: TenantUser[]; tenantId?: string }) {
   const ROLE_COLORS: Record<string, string> = {
     tenant_admin: "bg-amber-500/10 text-amber-700 dark:text-amber-300",
     sales: "bg-blue-500/10 text-blue-700 dark:text-blue-300",
@@ -769,9 +769,20 @@ function UsersTab({ users }: { users: TenantUser[] }) {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-        <Users className="h-4 w-4" />
-        {users.length} user{users.length !== 1 ? "s" : ""} in this workspace
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Users className="h-4 w-4" />
+          {users.length} user{users.length !== 1 ? "s" : ""} in this workspace
+        </div>
+        {tenantId && (
+          <Button variant="outline" size="sm" asChild className="h-8 text-xs gap-1.5">
+            <Link to="/super-admin/tenants_/$tenantId/users" params={{ tenantId }}>
+              <UserCog className="h-3.5 w-3.5 text-primary" />
+              Manage Tenant Users
+              <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
+            </Link>
+          </Button>
+        )}
       </div>
       <Card className="p-0 overflow-hidden">
         <Table>
@@ -1493,7 +1504,7 @@ function TenantDetailPage() {
           </TabsContent>
 
           <TabsContent value="users">
-            <UsersTab users={payload.users ?? []} />
+            <UsersTab users={payload.users ?? []} tenantId={tenant.id} />
           </TabsContent>
 
           <TabsContent value="subscription">
