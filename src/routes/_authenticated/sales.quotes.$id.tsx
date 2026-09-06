@@ -9,7 +9,7 @@ function QuoteDetailPage() {
   const { id } = Route.useParams();
   const nav = useNavigate();
   return (
-    <div className="flex h-full flex-col overflow-hidden">
+    <div className="flex h-[calc(100svh-3.5rem)] min-h-0 w-full flex-col overflow-y-auto overscroll-contain">
       <DocViewPanel
         kind="quote"
         id={id}

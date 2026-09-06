@@ -773,10 +773,10 @@ export function DocumentEditor({
     Number(doc?.balance_due ?? doc?.balance ?? 0) > 0.001;
 
   return (
-    <div className="flex w-full flex-col gap-4 p-4 md:p-6">
+    <div className="flex min-w-0 w-full flex-col gap-4 p-3 sm:p-4 md:p-6">
       <div className="flex w-full flex-col gap-4">
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3 min-w-0">
+        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3 sm:flex sm:flex-wrap sm:items-center sm:justify-between">
+          <div className="flex min-w-0 items-center gap-2 sm:gap-3">
             <Button
               variant="ghost"
               size="sm"
@@ -803,7 +803,7 @@ export function DocumentEditor({
               )}
             </div>
           </div>
-          <div className="flex items-center gap-2 flex-wrap justify-end">
+          <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
             {!isNew && <EmailStatus entityType={kind} entityId={id} />}
             {!isNew && (
               <>
@@ -957,7 +957,7 @@ export function DocumentEditor({
           </div>
         </div>
 
-        <Card className="p-4 grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card className="grid grid-cols-1 gap-4 p-3 sm:p-4 sm:grid-cols-2 lg:grid-cols-4">
           <div className="grid gap-1.5">
             <Label>Number</Label>
             <Input
@@ -1263,8 +1263,8 @@ export function DocumentEditor({
               </tbody>
             </table>
           </div>
-          <div className="flex justify-end border-t bg-muted/10 px-4 py-3">
-            <div className="w-72 space-y-1 text-sm">
+          <div className="flex justify-end border-t bg-muted/10 px-3 py-3 sm:px-4">
+            <div className="w-72 max-w-full space-y-1 text-sm">
               <Row label="Subtotal" v={totals.subtotal} />
               <Row label="Discount" v={-totals.discount_total} />
               <Row label="Tax" v={totals.tax_total} />
