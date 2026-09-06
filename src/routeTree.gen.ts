@@ -45,6 +45,7 @@ import { Route as AdminAuditRouteImport } from './routes/_admin/audit'
 import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authenticated/settings.index'
 import { Route as AuthenticatedAccountingIndexRouteImport } from './routes/_authenticated/accounting.index'
 import { Route as SuperAdminTenantsIdRouteImport } from './routes/super-admin/tenants_.$id'
+import { Route as SuperAdminSecurityAuditRouteImport } from './routes/super-admin/security/audit'
 import { Route as SuperAdminPlatformFeaturesRouteImport } from './routes/super-admin/platform/features'
 import { Route as SuperAdminBillingSubscriptionsRouteImport } from './routes/super-admin/billing/subscriptions'
 import { Route as SuperAdminBillingPlansRouteImport } from './routes/super-admin/billing/plans'
@@ -311,6 +312,11 @@ const AuthenticatedAccountingIndexRoute =
 const SuperAdminTenantsIdRoute = SuperAdminTenantsIdRouteImport.update({
   id: '/tenants_/$id',
   path: '/tenants/$id',
+  getParentRoute: () => SuperAdminRouteRoute,
+} as any)
+const SuperAdminSecurityAuditRoute = SuperAdminSecurityAuditRouteImport.update({
+  id: '/security/audit',
+  path: '/security/audit',
   getParentRoute: () => SuperAdminRouteRoute,
 } as any)
 const SuperAdminPlatformFeaturesRoute =
@@ -896,6 +902,7 @@ export interface FileRoutesByFullPath {
   '/super-admin/billing/plans': typeof SuperAdminBillingPlansRoute
   '/super-admin/billing/subscriptions': typeof SuperAdminBillingSubscriptionsRoute
   '/super-admin/platform/features': typeof SuperAdminPlatformFeaturesRoute
+  '/super-admin/security/audit': typeof SuperAdminSecurityAuditRoute
   '/super-admin/tenants/$id': typeof SuperAdminTenantsIdRoute
   '/accounting/': typeof AuthenticatedAccountingIndexRoute
   '/settings/': typeof AuthenticatedSettingsIndexRoute
@@ -1015,6 +1022,7 @@ export interface FileRoutesByTo {
   '/super-admin/billing/plans': typeof SuperAdminBillingPlansRoute
   '/super-admin/billing/subscriptions': typeof SuperAdminBillingSubscriptionsRoute
   '/super-admin/platform/features': typeof SuperAdminPlatformFeaturesRoute
+  '/super-admin/security/audit': typeof SuperAdminSecurityAuditRoute
   '/super-admin/tenants/$id': typeof SuperAdminTenantsIdRoute
   '/accounting': typeof AuthenticatedAccountingIndexRoute
   '/crm/customers/$id': typeof AuthenticatedCrmCustomersIdRoute
@@ -1137,6 +1145,7 @@ export interface FileRoutesById {
   '/super-admin/billing/plans': typeof SuperAdminBillingPlansRoute
   '/super-admin/billing/subscriptions': typeof SuperAdminBillingSubscriptionsRoute
   '/super-admin/platform/features': typeof SuperAdminPlatformFeaturesRoute
+  '/super-admin/security/audit': typeof SuperAdminSecurityAuditRoute
   '/super-admin/tenants_/$id': typeof SuperAdminTenantsIdRoute
   '/_authenticated/accounting/': typeof AuthenticatedAccountingIndexRoute
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
@@ -1259,6 +1268,7 @@ export interface FileRouteTypes {
     | '/super-admin/billing/plans'
     | '/super-admin/billing/subscriptions'
     | '/super-admin/platform/features'
+    | '/super-admin/security/audit'
     | '/super-admin/tenants/$id'
     | '/accounting/'
     | '/settings/'
@@ -1378,6 +1388,7 @@ export interface FileRouteTypes {
     | '/super-admin/billing/plans'
     | '/super-admin/billing/subscriptions'
     | '/super-admin/platform/features'
+    | '/super-admin/security/audit'
     | '/super-admin/tenants/$id'
     | '/accounting'
     | '/crm/customers/$id'
@@ -1499,6 +1510,7 @@ export interface FileRouteTypes {
     | '/super-admin/billing/plans'
     | '/super-admin/billing/subscriptions'
     | '/super-admin/platform/features'
+    | '/super-admin/security/audit'
     | '/super-admin/tenants_/$id'
     | '/_authenticated/accounting/'
     | '/_authenticated/settings/'
@@ -1800,6 +1812,13 @@ declare module '@tanstack/react-router' {
       path: '/tenants/$id'
       fullPath: '/super-admin/tenants/$id'
       preLoaderRoute: typeof SuperAdminTenantsIdRouteImport
+      parentRoute: typeof SuperAdminRouteRoute
+    }
+    '/super-admin/security/audit': {
+      id: '/super-admin/security/audit'
+      path: '/security/audit'
+      fullPath: '/super-admin/security/audit'
+      preLoaderRoute: typeof SuperAdminSecurityAuditRouteImport
       parentRoute: typeof SuperAdminRouteRoute
     }
     '/super-admin/platform/features': {
@@ -2646,6 +2665,7 @@ interface SuperAdminRouteRouteChildren {
   SuperAdminBillingPlansRoute: typeof SuperAdminBillingPlansRoute
   SuperAdminBillingSubscriptionsRoute: typeof SuperAdminBillingSubscriptionsRoute
   SuperAdminPlatformFeaturesRoute: typeof SuperAdminPlatformFeaturesRoute
+  SuperAdminSecurityAuditRoute: typeof SuperAdminSecurityAuditRoute
   SuperAdminTenantsIdRoute: typeof SuperAdminTenantsIdRoute
   SuperAdminTenantsTenantIdUsersRoute: typeof SuperAdminTenantsTenantIdUsersRoute
 }
@@ -2676,6 +2696,7 @@ const SuperAdminRouteRouteChildren: SuperAdminRouteRouteChildren = {
   SuperAdminBillingPlansRoute: SuperAdminBillingPlansRoute,
   SuperAdminBillingSubscriptionsRoute: SuperAdminBillingSubscriptionsRoute,
   SuperAdminPlatformFeaturesRoute: SuperAdminPlatformFeaturesRoute,
+  SuperAdminSecurityAuditRoute: SuperAdminSecurityAuditRoute,
   SuperAdminTenantsIdRoute: SuperAdminTenantsIdRoute,
   SuperAdminTenantsTenantIdUsersRoute: SuperAdminTenantsTenantIdUsersRoute,
 }

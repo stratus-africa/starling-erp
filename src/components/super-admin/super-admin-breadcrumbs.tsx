@@ -28,6 +28,7 @@ const ROUTE_LABELS: Record<string, string> = {
   "/super-admin/roles": "Roles & Permissions",
   "/super-admin/sessions": "Sessions",
   "/super-admin/security-events": "Security Events",
+  "/super-admin/security": "Security Center",
   "/super-admin/audit": "Audit Log",
   "/super-admin/security/audit": "Audit Log",
 };
