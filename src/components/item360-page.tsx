@@ -1184,7 +1184,7 @@ export function Item360Page({ id, backTo = "/inventory/items", backLabel = "Item
               TAB 2: INVENTORY
           ════════════════════════════════════════════════════════════════ */}
           <TabsContent value="inventory" className="mt-0 flex-1 overflow-auto p-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-4xl">
+            <div className="grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-6 items-start w-full">
               {/* Stock level controls */}
               <Card>
                 <CardHeader className="pb-2 pt-4 px-4">
@@ -1494,7 +1494,7 @@ export function Item360Page({ id, backTo = "/inventory/items", backLabel = "Item
               TAB 3: WAREHOUSES
           ════════════════════════════════════════════════════════════════ */}
           <TabsContent value="warehouses" className="mt-0 flex-1 overflow-auto p-6">
-            <div className="space-y-5 max-w-4xl">
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-5 items-start w-full">
               {/* ── Warehouse-level summary ─────────────────────────────── */}
               {(() => {
                 // Group location stock rows by warehouse
@@ -1670,7 +1670,7 @@ export function Item360Page({ id, backTo = "/inventory/items", backLabel = "Item
               TAB 5: SALES
           ════════════════════════════════════════════════════════════════ */}
           <TabsContent value="sales" className="mt-0 flex-1 overflow-auto p-6">
-            <div className="space-y-6 max-w-5xl">
+            <div className="space-y-6 w-full">
               {/* KPIs */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {[
@@ -1799,7 +1799,7 @@ export function Item360Page({ id, backTo = "/inventory/items", backLabel = "Item
               TAB 6: PURCHASING
           ════════════════════════════════════════════════════════════════ */}
           <TabsContent value="purchasing" className="mt-0 flex-1 overflow-auto p-6">
-            <div className="space-y-6 max-w-5xl">
+            <div className="space-y-6 w-full">
               {/* KPIs */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {[
@@ -1879,7 +1879,7 @@ export function Item360Page({ id, backTo = "/inventory/items", backLabel = "Item
               TAB 7: SUPPLIERS
           ════════════════════════════════════════════════════════════════ */}
           <TabsContent value="suppliers" className="mt-0 flex-1 overflow-auto p-6">
-            <div className="max-w-3xl space-y-6">
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 items-start w-full">
               <Card>
                 <CardHeader className="pb-2 pt-4 px-4">
                   <CardTitle className="text-sm">Procurement Settings</CardTitle>
@@ -1964,7 +1964,7 @@ export function Item360Page({ id, backTo = "/inventory/items", backLabel = "Item
               TAB 8: BOMs
           ════════════════════════════════════════════════════════════════ */}
           <TabsContent value="boms" className="mt-0 flex-1 overflow-auto p-6">
-            <div className="space-y-6 max-w-5xl">
+            <div className="space-y-6 w-full">
               {/* BOMs where this item is the output */}
               <Card className="overflow-hidden p-0">
                 <CardHeader className="border-b px-4 py-3 flex flex-row items-center justify-between">
@@ -2072,7 +2072,7 @@ export function Item360Page({ id, backTo = "/inventory/items", backLabel = "Item
               TAB 9: MANUFACTURING
           ════════════════════════════════════════════════════════════════ */}
           <TabsContent value="manufacturing" className="mt-0 flex-1 overflow-auto p-6">
-            <div className="space-y-6 max-w-5xl">
+            <div className="space-y-6 w-full">
               {/* KPIs */}
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                 {[
@@ -2163,7 +2163,7 @@ export function Item360Page({ id, backTo = "/inventory/items", backLabel = "Item
               TAB 10: PRICING
           ════════════════════════════════════════════════════════════════ */}
           <TabsContent value="pricing" className="mt-0 flex-1 overflow-auto p-6">
-            <div className="max-w-2xl space-y-6">
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 items-start w-full">
               <Card>
                 <CardHeader className="pb-2 pt-4 px-4">
                   <CardTitle className="text-sm flex items-center gap-2">
@@ -2271,7 +2271,7 @@ export function Item360Page({ id, backTo = "/inventory/items", backLabel = "Item
               TAB 11: ACCOUNTING
           ════════════════════════════════════════════════════════════════ */}
           <TabsContent value="accounting" className="mt-0 flex-1 overflow-auto p-6">
-            <div className="max-w-2xl space-y-6">
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 items-start w-full">
               <Card>
                 <CardHeader className="pb-2 pt-4 px-4">
                   <CardTitle className="text-sm flex items-center gap-2">
