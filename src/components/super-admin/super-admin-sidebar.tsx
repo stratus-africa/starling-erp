@@ -1,14 +1,39 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
-  Activity, AlertTriangle, BarChart3, Bell, Building2,
-  CreditCard, FileText, Flag, Globe, Layers, LayoutDashboard,
-  Loader, MessageSquare, ReceiptText, Server, Settings2,
-  ShieldCheck, Siren, Terminal, Users, Wallet, Zap,
+  Activity,
+  AlertTriangle,
+  BarChart3,
+  Bell,
+  Building2,
+  CreditCard,
+  FileText,
+  Flag,
+  Globe,
+  Layers,
+  LayoutDashboard,
+  Loader,
+  MessageSquare,
+  ReceiptText,
+  Server,
+  Settings2,
+  ShieldCheck,
+  Siren,
+  Terminal,
+  Users,
+  Wallet,
+  Zap,
 } from "lucide-react";
 import {
-  Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent,
-  SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton,
-  SidebarMenuItem, useSidebar,
+  Sidebar,
+  SidebarContent,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  useSidebar,
 } from "@/components/ui/sidebar";
 import { usePlatformAuth } from "@/hooks/use-platform-auth";
 import { PLATFORM_PERMISSIONS } from "@/lib/platform-permissions";
@@ -16,90 +41,128 @@ import { PLATFORM_PERMISSIONS } from "@/lib/platform-permissions";
 // ─── Navigation structure ─────────────────────────────────────────────────────
 
 interface NavItem {
-  title:       string;
-  url:         string;
-  icon:        React.ElementType;
-  permission?: string;   // if set, item is hidden when canPlatform returns false
+  title: string;
+  url: string;
+  icon: React.ElementType;
+  permission?: string; // if set, item is hidden when canPlatform returns false
 }
 
 interface NavGroup {
-  label:       string;
-  items:       NavItem[];
+  label: string;
+  items: NavItem[];
 }
 
 const NAV: NavGroup[] = [
   {
     label: "Super Admin",
     items: [
-      { title: "Dashboard", url: "/super-admin", icon: LayoutDashboard,
-        permission: PLATFORM_PERMISSIONS.dashboardView },
+      {
+        title: "Dashboard",
+        url: "/super-admin",
+        icon: LayoutDashboard,
+        permission: PLATFORM_PERMISSIONS.dashboardView,
+      },
     ],
   },
   {
     label: "Customers",
     items: [
-      { title: "Tenants",          url: "/super-admin/tenants",          icon: Building2,
-        permission: PLATFORM_PERMISSIONS.tenantsView },
-      { title: "Users",            url: "/super-admin/users",            icon: Users,
-        permission: PLATFORM_PERMISSIONS.usersView },
-      { title: "Support Sessions", url: "/super-admin/support-sessions", icon: MessageSquare,
-        permission: PLATFORM_PERMISSIONS.supportView },
+      { title: "Tenants", url: "/super-admin/tenants", icon: Building2, permission: PLATFORM_PERMISSIONS.tenantsView },
+      { title: "Users", url: "/super-admin/users", icon: Users, permission: PLATFORM_PERMISSIONS.usersView },
+      {
+        title: "Support Sessions",
+        url: "/super-admin/support-sessions",
+        icon: MessageSquare,
+        permission: PLATFORM_PERMISSIONS.supportView,
+      },
     ],
   },
   {
     label: "Billing",
     items: [
-      { title: "Plans",         url: "/super-admin/plans",         icon: Layers,
-        permission: PLATFORM_PERMISSIONS.plansView },
-      { title: "Subscriptions", url: "/super-admin/subscriptions", icon: ReceiptText,
-        permission: PLATFORM_PERMISSIONS.billingView },
-      { title: "Payments",      url: "/super-admin/payments",      icon: CreditCard,
-        permission: PLATFORM_PERMISSIONS.billingView },
-      { title: "Invoices",      url: "/super-admin/invoices",      icon: FileText,
-        permission: PLATFORM_PERMISSIONS.billingView },
+      { title: "Plans", url: "/super-admin/billing/plans", icon: Layers, permission: PLATFORM_PERMISSIONS.plansView },
+      {
+        title: "Subscriptions",
+        url: "/super-admin/subscriptions",
+        icon: ReceiptText,
+        permission: PLATFORM_PERMISSIONS.billingView,
+      },
+      {
+        title: "Payments",
+        url: "/super-admin/payments",
+        icon: CreditCard,
+        permission: PLATFORM_PERMISSIONS.billingView,
+      },
+      { title: "Invoices", url: "/super-admin/invoices", icon: FileText, permission: PLATFORM_PERMISSIONS.billingView },
     ],
   },
   {
     label: "Platform",
     items: [
-      { title: "Feature Flags",  url: "/super-admin/features",      icon: Flag,
-        permission: PLATFORM_PERMISSIONS.featuresView },
-      { title: "Announcements",  url: "/super-admin/announcements", icon: Bell,
-        permission: PLATFORM_PERMISSIONS.announcementsView },
-      { title: "Settings",       url: "/super-admin/settings",      icon: Settings2,
-        permission: PLATFORM_PERMISSIONS.settingsView },
-      { title: "Integrations",   url: "/super-admin/integrations",  icon: Zap,
-        permission: PLATFORM_PERMISSIONS.settingsView },
+      {
+        title: "Feature Flags",
+        url: "/super-admin/features",
+        icon: Flag,
+        permission: PLATFORM_PERMISSIONS.featuresView,
+      },
+      {
+        title: "Announcements",
+        url: "/super-admin/announcements",
+        icon: Bell,
+        permission: PLATFORM_PERMISSIONS.announcementsView,
+      },
+      {
+        title: "Settings",
+        url: "/super-admin/settings",
+        icon: Settings2,
+        permission: PLATFORM_PERMISSIONS.settingsView,
+      },
+      {
+        title: "Integrations",
+        url: "/super-admin/integrations",
+        icon: Zap,
+        permission: PLATFORM_PERMISSIONS.settingsView,
+      },
     ],
   },
   {
     label: "Monitoring",
     items: [
-      { title: "System Health",    url: "/super-admin/system",      icon: Activity,
-        permission: PLATFORM_PERMISSIONS.systemView },
-      { title: "Errors",           url: "/super-admin/errors",      icon: AlertTriangle,
-        permission: PLATFORM_PERMISSIONS.systemView },
-      { title: "Background Jobs",  url: "/super-admin/jobs",        icon: Loader,
-        permission: PLATFORM_PERMISSIONS.systemView },
-      { title: "API",              url: "/super-admin/api",         icon: Terminal,
-        permission: PLATFORM_PERMISSIONS.systemView },
-      { title: "Usage",            url: "/super-admin/usage",       icon: BarChart3,
-        permission: PLATFORM_PERMISSIONS.systemView },
+      {
+        title: "System Health",
+        url: "/super-admin/system",
+        icon: Activity,
+        permission: PLATFORM_PERMISSIONS.systemView,
+      },
+      { title: "Errors", url: "/super-admin/errors", icon: AlertTriangle, permission: PLATFORM_PERMISSIONS.systemView },
+      { title: "Background Jobs", url: "/super-admin/jobs", icon: Loader, permission: PLATFORM_PERMISSIONS.systemView },
+      { title: "API", url: "/super-admin/api", icon: Terminal, permission: PLATFORM_PERMISSIONS.systemView },
+      { title: "Usage", url: "/super-admin/usage", icon: BarChart3, permission: PLATFORM_PERMISSIONS.systemView },
     ],
   },
   {
     label: "Security",
     items: [
-      { title: "Platform Admins",    url: "/super-admin/admins",          icon: ShieldCheck,
-        permission: PLATFORM_PERMISSIONS.adminsView },
-      { title: "Roles & Permissions",url: "/super-admin/roles",           icon: Layers,
-        permission: PLATFORM_PERMISSIONS.adminsView },
-      { title: "Sessions",           url: "/super-admin/sessions",        icon: Globe,
-        permission: PLATFORM_PERMISSIONS.securityView },
-      { title: "Security Events",    url: "/super-admin/security-events", icon: Siren,
-        permission: PLATFORM_PERMISSIONS.securityView },
-      { title: "Audit Log",          url: "/super-admin/audit",           icon: Server,
-        permission: PLATFORM_PERMISSIONS.auditView },
+      {
+        title: "Platform Admins",
+        url: "/super-admin/admins",
+        icon: ShieldCheck,
+        permission: PLATFORM_PERMISSIONS.adminsView,
+      },
+      {
+        title: "Roles & Permissions",
+        url: "/super-admin/roles",
+        icon: Layers,
+        permission: PLATFORM_PERMISSIONS.adminsView,
+      },
+      { title: "Sessions", url: "/super-admin/sessions", icon: Globe, permission: PLATFORM_PERMISSIONS.securityView },
+      {
+        title: "Security Events",
+        url: "/super-admin/security-events",
+        icon: Siren,
+        permission: PLATFORM_PERMISSIONS.securityView,
+      },
+      { title: "Audit Log", url: "/super-admin/audit", icon: Server, permission: PLATFORM_PERMISSIONS.auditView },
     ],
   },
 ];
@@ -122,9 +185,7 @@ export function SuperAdminSidebar() {
           </div>
           {!collapsed && (
             <div className="flex flex-col min-w-0">
-              <span className="text-sm font-semibold text-sidebar-foreground truncate">
-                NimbusERP
-              </span>
+              <span className="text-sm font-semibold text-sidebar-foreground truncate">NimbusERP</span>
               <span className="text-[10px] uppercase tracking-wider text-amber-600 dark:text-amber-400">
                 Super Admin
               </span>
@@ -136,9 +197,7 @@ export function SuperAdminSidebar() {
       <SidebarContent>
         {NAV.map((group) => {
           // Filter items the current admin has permission for
-          const visibleItems = group.items.filter((item) =>
-            !item.permission || canPlatform(item.permission as any),
-          );
+          const visibleItems = group.items.filter((item) => !item.permission || canPlatform(item.permission as any));
           if (visibleItems.length === 0) return null;
 
           return (
@@ -152,9 +211,10 @@ export function SuperAdminSidebar() {
                 <SidebarMenu>
                   {visibleItems.map((item) => {
                     // Exact match for dashboard, prefix match for children
-                    const isActive = item.url === "/super-admin"
-                      ? pathname === "/super-admin" || pathname === "/super-admin/"
-                      : pathname.startsWith(item.url);
+                    const isActive =
+                      item.url === "/super-admin"
+                        ? pathname === "/super-admin" || pathname === "/super-admin/"
+                        : pathname.startsWith(item.url);
 
                     return (
                       <SidebarMenuItem key={item.url}>
