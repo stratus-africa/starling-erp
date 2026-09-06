@@ -6128,6 +6128,44 @@ export type Database = {
         Args: { _bom_id: string };
         Returns: Json;
       };
+      check_material_availability: {
+        Args: { _order_id: string };
+        Returns: {
+          item_id: string;
+          item_name: string;
+          sku: string | null;
+          uom: string | null;
+          required_qty: number;
+          on_hand: number;
+          reserved: number;
+          available: number;
+          shortage: number;
+          warehouse_id: string | null;
+          warehouse_name: string | null;
+          is_subassembly: boolean;
+        }[];
+      };
+      create_production_reservations: {
+        Args: { _order_id: string };
+        Returns: {
+          item_id: string;
+          item_name: string;
+          sku: string | null;
+          uom: string | null;
+          required_qty: number;
+          on_hand: number;
+          reserved: number;
+          available: number;
+          shortage: number;
+          warehouse_id: string | null;
+          warehouse_name: string | null;
+          is_subassembly: boolean;
+        }[];
+      };
+      release_production_reservations: {
+        Args: { _order_id: string };
+        Returns: number;
+      };
       get_sales_dashboard: { Args: never; Returns: Json };
       get_tenant_detail: { Args: { _tenant_id: string }; Returns: Json };
       global_search: {
