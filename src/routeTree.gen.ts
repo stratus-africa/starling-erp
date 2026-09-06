@@ -43,6 +43,7 @@ import { Route as AdminTenantsRouteImport } from './routes/_admin/tenants'
 import { Route as AdminSettingsRouteImport } from './routes/_admin/settings'
 import { Route as AdminPlansRouteImport } from './routes/_admin/plans'
 import { Route as AdminAuditRouteImport } from './routes/_admin/audit'
+import { Route as SuperAdminBillingIndexRouteImport } from './routes/super-admin/billing/index'
 import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authenticated/settings.index'
 import { Route as AuthenticatedAccountingIndexRouteImport } from './routes/_authenticated/accounting.index'
 import { Route as SuperAdminTenantsIdRouteImport } from './routes/super-admin/tenants_.$id'
@@ -306,6 +307,11 @@ const AdminAuditRoute = AdminAuditRouteImport.update({
   id: '/audit',
   path: '/audit',
   getParentRoute: () => AdminRouteRoute,
+} as any)
+const SuperAdminBillingIndexRoute = SuperAdminBillingIndexRouteImport.update({
+  id: '/billing/',
+  path: '/billing/',
+  getParentRoute: () => SuperAdminRouteRoute,
 } as any)
 const AuthenticatedSettingsIndexRoute =
   AuthenticatedSettingsIndexRouteImport.update({
@@ -944,6 +950,7 @@ export interface FileRoutesByFullPath {
   '/super-admin/tenants/$id': typeof SuperAdminTenantsIdRoute
   '/accounting/': typeof AuthenticatedAccountingIndexRoute
   '/settings/': typeof AuthenticatedSettingsIndexRoute
+  '/super-admin/billing/': typeof SuperAdminBillingIndexRoute
   '/crm/customers/$id': typeof AuthenticatedCrmCustomersIdRoute
   '/inventory/items/$id': typeof AuthenticatedInventoryItemsIdRoute
   '/inventory/warehouses/$id': typeof AuthenticatedInventoryWarehousesIdRoute
@@ -1068,6 +1075,7 @@ export interface FileRoutesByTo {
   '/super-admin/security/audit': typeof SuperAdminSecurityAuditRoute
   '/super-admin/tenants/$id': typeof SuperAdminTenantsIdRoute
   '/accounting': typeof AuthenticatedAccountingIndexRoute
+  '/super-admin/billing': typeof SuperAdminBillingIndexRoute
   '/crm/customers/$id': typeof AuthenticatedCrmCustomersIdRoute
   '/inventory/items/$id': typeof AuthenticatedInventoryItemsIdRoute
   '/inventory/warehouses/$id': typeof AuthenticatedInventoryWarehousesIdRoute
@@ -1197,6 +1205,7 @@ export interface FileRoutesById {
   '/super-admin/tenants_/$id': typeof SuperAdminTenantsIdRoute
   '/_authenticated/accounting/': typeof AuthenticatedAccountingIndexRoute
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
+  '/super-admin/billing/': typeof SuperAdminBillingIndexRoute
   '/_authenticated/crm/customers/$id': typeof AuthenticatedCrmCustomersIdRoute
   '/_authenticated/inventory/items/$id': typeof AuthenticatedInventoryItemsIdRoute
   '/_authenticated/inventory/warehouses/$id': typeof AuthenticatedInventoryWarehousesIdRoute
@@ -1325,6 +1334,7 @@ export interface FileRouteTypes {
     | '/super-admin/tenants/$id'
     | '/accounting/'
     | '/settings/'
+    | '/super-admin/billing/'
     | '/crm/customers/$id'
     | '/inventory/items/$id'
     | '/inventory/warehouses/$id'
@@ -1449,6 +1459,7 @@ export interface FileRouteTypes {
     | '/super-admin/security/audit'
     | '/super-admin/tenants/$id'
     | '/accounting'
+    | '/super-admin/billing'
     | '/crm/customers/$id'
     | '/inventory/items/$id'
     | '/inventory/warehouses/$id'
@@ -1577,6 +1588,7 @@ export interface FileRouteTypes {
     | '/super-admin/tenants_/$id'
     | '/_authenticated/accounting/'
     | '/_authenticated/settings/'
+    | '/super-admin/billing/'
     | '/_authenticated/crm/customers/$id'
     | '/_authenticated/inventory/items/$id'
     | '/_authenticated/inventory/warehouses/$id'
@@ -1862,6 +1874,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/audit'
       preLoaderRoute: typeof AdminAuditRouteImport
       parentRoute: typeof AdminRouteRoute
+    }
+    '/super-admin/billing/': {
+      id: '/super-admin/billing/'
+      path: '/billing'
+      fullPath: '/super-admin/billing/'
+      preLoaderRoute: typeof SuperAdminBillingIndexRouteImport
+      parentRoute: typeof SuperAdminRouteRoute
     }
     '/_authenticated/settings/': {
       id: '/_authenticated/settings/'
@@ -2780,6 +2799,7 @@ interface SuperAdminRouteRouteChildren {
   SuperAdminMonitoringJobsRoute: typeof SuperAdminMonitoringJobsRoute
   SuperAdminPlatformFeaturesRoute: typeof SuperAdminPlatformFeaturesRoute
   SuperAdminTenantsIdRoute: typeof SuperAdminTenantsIdRoute
+  SuperAdminBillingIndexRoute: typeof SuperAdminBillingIndexRoute
   SuperAdminTenantsTenantIdUsersRoute: typeof SuperAdminTenantsTenantIdUsersRoute
 }
 
@@ -2815,6 +2835,7 @@ const SuperAdminRouteRouteChildren: SuperAdminRouteRouteChildren = {
   SuperAdminMonitoringJobsRoute: SuperAdminMonitoringJobsRoute,
   SuperAdminPlatformFeaturesRoute: SuperAdminPlatformFeaturesRoute,
   SuperAdminTenantsIdRoute: SuperAdminTenantsIdRoute,
+  SuperAdminBillingIndexRoute: SuperAdminBillingIndexRoute,
   SuperAdminTenantsTenantIdUsersRoute: SuperAdminTenantsTenantIdUsersRoute,
 }
 

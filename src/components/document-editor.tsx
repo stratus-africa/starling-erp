@@ -864,6 +864,34 @@ export function DocumentEditor({
   const reqApproved = header.status === "Approved" || header.status === "Ordered";
   const isStockReq = isReq && header.requisition_type === "stock";
 
+  // C: Default purchase req currency to tenant currency on new documents
+  useEffect(() => {
+    if (isNew && isReq && !isStockReq && tenant?.currency && !header.currency) {
+      setHeader((h) => ({ ...h, currency: tenant.currency }));
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isNew, isReq, isStockReq, tenant?.currency]);
+
+  // B2: Approve stock requisition via RPC → creates Draft Stock Issues
+  const approveStockReq = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await (supabase as any).rpc("approve_stock_requisition", { _req_id: id });
+      if (error) throw error;
+      return (data ?? []) as string[];
+    },
+    onSuccess: (adjIds) => {
+      const count = adjIds.length;
+      toast.success(
+        `Stock requisition approved. ${count} Draft Stock Issue${count !== 1 ? "s" : ""} created.`,
+        { description: "Go to Inventory → Adjustments to review and Post them.", duration: 8000 }
+      );
+      setHeader((h) => ({ ...h, status: "Approved" }));
+      qc.invalidateQueries();
+      nav({ to: "/inventory/adjustments" });
+    },
+    onError: (e: Error) => toast.error(e.message ?? "Approval failed"),
+  });
+
   const setReqStatus = useMutation({
     mutationFn: async ({ status, note }: { status: string; note: string }) => {
       const { error } = await db.from(cfg.table).update({ status }).eq("id", id);
@@ -1072,7 +1100,7 @@ export function DocumentEditor({
                 <Button
                   variant="outline"
                   size="sm"
-                  disabled={setReqStatus.isPending}
+                  disabled={setReqStatus.isPending || approveStockReq.isPending}
                   onClick={() => setReqStatus.mutate({ status: "Rejected", note: "Rejected by approver" })}
                 >
                   Reject
@@ -1080,9 +1108,16 @@ export function DocumentEditor({
                 <Button
                   variant="default"
                   size="sm"
-                  disabled={setReqStatus.isPending}
-                  onClick={() => setReqStatus.mutate({ status: "Approved", note: "Approved" })}
+                  disabled={setReqStatus.isPending || approveStockReq.isPending}
+                  onClick={() =>
+                    isStockReq
+                      ? approveStockReq.mutate()
+                      : setReqStatus.mutate({ status: "Approved", note: "Approved" })
+                  }
                 >
+                  {(setReqStatus.isPending || approveStockReq.isPending) && (
+                    <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
+                  )}
                   <CheckCircle2 className="h-4 w-4 mr-1.5" /> Approve
                 </Button>
               </>
@@ -1282,25 +1317,27 @@ export function DocumentEditor({
               </Select>
             </div>
           )}
-          <div className="grid gap-1.5">
-            <Label>Currency</Label>
-            <Select
-              value={header.currency ?? "USD"}
-              onValueChange={(v) => setHeader({ ...header, currency: v })}
-              disabled={!canWrite}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {["USD", "EUR", "GBP", "KES", "AED", "EGP", "INR", "ZAR"].map((c) => (
-                  <SelectItem key={c} value={c}>
-                    {c}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          {!isStockReq && (
+            <div className="grid gap-1.5">
+              <Label>Currency</Label>
+              <Select
+                value={header.currency ?? "USD"}
+                onValueChange={(v) => setHeader({ ...header, currency: v })}
+                disabled={!canWrite}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {["USD", "EUR", "GBP", "KES", "AED", "EGP", "INR", "ZAR"].map((c) => (
+                    <SelectItem key={c} value={c}>
+                      {c}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
           <div className="grid gap-1.5">
             <Label>Status</Label>
             <Select
@@ -1451,17 +1488,17 @@ export function DocumentEditor({
                   <th className="text-left px-3 py-2 min-w-[200px]">Item</th>
                   <th className="text-left px-3 py-2 min-w-[220px]">Description</th>
                   <th className="text-right px-3 py-2 w-20">Qty</th>
-                  <th className="text-right px-3 py-2 w-28">Unit Price</th>
-                  <th className="text-right px-3 py-2 w-20">Disc %</th>
-                  <th className="text-right px-3 py-2 w-20">Tax %</th>
-                  <th className="text-right px-3 py-2 w-28">Total</th>
+                  {!isStockReq && <th className="text-right px-3 py-2 w-28">Unit Price</th>}
+                  {!isStockReq && <th className="text-right px-3 py-2 w-20">Disc %</th>}
+                  {!isStockReq && <th className="text-right px-3 py-2 w-20">Tax %</th>}
+                  {!isStockReq && <th className="text-right px-3 py-2 w-28">Total</th>}
                   <th className="w-10" />
                 </tr>
               </thead>
               <tbody>
                 {lines.length === 0 && (
                   <tr>
-                    <td colSpan={9} className="text-center text-sm text-muted-foreground py-10">
+                    <td colSpan={isStockReq ? 5 : 9} className="text-center text-sm text-muted-foreground py-10">
                       No lines yet. {canWrite && "Click Add line to begin."}
                     </td>
                   </tr>
@@ -1519,37 +1556,45 @@ export function DocumentEditor({
                         disabled={!canWrite}
                       />
                     </td>
-                    <td className="px-2 py-1.5">
-                      <Input
-                        className="h-8 text-right"
-                        type="number"
-                        step="any"
-                        value={l.unit_price}
-                        onChange={(e) => updateLine(idx, { unit_price: Number(e.target.value) })}
-                        disabled={!canWrite}
-                      />
-                    </td>
-                    <td className="px-2 py-1.5">
-                      <Input
-                        className="h-8 text-right"
-                        type="number"
-                        step="any"
-                        value={l.discount_pct}
-                        onChange={(e) => updateLine(idx, { discount_pct: Number(e.target.value) })}
-                        disabled={!canWrite}
-                      />
-                    </td>
-                    <td className="px-2 py-1.5">
-                      <Input
-                        className="h-8 text-right"
-                        type="number"
-                        step="any"
-                        value={l.tax_pct}
-                        onChange={(e) => updateLine(idx, { tax_pct: Number(e.target.value) })}
-                        disabled={!canWrite}
-                      />
-                    </td>
-                    <td className="px-3 py-1.5 text-right font-mono tabular-nums">{money(computeLine(l))}</td>
+                    {!isStockReq && (
+                      <td className="px-2 py-1.5">
+                        <Input
+                          className="h-8 text-right"
+                          type="number"
+                          step="any"
+                          value={l.unit_price}
+                          onChange={(e) => updateLine(idx, { unit_price: Number(e.target.value) })}
+                          disabled={!canWrite}
+                        />
+                      </td>
+                    )}
+                    {!isStockReq && (
+                      <td className="px-2 py-1.5">
+                        <Input
+                          className="h-8 text-right"
+                          type="number"
+                          step="any"
+                          value={l.discount_pct}
+                          onChange={(e) => updateLine(idx, { discount_pct: Number(e.target.value) })}
+                          disabled={!canWrite}
+                        />
+                      </td>
+                    )}
+                    {!isStockReq && (
+                      <td className="px-2 py-1.5">
+                        <Input
+                          className="h-8 text-right"
+                          type="number"
+                          step="any"
+                          value={l.tax_pct}
+                          onChange={(e) => updateLine(idx, { tax_pct: Number(e.target.value) })}
+                          disabled={!canWrite}
+                        />
+                      </td>
+                    )}
+                    {!isStockReq && (
+                      <td className="px-3 py-1.5 text-right font-mono tabular-nums">{money(computeLine(l))}</td>
+                    )}
                     <td className="px-2 py-1.5">
                       {canWrite && (
                         <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => removeLine(idx)}>
@@ -1562,30 +1607,32 @@ export function DocumentEditor({
               </tbody>
             </table>
           </div>
-          <div className="flex justify-end border-t bg-muted/10 px-3 py-3 sm:px-4">
-            <div className="w-72 max-w-full space-y-1 text-sm">
-              <Row label="Subtotal" v={totals.subtotal} />
-              <Row label="Discount" v={-totals.discount_total} />
-              <Row label="Tax" v={totals.tax_total} />
-              <div className="border-t mt-1 pt-1 flex justify-between font-semibold text-base">
-                <span>Grand Total</span>
-                <span className="font-mono tabular-nums">
-                  {header.currency ?? "USD"} {money(totals.grand_total)}
-                </span>
+          {!isStockReq && (
+            <div className="flex justify-end border-t bg-muted/10 px-3 py-3 sm:px-4">
+              <div className="w-72 max-w-full space-y-1 text-sm">
+                <Row label="Subtotal" v={totals.subtotal} />
+                <Row label="Discount" v={-totals.discount_total} />
+                <Row label="Tax" v={totals.tax_total} />
+                <div className="border-t mt-1 pt-1 flex justify-between font-semibold text-base">
+                  <span>Grand Total</span>
+                  <span className="font-mono tabular-nums">
+                    {header.currency ?? "USD"} {money(totals.grand_total)}
+                  </span>
+                </div>
+                {(kind === "invoice" || kind === "bill") && Number(doc?.amount_paid ?? 0) > 0 && (
+                  <>
+                    <Row label="Paid" v={-Number(doc?.amount_paid)} />
+                    <div className="flex justify-between font-medium">
+                      <span>Balance Due</span>
+                      <span className="font-mono tabular-nums">
+                        {money(totals.grand_total - Number(doc?.amount_paid || 0))}
+                      </span>
+                    </div>
+                  </>
+                )}
               </div>
-              {(kind === "invoice" || kind === "bill") && Number(doc?.amount_paid ?? 0) > 0 && (
-                <>
-                  <Row label="Paid" v={-Number(doc?.amount_paid)} />
-                  <div className="flex justify-between font-medium">
-                    <span>Balance Due</span>
-                    <span className="font-mono tabular-nums">
-                      {money(totals.grand_total - Number(doc?.amount_paid || 0))}
-                    </span>
-                  </div>
-                </>
-              )}
             </div>
-          </div>
+          )}
         </Card>
 
         {kind === "order" && !isNew && (
