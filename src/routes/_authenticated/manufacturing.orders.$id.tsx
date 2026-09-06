@@ -1,23 +1,19 @@
 /**
  * Production Order Detail Page
  *
- * Full 9-stage lifecycle:
+ * Full 11-stage lifecycle with partial production support:
  *   Draft → Planned → Confirmed → Material Reserved → Released
- *   → In Progress → Quality Check → Completed → Closed
+ *   → In Progress ↔ Paused → Quality Check → Completed → Closed
+ *   Any open → Cancelled
  *
- * Status transitions (all server-side RPCs — tenant-safe, transactional):
- *   Planned       → Confirmed         via confirm_production_order
- *   Confirmed     → Material Reserved via create_production_reservations
- *   Material Res. → Released          via release_production_order
- *   Released      → In Progress       via start_production_order
- *   In Progress   → Quality Check     via complete_production_quality_check
- *   Quality Check → Completed         via post_production_order (consumes stock,
- *                                        releases reservations, posts journals)
- *   Completed     → Closed            via close_production_order
- *   Any open      → Cancelled         via cancel_production_order
- *                                        (atomically releases reservations)
- *
- * Inventory is NEVER consumed until the order is posted (Quality Check → Completed).
+ * Key capabilities:
+ *   - Record Production Run: partial output, scrap, lot number, notes
+ *   - Production Entries history table (full audit trail)
+ *   - qty_produced / qty_remaining progress bar
+ *   - Priority badge (Critical / High / Normal / Low)
+ *   - Planned & actual date fields
+ *   - Pause / Resume
+ *   - All existing status transitions preserved
  */
 
 import { createFileRoute, Link } from "@tanstack/react-router";
@@ -27,9 +23,13 @@ import { db } from "@/lib/typed-db";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -40,10 +40,19 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { toast } from "sonner";
 import {
   AlertTriangle,
   ArrowLeft,
+  CalendarDays,
   CheckCircle2,
   ChevronRight,
   ClipboardCheck,
@@ -52,9 +61,12 @@ import {
   Loader2,
   Lock,
   Package,
+  Pause,
   Play,
+  Plus,
   Send,
   ShieldCheck,
+  Trash2,
   XCircle,
 } from "lucide-react";
 import { MaterialAvailabilityPanel } from "@/components/material-availability-panel";
@@ -65,22 +77,8 @@ export const Route = createFileRoute("/_authenticated/manufacturing/orders/$id")
   component: ProductionOrderDetailPage,
 });
 
-// ─── Status config ─────────────────────────────────────────────────────────────
+// ─── Constants ────────────────────────────────────────────────────────────────
 
-const STATUS_COLORS: Record<string, string> = {
-  Draft: "bg-muted text-muted-foreground",
-  Planned: "bg-muted text-muted-foreground",
-  Confirmed: "bg-blue-500/15 text-blue-700 dark:text-blue-400",
-  "Material Reserved": "bg-violet-500/15 text-violet-700 dark:text-violet-400",
-  Released: "bg-amber-500/15 text-amber-700 dark:text-amber-400",
-  "In Progress": "bg-info/15 text-info",
-  "Quality Check": "bg-orange-500/15 text-orange-700 dark:text-orange-400",
-  Completed: "bg-success/15 text-success",
-  Closed: "bg-muted text-muted-foreground font-semibold",
-  Cancelled: "bg-destructive/15 text-destructive",
-};
-
-// Ordered list for the progress stepper (terminal states excluded)
 const WORKFLOW_STEPS = [
   "Draft",
   "Planned",
@@ -92,12 +90,38 @@ const WORKFLOW_STEPS = [
   "Completed",
   "Closed",
 ] as const;
-
 type WorkflowStep = (typeof WORKFLOW_STEPS)[number];
+
+const STATUS_COLORS: Record<string, string> = {
+  Draft: "bg-muted text-muted-foreground",
+  Planned: "bg-muted text-muted-foreground",
+  Confirmed: "bg-blue-500/15 text-blue-700 dark:text-blue-400",
+  "Material Reserved": "bg-violet-500/15 text-violet-700 dark:text-violet-400",
+  Released: "bg-amber-500/15 text-amber-700 dark:text-amber-400",
+  "In Progress": "bg-info/15 text-info",
+  Paused: "bg-yellow-500/15 text-yellow-700 dark:text-yellow-400",
+  "Quality Check": "bg-orange-500/15 text-orange-700 dark:text-orange-400",
+  Completed: "bg-success/15 text-success",
+  Closed: "bg-muted text-muted-foreground",
+  Cancelled: "bg-destructive/15 text-destructive",
+};
+
+const PRIORITY_LABEL: Record<number, string> = {
+  1: "Critical",
+  2: "High",
+  3: "Normal",
+  4: "Low",
+};
+const PRIORITY_COLOR: Record<number, string> = {
+  1: "bg-destructive/15 text-destructive",
+  2: "bg-orange-500/15 text-orange-700 dark:text-orange-300",
+  3: "bg-muted text-muted-foreground",
+  4: "bg-muted/50 text-muted-foreground",
+};
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-const fmtDate = (v: string | null | undefined) =>
+const fmtDate = (v?: string | null) =>
   !v
     ? "—"
     : new Date(v).toLocaleDateString(undefined, {
@@ -106,7 +130,7 @@ const fmtDate = (v: string | null | undefined) =>
         year: "numeric",
       });
 
-const fmtDateTime = (v: string | null | undefined) =>
+const fmtDateTime = (v?: string | null) =>
   !v
     ? "—"
     : new Date(v).toLocaleString(undefined, {
@@ -115,6 +139,14 @@ const fmtDateTime = (v: string | null | undefined) =>
         year: "numeric",
         hour: "2-digit",
         minute: "2-digit",
+      });
+
+const fmtQty = (v?: number | null, dp = 4) =>
+  v == null
+    ? "—"
+    : Number(v).toLocaleString(undefined, {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: dp,
       });
 
 function FieldRow({ label, value }: { label: string; value: React.ReactNode }) {
@@ -130,65 +162,461 @@ function FieldRow({ label, value }: { label: string; value: React.ReactNode }) {
 
 function WorkflowStepper({ status }: { status: string }) {
   const isCancelled = status === "Cancelled";
-  const currentIdx = WORKFLOW_STEPS.indexOf(status as WorkflowStep);
+  // For display, treat Paused as In Progress position
+  const displayStatus = status === "Paused" ? "In Progress" : status;
+  const currentIdx = WORKFLOW_STEPS.indexOf(displayStatus as WorkflowStep);
 
   return (
-    <div className="flex items-center gap-0 overflow-x-auto py-2 px-1">
+    <div className="flex items-center overflow-x-auto py-2 px-1 gap-0">
       {WORKFLOW_STEPS.map((step, idx) => {
         const done = !isCancelled && currentIdx > idx;
         const current = !isCancelled && currentIdx === idx;
-        const future = isCancelled || currentIdx < idx;
-
         return (
           <div key={step} className="flex items-center shrink-0">
-            {/* Node */}
             <div className="flex flex-col items-center gap-1">
               <div
                 className={`
-                  w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold border-2
-                  transition-colors
-                  ${done ? "bg-success border-success text-success-foreground" : ""}
-                  ${current ? "bg-primary border-primary text-primary-foreground" : ""}
-                  ${future ? "bg-muted border-muted-foreground/30 text-muted-foreground" : ""}
-                `}
+                w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-colors
+                ${done ? "bg-success border-success text-success-foreground" : ""}
+                ${current ? "bg-primary border-primary text-primary-foreground" : ""}
+                ${!done && !current ? "bg-muted border-muted-foreground/30 text-muted-foreground" : ""}
+              `}
               >
                 {done ? "✓" : idx + 1}
               </div>
               <span
-                className={`
-                  text-[10px] leading-tight text-center w-16 whitespace-nowrap
-                  ${current ? "font-semibold text-primary" : "text-muted-foreground"}
-                  ${done ? "text-success" : ""}
-                `}
+                className={`text-[10px] leading-tight text-center w-16 whitespace-nowrap
+                ${current ? "font-semibold text-primary" : "text-muted-foreground"}
+                ${done ? "text-success" : ""}
+              `}
               >
                 {step}
               </span>
             </div>
-
-            {/* Connector */}
             {idx < WORKFLOW_STEPS.length - 1 && (
               <div
-                className={`
-                  h-0.5 w-6 mx-0.5 mb-5 shrink-0 rounded
-                  ${done ? "bg-success" : "bg-muted-foreground/20"}
-                `}
+                className={`h-0.5 w-6 mx-0.5 mb-5 shrink-0 rounded
+                ${done ? "bg-success" : "bg-muted-foreground/20"}`}
               />
             )}
           </div>
         );
       })}
-
+      {status === "Paused" && (
+        <div className="ml-3 flex items-center gap-1 rounded-full bg-yellow-500/10 px-2 py-0.5 text-xs font-semibold text-yellow-700 dark:text-yellow-400 shrink-0">
+          <Pause className="h-3 w-3" /> Paused
+        </div>
+      )}
       {isCancelled && (
-        <div className="ml-4 flex items-center gap-1.5 rounded-full bg-destructive/10 px-2 py-1 text-xs font-semibold text-destructive shrink-0">
-          <XCircle className="h-3.5 w-3.5" />
-          Cancelled
+        <div className="ml-3 flex items-center gap-1 rounded-full bg-destructive/10 px-2 py-0.5 text-xs font-semibold text-destructive shrink-0">
+          <XCircle className="h-3 w-3" /> Cancelled
         </div>
       )}
     </div>
   );
 }
 
-// ─── Page component ───────────────────────────────────────────────────────────
+// ─── Production progress bar ──────────────────────────────────────────────────
+
+function ProductionProgress({
+  planned,
+  produced,
+  remaining,
+  uom,
+}: {
+  planned: number;
+  produced: number;
+  remaining: number;
+  uom?: string;
+}) {
+  const pct = planned > 0 ? Math.min(100, (produced / planned) * 100) : 0;
+  const color = pct >= 100 ? "[&>div]:bg-success" : pct > 0 ? "[&>div]:bg-info" : "[&>div]:bg-muted-foreground/30";
+
+  return (
+    <div className="flex flex-col gap-1.5">
+      <div className="flex items-center justify-between text-xs">
+        <span className="text-muted-foreground">Progress</span>
+        <span className="font-semibold tabular-nums">
+          {fmtQty(produced)} / {fmtQty(planned)} {uom ?? ""}{" "}
+          <span className="text-muted-foreground">({Math.round(pct)}%)</span>
+        </span>
+      </div>
+      <Progress value={pct} className={`h-2.5 ${color}`} />
+      <div className="flex items-center justify-between text-xs text-muted-foreground">
+        <span>
+          Produced: <strong className="text-foreground">{fmtQty(produced)}</strong>
+        </span>
+        <span>
+          Remaining:{" "}
+          <strong className={remaining > 0 ? "text-amber-600 dark:text-amber-400" : "text-success"}>
+            {fmtQty(remaining)}
+          </strong>
+        </span>
+      </div>
+    </div>
+  );
+}
+
+// ─── Production entries table ─────────────────────────────────────────────────
+
+function ProductionEntriesTable({ orderId }: { orderId: string }) {
+  const { data: entries = [], isLoading } = useQuery({
+    queryKey: ["production_entries", orderId],
+    enabled: !!orderId,
+    queryFn: async () => {
+      const { data, error } = await db
+        .from("production_entries")
+        .select(
+          `
+          id, entry_number, entry_date, qty_produced, qty_scrap,
+          lot_number, unit_cost, total_cost, status, notes,
+          voided_at, void_reason,
+          operator:operator_id (full_name, email),
+          warehouse:warehouse_id (name, code)
+        `,
+        )
+        .eq("production_order_id", orderId)
+        .order("entry_number", { ascending: true });
+      if (error) throw error;
+      return (data ?? []) as any[];
+    },
+    staleTime: 10_000,
+  });
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (entries.length === 0) {
+    return (
+      <div className="rounded-lg border border-dashed bg-muted/20 px-4 py-6 text-center text-sm text-muted-foreground">
+        No production runs recorded yet. Use "Record Run" to log output.
+      </div>
+    );
+  }
+
+  const totalProduced = entries
+    .filter((e) => e.status !== "Voided")
+    .reduce((s: number, e: any) => s + Number(e.qty_produced), 0);
+  const totalScrap = entries
+    .filter((e) => e.status !== "Voided")
+    .reduce((s: number, e: any) => s + Number(e.qty_scrap), 0);
+  const totalCost = entries
+    .filter((e) => e.status !== "Voided")
+    .reduce((s: number, e: any) => s + Number(e.total_cost), 0);
+
+  return (
+    <div className="overflow-x-auto rounded-lg border">
+      <Table>
+        <TableHeader>
+          <TableRow className="bg-muted/20">
+            <TableHead className="text-xs w-12">#</TableHead>
+            <TableHead className="text-xs">Date</TableHead>
+            <TableHead className="text-xs">Operator</TableHead>
+            <TableHead className="text-xs">Warehouse</TableHead>
+            <TableHead className="text-right text-xs">Produced</TableHead>
+            <TableHead className="text-right text-xs">Scrap</TableHead>
+            <TableHead className="text-xs">Lot</TableHead>
+            <TableHead className="text-right text-xs">Unit Cost</TableHead>
+            <TableHead className="text-right text-xs">Total Cost</TableHead>
+            <TableHead className="text-xs">Notes</TableHead>
+            <TableHead className="text-xs w-20">Status</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {entries.map((e: any) => (
+            <TableRow key={e.id} className={e.status === "Voided" ? "opacity-50 line-through" : ""}>
+              <TableCell className="font-mono text-xs text-muted-foreground">{e.entry_number}</TableCell>
+              <TableCell className="text-xs">{fmtDate(e.entry_date)}</TableCell>
+              <TableCell className="text-xs">{e.operator?.full_name ?? e.operator?.email ?? "—"}</TableCell>
+              <TableCell className="text-xs text-muted-foreground">{e.warehouse?.name ?? "—"}</TableCell>
+              <TableCell className="text-right font-mono tabular-nums text-sm font-semibold">
+                {fmtQty(e.qty_produced)}
+              </TableCell>
+              <TableCell className="text-right font-mono tabular-nums text-sm">
+                {Number(e.qty_scrap) > 0 ? (
+                  <span className="text-destructive">{fmtQty(e.qty_scrap)}</span>
+                ) : (
+                  <span className="text-muted-foreground">—</span>
+                )}
+              </TableCell>
+              <TableCell className="font-mono text-xs">
+                {e.lot_number ?? <span className="text-muted-foreground">—</span>}
+              </TableCell>
+              <TableCell className="text-right font-mono tabular-nums text-xs text-muted-foreground">
+                {Number(e.unit_cost).toLocaleString(undefined, { minimumFractionDigits: 4, maximumFractionDigits: 4 })}
+              </TableCell>
+              <TableCell className="text-right font-mono tabular-nums text-xs">
+                {Number(e.total_cost).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </TableCell>
+              <TableCell className="text-xs text-muted-foreground max-w-[160px] truncate">
+                {e.status === "Voided" ? (
+                  <span className="text-destructive">Voided: {e.void_reason}</span>
+                ) : (
+                  (e.notes ?? "—")
+                )}
+              </TableCell>
+              <TableCell>
+                <span
+                  className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium ${e.status === "Voided" ? "bg-destructive/10 text-destructive" : "bg-success/10 text-success"}`}
+                >
+                  {e.status}
+                </span>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+        {entries.some((e: any) => e.status !== "Voided") && (
+          <tfoot>
+            <TableRow className="bg-muted/10 font-semibold border-t-2">
+              <TableCell colSpan={4} className="text-xs text-muted-foreground pl-4">
+                Totals
+              </TableCell>
+              <TableCell className="text-right font-mono tabular-nums text-sm">{fmtQty(totalProduced)}</TableCell>
+              <TableCell className="text-right font-mono tabular-nums text-sm text-destructive">
+                {totalScrap > 0 ? fmtQty(totalScrap) : "—"}
+              </TableCell>
+              <TableCell colSpan={2} />
+              <TableCell className="text-right font-mono tabular-nums text-xs">
+                {totalCost.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </TableCell>
+              <TableCell colSpan={2} />
+            </TableRow>
+          </tfoot>
+        )}
+      </Table>
+    </div>
+  );
+}
+
+// ─── Record Run dialog ────────────────────────────────────────────────────────
+
+interface RecordRunDialogProps {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  order: any;
+  product?: any;
+  onSuccess: () => void;
+}
+
+function RecordRunDialog({ open, onOpenChange, order, product, onSuccess }: RecordRunDialogProps) {
+  const [qty, setQty] = useState("");
+  const [scrap, setScrap] = useState("0");
+  const [lotNo, setLotNo] = useState("");
+  const [notes, setNotes] = useState("");
+
+  const remaining = Number(order?.qty_remaining ?? order?.quantity ?? 0);
+
+  const runMutation = useMutation({
+    mutationFn: async () => {
+      const qtyNum = parseFloat(qty);
+      const scrapNum = parseFloat(scrap) || 0;
+      if (isNaN(qtyNum) || qtyNum <= 0) throw new Error("Quantity must be greater than zero");
+
+      const { data, error } = await (db as any).rpc("record_production_run", {
+        _order_id: order.id,
+        _qty_produced: qtyNum,
+        _qty_scrap: scrapNum,
+        _lot_number: lotNo.trim() || null,
+        _notes: notes.trim() || null,
+      });
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      toast.success("Production run recorded.");
+      setQty("");
+      setScrap("0");
+      setLotNo("");
+      setNotes("");
+      onOpenChange(false);
+      onSuccess();
+    },
+    onError: (e: any) => toast.error(e.message ?? "Failed to record run"),
+  });
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Plus className="h-5 w-5" />
+            Record Production Run
+          </DialogTitle>
+          <DialogDescription>
+            Log output for <strong>{product?.name ?? "this order"}</strong>. Remaining:{" "}
+            <strong className="text-amber-600 dark:text-amber-400">
+              {fmtQty(remaining)} {product?.uom ?? ""}
+            </strong>
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="flex flex-col gap-4 py-2">
+          {/* Qty produced */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="run-qty">
+                Qty Produced <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                id="run-qty"
+                type="number"
+                step="any"
+                min="0.0001"
+                placeholder={`max ${fmtQty(remaining)}`}
+                value={qty}
+                onChange={(e) => setQty(e.target.value)}
+                className="font-mono"
+                autoFocus
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="run-scrap">Scrap Qty</Label>
+              <Input
+                id="run-scrap"
+                type="number"
+                step="any"
+                min="0"
+                placeholder="0"
+                value={scrap}
+                onChange={(e) => setScrap(e.target.value)}
+                className="font-mono"
+              />
+            </div>
+          </div>
+
+          {/* Lot number */}
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="run-lot">
+              Lot Number
+              <span className="ml-1.5 text-xs text-muted-foreground">(optional — if finished item is lot-tracked)</span>
+            </Label>
+            <Input
+              id="run-lot"
+              placeholder="e.g. LOT-2026-001"
+              value={lotNo}
+              onChange={(e) => setLotNo(e.target.value)}
+              className="font-mono"
+            />
+          </div>
+
+          {/* Notes */}
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="run-notes">Notes</Label>
+            <Textarea
+              id="run-notes"
+              rows={2}
+              placeholder="Shift notes, operator observations…"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+            />
+          </div>
+
+          {/* Overproduction warning */}
+          {qty && parseFloat(qty) > remaining && remaining > 0 && !order?.allow_overproduction && (
+            <div className="flex items-start gap-2 rounded-md border border-warning/40 bg-warning/5 px-3 py-2 text-xs text-warning">
+              <AlertTriangle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+              <span>
+                This exceeds the remaining quantity. Ensure <em>Allow Overproduction</em> is enabled on the order or the
+                server will reject the run.
+              </span>
+            </div>
+          )}
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={runMutation.isPending}>
+            Cancel
+          </Button>
+          <Button
+            onClick={() => runMutation.mutate()}
+            disabled={runMutation.isPending || !qty || parseFloat(qty) <= 0}
+            className="gap-1.5"
+          >
+            {runMutation.isPending ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <CheckCircle2 className="h-4 w-4" />
+            )}
+            Record Run
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ─── Pause dialog ─────────────────────────────────────────────────────────────
+
+function PauseDialog({
+  open,
+  onOpenChange,
+  orderId,
+  onSuccess,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  orderId: string;
+  onSuccess: () => void;
+}) {
+  const [reason, setReason] = useState("");
+  const mutation = useMutation({
+    mutationFn: async () => {
+      const { error } = await (db as any).rpc("pause_production_order", {
+        _order_id: orderId,
+        _reason: reason.trim() || null,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Production paused.");
+      setReason("");
+      onOpenChange(false);
+      onSuccess();
+    },
+    onError: (e: any) => toast.error(e.message ?? "Pause failed"),
+  });
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-sm">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Pause className="h-5 w-5" />
+            Pause Production?
+          </DialogTitle>
+          <DialogDescription>Provide an optional reason. Reservations remain active.</DialogDescription>
+        </DialogHeader>
+        <div className="py-2">
+          <Label htmlFor="pause-reason">Reason (optional)</Label>
+          <Textarea
+            id="pause-reason"
+            className="mt-1.5"
+            rows={2}
+            placeholder="Machine breakdown, shift end…"
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+          />
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Cancel
+          </Button>
+          <Button onClick={() => mutation.mutate()} disabled={mutation.isPending} className="gap-1.5">
+            {mutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Pause className="h-4 w-4" />}
+            Pause
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ─── Page ─────────────────────────────────────────────────────────────────────
 
 function ProductionOrderDetailPage() {
   const { id } = Route.useParams();
@@ -197,15 +625,16 @@ function ProductionOrderDetailPage() {
   const canWrite = can(["manufacturing.create", "manufacturing.update"]);
 
   // Dialog state
+  const [showRunDialog, setShowRunDialog] = useState(false);
+  const [showPauseDialog, setShowPauseDialog] = useState(false);
   const [cancelConfirm, setCancelConfirm] = useState(false);
   const [postConfirm, setPostConfirm] = useState(false);
   const [qcConfirm, setQcConfirm] = useState(false);
   const [qcNotes, setQcNotes] = useState("");
 
-  // ── Fetch production order ─────────────────────────────────────────────
+  // ── Data fetching ─────────────────────────────────────────────────────
   const { data: order, isLoading } = useQuery({
     queryKey: ["production_orders", id],
-    enabled: !!id,
     queryFn: async () => {
       const { data, error } = await db.from("production_orders").select("*").eq("id", id).maybeSingle();
       if (error) throw error;
@@ -213,7 +642,6 @@ function ProductionOrderDetailPage() {
     },
   });
 
-  // ── BOM + product ─────────────────────────────────────────────────────
   const { data: bom } = useQuery({
     queryKey: ["bom_headers", order?.bom_id],
     enabled: !!order?.bom_id,
@@ -242,7 +670,34 @@ function ProductionOrderDetailPage() {
     },
   });
 
-  // ── allow_production_shortage config ──────────────────────────────────
+  const { data: warehouse } = useQuery({
+    queryKey: ["warehouses", order?.warehouse_id],
+    enabled: !!order?.warehouse_id,
+    queryFn: async () => {
+      const { data, error } = await db
+        .from("warehouses")
+        .select("id, name, code")
+        .eq("id", order!.warehouse_id)
+        .maybeSingle();
+      if (error) throw error;
+      return data as any;
+    },
+  });
+
+  const { data: location } = useQuery({
+    queryKey: ["warehouse_locations", order?.location_id],
+    enabled: !!order?.location_id,
+    queryFn: async () => {
+      const { data, error } = await db
+        .from("warehouse_locations")
+        .select("id, code, name")
+        .eq("id", order!.location_id)
+        .maybeSingle();
+      if (error) throw error;
+      return data as any;
+    },
+  });
+
   const { data: configRows = [] } = useQuery({
     queryKey: ["inventory_config", "allow_production_shortage"],
     enabled: !!tenant?.id,
@@ -257,7 +712,6 @@ function ProductionOrderDetailPage() {
   });
   const allowShortage = configRows.find((r) => r.key === "allow_production_shortage")?.value === "true";
 
-  // ── Active reservations ───────────────────────────────────────────────
   const { data: existingReservations = [] } = useQuery({
     queryKey: ["stock_reservations", "production_order", id],
     enabled: !!id,
@@ -275,36 +729,27 @@ function ProductionOrderDetailPage() {
   });
   const hasReservations = existingReservations.length > 0;
 
-  // ─── Invalidation helper ──────────────────────────────────────────────
+  // ── Shared invalidation ───────────────────────────────────────────────
   const invalidateAll = () => {
     qc.invalidateQueries({ queryKey: ["production_orders"] });
     qc.invalidateQueries({ queryKey: ["production_orders", id] });
     qc.invalidateQueries({ queryKey: ["stock_reservations", "production_order", id] });
     qc.invalidateQueries({ queryKey: ["material_availability", id] });
+    qc.invalidateQueries({ queryKey: ["production_entries", id] });
   };
 
-  // ─── Mutations ────────────────────────────────────────────────────────
-
+  // ── Mutations ─────────────────────────────────────────────────────────
   const confirmMutation = useMutation({
     mutationFn: async () => {
       const { error } = await (db as any).rpc("confirm_production_order", { _order_id: id });
       if (error) throw error;
     },
     onSuccess: () => {
-      toast.success("Order confirmed. Ready to reserve materials.");
+      toast.success("Order confirmed.");
       invalidateAll();
     },
     onError: (e: any) => toast.error(e.message ?? "Confirmation failed"),
   });
-
-  // create_production_reservations is driven from MaterialAvailabilityPanel;
-  // we provide the success callback here to refresh order state.
-  const afterReserve = () => {
-    invalidateAll();
-  };
-  const afterRelease = () => {
-    invalidateAll();
-  };
 
   const releaseToFloorMutation = useMutation({
     mutationFn: async () => {
@@ -312,7 +757,7 @@ function ProductionOrderDetailPage() {
       if (error) throw error;
     },
     onSuccess: () => {
-      toast.success("Order released to shop floor.");
+      toast.success("Released to shop floor.");
       invalidateAll();
     },
     onError: (e: any) => toast.error(e.message ?? "Release failed"),
@@ -330,6 +775,18 @@ function ProductionOrderDetailPage() {
     onError: (e: any) => toast.error(e.message ?? "Start failed"),
   });
 
+  const resumeMutation = useMutation({
+    mutationFn: async () => {
+      const { error } = await (db as any).rpc("resume_production_order", { _order_id: id });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Production resumed.");
+      invalidateAll();
+    },
+    onError: (e: any) => toast.error(e.message ?? "Resume failed"),
+  });
+
   const qcMutation = useMutation({
     mutationFn: async (notes: string) => {
       const { error } = await (db as any).rpc("complete_production_quality_check", {
@@ -339,11 +796,11 @@ function ProductionOrderDetailPage() {
       if (error) throw error;
     },
     onSuccess: () => {
-      toast.success("Production entered Quality Check. Ready to complete & post.");
+      toast.success("Submitted to Quality Check.");
       setQcNotes("");
       invalidateAll();
     },
-    onError: (e: any) => toast.error(e.message ?? "Quality check transition failed"),
+    onError: (e: any) => toast.error(e.message ?? "QC transition failed"),
   });
 
   const postMutation = useMutation({
@@ -352,7 +809,7 @@ function ProductionOrderDetailPage() {
       if (error) throw error;
     },
     onSuccess: () => {
-      toast.success("Production order completed. Inventory consumed, finished goods received.");
+      toast.success("Production completed and inventory updated.");
       invalidateAll();
     },
     onError: (e: any) => toast.error(e.message ?? "Completion failed"),
@@ -364,7 +821,7 @@ function ProductionOrderDetailPage() {
       if (error) throw error;
     },
     onSuccess: () => {
-      toast.success("Production order closed.");
+      toast.success("Order closed.");
       invalidateAll();
     },
     onError: (e: any) => toast.error(e.message ?? "Close failed"),
@@ -376,7 +833,7 @@ function ProductionOrderDetailPage() {
       if (error) throw error;
     },
     onSuccess: () => {
-      toast.success("Production order cancelled. All reservations released.");
+      toast.success("Order cancelled. Reservations released.");
       invalidateAll();
     },
     onError: (e: any) => toast.error(e.message ?? "Cancellation failed"),
@@ -386,12 +843,13 @@ function ProductionOrderDetailPage() {
     confirmMutation.isPending ||
     releaseToFloorMutation.isPending ||
     startMutation.isPending ||
+    resumeMutation.isPending ||
     qcMutation.isPending ||
     postMutation.isPending ||
     closeMutation.isPending ||
     cancelMutation.isPending;
 
-  // ─── Loading ──────────────────────────────────────────────────────────
+  // ── Loading / not found ───────────────────────────────────────────────
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-24">
@@ -399,13 +857,12 @@ function ProductionOrderDetailPage() {
       </div>
     );
   }
-
   if (!order) {
     return (
       <div className="flex flex-col items-center justify-center py-24 gap-3">
         <p className="text-sm text-muted-foreground">Production order not found.</p>
         <Button variant="outline" size="sm" asChild>
-          <Link to="/manufacturing/orders">Back to Orders</Link>
+          <Link to="/manufacturing/orders">Back</Link>
         </Button>
       </div>
     );
@@ -413,20 +870,18 @@ function ProductionOrderDetailPage() {
 
   const status = order.status ?? "Draft";
   const isTerminal = ["Completed", "Closed", "Cancelled"].includes(status);
-  const isCancelled = status === "Cancelled";
-  const isCompleted = status === "Completed";
-  const isClosed = status === "Closed";
+  const isActive = ["In Progress", "Paused"].includes(status);
+  const canRecord = canWrite && isActive;
+  const qty = Number(order.quantity ?? 0);
+  const produced = Number(order.qty_produced ?? 0);
+  const remaining = Number(order.qty_remaining ?? Math.max(0, qty - produced));
+  const priority = Number(order.priority ?? 3);
+  const showAvail = !isTerminal && !!order.bom_id;
+  const showProgress = produced > 0 || isActive || ["Quality Check", "Completed"].includes(status);
 
-  // Which statuses show the material availability panel
-  const showAvailPanel = !isTerminal && order.bom_id;
-  // Statuses where reservations are active / visible
-  const showReservationBanner =
-    ["Material Reserved", "Released", "In Progress", "Quality Check"].includes(status) && hasReservations;
-
-  // ─── Render ───────────────────────────────────────────────────────────
   return (
     <div className="flex flex-col gap-5 p-4 md:p-6 max-w-5xl mx-auto">
-      {/* ── Breadcrumb + header ─────────────────────────────────────────── */}
+      {/* ── Breadcrumb + actions ───────────────────────────────────────── */}
       <div className="flex items-center gap-2 flex-wrap">
         <Button variant="ghost" size="sm" className="gap-1 -ml-2" asChild>
           <Link to="/manufacturing/orders">
@@ -441,11 +896,45 @@ function ProductionOrderDetailPage() {
         >
           {status}
         </span>
+        <Badge variant="outline" className={`text-xs ${PRIORITY_COLOR[priority]}`}>
+          {PRIORITY_LABEL[priority] ?? "Normal"}
+        </Badge>
 
-        {/* Primary action button — right side */}
         {canWrite && (
           <div className="ml-auto flex items-center gap-2 flex-wrap justify-end">
-            {/* Draft / Planned → Confirm */}
+            {/* Record Run — primary action when In Progress or Paused */}
+            {canRecord && (
+              <Button size="sm" className="gap-1.5" onClick={() => setShowRunDialog(true)}>
+                <Plus className="h-3.5 w-3.5" /> Record Run
+              </Button>
+            )}
+
+            {/* Pause */}
+            {status === "In Progress" && (
+              <Button
+                size="sm"
+                variant="outline"
+                className="gap-1.5"
+                onClick={() => setShowPauseDialog(true)}
+                disabled={anyPending}
+              >
+                <Pause className="h-3.5 w-3.5" /> Pause
+              </Button>
+            )}
+
+            {/* Resume */}
+            {status === "Paused" && (
+              <Button size="sm" className="gap-1.5" onClick={() => resumeMutation.mutate()} disabled={anyPending}>
+                {resumeMutation.isPending ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Play className="h-3.5 w-3.5" />
+                )}
+                Resume
+              </Button>
+            )}
+
+            {/* Confirm */}
             {["Draft", "Planned"].includes(status) && (
               <Button
                 size="sm"
@@ -459,11 +948,11 @@ function ProductionOrderDetailPage() {
                 ) : (
                   <ClipboardCheck className="h-3.5 w-3.5" />
                 )}
-                Confirm Order
+                Confirm
               </Button>
             )}
 
-            {/* Released → Start Production */}
+            {/* Start (Released) */}
             {status === "Released" && (
               <Button size="sm" className="gap-1.5" onClick={() => startMutation.mutate()} disabled={anyPending}>
                 {startMutation.isPending ? (
@@ -475,8 +964,8 @@ function ProductionOrderDetailPage() {
               </Button>
             )}
 
-            {/* In Progress → Quality Check */}
-            {status === "In Progress" && (
+            {/* Submit to QC */}
+            {isActive && (
               <Button
                 size="sm"
                 variant="outline"
@@ -484,12 +973,11 @@ function ProductionOrderDetailPage() {
                 onClick={() => setQcConfirm(true)}
                 disabled={anyPending}
               >
-                <FlaskConical className="h-3.5 w-3.5" />
-                Submit to QC
+                <FlaskConical className="h-3.5 w-3.5" /> Submit to QC
               </Button>
             )}
 
-            {/* Quality Check → Complete & Post */}
+            {/* Complete & Post */}
             {status === "Quality Check" && (
               <Button size="sm" className="gap-1.5" onClick={() => setPostConfirm(true)} disabled={anyPending}>
                 {postMutation.isPending ? (
@@ -501,8 +989,8 @@ function ProductionOrderDetailPage() {
               </Button>
             )}
 
-            {/* Completed → Close */}
-            {isCompleted && (
+            {/* Close */}
+            {status === "Completed" && (
               <Button
                 size="sm"
                 variant="outline"
@@ -515,11 +1003,11 @@ function ProductionOrderDetailPage() {
                 ) : (
                   <Lock className="h-3.5 w-3.5" />
                 )}
-                Close Order
+                Close
               </Button>
             )}
 
-            {/* Cancel — available on all open non-terminal states */}
+            {/* Cancel */}
             {!isTerminal && (
               <Button
                 variant="outline"
@@ -528,19 +1016,32 @@ function ProductionOrderDetailPage() {
                 onClick={() => setCancelConfirm(true)}
                 disabled={anyPending}
               >
-                <XCircle className="h-3.5 w-3.5" />
-                Cancel
+                <XCircle className="h-3.5 w-3.5" /> Cancel
               </Button>
             )}
           </div>
         )}
       </div>
 
-      {/* ── Workflow stepper ──────────────────────────────────────────────── */}
-      {!isCancelled && (
+      {/* ── Workflow stepper ──────────────────────────────────────────── */}
+      {!["Cancelled"].includes(status) && (
         <Card className="overflow-hidden">
           <CardContent className="px-4 py-3">
             <WorkflowStepper status={status} />
+          </CardContent>
+        </Card>
+      )}
+
+      {/* ── Progress bar (when production has started) ─────────────────── */}
+      {showProgress && (
+        <Card>
+          <CardContent className="px-4 py-4">
+            <ProductionProgress
+              planned={qty}
+              produced={produced}
+              remaining={remaining}
+              uom={product?.uom ?? order.quantity_uom}
+            />
           </CardContent>
         </Card>
       )}
@@ -553,7 +1054,8 @@ function ProductionOrderDetailPage() {
             Production Order Details
           </CardTitle>
         </CardHeader>
-        <CardContent className="px-4 pb-4">
+        <CardContent className="px-4 pb-4 flex flex-col gap-4">
+          {/* Row 1: core identity */}
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
             <FieldRow label="MO Number" value={<span className="font-mono">{order.number}</span>} />
             <FieldRow label="Date" value={fmtDate(order.date)} />
@@ -573,18 +1075,6 @@ function ProductionOrderDetailPage() {
               }
             />
             <FieldRow
-              label="Quantity"
-              value={
-                <span className="font-mono">
-                  {Number(order.quantity).toLocaleString(undefined, {
-                    minimumFractionDigits: 0,
-                    maximumFractionDigits: 4,
-                  })}{" "}
-                  {product?.uom ?? order.quantity_uom ?? ""}
-                </span>
-              }
-            />
-            <FieldRow
               label="BOM"
               value={
                 bom ? (
@@ -595,15 +1085,92 @@ function ProductionOrderDetailPage() {
                     )}
                   </Link>
                 ) : (
-                  <span className="text-destructive text-xs">No BOM assigned</span>
+                  <span className="text-destructive text-xs">No BOM</span>
                 )
+              }
+            />
+            <FieldRow
+              label="Priority"
+              value={
+                <span
+                  className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${PRIORITY_COLOR[priority]}`}
+                >
+                  {PRIORITY_LABEL[priority] ?? "Normal"}
+                </span>
               }
             />
           </div>
 
+          {/* Row 2: quantities */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+            <FieldRow
+              label="Qty Planned"
+              value={
+                <span className="font-mono font-semibold">
+                  {fmtQty(qty)} {product?.uom ?? order.quantity_uom ?? ""}
+                </span>
+              }
+            />
+            <FieldRow
+              label="Qty Produced"
+              value={
+                <span className={`font-mono font-semibold ${produced > 0 ? "text-success" : "text-muted-foreground"}`}>
+                  {fmtQty(produced)}
+                </span>
+              }
+            />
+            <FieldRow
+              label="Qty Remaining"
+              value={
+                <span
+                  className={`font-mono font-semibold ${remaining > 0 ? "text-amber-600 dark:text-amber-400" : "text-success"}`}
+                >
+                  {fmtQty(remaining)}
+                </span>
+              }
+            />
+            <FieldRow label="Warehouse" value={warehouse?.name ?? "—"} />
+            <FieldRow
+              label="Location"
+              value={location ? `${location.code}${location.name ? ` — ${location.name}` : ""}` : "—"}
+            />
+          </div>
+
+          {/* Row 3: dates */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+            <FieldRow
+              label="Planned Start"
+              value={
+                order.planned_start ? (
+                  <span className="flex items-center gap-1">
+                    <CalendarDays className="h-3 w-3 text-muted-foreground" />
+                    {fmtDate(order.planned_start)}
+                  </span>
+                ) : (
+                  "—"
+                )
+              }
+            />
+            <FieldRow
+              label="Planned End"
+              value={
+                order.planned_end ? (
+                  <span className="flex items-center gap-1">
+                    <CalendarDays className="h-3 w-3 text-muted-foreground" />
+                    {fmtDate(order.planned_end)}
+                  </span>
+                ) : (
+                  "—"
+                )
+              }
+            />
+            <FieldRow label="Actual Start" value={fmtDateTime(order.actual_start)} />
+            <FieldRow label="Actual End" value={fmtDateTime(order.actual_end)} />
+          </div>
+
           {order.notes && (
             <>
-              <Separator className="my-3" />
+              <Separator />
               <p className="text-sm text-muted-foreground">{order.notes}</p>
             </>
           )}
@@ -617,11 +1184,12 @@ function ProductionOrderDetailPage() {
             order.closed_at ||
             order.cancelled_at) && (
             <>
-              <Separator className="my-3" />
+              <Separator />
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
                 {order.confirmed_at && <FieldRow label="Confirmed" value={fmtDateTime(order.confirmed_at)} />}
-                {order.reserved_at && <FieldRow label="Materials Reserved" value={fmtDateTime(order.reserved_at)} />}
+                {order.reserved_at && <FieldRow label="Reserved" value={fmtDateTime(order.reserved_at)} />}
                 {order.released_at && <FieldRow label="Released" value={fmtDateTime(order.released_at)} />}
+                {order.paused_at && <FieldRow label="Paused" value={fmtDateTime(order.paused_at)} />}
                 {order.quality_check_at && (
                   <FieldRow label="QC Submitted" value={fmtDateTime(order.quality_check_at)} />
                 )}
@@ -632,11 +1200,22 @@ function ProductionOrderDetailPage() {
             </>
           )}
 
+          {/* Pause reason */}
+          {order.pause_reason && (
+            <>
+              <Separator />
+              <div className="flex flex-col gap-0.5">
+                <span className="text-xs text-muted-foreground">Pause Reason</span>
+                <p className="text-sm text-yellow-700 dark:text-yellow-400">{order.pause_reason}</p>
+              </div>
+            </>
+          )}
+
           {/* QC notes */}
           {order.quality_notes && (
             <>
-              <Separator className="my-3" />
-              <div className="flex flex-col gap-1">
+              <Separator />
+              <div className="flex flex-col gap-0.5">
                 <span className="text-xs text-muted-foreground">Quality Check Notes</span>
                 <p className="text-sm">{order.quality_notes}</p>
               </div>
@@ -645,63 +1224,71 @@ function ProductionOrderDetailPage() {
         </CardContent>
       </Card>
 
-      {/* ── Active reservations banner ────────────────────────────────────── */}
-      {showReservationBanner && (
-        <div className="flex items-center gap-2 rounded-md border border-violet-500/30 bg-violet-500/5 px-3 py-2 text-xs">
-          <Package className="h-3.5 w-3.5 shrink-0 text-violet-600 dark:text-violet-400" />
-          <span className="text-violet-700 dark:text-violet-300">
-            <strong>{existingReservations.length}</strong> component reservation
-            {existingReservations.length !== 1 ? "s" : ""} active — inventory is held and will be consumed when the
-            order is completed &amp; posted.
-          </span>
-        </div>
-      )}
+      {/* ── Reservation banner ────────────────────────────────────────────── */}
+      {["Material Reserved", "Released", "In Progress", "Paused", "Quality Check"].includes(status) &&
+        hasReservations && (
+          <div className="flex items-center gap-2 rounded-md border border-violet-500/30 bg-violet-500/5 px-3 py-2 text-xs">
+            <Package className="h-3.5 w-3.5 shrink-0 text-violet-600 dark:text-violet-400" />
+            <span className="text-violet-700 dark:text-violet-300">
+              <strong>{existingReservations.length}</strong> component reservation
+              {existingReservations.length !== 1 ? "s" : ""} active — materials held for this order.
+            </span>
+          </div>
+        )}
 
       {/* ── Terminal state banners ────────────────────────────────────────── */}
-      {isCompleted && (
+      {status === "Completed" && (
         <div className="flex items-center gap-3 rounded-lg border border-success/40 bg-success/5 px-4 py-3">
           <CheckCircle2 className="h-5 w-5 text-success shrink-0" />
           <div>
             <p className="text-sm font-semibold text-success">Production Complete</p>
             <p className="text-xs text-muted-foreground">
-              All component materials consumed and finished goods received into stock. Material reservations fulfilled
-              and released. Close the order when ready.
+              {fmtQty(produced)} {product?.uom ?? ""} produced. All reservations fulfilled. Close the order when ready.
             </p>
           </div>
         </div>
       )}
-
-      {isClosed && (
+      {status === "Closed" && (
         <div className="flex items-center gap-3 rounded-lg border border-muted bg-muted/20 px-4 py-3">
           <Lock className="h-5 w-5 text-muted-foreground shrink-0" />
-          <div>
-            <p className="text-sm font-semibold text-muted-foreground">Order Closed</p>
-            <p className="text-xs text-muted-foreground">
-              This production order is closed and locked for further changes.
-            </p>
-          </div>
+          <p className="text-sm font-semibold text-muted-foreground">Order Closed</p>
         </div>
       )}
-
-      {isCancelled && (
+      {status === "Cancelled" && (
         <div className="flex items-center gap-3 rounded-lg border border-destructive/40 bg-destructive/5 px-4 py-3">
           <XCircle className="h-5 w-5 text-destructive shrink-0" />
           <div>
             <p className="text-sm font-semibold text-destructive">Order Cancelled</p>
-            <p className="text-xs text-muted-foreground">
-              All material reservations were released. No inventory was consumed.
-            </p>
+            <p className="text-xs text-muted-foreground">All reservations released and production entries voided.</p>
           </div>
         </div>
       )}
 
-      {/* ── Material Availability Panel ─────────────────────────────────── */}
-      {showAvailPanel && (
+      {/* ── Production Entries ───────────────────────────────────────────── */}
+      {(produced > 0 || isActive || ["Quality Check", "Completed", "Closed", "Cancelled"].includes(status)) && (
+        <div>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-sm font-semibold flex items-center gap-2">
+              <Package className="h-4 w-4 text-muted-foreground" />
+              Production Runs
+            </h2>
+            {canRecord && (
+              <Button size="sm" variant="outline" className="gap-1.5 h-7" onClick={() => setShowRunDialog(true)}>
+                <Plus className="h-3 w-3" /> Record Run
+              </Button>
+            )}
+          </div>
+          <ProductionEntriesTable orderId={id} />
+        </div>
+      )}
+
+      {/* ── Material Availability ─────────────────────────────────────────── */}
+      {showAvail && (
         <div>
           <h2 className="text-sm font-semibold mb-3 flex items-center gap-2">
             <ShieldCheck className="h-4 w-4 text-muted-foreground" />
             Material Availability
-            {["Material Reserved", "Released", "In Progress", "Quality Check"].includes(status) && (
+            {["Material Reserved", "Released", "In Progress", "Paused", "Quality Check"].includes(status) && (
               <span className="text-xs font-normal text-muted-foreground ml-1">— reservations active</span>
             )}
           </h2>
@@ -713,8 +1300,8 @@ function ProductionOrderDetailPage() {
             canWrite={canWrite}
             orderStatus={status}
             reservedAlready={hasReservations}
-            onReserveSuccess={afterReserve}
-            onReleaseSuccess={afterRelease}
+            onReserveSuccess={invalidateAll}
+            onReleaseSuccess={invalidateAll}
             onReleaseToFloor={status === "Material Reserved" ? () => releaseToFloorMutation.mutate() : undefined}
             releaseToFloorPending={releaseToFloorMutation.isPending}
           />
@@ -724,32 +1311,40 @@ function ProductionOrderDetailPage() {
       {!order.bom_id && !isTerminal && (
         <div className="flex items-center gap-2 rounded-md border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
           <AlertTriangle className="h-4 w-4 shrink-0" />
-          No BOM assigned to this production order. Edit the order to assign a BOM before confirming.
+          No BOM assigned. Edit the order to assign a BOM before confirming.
         </div>
       )}
 
-      {/* ── QC dialog ────────────────────────────────────────────────────── */}
+      {/* ── Dialogs ──────────────────────────────────────────────────────── */}
+
+      <RecordRunDialog
+        open={showRunDialog}
+        onOpenChange={setShowRunDialog}
+        order={order}
+        product={product}
+        onSuccess={invalidateAll}
+      />
+
+      <PauseDialog open={showPauseDialog} onOpenChange={setShowPauseDialog} orderId={id} onSuccess={invalidateAll} />
+
+      {/* QC dialog */}
       <AlertDialog open={qcConfirm} onOpenChange={setQcConfirm}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2">
-              <FlaskConical className="h-5 w-5" />
-              Submit to Quality Check?
+              <FlaskConical className="h-5 w-5" /> Submit to Quality Check?
             </AlertDialogTitle>
             <AlertDialogDescription>
-              Production will move to <strong>Quality Check</strong> status. Add optional inspection notes before
-              submitting. Inventory is not consumed yet.
+              Production will move to <strong>Quality Check</strong>. Inventory is not finalised yet.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="px-1 py-2">
-            <Label className="text-sm" htmlFor="qc-notes">
-              QC Notes (optional)
-            </Label>
+            <Label htmlFor="qc-notes">QC Notes (optional)</Label>
             <Textarea
               id="qc-notes"
               className="mt-1.5"
               rows={3}
-              placeholder="Record inspection observations, measurements, or pass criteria…"
+              placeholder="Inspection notes, measurements, pass criteria…"
               value={qcNotes}
               onChange={(e) => setQcNotes(e.target.value)}
             />
@@ -768,22 +1363,19 @@ function ProductionOrderDetailPage() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* ── Complete & Post dialog ────────────────────────────────────────── */}
+      {/* Complete & Post dialog */}
       <AlertDialog open={postConfirm} onOpenChange={setPostConfirm}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Complete &amp; Post Production Order?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will consume all component materials from inventory and receive{" "}
+              Any residual quantity not yet produced via runs will be consumed and received now. Total planned:{" "}
               <strong>
-                {Number(order.quantity).toLocaleString(undefined, {
-                  minimumFractionDigits: 0,
-                  maximumFractionDigits: 4,
-                })}{" "}
-                {product?.uom ?? "units"}
-              </strong>{" "}
-              of <strong>{product?.name ?? "finished goods"}</strong> into stock. Material reservations will be
-              fulfilled and journal entries created. This action cannot be undone.
+                {fmtQty(qty)} {product?.uom ?? ""}
+              </strong>
+              , already produced: <strong>{fmtQty(produced)}</strong>, residual:{" "}
+              <strong>{fmtQty(Math.max(0, qty - produced))}</strong>. Journal entries will be created. This cannot be
+              undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -800,16 +1392,19 @@ function ProductionOrderDetailPage() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* ── Cancel dialog ─────────────────────────────────────────────────── */}
+      {/* Cancel dialog */}
       <AlertDialog open={cancelConfirm} onOpenChange={setCancelConfirm}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Cancel Production Order?</AlertDialogTitle>
             <AlertDialogDescription>
               {hasReservations
-                ? `All ${existingReservations.length} active material reservation${existingReservations.length !== 1 ? "s" : ""} will be released immediately. `
+                ? `${existingReservations.length} reservation${existingReservations.length !== 1 ? "s" : ""} will be released. `
                 : ""}
-              No inventory will be consumed. This action cannot be undone.
+              {produced > 0
+                ? `${fmtQty(produced)} units already produced — those production entries will be voided and stock movements reversed. `
+                : ""}
+              This cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
