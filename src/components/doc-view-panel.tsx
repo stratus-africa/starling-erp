@@ -713,7 +713,7 @@ export function DocViewPanel({ kind, id, embedded = false, onClose, onSaved }: D
   // If new doc or explicitly in edit mode, show the editor full-screen
   if (editMode || isNew) {
     return (
-      <div className="flex h-full flex-col overflow-hidden">
+      <div className="flex min-h-full w-full flex-col">
         <DocumentEditor
           kind={kind}
           id={id}
