@@ -46,7 +46,7 @@ import { DocumentTimeline } from "@/components/document-timeline";
 import { PostingDetailsDrawer } from "@/components/posting-details-drawer";
 import { FulfillmentTimeline } from "@/components/fulfillment-timeline";
 import { useDocumentBranding, type DocTemplateKind } from "@/hooks/use-document-branding";
-import { logDocumentEvent } from "@/lib/document-events";
+import { logDocumentEvent, useDocumentEvents } from "@/lib/document-events";
 import { downloadDocumentPdf, type PdfDocInput } from "@/lib/document-pdf";
 import { Link } from "@tanstack/react-router";
 import { fetchRow, insertRow, updateRow, db, type Row } from "@/lib/typed-db";
@@ -190,6 +190,27 @@ const TEMPLATE_KIND: Record<DocKind, DocTemplateKind> = {
 
 const money = (n: number) => (n || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
+const STATUS_SELECT_COLORS: Record<string, string> = {
+  Draft: "border-slate-300/60 bg-slate-100 text-slate-600 dark:border-slate-700/60 dark:bg-slate-800 dark:text-slate-300",
+  Sent: "border-blue-400/50 bg-blue-50 text-blue-700 dark:border-blue-600/50 dark:bg-blue-950/50 dark:text-blue-300",
+  Accepted:
+    "border-emerald-400/50 bg-emerald-50 text-emerald-700 dark:border-emerald-600/50 dark:bg-emerald-950/50 dark:text-emerald-300",
+  Rejected: "border-red-400/50 bg-red-50 text-red-700 dark:border-red-600/50 dark:bg-red-950/50 dark:text-red-300",
+  Expired:
+    "border-orange-400/50 bg-orange-50 text-orange-700 dark:border-orange-600/50 dark:bg-orange-950/50 dark:text-orange-300",
+};
+
+const formatStatusEvent = (createdAt: string, actorEmail: string | null) => {
+  const timestamp = new Date(createdAt).toLocaleString(undefined, {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+  return `${timestamp} · ${actorEmail ?? "System"}`;
+};
+
 interface Line {
   id?: string;
   line_no: number;
@@ -260,6 +281,14 @@ export function DocumentEditor({
   const [emailOpen, setEmailOpen] = useState(false);
   const [postOpen, setPostOpen] = useState(false);
   const { branding } = useDocumentBranding(TEMPLATE_KIND[kind]);
+  const { data: quoteStatusEvents = [] } = useDocumentEvents(kind, kind === "quote" ? id : null);
+  const latestQuoteEventByStatus = useMemo(
+    () =>
+      new Map(
+        quoteStatusEvents.map((event) => [event.status, event] as const),
+      ),
+    [quoteStatusEvents],
+  );
 
   const { data: doc, isLoading } = useQuery({
     queryKey: [cfg.table, id],
@@ -744,9 +773,8 @@ export function DocumentEditor({
     Number(doc?.balance_due ?? doc?.balance ?? 0) > 0.001;
 
   return (
-    <div className={`flex gap-4 p-4 md:p-6 w-full ${kind === "quote" && !isNew ? "flex-row items-start" : "flex-col"}`}>
-      {/* ── Left column: Quote details (65%) or full width for other docs ── */}
-      <div className={`flex flex-col gap-4 ${kind === "quote" && !isNew ? "w-[65%] min-w-0" : "w-full"}`}>
+    <div className="flex w-full flex-col gap-4 p-4 md:p-6">
+      <div className="flex w-full flex-col gap-4">
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0">
             <Button
@@ -762,7 +790,11 @@ export function DocumentEditor({
                 <h1 className="text-xl font-semibold truncate">
                   {isNew ? `New ${cfg.label}` : header.number || cfg.label}
                 </h1>
-                {header.status && <Badge variant="secondary">{header.status}</Badge>}
+                {header.status && (
+                  <Badge variant="outline" className={kind === "quote" ? STATUS_SELECT_COLORS[header.status] : undefined}>
+                    {header.status}
+                  </Badge>
+                )}
               </div>
               {!isNew && (
                 <p className="text-xs text-muted-foreground mt-0.5">
@@ -1021,17 +1053,38 @@ export function DocumentEditor({
               onValueChange={(v) => setHeader({ ...header, status: v })}
               disabled={!canWrite}
             >
-              <SelectTrigger>
+              <SelectTrigger
+                className={kind === "quote" ? STATUS_SELECT_COLORS[header.status ?? cfg.statuses[0]] : undefined}
+              >
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className={kind === "quote" ? "min-w-[19rem]" : undefined}>
                 {cfg.statuses
                   .filter((s) => !(isReq && !canApprove && (s === "Approved" || s === "Rejected")))
-                  .map((s) => (
-                    <SelectItem key={s} value={s}>
-                      {s}
-                    </SelectItem>
-                  ))}
+                  .map((s) => {
+                    const event = kind === "quote" ? latestQuoteEventByStatus.get(s) : undefined;
+                    return (
+                      <SelectItem
+                        key={s}
+                        value={s}
+                        className={kind === "quote" ? `my-1 border ${STATUS_SELECT_COLORS[s] ?? ""}` : undefined}
+                      >
+                        <span className="flex min-w-0 items-center gap-2">
+                          {kind === "quote" && (
+                            <CheckCircle2 className={`h-3.5 w-3.5 shrink-0 ${event ? "opacity-100" : "opacity-30"}`} />
+                          )}
+                          <span className="min-w-0">
+                            <span className="block font-medium">{s}</span>
+                            {kind === "quote" && event && (
+                              <span className="block truncate text-[10px] opacity-75">
+                                {formatStatusEvent(event.created_at, event.actor_email)}
+                              </span>
+                            )}
+                          </span>
+                        </span>
+                      </SelectItem>
+                    );
+                  })}
               </SelectContent>
             </Select>
           </div>
@@ -1357,18 +1410,6 @@ export function DocumentEditor({
         )}
       </div>
       {/* end left / main column */}
-
-      {/* ── Right column: Status timeline for quotes (35%) ── */}
-      {kind === "quote" && !isNew && (
-        <div className="w-[35%] shrink-0 flex flex-col gap-4">
-          <DocumentTimeline
-            entityType={kind}
-            entityId={id}
-            stages={cfg.timelineStages ?? [...cfg.statuses]}
-            currentStage={header.status ?? null}
-          />
-        </div>
-      )}
 
       {/* ── Portals/dialogs — outside columns, always rendered at root level ── */}
       {showRecordPayment && (
