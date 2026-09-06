@@ -5008,6 +5008,7 @@ export type Database = {
           item_id: string | null
           tenant_id: string
           to_uom: string
+          uom_class: string | null
           updated_at: string
         }
         Insert: {
@@ -5019,6 +5020,7 @@ export type Database = {
           item_id?: string | null
           tenant_id: string
           to_uom: string
+          uom_class?: string | null
           updated_at?: string
         }
         Update: {
@@ -5030,6 +5032,7 @@ export type Database = {
           item_id?: string | null
           tenant_id?: string
           to_uom?: string
+          uom_class?: string | null
           updated_at?: string
         }
         Relationships: [
