@@ -59,9 +59,12 @@ import {
   Plus,
   Trash2,
   MapPin,
+  FlaskConical,
+  Fingerprint,
 } from "lucide-react";
 
 import { InventoryLocationStock } from "@/components/inventory-location-stock";
+import { LotSerialPanel } from "@/components/lot-serial-panel";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -926,6 +929,9 @@ export function Item360Page({ id, backTo = "/inventory/items", backLabel = "Item
                 { value: "pricing", label: "Pricing", icon: DollarSign },
                 { value: "accounting", label: "Accounting", icon: BookOpen },
                 { value: "activity", label: "Activity", icon: Activity },
+                ...(item?.track_batches || item?.track_serials
+                  ? [{ value: "traceability", label: "Traceability", icon: FlaskConical }]
+                  : []),
               ].map(({ value, label, icon: Icon }) => (
                 <TabsTrigger
                   key={value}
@@ -2371,6 +2377,42 @@ export function Item360Page({ id, backTo = "/inventory/items", backLabel = "Item
               </Card>
             </div>
           </TabsContent>
+
+          {/* ════════════════════════════════════════════════════════════════
+              TAB 13: TRACEABILITY (lot/serial tracking only)
+          ════════════════════════════════════════════════════════════════ */}
+          {(item?.track_batches || item?.track_serials) && !isNew && (
+            <TabsContent value="traceability" className="mt-0 flex-1 overflow-auto p-6">
+              <div className="max-w-5xl">
+                <div className="mb-4 flex items-center gap-2">
+                  <FlaskConical className="h-4 w-4 text-muted-foreground" />
+                  <h2 className="text-sm font-semibold">Lot &amp; Serial Traceability</h2>
+                  <div className="flex items-center gap-2 ml-3">
+                    {item?.track_batches && (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-success/10 text-success px-2 py-0.5 text-xs font-medium">
+                        <FlaskConical className="h-3 w-3" /> Batch tracking on
+                      </span>
+                    )}
+                    {item?.track_serials && (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-info/10 text-info px-2 py-0.5 text-xs font-medium">
+                        <Fingerprint className="h-3 w-3" /> Serial tracking on
+                      </span>
+                    )}
+                    {item?.track_expiry && (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-warning/10 text-warning px-2 py-0.5 text-xs font-medium">
+                        <AlertTriangle className="h-3 w-3" /> Expiry tracking on
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <LotSerialPanel
+                  itemId={id}
+                  trackBatches={Boolean(item?.track_batches)}
+                  trackSerials={Boolean(item?.track_serials)}
+                />
+              </div>
+            </TabsContent>
+          )}
         </Tabs>
       </div>
     </div>

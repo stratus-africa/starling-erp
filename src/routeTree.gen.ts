@@ -70,6 +70,8 @@ import { Route as AuthenticatedManufacturingRunsRouteImport } from './routes/_au
 import { Route as AuthenticatedManufacturingOrdersRouteImport } from './routes/_authenticated/manufacturing.orders'
 import { Route as AuthenticatedInventoryWarehousesRouteImport } from './routes/_authenticated/inventory.warehouses'
 import { Route as AuthenticatedInventoryTransfersRouteImport } from './routes/_authenticated/inventory.transfers'
+import { Route as AuthenticatedInventorySerialsRouteImport } from './routes/_authenticated/inventory.serials'
+import { Route as AuthenticatedInventoryLotsRouteImport } from './routes/_authenticated/inventory.lots'
 import { Route as AuthenticatedInventoryLedgerRouteImport } from './routes/_authenticated/inventory.ledger'
 import { Route as AuthenticatedInventoryItemsRouteImport } from './routes/_authenticated/inventory.items'
 import { Route as AuthenticatedInventoryAdjustmentsRouteImport } from './routes/_authenticated/inventory.adjustments'
@@ -77,6 +79,7 @@ import { Route as AuthenticatedDashboardsSalesRouteImport } from './routes/_auth
 import { Route as AuthenticatedDashboardsProductionRouteImport } from './routes/_authenticated/dashboards.production'
 import { Route as AuthenticatedDashboardsProcurementRouteImport } from './routes/_authenticated/dashboards.procurement'
 import { Route as AuthenticatedDashboardsLogisticsRouteImport } from './routes/_authenticated/dashboards.logistics'
+import { Route as AuthenticatedDashboardsInventoryRouteImport } from './routes/_authenticated/dashboards.inventory'
 import { Route as AuthenticatedAccountingTrialBalanceRouteImport } from './routes/_authenticated/accounting.trial-balance'
 import { Route as AuthenticatedAccountingTaxReportRouteImport } from './routes/_authenticated/accounting.tax-report'
 import { Route as AuthenticatedAccountingReconciliationRouteImport } from './routes/_authenticated/accounting.reconciliation'
@@ -453,6 +456,18 @@ const AuthenticatedInventoryTransfersRoute =
     path: '/inventory/transfers',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedInventorySerialsRoute =
+  AuthenticatedInventorySerialsRouteImport.update({
+    id: '/inventory/serials',
+    path: '/inventory/serials',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedInventoryLotsRoute =
+  AuthenticatedInventoryLotsRouteImport.update({
+    id: '/inventory/lots',
+    path: '/inventory/lots',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedInventoryLedgerRoute =
   AuthenticatedInventoryLedgerRouteImport.update({
     id: '/inventory/ledger',
@@ -493,6 +508,12 @@ const AuthenticatedDashboardsLogisticsRoute =
   AuthenticatedDashboardsLogisticsRouteImport.update({
     id: '/dashboards/logistics',
     path: '/dashboards/logistics',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedDashboardsInventoryRoute =
+  AuthenticatedDashboardsInventoryRouteImport.update({
+    id: '/dashboards/inventory',
+    path: '/dashboards/inventory',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedAccountingTrialBalanceRoute =
@@ -793,6 +814,7 @@ export interface FileRoutesByFullPath {
   '/accounting/reconciliation': typeof AuthenticatedAccountingReconciliationRoute
   '/accounting/tax-report': typeof AuthenticatedAccountingTaxReportRoute
   '/accounting/trial-balance': typeof AuthenticatedAccountingTrialBalanceRoute
+  '/dashboards/inventory': typeof AuthenticatedDashboardsInventoryRoute
   '/dashboards/logistics': typeof AuthenticatedDashboardsLogisticsRoute
   '/dashboards/procurement': typeof AuthenticatedDashboardsProcurementRoute
   '/dashboards/production': typeof AuthenticatedDashboardsProductionRoute
@@ -800,6 +822,8 @@ export interface FileRoutesByFullPath {
   '/inventory/adjustments': typeof AuthenticatedInventoryAdjustmentsRoute
   '/inventory/items': typeof AuthenticatedInventoryItemsRouteWithChildren
   '/inventory/ledger': typeof AuthenticatedInventoryLedgerRoute
+  '/inventory/lots': typeof AuthenticatedInventoryLotsRoute
+  '/inventory/serials': typeof AuthenticatedInventorySerialsRoute
   '/inventory/transfers': typeof AuthenticatedInventoryTransfersRoute
   '/inventory/warehouses': typeof AuthenticatedInventoryWarehousesRoute
   '/manufacturing/orders': typeof AuthenticatedManufacturingOrdersRoute
@@ -902,6 +926,7 @@ export interface FileRoutesByTo {
   '/accounting/reconciliation': typeof AuthenticatedAccountingReconciliationRoute
   '/accounting/tax-report': typeof AuthenticatedAccountingTaxReportRoute
   '/accounting/trial-balance': typeof AuthenticatedAccountingTrialBalanceRoute
+  '/dashboards/inventory': typeof AuthenticatedDashboardsInventoryRoute
   '/dashboards/logistics': typeof AuthenticatedDashboardsLogisticsRoute
   '/dashboards/procurement': typeof AuthenticatedDashboardsProcurementRoute
   '/dashboards/production': typeof AuthenticatedDashboardsProductionRoute
@@ -909,6 +934,8 @@ export interface FileRoutesByTo {
   '/inventory/adjustments': typeof AuthenticatedInventoryAdjustmentsRoute
   '/inventory/items': typeof AuthenticatedInventoryItemsRouteWithChildren
   '/inventory/ledger': typeof AuthenticatedInventoryLedgerRoute
+  '/inventory/lots': typeof AuthenticatedInventoryLotsRoute
+  '/inventory/serials': typeof AuthenticatedInventorySerialsRoute
   '/inventory/transfers': typeof AuthenticatedInventoryTransfersRoute
   '/inventory/warehouses': typeof AuthenticatedInventoryWarehousesRoute
   '/manufacturing/orders': typeof AuthenticatedManufacturingOrdersRoute
@@ -1014,6 +1041,7 @@ export interface FileRoutesById {
   '/_authenticated/accounting/reconciliation': typeof AuthenticatedAccountingReconciliationRoute
   '/_authenticated/accounting/tax-report': typeof AuthenticatedAccountingTaxReportRoute
   '/_authenticated/accounting/trial-balance': typeof AuthenticatedAccountingTrialBalanceRoute
+  '/_authenticated/dashboards/inventory': typeof AuthenticatedDashboardsInventoryRoute
   '/_authenticated/dashboards/logistics': typeof AuthenticatedDashboardsLogisticsRoute
   '/_authenticated/dashboards/procurement': typeof AuthenticatedDashboardsProcurementRoute
   '/_authenticated/dashboards/production': typeof AuthenticatedDashboardsProductionRoute
@@ -1021,6 +1049,8 @@ export interface FileRoutesById {
   '/_authenticated/inventory/adjustments': typeof AuthenticatedInventoryAdjustmentsRoute
   '/_authenticated/inventory/items': typeof AuthenticatedInventoryItemsRouteWithChildren
   '/_authenticated/inventory/ledger': typeof AuthenticatedInventoryLedgerRoute
+  '/_authenticated/inventory/lots': typeof AuthenticatedInventoryLotsRoute
+  '/_authenticated/inventory/serials': typeof AuthenticatedInventorySerialsRoute
   '/_authenticated/inventory/transfers': typeof AuthenticatedInventoryTransfersRoute
   '/_authenticated/inventory/warehouses': typeof AuthenticatedInventoryWarehousesRoute
   '/_authenticated/manufacturing/orders': typeof AuthenticatedManufacturingOrdersRoute
@@ -1126,6 +1156,7 @@ export interface FileRouteTypes {
     | '/accounting/reconciliation'
     | '/accounting/tax-report'
     | '/accounting/trial-balance'
+    | '/dashboards/inventory'
     | '/dashboards/logistics'
     | '/dashboards/procurement'
     | '/dashboards/production'
@@ -1133,6 +1164,8 @@ export interface FileRouteTypes {
     | '/inventory/adjustments'
     | '/inventory/items'
     | '/inventory/ledger'
+    | '/inventory/lots'
+    | '/inventory/serials'
     | '/inventory/transfers'
     | '/inventory/warehouses'
     | '/manufacturing/orders'
@@ -1235,6 +1268,7 @@ export interface FileRouteTypes {
     | '/accounting/reconciliation'
     | '/accounting/tax-report'
     | '/accounting/trial-balance'
+    | '/dashboards/inventory'
     | '/dashboards/logistics'
     | '/dashboards/procurement'
     | '/dashboards/production'
@@ -1242,6 +1276,8 @@ export interface FileRouteTypes {
     | '/inventory/adjustments'
     | '/inventory/items'
     | '/inventory/ledger'
+    | '/inventory/lots'
+    | '/inventory/serials'
     | '/inventory/transfers'
     | '/inventory/warehouses'
     | '/manufacturing/orders'
@@ -1346,6 +1382,7 @@ export interface FileRouteTypes {
     | '/_authenticated/accounting/reconciliation'
     | '/_authenticated/accounting/tax-report'
     | '/_authenticated/accounting/trial-balance'
+    | '/_authenticated/dashboards/inventory'
     | '/_authenticated/dashboards/logistics'
     | '/_authenticated/dashboards/procurement'
     | '/_authenticated/dashboards/production'
@@ -1353,6 +1390,8 @@ export interface FileRouteTypes {
     | '/_authenticated/inventory/adjustments'
     | '/_authenticated/inventory/items'
     | '/_authenticated/inventory/ledger'
+    | '/_authenticated/inventory/lots'
+    | '/_authenticated/inventory/serials'
     | '/_authenticated/inventory/transfers'
     | '/_authenticated/inventory/warehouses'
     | '/_authenticated/manufacturing/orders'
@@ -1848,6 +1887,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedInventoryTransfersRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/inventory/serials': {
+      id: '/_authenticated/inventory/serials'
+      path: '/inventory/serials'
+      fullPath: '/inventory/serials'
+      preLoaderRoute: typeof AuthenticatedInventorySerialsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/inventory/lots': {
+      id: '/_authenticated/inventory/lots'
+      path: '/inventory/lots'
+      fullPath: '/inventory/lots'
+      preLoaderRoute: typeof AuthenticatedInventoryLotsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/inventory/ledger': {
       id: '/_authenticated/inventory/ledger'
       path: '/inventory/ledger'
@@ -1895,6 +1948,13 @@ declare module '@tanstack/react-router' {
       path: '/dashboards/logistics'
       fullPath: '/dashboards/logistics'
       preLoaderRoute: typeof AuthenticatedDashboardsLogisticsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/dashboards/inventory': {
+      id: '/_authenticated/dashboards/inventory'
+      path: '/dashboards/inventory'
+      fullPath: '/dashboards/inventory'
+      preLoaderRoute: typeof AuthenticatedDashboardsInventoryRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/accounting/trial-balance': {
@@ -2244,6 +2304,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAccountingReconciliationRoute: typeof AuthenticatedAccountingReconciliationRoute
   AuthenticatedAccountingTaxReportRoute: typeof AuthenticatedAccountingTaxReportRoute
   AuthenticatedAccountingTrialBalanceRoute: typeof AuthenticatedAccountingTrialBalanceRoute
+  AuthenticatedDashboardsInventoryRoute: typeof AuthenticatedDashboardsInventoryRoute
   AuthenticatedDashboardsLogisticsRoute: typeof AuthenticatedDashboardsLogisticsRoute
   AuthenticatedDashboardsProcurementRoute: typeof AuthenticatedDashboardsProcurementRoute
   AuthenticatedDashboardsProductionRoute: typeof AuthenticatedDashboardsProductionRoute
@@ -2251,6 +2312,8 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedInventoryAdjustmentsRoute: typeof AuthenticatedInventoryAdjustmentsRoute
   AuthenticatedInventoryItemsRoute: typeof AuthenticatedInventoryItemsRouteWithChildren
   AuthenticatedInventoryLedgerRoute: typeof AuthenticatedInventoryLedgerRoute
+  AuthenticatedInventoryLotsRoute: typeof AuthenticatedInventoryLotsRoute
+  AuthenticatedInventorySerialsRoute: typeof AuthenticatedInventorySerialsRoute
   AuthenticatedInventoryTransfersRoute: typeof AuthenticatedInventoryTransfersRoute
   AuthenticatedInventoryWarehousesRoute: typeof AuthenticatedInventoryWarehousesRoute
   AuthenticatedManufacturingOrdersRoute: typeof AuthenticatedManufacturingOrdersRoute
@@ -2330,6 +2393,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAccountingTaxReportRoute: AuthenticatedAccountingTaxReportRoute,
   AuthenticatedAccountingTrialBalanceRoute:
     AuthenticatedAccountingTrialBalanceRoute,
+  AuthenticatedDashboardsInventoryRoute: AuthenticatedDashboardsInventoryRoute,
   AuthenticatedDashboardsLogisticsRoute: AuthenticatedDashboardsLogisticsRoute,
   AuthenticatedDashboardsProcurementRoute:
     AuthenticatedDashboardsProcurementRoute,
@@ -2341,6 +2405,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedInventoryItemsRoute:
     AuthenticatedInventoryItemsRouteWithChildren,
   AuthenticatedInventoryLedgerRoute: AuthenticatedInventoryLedgerRoute,
+  AuthenticatedInventoryLotsRoute: AuthenticatedInventoryLotsRoute,
+  AuthenticatedInventorySerialsRoute: AuthenticatedInventorySerialsRoute,
   AuthenticatedInventoryTransfersRoute: AuthenticatedInventoryTransfersRoute,
   AuthenticatedInventoryWarehousesRoute: AuthenticatedInventoryWarehousesRoute,
   AuthenticatedManufacturingOrdersRoute: AuthenticatedManufacturingOrdersRoute,

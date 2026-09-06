@@ -55,6 +55,8 @@ import {
   CalendarRange,
   GitBranch,
   PackageSearch,
+  FlaskConical,
+  Fingerprint,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -117,6 +119,8 @@ export const navGroups: NavGroup[] = [
       { title: "Warehouses", url: "/inventory/warehouses", icon: Warehouse },
       { title: "Adjustments", url: "/inventory/adjustments", icon: PackagePlus },
       { title: "Stock Transfers", url: "/inventory/transfers", icon: ArrowLeftRight, feature: "multi_location" },
+      { title: "Lots & Batches", url: "/inventory/lots", icon: FlaskConical },
+      { title: "Serial Numbers", url: "/inventory/serials", icon: Fingerprint },
       { title: "Inventory Ledger", url: "/inventory/ledger", icon: BookOpen },
     ],
   },
