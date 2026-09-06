@@ -1247,7 +1247,7 @@ export function Item360Page({ id, backTo = "/inventory/items", backLabel = "Item
               </Card>
 
               {/* UOM conversions */}
-              <Card className="lg:col-span-2">
+              <Card className="lg:col-span-2 2xl:col-span-3">
                 <CardHeader className="pb-2 pt-4 px-4">
                   <CardTitle className="text-sm flex items-center gap-2">
                     <RefreshCw className="h-4 w-4" /> Unit of Measure & Conversions
