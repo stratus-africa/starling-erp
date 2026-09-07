@@ -34,16 +34,16 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { ArrowLeft, ArrowRight, Building2, Check, CircleHelp, Loader2, Save } from "lucide-react";
+import { Building2, CircleHelp, Loader2, Save } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-const STEPS = [
-  "Basic Information",
-  "Identity & Contact",
-  "Addresses",
-  "Financial & Tax",
-  "Commercial Terms",
-  "Additional Information",
-];
+const SUPPLIER_TABS = [
+  { value: "basic", label: "Basic Information" },
+  { value: "contact", label: "Contact Information" },
+  { value: "address", label: "Address" },
+  { value: "financial", label: "Financial & Banking" },
+  { value: "additional", label: "Additional Information" },
+] as const;
 const CURRENCIES = ["USD", "EUR", "GBP", "KES", "AED", "EGP", "INR", "ZAR"];
 const TERMS = ["Due on Receipt", "Net 7", "Net 15", "Net 30", "Net 45", "Net 60"];
 
@@ -66,7 +66,7 @@ export function SupplierCreateEditWindow({
   const qc = useQueryClient();
   const isNew = id === "new";
   const canWrite = hasRole(["tenant_admin", "super_admin", "purchasing"]);
-  const [step, setStep] = useState(0);
+  const [activeTab, setActiveTab] = useState<(typeof SUPPLIER_TABS)[number]["value"]>("basic");
   const [values, setValues] = useState<Values>(() =>
     Object.fromEntries(
       fields.map((field) => [field.key, field.defaultValue ?? (field.type === "number" ? "" : "")]),
@@ -136,19 +136,30 @@ export function SupplierCreateEditWindow({
     });
     setDirty(true);
   };
-  const fieldsByStep = useMemo(
+  const fieldsByTab = useMemo(
     () => ({
-      0: fields.filter((field) => ["name", "code", "category", "status"].includes(field.key)),
-      1: fields.filter((field) => ["email", "phone"].includes(field.key)),
-      2: fields.filter((field) => ["billing_address", "shipping_address"].includes(field.key)),
-      3: fields.filter((field) =>
+      basic: fields.filter((field) => ["name", "code", "category", "status"].includes(field.key)),
+      contact: fields.filter((field) =>
+        ["contact_person", "email", "phone", "website"].includes(field.key),
+      ),
+      address: fields.filter((field) =>
+        ["billing_address", "shipping_address"].includes(field.key),
+      ),
+      financial: fields.filter((field) =>
         ["currency", "payment_terms", "tax_id", "credit_limit", "balance"].includes(field.key),
       ),
-      4: fields.filter((field) => ["category"].includes(field.key)),
-      5: fields.filter((field) => field.key === "notes"),
+      additional: fields.filter((field) => ["notes", "website"].includes(field.key)),
     }),
     [fields],
   );
+
+  const tabForField = (key: string) => {
+    if (fieldsByTab.contact.some((field) => field.key === key)) return "contact" as const;
+    if (fieldsByTab.address.some((field) => field.key === key)) return "address" as const;
+    if (fieldsByTab.financial.some((field) => field.key === key)) return "financial" as const;
+    if (fieldsByTab.additional.some((field) => field.key === key)) return "additional" as const;
+    return "basic" as const;
+  };
 
   const validate = () => {
     const next: Record<string, string> = {};
@@ -170,6 +181,8 @@ export function SupplierCreateEditWindow({
     )
       next.credit_limit = "Credit limit cannot be negative";
     setErrors(next);
+    const firstError = Object.keys(next)[0];
+    if (firstError) setActiveTab(tabForField(firstError));
     return Object.keys(next).length === 0;
   };
 
@@ -212,7 +225,7 @@ export function SupplierCreateEditWindow({
             ]),
           ),
         );
-        setStep(0);
+        setActiveTab("basic");
         return;
       }
       onSaved?.(savedId);
@@ -297,86 +310,80 @@ export function SupplierCreateEditWindow({
             </DialogDescription>
           </DialogHeader>
           <div className="min-h-0 flex-1 overflow-y-auto">
-            <div className="grid min-h-full lg:grid-cols-[190px_minmax(0,1fr)_230px]">
-              <nav className="border-b bg-muted/20 p-4 lg:border-b-0 lg:border-r">
-                <p className="mb-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                  Supplier setup
-                </p>
-                <div className="flex gap-2 overflow-x-auto lg:block lg:space-y-1">
-                  {STEPS.map((label, index) => (
-                    <button
-                      key={label}
-                      type="button"
-                      onClick={() => setStep(index)}
-                      className={`flex shrink-0 items-center gap-2 rounded-md px-3 py-2 text-left text-xs transition-colors lg:w-full ${step === index ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}
-                    >
-                      <span
-                        className={`flex h-5 w-5 items-center justify-center rounded-full border text-[10px] ${step === index ? "border-primary-foreground" : "border-current"}`}
-                      >
-                        {index < step ? <Check className="h-3 w-3" /> : index + 1}
-                      </span>
-                      {label}
-                    </button>
-                  ))}
-                </div>
-              </nav>
+            <div className="min-h-full">
               <main className="min-w-0 p-5 md:p-7">
-                <div className="mb-6">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-primary">
-                    Step {step + 1} of {STEPS.length}
-                  </p>
-                  <h2 className="mt-1 text-xl font-semibold">{STEPS[step]}</h2>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    {step === 0
-                      ? "Set the supplier account identity and status."
-                      : step === 1
-                        ? "Add the people and channels used to communicate."
-                        : step === 2
-                          ? "Keep billing and delivery information accurate."
-                          : step === 3
-                            ? "Set payables, tax, and credit information."
-                            : step === 4
-                              ? "Define purchasing preferences available in the current supplier model."
-                              : "Add internal notes for your team."}
-                  </p>
-                </div>
-                <div className="grid gap-4 sm:grid-cols-2">
-                  {fieldsByStep[step as keyof typeof fieldsByStep].map(renderField)}
-                </div>
-                {step === 0 && duplicates.length > 0 && (
-                  <div className="mt-5 rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
-                    <p className="font-medium">Possible duplicate supplier</p>
-                    {duplicates.map((duplicate) => (
-                      <p key={duplicate.id} className="mt-1 text-xs">
-                        {duplicate.name} · {duplicate.code ?? "No code"} ·{" "}
-                        {duplicate.country ?? "Country not set"}
-                      </p>
+                <Tabs
+                  value={activeTab}
+                  onValueChange={(value) => setActiveTab(value as typeof activeTab)}
+                >
+                  <TabsList className="mb-6 h-auto w-full justify-start overflow-x-auto bg-muted/50 p-1">
+                    {SUPPLIER_TABS.map((tab) => (
+                      <TabsTrigger
+                        key={tab.value}
+                        value={tab.value}
+                        className="whitespace-nowrap text-xs md:text-sm"
+                      >
+                        {tab.label}
+                      </TabsTrigger>
                     ))}
-                  </div>
-                )}
-                {step === 0 && (
-                  <div className="mt-5 flex items-center gap-2 rounded-md border bg-muted/20 p-3 text-xs text-muted-foreground">
-                    <Badge variant="secondary">Supplier</Badge> Account type follows the existing
-                    supplier master model.
-                  </div>
-                )}
-                {step === 2 && (
-                  <label className="mt-5 flex items-center gap-2 text-sm">
-                    <Checkbox
-                      checked={sameAddress}
-                      onCheckedChange={(checked) => {
-                        setSameAddress(Boolean(checked));
-                        setDirty(true);
-                      }}
-                    />{" "}
-                    Shipping address is same as billing
-                  </label>
-                )}
-                {step === 5 && (
-                  <div className="mt-6 rounded-md border bg-muted/20 p-4 text-sm text-muted-foreground">
-                    You can add more details in the next steps, or save now and continue later.
-                  </div>
-                )}
+                  </TabsList>
+                  {SUPPLIER_TABS.map((tab) => (
+                    <TabsContent key={tab.value} value={tab.value} className="mt-0">
+                      <div className="mb-5">
+                        <h2 className="text-lg font-semibold">{tab.label}</h2>
+                        <p className="mt-1 text-sm text-muted-foreground">
+                          {tab.value === "basic"
+                            ? "Set the supplier identity and account defaults."
+                            : tab.value === "contact"
+                              ? "Add the people and channels used to communicate."
+                              : tab.value === "address"
+                                ? "Keep supplier address information accurate."
+                                : tab.value === "financial"
+                                  ? "Set currency, tax, payment, and credit information."
+                                  : "Add supplier notes and additional context."}
+                        </p>
+                      </div>
+                      <div className="grid gap-4 sm:grid-cols-2">
+                        {fieldsByTab[tab.value].map(renderField)}
+                      </div>
+                      {tab.value === "basic" && duplicates.length > 0 && (
+                        <div className="mt-5 rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
+                          <p className="font-medium">Possible duplicate supplier</p>
+                          {duplicates.map((duplicate) => (
+                            <p key={duplicate.id} className="mt-1 text-xs">
+                              {duplicate.name} · {duplicate.code ?? "No code"} ·{" "}
+                              {duplicate.country ?? "Country not set"}
+                            </p>
+                          ))}
+                        </div>
+                      )}
+                      {tab.value === "basic" && (
+                        <div className="mt-5 flex items-center gap-2 rounded-md border bg-muted/20 p-3 text-xs text-muted-foreground">
+                          <Badge variant="secondary">Supplier</Badge> Account type follows the
+                          existing supplier master model.
+                        </div>
+                      )}
+                      {tab.value === "address" && (
+                        <label className="mt-5 flex items-center gap-2 text-sm">
+                          <Checkbox
+                            checked={sameAddress}
+                            onCheckedChange={(checked) => {
+                              setSameAddress(Boolean(checked));
+                              setDirty(true);
+                            }}
+                          />{" "}
+                          Shipping address is same as billing
+                        </label>
+                      )}
+                      {tab.value === "additional" && (
+                        <div className="mt-6 rounded-md border bg-muted/20 p-4 text-sm text-muted-foreground">
+                          You can add more details in the other tabs, or save now and continue
+                          later.
+                        </div>
+                      )}
+                    </TabsContent>
+                  ))}
+                </Tabs>
               </main>
               <aside className="hidden border-l bg-muted/10 p-5 xl:block">
                 <div className="rounded-lg border bg-background p-4">
@@ -415,27 +422,10 @@ export function SupplierCreateEditWindow({
                   Save & Create Another
                 </Button>
               )}
-              {step > 0 && (
-                <Button variant="outline" onClick={() => setStep((current) => current - 1)}>
-                  <ArrowLeft className="mr-1.5 h-4 w-4" /> Back
-                </Button>
-              )}
-              {step < STEPS.length - 1 ? (
-                <Button
-                  onClick={() => {
-                    if (step === 0 && !validate()) return;
-                    setStep((current) => current + 1);
-                  }}
-                  disabled={!canWrite}
-                >
-                  <ArrowRight className="mr-1.5 h-4 w-4" /> Next: {STEPS[step + 1]}
-                </Button>
-              ) : (
-                <Button onClick={() => save.mutate()} disabled={!canWrite || save.isPending}>
-                  {save.isPending && <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />}
-                  {isNew ? "Create Supplier" : "Save Changes"}
-                </Button>
-              )}
+              <Button onClick={() => save.mutate()} disabled={!canWrite || save.isPending}>
+                {save.isPending && <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />}
+                {isNew ? "Create Supplier" : "Save Changes"}
+              </Button>
             </div>
           </footer>
         </DialogContent>
