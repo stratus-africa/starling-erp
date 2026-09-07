@@ -1874,6 +1874,90 @@ export type Database = {
           },
         ]
       }
+      feature_flags: {
+        Row: {
+          code: string
+          created_at: string
+          description: string | null
+          enabled: boolean
+          environment: string
+          id: string
+          name: string
+          rollout_percentage: number
+          target_plans: string[]
+          target_tenants: string[]
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          description?: string | null
+          enabled?: boolean
+          environment?: string
+          id?: string
+          name: string
+          rollout_percentage?: number
+          target_plans?: string[]
+          target_tenants?: string[]
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          description?: string | null
+          enabled?: boolean
+          environment?: string
+          id?: string
+          name?: string
+          rollout_percentage?: number
+          target_plans?: string[]
+          target_tenants?: string[]
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      features: {
+        Row: {
+          category: string
+          code: string
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          sort_order: number
+          type: string
+          unit: string | null
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          code: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          sort_order?: number
+          type?: string
+          unit?: string | null
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          code?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          sort_order?: number
+          type?: string
+          unit?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       inventory_adjustments: {
         Row: {
           created_at: string
@@ -1958,6 +2042,41 @@ export type Database = {
             columns: ["warehouse_id"]
             isOneToOne: false
             referencedRelation: "warehouses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inventory_config: {
+        Row: {
+          created_at: string
+          id: string
+          key: string
+          tenant_id: string
+          updated_at: string
+          value: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          key: string
+          tenant_id: string
+          updated_at?: string
+          value?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          key?: string
+          tenant_id?: string
+          updated_at?: string
+          value?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_config_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
             referencedColumns: ["id"]
           },
         ]
@@ -2292,6 +2411,249 @@ export type Database = {
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      item_lots: {
+        Row: {
+          certificate_ref: string | null
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          expiry_date: string | null
+          id: string
+          initial_qty: number
+          item_id: string
+          location_id: string | null
+          lot_number: string
+          manufactured_date: string | null
+          notes: string | null
+          received_date: string | null
+          source_ref_id: string | null
+          source_ref_type: string | null
+          status: string
+          supplier_lot_ref: string | null
+          tenant_id: string
+          updated_at: string
+          warehouse_id: string | null
+        }
+        Insert: {
+          certificate_ref?: string | null
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          expiry_date?: string | null
+          id?: string
+          initial_qty?: number
+          item_id: string
+          location_id?: string | null
+          lot_number: string
+          manufactured_date?: string | null
+          notes?: string | null
+          received_date?: string | null
+          source_ref_id?: string | null
+          source_ref_type?: string | null
+          status?: string
+          supplier_lot_ref?: string | null
+          tenant_id: string
+          updated_at?: string
+          warehouse_id?: string | null
+        }
+        Update: {
+          certificate_ref?: string | null
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          expiry_date?: string | null
+          id?: string
+          initial_qty?: number
+          item_id?: string
+          location_id?: string | null
+          lot_number?: string
+          manufactured_date?: string | null
+          notes?: string | null
+          received_date?: string | null
+          source_ref_id?: string | null
+          source_ref_type?: string | null
+          status?: string
+          supplier_lot_ref?: string | null
+          tenant_id?: string
+          updated_at?: string
+          warehouse_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "item_lots_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_item_stock"
+            referencedColumns: ["item_id"]
+          },
+          {
+            foreignKeyName: "item_lots_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "item_lots_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "warehouse_locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "item_lots_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "item_lots_warehouse_id_fkey"
+            columns: ["warehouse_id"]
+            isOneToOne: false
+            referencedRelation: "warehouses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      item_serials: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          customer_id: string | null
+          deleted_at: string | null
+          id: string
+          issued_to_ref_id: string | null
+          issued_to_ref_type: string | null
+          item_id: string
+          location_id: string | null
+          lot_id: string | null
+          manufactured_date: string | null
+          notes: string | null
+          production_order_id: string | null
+          received_date: string | null
+          received_from_ref_id: string | null
+          received_from_ref_type: string | null
+          serial_number: string
+          status: string
+          tenant_id: string
+          updated_at: string
+          warehouse_id: string | null
+          warranty_end: string | null
+          warranty_months: number | null
+          warranty_start: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string | null
+          deleted_at?: string | null
+          id?: string
+          issued_to_ref_id?: string | null
+          issued_to_ref_type?: string | null
+          item_id: string
+          location_id?: string | null
+          lot_id?: string | null
+          manufactured_date?: string | null
+          notes?: string | null
+          production_order_id?: string | null
+          received_date?: string | null
+          received_from_ref_id?: string | null
+          received_from_ref_type?: string | null
+          serial_number: string
+          status?: string
+          tenant_id: string
+          updated_at?: string
+          warehouse_id?: string | null
+          warranty_end?: string | null
+          warranty_months?: number | null
+          warranty_start?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string | null
+          deleted_at?: string | null
+          id?: string
+          issued_to_ref_id?: string | null
+          issued_to_ref_type?: string | null
+          item_id?: string
+          location_id?: string | null
+          lot_id?: string | null
+          manufactured_date?: string | null
+          notes?: string | null
+          production_order_id?: string | null
+          received_date?: string | null
+          received_from_ref_id?: string | null
+          received_from_ref_type?: string | null
+          serial_number?: string
+          status?: string
+          tenant_id?: string
+          updated_at?: string
+          warehouse_id?: string | null
+          warranty_end?: string | null
+          warranty_months?: number | null
+          warranty_start?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "item_serials_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "item_serials_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_item_stock"
+            referencedColumns: ["item_id"]
+          },
+          {
+            foreignKeyName: "item_serials_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "item_serials_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "warehouse_locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "item_serials_lot_id_fkey"
+            columns: ["lot_id"]
+            isOneToOne: false
+            referencedRelation: "item_lots"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "item_serials_production_order_id_fkey"
+            columns: ["production_order_id"]
+            isOneToOne: false
+            referencedRelation: "production_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "item_serials_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "item_serials_warehouse_id_fkey"
+            columns: ["warehouse_id"]
+            isOneToOne: false
+            referencedRelation: "warehouses"
             referencedColumns: ["id"]
           },
         ]
@@ -3077,6 +3439,54 @@ export type Database = {
         }
         Relationships: []
       }
+      plan_entitlements: {
+        Row: {
+          config: Json
+          created_at: string
+          enabled: boolean
+          feature_id: string
+          id: string
+          limit_value: number | null
+          plan_id: string
+          updated_at: string
+        }
+        Insert: {
+          config?: Json
+          created_at?: string
+          enabled?: boolean
+          feature_id: string
+          id?: string
+          limit_value?: number | null
+          plan_id: string
+          updated_at?: string
+        }
+        Update: {
+          config?: Json
+          created_at?: string
+          enabled?: boolean
+          feature_id?: string
+          id?: string
+          limit_value?: number | null
+          plan_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plan_entitlements_feature_id_fkey"
+            columns: ["feature_id"]
+            isOneToOne: false
+            referencedRelation: "features"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plan_entitlements_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       plan_features: {
         Row: {
           feature: string
@@ -3102,8 +3512,10 @@ export type Database = {
       }
       plans: {
         Row: {
+          billing_interval: string
           code: string
           created_at: string
+          currency: string
           description: string | null
           id: string
           is_active: boolean
@@ -3113,11 +3525,14 @@ export type Database = {
           name: string
           price_usd: number
           sort_order: number
+          trial_days: number
           updated_at: string
         }
         Insert: {
+          billing_interval?: string
           code: string
           created_at?: string
+          currency?: string
           description?: string | null
           id?: string
           is_active?: boolean
@@ -3127,11 +3542,14 @@ export type Database = {
           name: string
           price_usd?: number
           sort_order?: number
+          trial_days?: number
           updated_at?: string
         }
         Update: {
+          billing_interval?: string
           code?: string
           created_at?: string
+          currency?: string
           description?: string | null
           id?: string
           is_active?: boolean
@@ -3141,7 +3559,68 @@ export type Database = {
           name?: string
           price_usd?: number
           sort_order?: number
+          trial_days?: number
           updated_at?: string
+        }
+        Relationships: []
+      }
+      platform_active_sessions: {
+        Row: {
+          admin_email: string
+          admin_role: string
+          browser: string | null
+          client_ip: unknown
+          created_at: string
+          device_type: string | null
+          expires_at: string
+          id: string
+          last_active_at: string
+          location_hint: string | null
+          os: string | null
+          revocation_reason: string | null
+          revoked_at: string | null
+          revoked_by: string | null
+          status: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          admin_email: string
+          admin_role: string
+          browser?: string | null
+          client_ip?: unknown
+          created_at?: string
+          device_type?: string | null
+          expires_at?: string
+          id?: string
+          last_active_at?: string
+          location_hint?: string | null
+          os?: string | null
+          revocation_reason?: string | null
+          revoked_at?: string | null
+          revoked_by?: string | null
+          status?: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          admin_email?: string
+          admin_role?: string
+          browser?: string | null
+          client_ip?: unknown
+          created_at?: string
+          device_type?: string | null
+          expires_at?: string
+          id?: string
+          last_active_at?: string
+          location_hint?: string | null
+          os?: string | null
+          revocation_reason?: string | null
+          revoked_at?: string | null
+          revoked_by?: string | null
+          status?: string
+          user_agent?: string | null
+          user_id?: string
         }
         Relationships: []
       }
@@ -3149,42 +3628,60 @@ export type Database = {
         Row: {
           created_at: string
           email: string
+          failed_login_count: number
           full_name: string | null
           granted_at: string
           granted_by: string | null
           is_active: boolean
+          last_failed_login_at: string | null
           last_seen_at: string | null
+          locked_until: string | null
+          mfa_enforced: boolean
+          mfa_enrolled: boolean
           notes: string | null
           platform_role: string
           revoked_at: string | null
+          session_revocation_nonce: number
           updated_at: string
           user_id: string
         }
         Insert: {
           created_at?: string
           email: string
+          failed_login_count?: number
           full_name?: string | null
           granted_at?: string
           granted_by?: string | null
           is_active?: boolean
+          last_failed_login_at?: string | null
           last_seen_at?: string | null
+          locked_until?: string | null
+          mfa_enforced?: boolean
+          mfa_enrolled?: boolean
           notes?: string | null
           platform_role?: string
           revoked_at?: string | null
+          session_revocation_nonce?: number
           updated_at?: string
           user_id: string
         }
         Update: {
           created_at?: string
           email?: string
+          failed_login_count?: number
           full_name?: string | null
           granted_at?: string
           granted_by?: string | null
           is_active?: boolean
+          last_failed_login_at?: string | null
           last_seen_at?: string | null
+          locked_until?: string | null
+          mfa_enforced?: boolean
+          mfa_enrolled?: boolean
           notes?: string | null
           platform_role?: string
           revoked_at?: string | null
+          session_revocation_nonce?: number
           updated_at?: string
           user_id?: string
         }
@@ -3198,6 +3695,51 @@ export type Database = {
           },
         ]
       }
+      platform_announcements: {
+        Row: {
+          body: string
+          created_at: string
+          created_by: string | null
+          ends_at: string | null
+          id: string
+          is_active: boolean
+          starts_at: string | null
+          target_plans: string[]
+          title: string
+          type: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          created_by?: string | null
+          ends_at?: string | null
+          id?: string
+          is_active?: boolean
+          starts_at?: string | null
+          target_plans?: string[]
+          title: string
+          type?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          created_by?: string | null
+          ends_at?: string | null
+          id?: string
+          is_active?: boolean
+          starts_at?: string | null
+          target_plans?: string[]
+          title?: string
+          type?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       platform_audit_log: {
         Row: {
           acting_as_tenant_id: string | null
@@ -3209,6 +3751,7 @@ export type Database = {
           detail: Json
           id: string
           ip_address: unknown
+          severity: string
           support_session_id: string | null
           target_id: string | null
           target_label: string | null
@@ -3225,6 +3768,7 @@ export type Database = {
           detail?: Json
           id?: string
           ip_address?: unknown
+          severity?: string
           support_session_id?: string | null
           target_id?: string | null
           target_label?: string | null
@@ -3241,6 +3785,7 @@ export type Database = {
           detail?: Json
           id?: string
           ip_address?: unknown
+          severity?: string
           support_session_id?: string | null
           target_id?: string | null
           target_label?: string | null
@@ -3263,6 +3808,48 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      platform_login_activity: {
+        Row: {
+          city: string | null
+          country: string | null
+          created_at: string
+          email: string
+          failure_reason: string | null
+          id: string
+          ip_address: unknown
+          risk_score: number | null
+          status: string
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          city?: string | null
+          country?: string | null
+          created_at?: string
+          email: string
+          failure_reason?: string | null
+          id?: string
+          ip_address?: unknown
+          risk_score?: number | null
+          status: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          city?: string | null
+          country?: string | null
+          created_at?: string
+          email?: string
+          failure_reason?: string | null
+          id?: string
+          ip_address?: unknown
+          risk_score?: number | null
+          status?: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
       }
       platform_permissions: {
         Row: {
@@ -3398,60 +3985,123 @@ export type Database = {
           },
         ]
       }
+      platform_settings: {
+        Row: {
+          category: string
+          description: string | null
+          is_secret: boolean
+          key: string
+          label: string
+          type: string
+          updated_at: string
+          updated_by: string | null
+          value: string | null
+        }
+        Insert: {
+          category?: string
+          description?: string | null
+          is_secret?: boolean
+          key: string
+          label: string
+          type?: string
+          updated_at?: string
+          updated_by?: string | null
+          value?: string | null
+        }
+        Update: {
+          category?: string
+          description?: string | null
+          is_secret?: boolean
+          key?: string
+          label?: string
+          type?: string
+          updated_at?: string
+          updated_by?: string | null
+          value?: string | null
+        }
+        Relationships: []
+      }
       platform_support_sessions: {
         Row: {
           admin_email: string
           admin_id: string
           authorised_by: string | null
+          client_ip: string | null
           created_at: string
           end_reason: string | null
           ended_at: string | null
           ended_by: string | null
           expires_at: string
           id: string
+          is_revoked: boolean
           reason: string
+          revocation_reason: string | null
+          revoked_at: string | null
+          revoked_by: string | null
           started_at: string
           status: string
           target_tenant_id: string
           target_tenant_name: string
+          target_user_email: string | null
+          target_user_id: string | null
+          target_user_name: string | null
           tenant_snapshot: Json
           updated_at: string
+          user_agent: string | null
         }
         Insert: {
           admin_email: string
           admin_id: string
           authorised_by?: string | null
+          client_ip?: string | null
           created_at?: string
           end_reason?: string | null
           ended_at?: string | null
           ended_by?: string | null
           expires_at?: string
           id?: string
+          is_revoked?: boolean
           reason: string
+          revocation_reason?: string | null
+          revoked_at?: string | null
+          revoked_by?: string | null
           started_at?: string
           status?: string
           target_tenant_id: string
           target_tenant_name: string
+          target_user_email?: string | null
+          target_user_id?: string | null
+          target_user_name?: string | null
           tenant_snapshot?: Json
           updated_at?: string
+          user_agent?: string | null
         }
         Update: {
           admin_email?: string
           admin_id?: string
           authorised_by?: string | null
+          client_ip?: string | null
           created_at?: string
           end_reason?: string | null
           ended_at?: string | null
           ended_by?: string | null
           expires_at?: string
           id?: string
+          is_revoked?: boolean
           reason?: string
+          revocation_reason?: string | null
+          revoked_at?: string | null
+          revoked_by?: string | null
           started_at?: string
           status?: string
           target_tenant_id?: string
           target_tenant_name?: string
+          target_user_email?: string | null
+          target_user_id?: string | null
+          target_user_name?: string | null
           tenant_snapshot?: Json
           updated_at?: string
+          user_agent?: string | null
         }
         Relationships: [
           {
@@ -3555,19 +4205,175 @@ export type Database = {
           },
         ]
       }
+      production_entries: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          entry_date: string
+          entry_number: number
+          id: string
+          location_id: string | null
+          lot_id: string | null
+          lot_number: string | null
+          movement_ids: Json | null
+          notes: string | null
+          operator_id: string | null
+          production_order_id: string
+          qty_produced: number
+          qty_scrap: number
+          status: string
+          tenant_id: string
+          total_cost: number
+          unit_cost: number
+          updated_at: string
+          void_reason: string | null
+          voided_at: string | null
+          voided_by: string | null
+          warehouse_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          entry_date?: string
+          entry_number?: number
+          id?: string
+          location_id?: string | null
+          lot_id?: string | null
+          lot_number?: string | null
+          movement_ids?: Json | null
+          notes?: string | null
+          operator_id?: string | null
+          production_order_id: string
+          qty_produced: number
+          qty_scrap?: number
+          status?: string
+          tenant_id: string
+          total_cost?: number
+          unit_cost?: number
+          updated_at?: string
+          void_reason?: string | null
+          voided_at?: string | null
+          voided_by?: string | null
+          warehouse_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          entry_date?: string
+          entry_number?: number
+          id?: string
+          location_id?: string | null
+          lot_id?: string | null
+          lot_number?: string | null
+          movement_ids?: Json | null
+          notes?: string | null
+          operator_id?: string | null
+          production_order_id?: string
+          qty_produced?: number
+          qty_scrap?: number
+          status?: string
+          tenant_id?: string
+          total_cost?: number
+          unit_cost?: number
+          updated_at?: string
+          void_reason?: string | null
+          voided_at?: string | null
+          voided_by?: string | null
+          warehouse_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "production_entries_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "warehouse_locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "production_entries_lot_id_fkey"
+            columns: ["lot_id"]
+            isOneToOne: false
+            referencedRelation: "item_lots"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "production_entries_operator_id_fkey"
+            columns: ["operator_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "production_entries_production_order_id_fkey"
+            columns: ["production_order_id"]
+            isOneToOne: false
+            referencedRelation: "production_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "production_entries_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "production_entries_voided_by_fkey"
+            columns: ["voided_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "production_entries_warehouse_id_fkey"
+            columns: ["warehouse_id"]
+            isOneToOne: false
+            referencedRelation: "warehouses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       production_orders: {
         Row: {
+          actual_end: string | null
+          actual_start: string | null
+          allow_overproduction: boolean
+          approved_at: string | null
+          approved_by: string | null
           bom_id: string | null
+          bom_version_snapshot: string | null
+          cancelled_at: string | null
+          cancelled_by: string | null
+          closed_at: string | null
+          closed_by: string | null
+          confirmed_at: string | null
+          confirmed_by: string | null
           created_at: string
           created_by: string | null
           date: string
           deleted_at: string | null
           id: string
+          location_id: string | null
           notes: string | null
           number: string
+          pause_reason: string | null
+          paused_at: string | null
+          paused_by: string | null
+          planned_end: string | null
+          planned_start: string | null
           posted_at: string | null
+          priority: number
+          qty_produced: number
+          qty_remaining: number
+          quality_check_at: string | null
+          quality_check_by: string | null
+          quality_notes: string | null
           quantity: number
           quantity_uom: string | null
+          released_at: string | null
+          released_by: string | null
+          reserved_at: string | null
+          reserved_by: string | null
           reversal_id: string | null
           status: string | null
           tenant_id: string
@@ -3578,17 +4384,45 @@ export type Database = {
           warehouse_id: string | null
         }
         Insert: {
+          actual_end?: string | null
+          actual_start?: string | null
+          allow_overproduction?: boolean
+          approved_at?: string | null
+          approved_by?: string | null
           bom_id?: string | null
+          bom_version_snapshot?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
+          closed_at?: string | null
+          closed_by?: string | null
+          confirmed_at?: string | null
+          confirmed_by?: string | null
           created_at?: string
           created_by?: string | null
           date?: string
           deleted_at?: string | null
           id?: string
+          location_id?: string | null
           notes?: string | null
           number: string
+          pause_reason?: string | null
+          paused_at?: string | null
+          paused_by?: string | null
+          planned_end?: string | null
+          planned_start?: string | null
           posted_at?: string | null
+          priority?: number
+          qty_produced?: number
+          qty_remaining?: number
+          quality_check_at?: string | null
+          quality_check_by?: string | null
+          quality_notes?: string | null
           quantity?: number
           quantity_uom?: string | null
+          released_at?: string | null
+          released_by?: string | null
+          reserved_at?: string | null
+          reserved_by?: string | null
           reversal_id?: string | null
           status?: string | null
           tenant_id: string
@@ -3599,17 +4433,45 @@ export type Database = {
           warehouse_id?: string | null
         }
         Update: {
+          actual_end?: string | null
+          actual_start?: string | null
+          allow_overproduction?: boolean
+          approved_at?: string | null
+          approved_by?: string | null
           bom_id?: string | null
+          bom_version_snapshot?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
+          closed_at?: string | null
+          closed_by?: string | null
+          confirmed_at?: string | null
+          confirmed_by?: string | null
           created_at?: string
           created_by?: string | null
           date?: string
           deleted_at?: string | null
           id?: string
+          location_id?: string | null
           notes?: string | null
           number?: string
+          pause_reason?: string | null
+          paused_at?: string | null
+          paused_by?: string | null
+          planned_end?: string | null
+          planned_start?: string | null
           posted_at?: string | null
+          priority?: number
+          qty_produced?: number
+          qty_remaining?: number
+          quality_check_at?: string | null
+          quality_check_by?: string | null
+          quality_notes?: string | null
           quantity?: number
           quantity_uom?: string | null
+          released_at?: string | null
+          released_by?: string | null
+          reserved_at?: string | null
+          reserved_by?: string | null
           reversal_id?: string | null
           status?: string | null
           tenant_id?: string
@@ -3621,10 +4483,73 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "production_orders_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "production_orders_bom_id_fkey"
             columns: ["bom_id"]
             isOneToOne: false
             referencedRelation: "bom_headers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "production_orders_cancelled_by_fkey"
+            columns: ["cancelled_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "production_orders_closed_by_fkey"
+            columns: ["closed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "production_orders_confirmed_by_fkey"
+            columns: ["confirmed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "production_orders_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "warehouse_locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "production_orders_paused_by_fkey"
+            columns: ["paused_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "production_orders_quality_check_by_fkey"
+            columns: ["quality_check_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "production_orders_released_by_fkey"
+            columns: ["released_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "production_orders_reserved_by_fkey"
+            columns: ["reserved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
           {
@@ -3643,6 +4568,7 @@ export type Database = {
           email: string | null
           full_name: string | null
           id: string
+          is_active: boolean
           phone: string | null
           tenant_id: string | null
           updated_at: string
@@ -3653,6 +4579,7 @@ export type Database = {
           email?: string | null
           full_name?: string | null
           id: string
+          is_active?: boolean
           phone?: string | null
           tenant_id?: string | null
           updated_at?: string
@@ -3663,6 +4590,7 @@ export type Database = {
           email?: string | null
           full_name?: string | null
           id?: string
+          is_active?: boolean
           phone?: string | null
           tenant_id?: string | null
           updated_at?: string
@@ -3903,6 +4831,7 @@ export type Database = {
       purchase_requisitions: {
         Row: {
           amount: number | null
+          converted_adjustment_ids: string[]
           converted_po_id: string | null
           created_at: string
           created_by: string | null
@@ -3928,6 +4857,7 @@ export type Database = {
         }
         Insert: {
           amount?: number | null
+          converted_adjustment_ids?: string[]
           converted_po_id?: string | null
           created_at?: string
           created_by?: string | null
@@ -3953,6 +4883,7 @@ export type Database = {
         }
         Update: {
           amount?: number | null
+          converted_adjustment_ids?: string[]
           converted_po_id?: string | null
           created_at?: string
           created_by?: string | null
@@ -3977,6 +4908,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "purchase_requisitions_from_warehouse_id_fkey"
+            columns: ["from_warehouse_id"]
+            isOneToOne: false
+            referencedRelation: "warehouses"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "purchase_requisitions_supplier_id_fkey"
             columns: ["supplier_id"]
@@ -4461,10 +5399,12 @@ export type Database = {
           id: string
           item_id: string
           location_id: string | null
+          lot_id: string | null
           note: string | null
           quantity: number
           ref_id: string | null
           ref_type: string
+          serial_id: string | null
           source_quantity: number | null
           source_uom: string | null
           tenant_id: string
@@ -4478,10 +5418,12 @@ export type Database = {
           id?: string
           item_id: string
           location_id?: string | null
+          lot_id?: string | null
           note?: string | null
           quantity: number
           ref_id?: string | null
           ref_type: string
+          serial_id?: string | null
           source_quantity?: number | null
           source_uom?: string | null
           tenant_id: string
@@ -4495,10 +5437,12 @@ export type Database = {
           id?: string
           item_id?: string
           location_id?: string | null
+          lot_id?: string | null
           note?: string | null
           quantity?: number
           ref_id?: string | null
           ref_type?: string
+          serial_id?: string | null
           source_quantity?: number | null
           source_uom?: string | null
           tenant_id?: string
@@ -4526,6 +5470,20 @@ export type Database = {
             columns: ["location_id"]
             isOneToOne: false
             referencedRelation: "warehouse_locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_movements_lot_id_fkey"
+            columns: ["lot_id"]
+            isOneToOne: false
+            referencedRelation: "item_lots"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_movements_serial_id_fkey"
+            columns: ["serial_id"]
+            isOneToOne: false
+            referencedRelation: "item_serials"
             referencedColumns: ["id"]
           },
           {
@@ -4808,6 +5766,41 @@ export type Database = {
           },
         ]
       }
+      tenant_feature_flags: {
+        Row: {
+          created_at: string
+          enabled: boolean
+          feature: string
+          reason: string | null
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          enabled?: boolean
+          feature: string
+          reason?: string | null
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          enabled?: boolean
+          feature?: string
+          reason?: string | null
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_feature_flags_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tenant_features: {
         Row: {
           enabled: boolean
@@ -4884,9 +5877,14 @@ export type Database = {
       }
       tenant_subscriptions: {
         Row: {
+          amount: number | null
+          billing_interval: string
+          cancel_at_period_end: boolean
+          cancellation_reason: string | null
           cancelled_at: string | null
           created_at: string
           created_by: string | null
+          currency: string
           current_period_end: string | null
           current_period_start: string
           external_id: string | null
@@ -4895,6 +5893,7 @@ export type Database = {
           notes: string | null
           override_max_storage: number | null
           override_max_users: number | null
+          payment_status: string
           plan_id: string
           status: string
           tenant_id: string
@@ -4902,9 +5901,14 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          amount?: number | null
+          billing_interval?: string
+          cancel_at_period_end?: boolean
+          cancellation_reason?: string | null
           cancelled_at?: string | null
           created_at?: string
           created_by?: string | null
+          currency?: string
           current_period_end?: string | null
           current_period_start?: string
           external_id?: string | null
@@ -4913,6 +5917,7 @@ export type Database = {
           notes?: string | null
           override_max_storage?: number | null
           override_max_users?: number | null
+          payment_status?: string
           plan_id: string
           status?: string
           tenant_id: string
@@ -4920,9 +5925,14 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          amount?: number | null
+          billing_interval?: string
+          cancel_at_period_end?: boolean
+          cancellation_reason?: string | null
           cancelled_at?: string | null
           created_at?: string
           created_by?: string | null
+          currency?: string
           current_period_end?: string | null
           current_period_start?: string
           external_id?: string | null
@@ -4931,6 +5941,7 @@ export type Database = {
           notes?: string | null
           override_max_storage?: number | null
           override_max_users?: number | null
+          payment_status?: string
           plan_id?: string
           status?: string
           tenant_id?: string
@@ -4956,34 +5967,121 @@ export type Database = {
       }
       tenants: {
         Row: {
+          address_line1: string | null
+          address_line2: string | null
+          business_type: string | null
+          city: string | null
+          country: string | null
           created_at: string
           currency: string
+          date_format: string | null
           deleted_at: string | null
+          description: string | null
+          email: string | null
+          fiscal_year_end: string | null
+          fiscal_year_start: string | null
           id: string
+          industry: string | null
+          legal_name: string | null
+          logo_url: string | null
           name: string
+          number_format: string | null
+          phone: string | null
+          postal_code: string | null
+          registration_number: string | null
+          signature_url: string | null
           slug: string
+          stamp_url: string | null
+          state_province: string | null
           status: string
+          tax_authority: string | null
+          tax_id: string | null
+          tax_inclusive_pricing: boolean | null
+          tax_regime: string | null
+          timezone: string | null
+          trading_name: string | null
           updated_at: string
+          vat_number: string | null
+          website: string | null
+          year_established: number | null
         }
         Insert: {
+          address_line1?: string | null
+          address_line2?: string | null
+          business_type?: string | null
+          city?: string | null
+          country?: string | null
           created_at?: string
           currency?: string
+          date_format?: string | null
           deleted_at?: string | null
+          description?: string | null
+          email?: string | null
+          fiscal_year_end?: string | null
+          fiscal_year_start?: string | null
           id?: string
+          industry?: string | null
+          legal_name?: string | null
+          logo_url?: string | null
           name: string
+          number_format?: string | null
+          phone?: string | null
+          postal_code?: string | null
+          registration_number?: string | null
+          signature_url?: string | null
           slug: string
+          stamp_url?: string | null
+          state_province?: string | null
           status?: string
+          tax_authority?: string | null
+          tax_id?: string | null
+          tax_inclusive_pricing?: boolean | null
+          tax_regime?: string | null
+          timezone?: string | null
+          trading_name?: string | null
           updated_at?: string
+          vat_number?: string | null
+          website?: string | null
+          year_established?: number | null
         }
         Update: {
+          address_line1?: string | null
+          address_line2?: string | null
+          business_type?: string | null
+          city?: string | null
+          country?: string | null
           created_at?: string
           currency?: string
+          date_format?: string | null
           deleted_at?: string | null
+          description?: string | null
+          email?: string | null
+          fiscal_year_end?: string | null
+          fiscal_year_start?: string | null
           id?: string
+          industry?: string | null
+          legal_name?: string | null
+          logo_url?: string | null
           name?: string
+          number_format?: string | null
+          phone?: string | null
+          postal_code?: string | null
+          registration_number?: string | null
+          signature_url?: string | null
           slug?: string
+          stamp_url?: string | null
+          state_province?: string | null
           status?: string
+          tax_authority?: string | null
+          tax_id?: string | null
+          tax_inclusive_pricing?: boolean | null
+          tax_regime?: string | null
+          timezone?: string | null
+          trading_name?: string | null
           updated_at?: string
+          vat_number?: string | null
+          website?: string | null
+          year_established?: number | null
         }
         Relationships: []
       }
@@ -5262,6 +6360,7 @@ export type Database = {
       }
       warehouses: {
         Row: {
+          capacity_sqm: number | null
           code: string | null
           created_at: string
           created_by: string | null
@@ -5274,6 +6373,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          capacity_sqm?: number | null
           code?: string | null
           created_at?: string
           created_by?: string | null
@@ -5286,6 +6386,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          capacity_sqm?: number | null
           code?: string | null
           created_at?: string
           created_by?: string | null
@@ -5515,14 +6616,377 @@ export type Database = {
         }
         Returns: string
       }
+      admin_cancel_subscription: {
+        Args: {
+          _cancellation_reason?: string
+          _immediate?: boolean
+          _reason?: string
+          _subscription_id: string
+        }
+        Returns: Json
+      }
+      admin_change_subscription_plan: {
+        Args: {
+          _new_plan_id: string
+          _notes?: string
+          _reason?: string
+          _subscription_id: string
+        }
+        Returns: Json
+      }
+      admin_create_announcement: {
+        Args: {
+          _body: string
+          _ends_at?: string
+          _is_active?: boolean
+          _starts_at?: string
+          _target_plans?: string[]
+          _title: string
+          _type?: string
+        }
+        Returns: string
+      }
+      admin_delete_announcement: { Args: { _id: string }; Returns: undefined }
+      admin_extend_subscription_trial: {
+        Args: {
+          _days?: number
+          _new_trial_end?: string
+          _reason?: string
+          _subscription_id: string
+        }
+        Returns: Json
+      }
+      admin_get_flag_history: { Args: { _flag_code: string }; Returns: Json }
+      admin_get_platform_audit_stats: {
+        Args: never
+        Returns: {
+          active_admins_24h: number
+          critical_events: number
+          events_24h: number
+          high_events: number
+          support_sessions: number
+          total_events: number
+        }[]
+      }
+      admin_get_security_center_overview: {
+        Args: never
+        Returns: {
+          active_admins: number
+          active_sessions_count: number
+          active_support_sessions: number
+          critical_events_count: number
+          disabled_admins: number
+          failed_logins_24h: number
+          high_risk_logins_24h: number
+          mfa_compliance_rate: number
+          mfa_enrolled_admins: number
+          system_security_posture: string
+          total_admins: number
+          unresolved_security_events: number
+        }[]
+      }
+      admin_get_sessions: {
+        Args: { _limit?: number }
+        Returns: {
+          aal: string
+          created_at: string
+          factor_id: string
+          id: string
+          ip: unknown
+          not_after: string
+          refreshed_at: string
+          tag: string
+          updated_at: string
+          user_agent: string
+          user_id: string
+        }[]
+      }
+      admin_get_subscription_detail: {
+        Args: { _subscription_id: string }
+        Returns: Json
+      }
+      admin_get_support_session_actions: {
+        Args: { _session_id: string }
+        Returns: {
+          action: string
+          actor_email: string
+          created_at: string
+          detail: Json
+          id: string
+          ip_address: unknown
+          target_id: string
+          target_label: string
+          target_type: string
+          user_agent: string
+        }[]
+      }
+      admin_get_user_activity: {
+        Args: { _limit?: number; _tenant_id: string; _user_id: string }
+        Returns: {
+          created_at: string
+          details: Json
+          entity_id: string
+          entity_type: string
+          event_type: string
+          source: string
+        }[]
+      }
       admin_grant_platform_access: {
         Args: { _notes?: string; _platform_role?: string; _user_id: string }
         Returns: undefined
       }
+      admin_list_feature_flags: { Args: never; Returns: Json }
+      admin_list_login_activity: {
+        Args: {
+          _from?: string
+          _limit?: number
+          _offset?: number
+          _risk_only?: boolean
+          _search?: string
+          _status?: string
+          _to?: string
+        }
+        Returns: {
+          city: string
+          country: string
+          created_at: string
+          email: string
+          failure_reason: string
+          id: string
+          ip_address: unknown
+          risk_score: number
+          status: string
+          total_count: number
+          user_agent: string
+          user_id: string
+        }[]
+      }
+      admin_list_plans_and_features: { Args: never; Returns: Json }
+      admin_list_platform_admins: {
+        Args: {
+          _limit?: number
+          _offset?: number
+          _role?: string
+          _search?: string
+          _status?: string
+        }
+        Returns: {
+          active_sessions: number
+          email: string
+          failed_logins: number
+          full_name: string
+          granted_at: string
+          is_active: boolean
+          last_seen_at: string
+          mfa_enforced: boolean
+          mfa_enrolled: boolean
+          notes: string
+          platform_role: string
+          total_count: number
+          user_id: string
+        }[]
+      }
+      admin_list_platform_audit_logs: {
+        Args: {
+          _action?: string
+          _actor_email?: string
+          _from?: string
+          _limit?: number
+          _offset?: number
+          _search?: string
+          _severity?: string
+          _tenant_id?: string
+          _to?: string
+        }
+        Returns: {
+          acting_as_tenant_id: string
+          action: string
+          actor_email: string
+          actor_id: string
+          actor_role: string
+          created_at: string
+          detail: Json
+          id: string
+          ip_address: unknown
+          severity: string
+          support_session_id: string
+          target_id: string
+          target_label: string
+          target_type: string
+          tenant_name: string
+          total_count: number
+          user_agent: string
+        }[]
+      }
+      admin_list_platform_sessions: {
+        Args: {
+          _limit?: number
+          _offset?: number
+          _search?: string
+          _status?: string
+          _user_id?: string
+        }
+        Returns: {
+          admin_email: string
+          admin_role: string
+          browser: string
+          client_ip: unknown
+          created_at: string
+          device_type: string
+          expires_at: string
+          id: string
+          last_active_at: string
+          location_hint: string
+          minutes_remaining: number
+          os: string
+          revocation_reason: string
+          revoked_at: string
+          status: string
+          total_count: number
+          user_agent: string
+          user_id: string
+        }[]
+      }
+      admin_list_security_events: {
+        Args: {
+          _limit?: number
+          _offset?: number
+          _resolved?: boolean
+          _search?: string
+          _severity?: string
+        }
+        Returns: {
+          actor_email: string
+          actor_id: string
+          created_at: string
+          detail: Json
+          event_type: string
+          id: string
+          ip_address: unknown
+          resolution_note: string
+          resolved: boolean
+          resolved_at: string
+          resolved_by: string
+          severity: string
+          tenant_id: string
+          tenant_name: string
+          total_count: number
+          user_agent: string
+        }[]
+      }
+      admin_list_support_sessions: {
+        Args: {
+          _admin_id?: string
+          _limit?: number
+          _offset?: number
+          _search?: string
+          _status?: string
+          _tenant_id?: string
+        }
+        Returns: {
+          actions_count: number
+          admin_email: string
+          admin_id: string
+          admin_name: string
+          client_ip: string
+          end_reason: string
+          ended_at: string
+          expires_at: string
+          id: string
+          is_revoked: boolean
+          minutes_remaining: number
+          reason: string
+          revoked_at: string
+          started_at: string
+          status: string
+          target_tenant_id: string
+          target_tenant_name: string
+          target_user_email: string
+          target_user_id: string
+          target_user_name: string
+          total_count: number
+          user_agent: string
+        }[]
+      }
+      admin_list_tenant_subscriptions: {
+        Args: {
+          _limit?: number
+          _offset?: number
+          _payment_status?: string
+          _plan_id?: string
+          _search?: string
+          _status?: string
+        }
+        Returns: {
+          amount: number
+          billing_interval: string
+          cancel_at_period_end: boolean
+          cancellation_reason: string
+          cancelled_at: string
+          created_at: string
+          currency: string
+          current_period_end: string
+          current_period_start: string
+          id: string
+          is_trialing: boolean
+          notes: string
+          payment_status: string
+          plan_code: string
+          plan_id: string
+          plan_name: string
+          plan_price: number
+          status: string
+          tenant_id: string
+          tenant_name: string
+          tenant_slug: string
+          total_count: number
+          trial_days_remaining: number
+          trial_ends_at: string
+          updated_at: string
+        }[]
+      }
       admin_ping: { Args: never; Returns: boolean }
+      admin_reactivate_subscription: {
+        Args: { _reason?: string; _subscription_id: string }
+        Returns: Json
+      }
+      admin_remove_tenant_user: {
+        Args: { _reason?: string; _tenant_id: string; _user_id: string }
+        Returns: Json
+      }
+      admin_resolve_security_event: {
+        Args: { _event_id: string; _resolution_note?: string }
+        Returns: undefined
+      }
+      admin_revoke_all_admin_sessions: {
+        Args: { _reason?: string; _user_id: string }
+        Returns: number
+      }
       admin_revoke_platform_access: {
         Args: { _reason?: string; _user_id: string }
         Returns: undefined
+      }
+      admin_revoke_platform_session: {
+        Args: { _reason?: string; _session_id: string }
+        Returns: undefined
+      }
+      admin_revoke_session: {
+        Args: { _reason?: string; _session_id: string }
+        Returns: undefined
+      }
+      admin_revoke_tenant_user_sessions: {
+        Args: { _reason?: string; _tenant_id: string; _user_id: string }
+        Returns: Json
+      }
+      admin_save_feature: { Args: { _payload: Json }; Returns: Json }
+      admin_save_feature_flag: {
+        Args: { _payload: Json; _reason?: string }
+        Returns: Json
+      }
+      admin_save_plan: { Args: { _payload: Json }; Returns: Json }
+      admin_save_plan_entitlements: {
+        Args: { _entitlements: Json; _plan_id: string; _reason?: string }
+        Returns: Json
       }
       admin_set_feature_flag: {
         Args: {
@@ -5533,6 +6997,31 @@ export type Database = {
         }
         Returns: undefined
       }
+      admin_set_plan_status: {
+        Args: { _is_active: boolean; _plan_id: string; _reason?: string }
+        Returns: Json
+      }
+      admin_set_platform_admin_role: {
+        Args: { _admin_id: string; _new_role: string; _reason?: string }
+        Returns: undefined
+      }
+      admin_set_platform_admin_status: {
+        Args: { _admin_id: string; _is_active: boolean; _reason?: string }
+        Returns: undefined
+      }
+      admin_set_platform_setting: {
+        Args: { _key: string; _value: string }
+        Returns: undefined
+      }
+      admin_set_tenant_flag_override: {
+        Args: {
+          _enabled: boolean
+          _flag_code: string
+          _reason?: string
+          _tenant_id: string
+        }
+        Returns: Json
+      }
       admin_set_tenant_plan: {
         Args: { _notes?: string; _plan_id: string; _tenant_id: string }
         Returns: string
@@ -5541,10 +7030,49 @@ export type Database = {
         Args: { _new_status: string; _reason?: string; _tenant_id: string }
         Returns: undefined
       }
+      admin_set_tenant_user_roles: {
+        Args: {
+          _reason?: string
+          _roles: string[]
+          _tenant_id: string
+          _user_id: string
+        }
+        Returns: Json
+      }
+      admin_set_tenant_user_status: {
+        Args: {
+          _is_active: boolean
+          _reason?: string
+          _tenant_id: string
+          _user_id: string
+        }
+        Returns: Json
+      }
       admin_set_user_roles: {
         Args: {
           new_roles: Database["public"]["Enums"]["app_role"][]
           target_user: string
+        }
+        Returns: undefined
+      }
+      admin_suspend_subscription: {
+        Args: { _reason?: string; _subscription_id: string }
+        Returns: Json
+      }
+      admin_toggle_feature_flag: {
+        Args: { _enabled: boolean; _flag_id: string; _reason?: string }
+        Returns: Json
+      }
+      admin_update_announcement: {
+        Args: {
+          _body: string
+          _ends_at?: string
+          _id: string
+          _is_active: boolean
+          _starts_at?: string
+          _target_plans?: string[]
+          _title: string
+          _type: string
         }
         Returns: undefined
       }
@@ -5568,6 +7096,14 @@ export type Database = {
         Returns: boolean
       }
       approve_bom: { Args: { _bom_id: string }; Returns: undefined }
+      approve_production_order: {
+        Args: { _order_id: string }
+        Returns: undefined
+      }
+      approve_stock_requisition: {
+        Args: { _req_id: string }
+        Returns: string[]
+      }
       assert_period_open: {
         Args: { _date: string; _tenant_id: string }
         Returns: undefined
@@ -5576,13 +7112,50 @@ export type Database = {
       audit_request_user_agent: { Args: never; Returns: string }
       begin_support_session: {
         Args: {
+          _client_ip?: string
           _reason: string
           _target_tenant_id: string
+          _target_user_id?: string
           _ttl_minutes?: number
+          _user_agent?: string
         }
         Returns: string
       }
       bom_refresh_uom_factors: { Args: { _bom_id: string }; Returns: number }
+      can_tenant_use_feature: {
+        Args: { _feature_code: string; _tenant_id: string }
+        Returns: boolean
+      }
+      cancel_approval_request: {
+        Args: { _reason?: string; _request_id: string }
+        Returns: {
+          amount: number | null
+          completed_at: string | null
+          created_at: string
+          current_step: number
+          entity_id: string
+          entity_type: string
+          id: string
+          idempotency_key: string | null
+          payload: Json
+          requested_by: string
+          status: string
+          submitted_at: string
+          tenant_id: string
+          updated_at: string
+          workflow_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "approval_requests"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      cancel_production_order: {
+        Args: { _order_id: string }
+        Returns: undefined
+      }
       check_inventory_stock_integrity: {
         Args: { _item_id?: string }
         Returns: {
@@ -5595,6 +7168,36 @@ export type Database = {
           sku: string
         }[]
       }
+      check_material_availability: {
+        Args: { _order_id: string }
+        Returns: {
+          available: number
+          is_subassembly: boolean
+          item_id: string
+          item_name: string
+          on_hand: number
+          required_qty: number
+          reserved: number
+          reserved_this_order: number
+          shortage: number
+          sku: string
+          uom: string
+          warehouse_id: string
+          warehouse_name: string
+        }[]
+      }
+      check_tenant_limit_enforcement: {
+        Args: {
+          _current_count: number
+          _feature_code: string
+          _tenant_id: string
+        }
+        Returns: Json
+      }
+      close_production_order: {
+        Args: { _order_id: string }
+        Returns: undefined
+      }
       complete_posting: {
         Args: {
           _action: string
@@ -5604,6 +7207,14 @@ export type Database = {
           _require_journal?: boolean
         }
         Returns: string
+      }
+      complete_production_quality_check: {
+        Args: { _notes?: string; _order_id: string }
+        Returns: undefined
+      }
+      confirm_production_order: {
+        Args: { _order_id: string }
+        Returns: undefined
       }
       convert_order_to_invoice: { Args: { _order_id: string }; Returns: string }
       convert_po_to_bill: { Args: { _po_id: string }; Returns: string }
@@ -5641,6 +7252,24 @@ export type Database = {
         }
         Returns: string
       }
+      create_production_reservations: {
+        Args: { _order_id: string }
+        Returns: {
+          available: number
+          is_subassembly: boolean
+          item_id: string
+          item_name: string
+          on_hand: number
+          required_qty: number
+          reserved: number
+          reserved_this_order: number
+          shortage: number
+          sku: string
+          uom: string
+          warehouse_id: string
+          warehouse_name: string
+        }[]
+      }
       create_reversal_journal: {
         Args: { _entity_id: string; _entity_type: string; _reason: string }
         Returns: string
@@ -5650,9 +7279,26 @@ export type Database = {
         Returns: number
       }
       current_tenant_id: { Args: never; Returns: string }
+      delete_approval_workflow: {
+        Args: { _workflow_id: string }
+        Returns: boolean
+      }
+      delete_approval_workflow_step: {
+        Args: { _step_id: string }
+        Returns: boolean
+      }
       end_support_session: {
         Args: { _reason?: string; _session_id?: string }
         Returns: undefined
+      }
+      evaluate_feature_flag: {
+        Args: {
+          _env?: string
+          _flag_code: string
+          _tenant_id?: string
+          _user_id?: string
+        }
+        Returns: boolean
       }
       explode_bom: {
         Args: { _bom_id: string; _max_depth?: number; _qty?: number }
@@ -5689,6 +7335,34 @@ export type Database = {
           started_at: string
           target_tenant_id: string
           target_tenant_name: string
+          target_user_email: string
+          target_user_id: string
+          target_user_name: string
+        }[]
+      }
+      get_all_evaluated_feature_flags: {
+        Args: { _env?: string; _tenant_id?: string; _user_id?: string }
+        Returns: Json
+      }
+      get_approval_request_audit: {
+        Args: { _request_id: string }
+        Returns: {
+          actions_history: Json
+          amount: number
+          completed_at: string
+          current_step: number
+          entity_id: string
+          entity_type: string
+          request_id: string
+          requested_by_email: string
+          requested_by_id: string
+          requested_by_name: string
+          status: string
+          submitted_at: string
+          workflow_code: string
+          workflow_id: string
+          workflow_name: string
+          workflow_steps: Json
         }[]
       }
       get_business_events: {
@@ -5801,6 +7475,7 @@ export type Database = {
           detail: Json
           id: string
           ip_address: unknown
+          severity: string
           support_session_id: string | null
           target_id: string | null
           target_label: string | null
@@ -5815,8 +7490,34 @@ export type Database = {
         }
       }
       get_platform_dashboard_stats: { Args: never; Returns: Json }
+      get_production_summary: {
+        Args: { _order_id: string }
+        Returns: {
+          completion_pct: number
+          first_run_at: string
+          last_run_at: string
+          number: string
+          order_id: string
+          qty_produced: number
+          qty_remaining: number
+          qty_scrap_total: number
+          quantity: number
+          run_count: number
+          status: string
+          total_cost: number
+        }[]
+      }
       get_sales_dashboard: { Args: never; Returns: Json }
+      get_sales_order_invoicing_status: {
+        Args: { _order_id: string }
+        Returns: Json
+      }
       get_tenant_detail: { Args: { _tenant_id: string }; Returns: Json }
+      get_tenant_entitlements: { Args: { _tenant_id: string }; Returns: Json }
+      get_tenant_limit: {
+        Args: { _feature_code: string; _tenant_id: string }
+        Returns: number
+      }
       global_search: {
         Args: {
           date_from?: string
@@ -5838,10 +7539,12 @@ export type Database = {
         Args: { _permission: string; _user_id?: string }
         Returns: boolean
       }
-      has_platform_permission: {
-        Args: { _code: string; _user_id?: string }
-        Returns: boolean
-      }
+      has_platform_permission:
+        | { Args: { _code: string; _user_id?: string }; Returns: boolean }
+        | { Args: { _code: string; _user_id: string }; Returns: boolean }
+      has_platform_role:
+        | { Args: { _role: string; _user_id?: string }; Returns: boolean }
+        | { Args: { _role: string; _user_id: string }; Returns: boolean }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -5851,6 +7554,56 @@ export type Database = {
       }
       is_platform_admin: { Args: { _user_id?: string }; Returns: boolean }
       is_super_admin: { Args: never; Returns: boolean }
+      list_platform_tenants: {
+        Args: {
+          _limit?: number
+          _offset?: number
+          _plan_code?: string
+          _search?: string
+          _status?: string
+        }
+        Returns: {
+          created_at: string
+          currency: string
+          id: string
+          name: string
+          plan_code: string
+          plan_id: string
+          plan_name: string
+          plan_price: number
+          slug: string
+          status: string
+          sub_status: string
+          total_count: number
+          trial_ends_at: string
+          updated_at: string
+          user_count: number
+        }[]
+      }
+      list_tenant_users: {
+        Args: {
+          _limit?: number
+          _offset?: number
+          _role?: string
+          _search?: string
+          _status?: string
+          _tenant_id: string
+        }
+        Returns: {
+          avatar_url: string
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+          is_active: boolean
+          last_sign_in_at: string
+          phone: string
+          platform_role: string
+          roles: string[]
+          total_count: number
+          updated_at: string
+        }[]
+      }
       manage_accounting_period: {
         Args: {
           _month: number
@@ -5866,16 +7619,32 @@ export type Database = {
         Returns: undefined
       }
       next_journal_number: { Args: { _tenant_id: string }; Returns: string }
-      platform_audit: {
-        Args: {
-          _action: string
-          _detail?: Json
-          _target_id?: string
-          _target_label?: string
-          _target_type?: string
-        }
-        Returns: string
+      pause_production_order: {
+        Args: { _order_id: string; _reason?: string }
+        Returns: undefined
       }
+      platform_audit:
+        | {
+            Args: {
+              _action: string
+              _detail?: Json
+              _target_id?: string
+              _target_label?: string
+              _target_type?: string
+            }
+            Returns: string
+          }
+        | {
+            Args: {
+              _action: string
+              _detail?: Json
+              _severity?: string
+              _target_id?: string
+              _target_label?: string
+              _target_type?: string
+            }
+            Returns: string
+          }
       post_adjustment: { Args: { _adjustment_id: string }; Returns: string }
       post_adjustment_unchecked: {
         Args: { _adjustment_id: string }
@@ -5936,6 +7705,34 @@ export type Database = {
         }
         Returns: string
       }
+      record_production_run: {
+        Args: {
+          _location_id?: string
+          _lot_number?: string
+          _notes?: string
+          _order_id: string
+          _qty_produced: number
+          _qty_scrap?: number
+          _warehouse_id?: string
+        }
+        Returns: string
+      }
+      release_production_order: {
+        Args: { _order_id: string }
+        Returns: undefined
+      }
+      release_production_reservations: {
+        Args: { _order_id: string }
+        Returns: number
+      }
+      resume_production_order: {
+        Args: { _order_id: string }
+        Returns: undefined
+      }
+      revoke_support_session: {
+        Args: { _reason?: string; _session_id: string }
+        Returns: undefined
+      }
       run_accounting_integrity_checks: { Args: never; Returns: Json }
       set_item_opening_stock: {
         Args: {
@@ -5948,6 +7745,10 @@ export type Database = {
       }
       set_role_permission_override: {
         Args: { _enabled: boolean; _permission_code: string; _role: string }
+        Returns: undefined
+      }
+      start_production_order: {
+        Args: { _order_id: string }
         Returns: undefined
       }
       switch_tenant: { Args: { target_tenant: string }; Returns: string }
@@ -5983,6 +7784,65 @@ export type Database = {
           _to: string
         }
         Returns: boolean
+      }
+      update_approval_workflow: {
+        Args: {
+          _conditions?: Json
+          _description?: string
+          _is_active?: boolean
+          _name: string
+          _workflow_id: string
+        }
+        Returns: {
+          code: string
+          conditions: Json
+          created_at: string
+          created_by: string | null
+          description: string | null
+          entity_type: string
+          id: string
+          is_active: boolean
+          name: string
+          tenant_id: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "approval_workflows"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      update_approval_workflow_step: {
+        Args: {
+          _approver_role?: string
+          _approver_type: string
+          _approver_user_id?: string
+          _minimum_approvals?: number
+          _name: string
+          _step_id: string
+        }
+        Returns: {
+          approver_role: string | null
+          approver_type: string
+          approver_user_id: string | null
+          created_at: string
+          id: string
+          minimum_approvals: number
+          name: string
+          step_order: number
+          workflow_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "approval_workflow_steps"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      upsert_inventory_config: {
+        Args: { _key: string; _value: string }
+        Returns: undefined
       }
       upsert_posting_config: {
         Args: { _account_id: string; _purpose: string }
