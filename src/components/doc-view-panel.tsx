@@ -60,6 +60,7 @@ import { useDocumentBranding, type DocTemplateKind } from "@/hooks/use-document-
 import { db } from "@/lib/typed-db";
 import type { TableName } from "@/lib/typed-db";
 import { EmailDocumentDialog } from "@/components/email-document-dialog";
+import { getDocumentTemplate } from "@/lib/document-template-types";
 
 // ── Config ────────────────────────────────────────────────────────────────────
 
@@ -1125,13 +1126,23 @@ function PdfPreview({ kind, id }: { kind: DocKind; id: string }) {
     );
   }
 
+  const templateName = {
+    modern: "Nimbus Modern",
+    corporate: "Nimbus Corporate",
+    compact: "Nimbus Compact",
+  }[getDocumentTemplate(kind as any)];
   return (
-    <iframe
-      src={pdfUri}
-      title={`${cfg.label} PDF Preview`}
-      className="h-full w-full border-0"
-      style={{ minHeight: "600px" }}
-    />
+    <div className="flex h-full min-h-[600px] flex-col">
+      <div className="flex items-center justify-between border-b bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
+        <span>Document Preview</span>
+        <span>Template: <strong className="text-foreground">{templateName}</strong></span>
+      </div>
+      <iframe
+        src={pdfUri}
+        title={`${cfg.label} PDF Preview`}
+        className="min-h-0 w-full flex-1 border-0"
+      />
+    </div>
   );
 }
 

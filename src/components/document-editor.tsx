@@ -853,9 +853,9 @@ export function DocumentEditor({
         setImportedSource(null);
         return;
       }
-      if (isNew && docId) {
+      if (docId) {
         if (onSaved) onSaved(docId);
-        else nav({ to: `${cfg.detailBase}/${docId}` as never });
+        else if (isNew) nav({ to: `${cfg.detailBase}/${docId}` as never });
       }
     },
     onError: (e: Error) => toast.error(e.message ?? "Save failed"),
