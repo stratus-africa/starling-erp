@@ -17,6 +17,8 @@ const MODULES: { key: string; label: string; route: (id: string) => string }[] =
   { key: "sales_quotes",    label: "Quotes",          route: () => `/sales/quotes` },
   { key: "purchase_orders", label: "Purchase Orders", route: () => `/purchasing/orders` },
   { key: "bills",           label: "Bills",           route: () => `/purchasing/bills` },
+  { key: "packages",        label: "Packages",        route: () => `/sales/packages` },
+  { key: "shipments",       label: "Shipments",       route: () => `/sales/shipments` },
 ];
 
 export function GlobalSearch() {

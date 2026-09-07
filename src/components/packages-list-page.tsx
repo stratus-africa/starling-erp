@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { db } from "@/lib/typed-db";
 import { useAuth } from "@/hooks/use-auth";
@@ -9,7 +9,8 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ChevronLeft, ChevronRight, Plus, Search, Loader2, List, LayoutGrid, MoreHorizontal } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Search, Loader2, List, LayoutGrid, MoreHorizontal, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -66,6 +67,9 @@ function KanbanCard({
   selected,
   onToggle,
   onClick,
+  canDelete,
+  onDelete,
+  onDragStart,
 }: {
   pkg: any;
   customerName: string;
@@ -75,10 +79,19 @@ function KanbanCard({
   selected: boolean;
   onToggle: () => void;
   onClick: () => void;
+  canDelete: boolean;
+  onDelete: () => void;
+  onDragStart: (id: string) => void;
 }) {
   return (
     <div
-      className="cursor-pointer rounded-md border bg-background p-3 shadow-sm transition-colors hover:bg-muted/40"
+      className="relative cursor-grab rounded-md border bg-background p-3 shadow-sm transition-colors hover:bg-muted/40 active:cursor-grabbing"
+      draggable
+      onDragStart={(event) => {
+        event.dataTransfer.effectAllowed = "move";
+        event.dataTransfer.setData("text/package-id", pkg.id);
+        onDragStart(pkg.id);
+      }}
       onClick={(e) => {
         if ((e.target as HTMLElement).closest("[data-no-nav]")) return;
         onClick();
@@ -102,6 +115,18 @@ function KanbanCard({
           {totalQty.toFixed(2)}
         </span>
       </div>
+      {canDelete && (
+        <Button
+          variant="ghost"
+          size="icon"
+          className="absolute right-1 top-1 h-6 w-6 text-muted-foreground hover:text-destructive"
+          onClick={(event) => { event.stopPropagation(); onDelete(); }}
+          aria-label="Delete package"
+          title="Delete package"
+        >
+          <Trash2 className="h-3.5 w-3.5" />
+        </Button>
+      )}
       <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs">
         <span className="font-mono text-primary">{pkg.number ?? "—"}</span>
         <span className="font-mono text-primary">{soNumber}</span>
@@ -119,13 +144,47 @@ function KanbanCard({
 export function PackagesListPage() {
   const navigate = useNavigate();
   const { can } = useAuth();
+  const queryClient = useQueryClient();
   const canCreate = can("sales.create");
+  const canDelete = can("sales.delete");
 
   const [view, setView] = useState<"list" | "kanban">("list");
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [draggedId, setDraggedId] = useState<string | null>(null);
+
+  const updateStatus = useMutation({
+    mutationFn: async ({ id, status }: { id: string; status: string }) => {
+      const { error } = await db.from("packages").update({ status, updated_at: new Date().toISOString() }).eq("id", id).is("deleted_at", null);
+      if (error) throw error;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["packages"] }),
+    onError: (error: Error) => toast.error(error.message || "Unable to update package status"),
+  });
+
+  const deletePackage = useMutation({
+    mutationFn: async (id: string) => {
+      const deletedAt = new Date().toISOString();
+      const { error: packageError } = await db.from("packages").update({ deleted_at: deletedAt }).eq("id", id).is("deleted_at", null);
+      if (packageError) throw packageError;
+      const { error: lineError } = await db.from("package_lines").update({ deleted_at: deletedAt }).eq("document_id", id).is("deleted_at", null);
+      if (lineError) throw lineError;
+    },
+    onSuccess: () => { toast.success("Package deleted"); queryClient.invalidateQueries({ queryKey: ["packages"] }); queryClient.invalidateQueries({ queryKey: ["package_lines"] }); },
+    onError: (error: Error) => toast.error(error.message || "Unable to delete package"),
+  });
+
+  const dropStatusForColumn: Record<string, string> = { not_shipped: "Packed", shipped: "Shipped", delivered: "Delivered" };
+  const handleDrop = (columnKey: string) => {
+    if (!draggedId || !can("sales.update")) return;
+    const status = dropStatusForColumn[columnKey];
+    const current = rows.find((row: any) => row.id === draggedId);
+    setDraggedId(null);
+    if (!status || current?.status === status) return;
+    updateStatus.mutate({ id: draggedId, status });
+  };
 
   // ── Fetch packages ──
   const { data, isLoading } = useQuery({
@@ -351,6 +410,7 @@ export function PackagesListPage() {
                   <th className="px-3 py-2.5 text-left whitespace-nowrap">Shipment Date</th>
                   <th className="px-3 py-2.5 text-left">Customer Name</th>
                   <th className="px-3 py-2.5 text-right whitespace-nowrap">Quantity</th>
+                  {canDelete && <th className="w-10 px-2 py-2.5" />}
                 </tr>
               </thead>
               <tbody>
@@ -415,6 +475,7 @@ export function PackagesListPage() {
                       <td className="px-3 py-2.5 text-right font-mono text-xs tabular-nums whitespace-nowrap">
                         {qty.toFixed(2)}
                       </td>
+                        {canDelete && <td className="px-2 py-2.5 text-right" data-no-nav><Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive" onClick={() => deletePackage.mutate(row.id)} aria-label="Delete package" title="Delete package"><Trash2 className="h-3.5 w-3.5" /></Button></td>}
                     </tr>
                   );
                 })}
@@ -451,7 +512,7 @@ export function PackagesListPage() {
               {KANBAN_COLS.map((col) => {
                 const colRows = rows.filter((r: any) => col.statuses.includes(r.status ?? "Draft"));
                 return (
-                  <div key={col.key} className="flex w-[280px] shrink-0 flex-col rounded-lg border bg-muted/20 overflow-hidden">
+                  <div key={col.key} className={`flex w-[280px] shrink-0 flex-col rounded-lg border bg-muted/20 overflow-hidden transition-colors ${draggedId ? "ring-1 ring-primary/20" : ""}`} onDragOver={(event) => { event.preventDefault(); event.dataTransfer.dropEffect = "move"; }} onDrop={(event) => { event.preventDefault(); handleDrop(col.key); }}>
                     {/* Column header */}
                     <div className={`flex items-center justify-between border-b px-3 py-2.5 ${col.headerClass}`}>
                       <span className="text-xs font-semibold">{col.label}</span>
@@ -484,6 +545,9 @@ export function PackagesListPage() {
                             selected={selected.has(row.id)}
                             onToggle={() => toggleRow(row.id)}
                             onClick={() => openDetail(row.id)}
+                            canDelete={canDelete}
+                            onDelete={() => deletePackage.mutate(row.id)}
+                            onDragStart={(id) => setDraggedId(id)}
                           />
                         );
                       })}
