@@ -68,24 +68,24 @@ function SummaryBar({ rows, kind }: { rows: any[]; kind: PaymentKind }) {
   const monthLabel = kind === "received" ? "Received This Month" : "Paid This Month";
 
   return (
-    <div className="mx-6 mt-3 mb-1 rounded-lg border bg-muted/30 px-5 py-3">
+    <div className="mx-6 mt-3 mb-1 w-auto rounded-lg border bg-muted/30 px-5 py-3">
       <p className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Payment Summary</p>
-      <div className="flex flex-wrap items-start gap-x-10 gap-y-2">
-        <div className="flex flex-col gap-0.5">
+      <div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4 lg:gap-0">
+        <div className="flex min-w-0 flex-col gap-0.5 lg:border-r lg:pr-5">
           <span className="text-[11px] text-muted-foreground">{label}</span>
           <span className="font-mono text-sm font-semibold tabular-nums">{moneyFmt(total, currency)}</span>
         </div>
-        <div className="flex flex-col gap-0.5">
+        <div className="flex min-w-0 flex-col gap-0.5 sm:border-l sm:pl-5 lg:border-l-0 lg:border-r lg:px-5">
           <span className="text-[11px] text-muted-foreground">{monthLabel}</span>
           <span className="font-mono text-sm tabular-nums text-blue-600 font-semibold">
             {moneyFmt(thisMonthTotal, currency)}
           </span>
         </div>
-        <div className="flex flex-col gap-0.5">
+        <div className="flex min-w-0 flex-col gap-0.5 lg:border-r lg:px-5">
           <span className="text-[11px] text-muted-foreground">Transactions</span>
           <span className="font-mono text-sm tabular-nums">{rows.length.toLocaleString()}</span>
         </div>
-        <div className="flex flex-col gap-0.5">
+        <div className="flex min-w-0 flex-col gap-0.5 sm:border-l sm:pl-5 lg:border-l-0 lg:pl-5">
           <span className="text-[11px] text-muted-foreground">This Month</span>
           <span className="font-mono text-sm tabular-nums">{thisMonth.length.toLocaleString()}</span>
         </div>

@@ -29,7 +29,18 @@ export function useModuleList(table: string, opts: ListOpts = {}) {
       q = q.order(orderBy, { ascending: orderAsc }).range((page - 1) * pageSize, page * pageSize - 1);
       const { data, error, count } = await q;
       if (error) throw error;
-      return { rows: (data ?? []) as Row[], count: count ?? 0 };
+      const rows = (data ?? []) as Row[];
+      if (table === "units_of_measure") {
+        const seen = new Set<string>();
+        const uniqueRows = rows.filter((row) => {
+          const key = String(row.code ?? "").trim().toLowerCase();
+          if (seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        });
+        return { rows: uniqueRows, count: uniqueRows.length };
+      }
+      return { rows, count: count ?? 0 };
     },
   });
 }
@@ -42,7 +53,10 @@ export function useModuleMutations(table: string) {
   const create = useMutation({
     mutationFn: async (values: Row) => {
       if (!tenant?.id) throw new Error("No tenant");
-      return insertRow(table, { ...values, tenant_id: tenant.id });
+      const normalizedValues = table === "units_of_measure" && typeof values.code === "string"
+        ? { ...values, code: values.code.trim().toLowerCase() }
+        : values;
+      return insertRow(table, { ...normalizedValues, tenant_id: tenant.id });
     },
     onSuccess: () => { toast.success("Created"); invalidate(); },
     onError: (e: Error) => toast.error(e.message ?? "Create failed"),
@@ -50,7 +64,10 @@ export function useModuleMutations(table: string) {
 
   const update = useMutation({
     mutationFn: async ({ id, values }: { id: string; values: Row }) => {
-      await updateRow(table, id, values);
+      const normalizedValues = table === "units_of_measure" && typeof values.code === "string"
+        ? { ...values, code: values.code.trim().toLowerCase() }
+        : values;
+      await updateRow(table, id, normalizedValues);
       return id;
     },
     onSuccess: () => { toast.success("Updated"); invalidate(); },
