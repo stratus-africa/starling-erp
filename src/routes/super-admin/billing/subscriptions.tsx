@@ -764,7 +764,7 @@ export function SubscriptionManagementPage() {
                         </div>
                         <div className="min-w-0">
                           <Link
-                            to="/super-admin/tenants_/$id"
+                            to="/super-admin/tenants/$id"
                             params={{ id: sub.tenant_id }}
                             className="font-semibold text-xs text-foreground hover:underline truncate block"
                           >
@@ -941,7 +941,7 @@ export function SubscriptionManagementPage() {
                   <h3 className="text-base font-bold text-foreground flex items-center gap-1.5 mt-0.5">
                     {selectedSub.tenant_name}
                     <Button variant="ghost" size="sm" asChild className="h-5 px-1.5 text-[10px]">
-                      <Link to="/super-admin/tenants_/$id" params={{ id: selectedSub.tenant_id }}>
+                      <Link to="/super-admin/tenants/$id" params={{ id: selectedSub.tenant_id }}>
                         <ExternalLink className="h-3 w-3" />
                       </Link>
                     </Button>

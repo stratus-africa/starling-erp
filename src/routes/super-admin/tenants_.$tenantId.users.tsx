@@ -114,7 +114,7 @@ import {
 
 // ─── Route Definition ─────────────────────────────────────────────────────────
 
-export const Route = createFileRoute("/super-admin/tenants_/$tenantId/users")({
+export const Route = createFileRoute("/super-admin/tenants/$tenantId/users")({
   component: () => (
     <PermissionGuard permission={PLATFORM_PERMISSIONS.tenantsView}>
       <TenantUserManagementPage />
@@ -171,7 +171,7 @@ interface UserActivityRecord {
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export function TenantUserManagementPage() {
-  const { tenantId } = useParams({ from: "/super-admin/tenants_/$tenantId/users" });
+  const { tenantId } = useParams({ from: "/super-admin/tenants/$tenantId/users" });
   const queryClient = useQueryClient();
   const { canPlatform } = usePlatformAuth();
 
@@ -397,7 +397,7 @@ export function TenantUserManagementPage() {
         <div>
           <div className="flex items-center gap-2 mb-1">
             <Button variant="ghost" size="sm" asChild className="-ml-2 h-8 px-2 text-muted-foreground">
-              <Link to="/super-admin/tenants_/$id" params={{ id: tenantId }}>
+              <Link to="/super-admin/tenants/$id" params={{ id: tenantId }}>
                 <ArrowLeft className="h-4 w-4 mr-1" />
                 Back to Tenant Detail
               </Link>

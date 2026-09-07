@@ -104,7 +104,7 @@ import {
 
 // ─── Route ────────────────────────────────────────────────────────────────────
 
-export const Route = createFileRoute("/super-admin/tenants_/$id")({
+export const Route = createFileRoute("/super-admin/tenants/$id")({
   component: () => (
     <PermissionGuard permission={PLATFORM_PERMISSIONS.tenantsView}>
       <TenantDetailPage />
@@ -776,7 +776,7 @@ function UsersTab({ users, tenantId }: { users: TenantUser[]; tenantId?: string 
         </div>
         {tenantId && (
           <Button variant="outline" size="sm" asChild className="h-8 text-xs gap-1.5">
-            <Link to="/super-admin/tenants_/$tenantId/users" params={{ tenantId }}>
+            <Link to="/super-admin/tenants/$tenantId/users" params={{ tenantId }}>
               <UserCog className="h-3.5 w-3.5 text-primary" />
               Manage Tenant Users
               <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
