@@ -77,11 +77,7 @@ type Outstanding = {
 
 // ── component ─────────────────────────────────────────────────────────────────
 
-export function CreatePaymentDialog({
-  open,
-  onOpenChange,
-  kind,
-}: CreatePaymentDialogProps) {
+export function CreatePaymentDialog({ open, onOpenChange, kind }: CreatePaymentDialogProps) {
   const { tenant } = useAuth();
   const qc = useQueryClient();
 
@@ -98,6 +94,7 @@ export function CreatePaymentDialog({
   const [partyId, setPartyId] = useState("");
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
   const [mode, setMode] = useState("Bank Transfer");
+  const [amount, setAmount] = useState("");
   const [reference, setReference] = useState("");
   const [notes, setNotes] = useState("");
   // per-doc applied amounts: docId → string (amount)
@@ -112,10 +109,10 @@ export function CreatePaymentDialog({
     queryFn: async () => {
       const { data } = await db
         .from(partyTable as any)
-        .select("id,name")
+        .select("id,name,currency")
         .is("deleted_at", null)
         .order("name");
-      return (data ?? []) as { id: string; name: string }[];
+      return (data ?? []) as { id: string; name: string; currency?: string | null }[];
     },
     staleTime: 30_000,
   });
@@ -169,22 +166,39 @@ export function CreatePaymentDialog({
     return s + (isNaN(amt) ? 0 : amt);
   }, 0);
 
-  const currency = selectedDocs[0]?.currency ?? outstandingDocs[0]?.currency ?? "USD";
+  const selectedParty = parties.find((party) => party.id === partyId);
+  const currency =
+    selectedParty?.currency ?? selectedDocs[0]?.currency ?? outstandingDocs[0]?.currency ?? "USD";
 
   // ── submit ──
   const saveMutation = useMutation({
     mutationFn: async () => {
       if (!tenant?.id) throw new Error("No workspace");
       if (!partyId) throw new Error(`Please select a ${partyLabel.toLowerCase()}`);
-      if (checked.size === 0) throw new Error(`Select at least one ${docLabel.toLowerCase()}`);
 
-      const totalAmt = Math.round(totalApplied * 100) / 100;
+      const totalAmt = Math.round((isReceived ? parseFloat(amount) : totalApplied) * 100) / 100;
       if (totalAmt <= 0) throw new Error("Total payment amount must be greater than zero");
+
+      if (isReceived) {
+        const { data, error } = await (supabase as any).rpc("create_customer_payment", {
+          _customer_id: partyId,
+          _amount: totalAmt,
+          _date: date,
+          _payment_method: mode,
+          _reference: reference || null,
+          _notes: notes || null,
+          _currency: currency,
+        });
+        if (error) throw error;
+        return data;
+      }
+
+      if (checked.size === 0) throw new Error(`Select at least one ${docLabel.toLowerCase()}`);
 
       // Build reference from doc numbers
       const docNumbers = selectedDocs.map((d) => d.number).join(", ");
 
-      // Insert single payment record
+      // Supplier payments retain their existing flow until the AP lifecycle is migrated.
       const { data: payment, error: payError } = await supabase
         .from(paymentTable as any)
         .insert({
@@ -210,14 +224,14 @@ export function CreatePaymentDialog({
         const amt = Math.round((parseFloat(applied[doc.id] ?? "0") || 0) * 100) / 100;
         if (amt <= 0) continue;
 
-        // Insert allocation linking payment → doc
+        // Insert the legacy supplier document relationship.
         await supabase.from(paymentTable as any).upsert({
           // We store the first doc reference on the payment row for backwards compat
           [docField]: doc.id,
         } as any);
 
-        // Update doc balance
-        const newPaid = Math.round(((doc.grand_total - doc.balance_due) + amt) * 100) / 100;
+        // Update the supplier document balance.
+        const newPaid = Math.round((doc.grand_total - doc.balance_due + amt) * 100) / 100;
         const newBalance = Math.max(0, Math.round((doc.grand_total - newPaid) * 100) / 100);
 
         if (isReceived) {
@@ -241,18 +255,6 @@ export function CreatePaymentDialog({
             })
             .eq("id", doc.id);
         }
-
-        // Insert individual payment allocation record for audit trail
-        try {
-          await supabase.from("payment_allocations" as any).insert({
-            tenant_id: tenant.id,
-            payment_id: paymentId,
-            [docField]: doc.id,
-            amount: amt,
-          } as any).throwOnError();
-        } catch {
-          // payment_allocations table may not exist yet — skip gracefully
-        }
       }
 
       return paymentId;
@@ -265,6 +267,7 @@ export function CreatePaymentDialog({
       setPartyId("");
       setDate(new Date().toISOString().slice(0, 10));
       setMode("Bank Transfer");
+      setAmount("");
       setReference("");
       setNotes("");
       setChecked(new Set());
@@ -291,7 +294,6 @@ export function CreatePaymentDialog({
 
         <div className="flex-1 overflow-y-auto min-h-0 pr-1">
           <div className="grid gap-5 py-2">
-
             {/* ── Party selector ── */}
             <div className="grid gap-1.5">
               <Label>{partyLabel}</Label>
@@ -313,11 +315,7 @@ export function CreatePaymentDialog({
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-1.5">
                 <Label>Payment Date</Label>
-                <Input
-                  type="date"
-                  value={date}
-                  onChange={(e) => setDate(e.target.value)}
-                />
+                <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
               </div>
               <div className="grid gap-1.5">
                 <Label>Payment Mode</Label>
@@ -336,6 +334,18 @@ export function CreatePaymentDialog({
               </div>
             </div>
 
+            <div className="grid gap-1.5">
+              <Label>Payment Amount ({currency})</Label>
+              <Input
+                type="number"
+                step="0.01"
+                min="0.01"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                placeholder="Enter amount"
+              />
+            </div>
+
             {/* ── Reference ── */}
             <div className="grid gap-1.5">
               <Label>Reference / Cheque No.</Label>
@@ -351,7 +361,7 @@ export function CreatePaymentDialog({
               <div className="grid gap-2">
                 <div className="flex items-center justify-between">
                   <Label>
-                    Outstanding {docLabel}s
+                    Optional {docLabel} shortlist
                     {loadingDocs && (
                       <Loader2 className="ml-2 inline h-3 w-3 animate-spin text-muted-foreground" />
                     )}
@@ -365,7 +375,8 @@ export function CreatePaymentDialog({
 
                 {!loadingDocs && outstandingDocs.length === 0 && (
                   <div className="rounded-md border bg-muted/30 px-4 py-6 text-center text-sm text-muted-foreground">
-                    No outstanding {docLabel.toLowerCase()}s found for this {partyLabel.toLowerCase()}.
+                    No outstanding {docLabel.toLowerCase()}s found for this{" "}
+                    {partyLabel.toLowerCase()}.
                   </div>
                 )}
 
@@ -384,8 +395,7 @@ export function CreatePaymentDialog({
                       <tbody>
                         {outstandingDocs.map((doc) => {
                           const isChecked = checked.has(doc.id);
-                          const isOverdue =
-                            doc.due_date && new Date(doc.due_date) < new Date();
+                          const isOverdue = doc.due_date && new Date(doc.due_date) < new Date();
                           return (
                             <tr
                               key={doc.id}
@@ -407,7 +417,13 @@ export function CreatePaymentDialog({
                               </td>
                               <td className="px-3 py-2.5 text-xs">
                                 {doc.due_date ? (
-                                  <span className={isOverdue ? "text-destructive font-medium" : "text-muted-foreground"}>
+                                  <span
+                                    className={
+                                      isOverdue
+                                        ? "text-destructive font-medium"
+                                        : "text-muted-foreground"
+                                    }
+                                  >
                                     {new Date(doc.due_date).toLocaleDateString()}
                                     {isOverdue && " (overdue)"}
                                   </span>
@@ -467,12 +483,13 @@ export function CreatePaymentDialog({
                 Total:{" "}
                 <span className="font-mono text-primary">{money(totalApplied, currency)}</span>
                 <span className="ml-2 text-xs text-muted-foreground">
-                  across {checked.size} {docLabel.toLowerCase()}{checked.size !== 1 ? "s" : ""}
+                  across {checked.size} {docLabel.toLowerCase()}
+                  {checked.size !== 1 ? "s" : ""}
                 </span>
               </span>
             ) : (
               <span className="text-xs text-muted-foreground">
-                Select one or more {docLabel.toLowerCase()}s above
+                Invoice allocation is available after posting
               </span>
             )}
             <div className="flex gap-2">
@@ -485,7 +502,9 @@ export function CreatePaymentDialog({
               </Button>
               <Button
                 onClick={() => saveMutation.mutate()}
-                disabled={saveMutation.isPending || checked.size === 0 || !partyId}
+                disabled={
+                  saveMutation.isPending || !partyId || (isReceived ? !amount : checked.size === 0)
+                }
               >
                 {saveMutation.isPending ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />

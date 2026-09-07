@@ -16,7 +16,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface RecordPaymentDialogProps {
   open: boolean;
@@ -61,6 +67,20 @@ export function RecordPaymentDialog({
       const amt = parseFloat(amount);
       if (isNaN(amt) || amt <= 0) throw new Error("Enter a valid amount greater than zero");
 
+      if (kind === "receive") {
+        const { data, error } = await (supabase as any).rpc("create_customer_payment", {
+          _customer_id: partyId,
+          _amount: amt,
+          _date: date,
+          _payment_method: mode,
+          _reference: reference || null,
+          _notes: notes || null,
+          _currency: currency,
+        });
+        if (error) throw error;
+        return data;
+      }
+
       const payload: Record<string, unknown> = {
         tenant_id: tenant.id,
         amount: amt,
@@ -76,50 +96,28 @@ export function RecordPaymentDialog({
       const { error } = await supabase.from(table as any).insert(payload as any);
       if (error) throw error;
 
-      // Update the document's amount_paid and balance_due
       const roundedAmt = Math.round(amt * 100) / 100;
-      if (kind === "receive") {
-        const { data: inv } = await supabase
-          .from("invoices")
-          .select("amount_paid, grand_total, balance_due")
-          .eq("id", docId)
-          .single();
-        if (inv) {
-          const newPaid = Math.round(((inv.amount_paid ?? 0) + roundedAmt) * 100) / 100;
-          const newBalance = Math.max(0, Math.round(((inv.grand_total ?? 0) - newPaid) * 100) / 100);
-          await supabase
-            .from("invoices")
-            .update({
-              amount_paid: newPaid,
-              balance_due: newBalance,
-              balance: newBalance,
-              status: newBalance <= 0.001 ? "Paid" : "Posted",
-            })
-            .eq("id", docId);
-        }
-      } else {
-        const { data: bill } = await supabase
+      const { data: bill } = await supabase
+        .from("bills")
+        .select("amount_paid, grand_total, balance_due")
+        .eq("id", docId)
+        .single();
+      if (bill) {
+        const newPaid = Math.round(((bill.amount_paid ?? 0) + roundedAmt) * 100) / 100;
+        const newBalance = Math.max(0, Math.round(((bill.grand_total ?? 0) - newPaid) * 100) / 100);
+        await supabase
           .from("bills")
-          .select("amount_paid, grand_total, balance_due")
-          .eq("id", docId)
-          .single();
-        if (bill) {
-          const newPaid = Math.round(((bill.amount_paid ?? 0) + roundedAmt) * 100) / 100;
-          const newBalance = Math.max(0, Math.round(((bill.grand_total ?? 0) - newPaid) * 100) / 100);
-          await supabase
-            .from("bills")
-            .update({
-              amount_paid: newPaid,
-              balance_due: newBalance,
-              balance: newBalance,
-              status: newBalance <= 0.001 ? "Paid" : "Posted",
-            })
-            .eq("id", docId);
-        }
+          .update({
+            amount_paid: newPaid,
+            balance_due: newBalance,
+            balance: newBalance,
+            status: newBalance <= 0.001 ? "Paid" : "Posted",
+          })
+          .eq("id", docId);
       }
     },
     onSuccess: () => {
-      toast.success("Payment recorded");
+      toast.success(kind === "receive" ? "Draft payment created" : "Payment recorded");
       qc.invalidateQueries({ queryKey: [kind === "receive" ? "invoices" : "bills", docId] });
       qc.invalidateQueries({ queryKey: [table, "list"] });
       onOpenChange(false);
@@ -136,10 +134,16 @@ export function RecordPaymentDialog({
             Record {kind === "receive" ? "Payment Received" : "Payment Made"}
           </DialogTitle>
           <DialogDescription>
-            {kind === "receive" ? "Record a customer payment against" : "Record a supplier payment against"}{" "}
+            {kind === "receive"
+              ? "Record a customer payment against"
+              : "Record a supplier payment against"}{" "}
             <span className="font-medium">{docNumber}</span>. Balance due:{" "}
             <span className="font-mono font-medium">
-              {currency} {balanceDue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              {currency}{" "}
+              {balanceDue.toLocaleString(undefined, {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })}
             </span>
           </DialogDescription>
         </DialogHeader>
@@ -159,7 +163,12 @@ export function RecordPaymentDialog({
 
           <div className="grid gap-1.5">
             <Label htmlFor="pay-date">Payment Date</Label>
-            <Input id="pay-date" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+            <Input
+              id="pay-date"
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+            />
           </div>
 
           <div className="grid gap-1.5">

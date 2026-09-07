@@ -7,8 +7,22 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ChevronLeft, ChevronRight, Search, Loader2, MoreHorizontal, CheckCircle2, MinusCircle } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Search,
+  Loader2,
+  MoreHorizontal,
+  CheckCircle2,
+  MinusCircle,
+} from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,6 +31,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
+import { useNavigate } from "@tanstack/react-router";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -69,11 +84,15 @@ function SummaryBar({ rows, kind }: { rows: any[]; kind: PaymentKind }) {
 
   return (
     <div className="mx-6 mt-3 mb-1 w-auto rounded-lg border bg-muted/30 px-5 py-3">
-      <p className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Payment Summary</p>
+      <p className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+        Payment Summary
+      </p>
       <div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4 lg:gap-0">
         <div className="flex min-w-0 flex-col gap-0.5 lg:border-r lg:pr-5">
           <span className="text-[11px] text-muted-foreground">{label}</span>
-          <span className="font-mono text-sm font-semibold tabular-nums">{moneyFmt(total, currency)}</span>
+          <span className="font-mono text-sm font-semibold tabular-nums">
+            {moneyFmt(total, currency)}
+          </span>
         </div>
         <div className="flex min-w-0 flex-col gap-0.5 sm:border-l sm:pl-5 lg:border-l-0 lg:border-r lg:px-5">
           <span className="text-[11px] text-muted-foreground">{monthLabel}</span>
@@ -87,7 +106,9 @@ function SummaryBar({ rows, kind }: { rows: any[]; kind: PaymentKind }) {
         </div>
         <div className="flex min-w-0 flex-col gap-0.5 sm:border-l sm:pl-5 lg:border-l-0 lg:pl-5">
           <span className="text-[11px] text-muted-foreground">This Month</span>
-          <span className="font-mono text-sm tabular-nums">{thisMonth.length.toLocaleString()}</span>
+          <span className="font-mono text-sm tabular-nums">
+            {thisMonth.length.toLocaleString()}
+          </span>
         </div>
       </div>
     </div>
@@ -99,6 +120,7 @@ function SummaryBar({ rows, kind }: { rows: any[]; kind: PaymentKind }) {
 export function PaymentsListPage({ kind }: { kind: PaymentKind }) {
   const { can } = useAuth();
   const qc = useQueryClient();
+  const navigate = useNavigate();
 
   const canPost = can("payments.post");
   const canVoid = can("payments.void");
@@ -234,10 +256,8 @@ export function PaymentsListPage({ kind }: { kind: PaymentKind }) {
       return n;
     });
 
-  // Payments don't have individual detail routes — clicking a row is a no-op
-  // (they are created via RecordPaymentDialog from invoices/bills)
-  const openDetail = (_id: string) => {
-    // no-op: individual payment records are viewed inline
+  const openDetail = (id: string) => {
+    if (isReceived) navigate({ to: "/sales/payments/$id", params: { id } });
   };
 
   // ─── Render ───────────────────────────────────────────────────────────────
@@ -275,11 +295,13 @@ export function PaymentsListPage({ kind }: { kind: PaymentKind }) {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Modes</SelectItem>
-              {["Cash", "Bank Transfer", "M-Pesa", "Card", "Cheque", "EFT", "Mobile Money"].map((m) => (
-                <SelectItem key={m} value={m}>
-                  {m}
-                </SelectItem>
-              ))}
+              {["Cash", "Bank Transfer", "M-Pesa", "Card", "Cheque", "EFT", "Mobile Money"].map(
+                (m) => (
+                  <SelectItem key={m} value={m}>
+                    {m}
+                  </SelectItem>
+                ),
+              )}
             </SelectContent>
           </Select>
           <Select
@@ -330,7 +352,11 @@ export function PaymentsListPage({ kind }: { kind: PaymentKind }) {
           <thead className="sticky top-0 z-10 bg-muted/60 backdrop-blur">
             <tr className="border-b text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
               <th className="w-9 px-3 py-2.5 text-left">
-                <Checkbox checked={allOnPageSelected} onCheckedChange={toggleAll} aria-label="Select all" />
+                <Checkbox
+                  checked={allOnPageSelected}
+                  onCheckedChange={toggleAll}
+                  aria-label="Select all"
+                />
               </th>
               <th className="px-3 py-2.5 text-left whitespace-nowrap">Date ↕</th>
               <th className="px-3 py-2.5 text-left whitespace-nowrap">Payment#</th>
@@ -393,11 +419,15 @@ export function PaymentsListPage({ kind }: { kind: PaymentKind }) {
                   </td>
 
                   {/* Date */}
-                  <td className="px-3 py-2 text-xs text-muted-foreground whitespace-nowrap">{fmt(row.date)}</td>
+                  <td className="px-3 py-2 text-xs text-muted-foreground whitespace-nowrap">
+                    {fmt(row.date)}
+                  </td>
 
                   {/* Payment number */}
                   <td className="px-3 py-2 whitespace-nowrap">
-                    <span className="font-mono text-xs font-semibold text-primary">{row.number ?? "—"}</span>
+                    <span className="font-mono text-xs font-semibold text-primary">
+                      {row.number ?? "—"}
+                    </span>
                   </td>
 
                   {/* Payment type */}
@@ -409,7 +439,9 @@ export function PaymentsListPage({ kind }: { kind: PaymentKind }) {
 
                   {/* Reference */}
                   <td className="px-3 py-2 whitespace-nowrap">
-                    <span className="font-mono text-xs text-muted-foreground">{row.reference ?? "—"}</span>
+                    <span className="font-mono text-xs text-muted-foreground">
+                      {row.reference ?? "—"}
+                    </span>
                   </td>
 
                   {/* Party name */}
@@ -423,7 +455,9 @@ export function PaymentsListPage({ kind }: { kind: PaymentKind }) {
 
                   {/* Invoice / Bill numbers */}
                   <td className="px-3 py-2 max-w-[220px]">
-                    <span className="font-mono text-xs text-primary line-clamp-2 leading-snug">{invoiceNums}</span>
+                    <span className="font-mono text-xs text-primary line-clamp-2 leading-snug">
+                      {invoiceNums}
+                    </span>
                   </td>
 
                   {/* Mode */}

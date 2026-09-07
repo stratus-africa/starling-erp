@@ -121,6 +121,7 @@ import { Route as SuperAdminTenantsTenantIdUsersRouteImport } from './routes/sup
 import { Route as AuthenticatedSettingsWarehousesIdRouteImport } from './routes/_authenticated/settings.warehouses.$id'
 import { Route as AuthenticatedSalesShipmentsIdRouteImport } from './routes/_authenticated/sales.shipments.$id'
 import { Route as AuthenticatedSalesQuotesIdRouteImport } from './routes/_authenticated/sales.quotes.$id'
+import { Route as AuthenticatedSalesPaymentsIdRouteImport } from './routes/_authenticated/sales.payments.$id'
 import { Route as AuthenticatedSalesPackagesIdRouteImport } from './routes/_authenticated/sales.packages.$id'
 import { Route as AuthenticatedSalesOrdersIdRouteImport } from './routes/_authenticated/sales.orders.$id'
 import { Route as AuthenticatedSalesInvoicesIdRouteImport } from './routes/_authenticated/sales.invoices.$id'
@@ -772,6 +773,12 @@ const AuthenticatedSalesQuotesIdRoute =
     path: '/sales/quotes/$id',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedSalesPaymentsIdRoute =
+  AuthenticatedSalesPaymentsIdRouteImport.update({
+    id: '/$id',
+    path: '/$id',
+    getParentRoute: () => AuthenticatedSalesPaymentsRoute,
+  } as any)
 const AuthenticatedSalesPackagesIdRoute =
   AuthenticatedSalesPackagesIdRouteImport.update({
     id: '/sales/packages/$id',
@@ -933,7 +940,7 @@ export interface FileRoutesByFullPath {
   '/reports/manufacturing': typeof AuthenticatedReportsManufacturingRoute
   '/reports/purchases': typeof AuthenticatedReportsPurchasesRoute
   '/reports/sales': typeof AuthenticatedReportsSalesRoute
-  '/sales/payments': typeof AuthenticatedSalesPaymentsRoute
+  '/sales/payments': typeof AuthenticatedSalesPaymentsRouteWithChildren
   '/settings/api-keys': typeof AuthenticatedSettingsApiKeysRoute
   '/settings/company': typeof AuthenticatedSettingsCompanyRoute
   '/settings/currencies': typeof AuthenticatedSettingsCurrenciesRoute
@@ -974,6 +981,7 @@ export interface FileRoutesByFullPath {
   '/sales/invoices/$id': typeof AuthenticatedSalesInvoicesIdRoute
   '/sales/orders/$id': typeof AuthenticatedSalesOrdersIdRoute
   '/sales/packages/$id': typeof AuthenticatedSalesPackagesIdRoute
+  '/sales/payments/$id': typeof AuthenticatedSalesPaymentsIdRoute
   '/sales/quotes/$id': typeof AuthenticatedSalesQuotesIdRoute
   '/sales/shipments/$id': typeof AuthenticatedSalesShipmentsIdRoute
   '/settings/warehouses/$id': typeof AuthenticatedSettingsWarehousesIdRoute
@@ -1060,7 +1068,7 @@ export interface FileRoutesByTo {
   '/reports/manufacturing': typeof AuthenticatedReportsManufacturingRoute
   '/reports/purchases': typeof AuthenticatedReportsPurchasesRoute
   '/reports/sales': typeof AuthenticatedReportsSalesRoute
-  '/sales/payments': typeof AuthenticatedSalesPaymentsRoute
+  '/sales/payments': typeof AuthenticatedSalesPaymentsRouteWithChildren
   '/settings/api-keys': typeof AuthenticatedSettingsApiKeysRoute
   '/settings/company': typeof AuthenticatedSettingsCompanyRoute
   '/settings/currencies': typeof AuthenticatedSettingsCurrenciesRoute
@@ -1100,6 +1108,7 @@ export interface FileRoutesByTo {
   '/sales/invoices/$id': typeof AuthenticatedSalesInvoicesIdRoute
   '/sales/orders/$id': typeof AuthenticatedSalesOrdersIdRoute
   '/sales/packages/$id': typeof AuthenticatedSalesPackagesIdRoute
+  '/sales/payments/$id': typeof AuthenticatedSalesPaymentsIdRoute
   '/sales/quotes/$id': typeof AuthenticatedSalesQuotesIdRoute
   '/sales/shipments/$id': typeof AuthenticatedSalesShipmentsIdRoute
   '/settings/warehouses/$id': typeof AuthenticatedSettingsWarehousesIdRoute
@@ -1190,7 +1199,7 @@ export interface FileRoutesById {
   '/_authenticated/reports/manufacturing': typeof AuthenticatedReportsManufacturingRoute
   '/_authenticated/reports/purchases': typeof AuthenticatedReportsPurchasesRoute
   '/_authenticated/reports/sales': typeof AuthenticatedReportsSalesRoute
-  '/_authenticated/sales/payments': typeof AuthenticatedSalesPaymentsRoute
+  '/_authenticated/sales/payments': typeof AuthenticatedSalesPaymentsRouteWithChildren
   '/_authenticated/settings/api-keys': typeof AuthenticatedSettingsApiKeysRoute
   '/_authenticated/settings/company': typeof AuthenticatedSettingsCompanyRoute
   '/_authenticated/settings/currencies': typeof AuthenticatedSettingsCurrenciesRoute
@@ -1231,6 +1240,7 @@ export interface FileRoutesById {
   '/_authenticated/sales/invoices/$id': typeof AuthenticatedSalesInvoicesIdRoute
   '/_authenticated/sales/orders/$id': typeof AuthenticatedSalesOrdersIdRoute
   '/_authenticated/sales/packages/$id': typeof AuthenticatedSalesPackagesIdRoute
+  '/_authenticated/sales/payments/$id': typeof AuthenticatedSalesPaymentsIdRoute
   '/_authenticated/sales/quotes/$id': typeof AuthenticatedSalesQuotesIdRoute
   '/_authenticated/sales/shipments/$id': typeof AuthenticatedSalesShipmentsIdRoute
   '/_authenticated/settings/warehouses/$id': typeof AuthenticatedSettingsWarehousesIdRoute
@@ -1361,6 +1371,7 @@ export interface FileRouteTypes {
     | '/sales/invoices/$id'
     | '/sales/orders/$id'
     | '/sales/packages/$id'
+    | '/sales/payments/$id'
     | '/sales/quotes/$id'
     | '/sales/shipments/$id'
     | '/settings/warehouses/$id'
@@ -1487,6 +1498,7 @@ export interface FileRouteTypes {
     | '/sales/invoices/$id'
     | '/sales/orders/$id'
     | '/sales/packages/$id'
+    | '/sales/payments/$id'
     | '/sales/quotes/$id'
     | '/sales/shipments/$id'
     | '/settings/warehouses/$id'
@@ -1617,6 +1629,7 @@ export interface FileRouteTypes {
     | '/_authenticated/sales/invoices/$id'
     | '/_authenticated/sales/orders/$id'
     | '/_authenticated/sales/packages/$id'
+    | '/_authenticated/sales/payments/$id'
     | '/_authenticated/sales/quotes/$id'
     | '/_authenticated/sales/shipments/$id'
     | '/_authenticated/settings/warehouses/$id'
@@ -2434,6 +2447,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSalesQuotesIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/sales/payments/$id': {
+      id: '/_authenticated/sales/payments/$id'
+      path: '/$id'
+      fullPath: '/sales/payments/$id'
+      preLoaderRoute: typeof AuthenticatedSalesPaymentsIdRouteImport
+      parentRoute: typeof AuthenticatedSalesPaymentsRoute
+    }
     '/_authenticated/sales/packages/$id': {
       id: '/_authenticated/sales/packages/$id'
       path: '/sales/packages/$id'
@@ -2569,6 +2589,20 @@ const AdminRouteRouteWithChildren = AdminRouteRoute._addFileChildren(
   AdminRouteRouteChildren,
 )
 
+interface AuthenticatedSalesPaymentsRouteChildren {
+  AuthenticatedSalesPaymentsIdRoute: typeof AuthenticatedSalesPaymentsIdRoute
+}
+
+const AuthenticatedSalesPaymentsRouteChildren: AuthenticatedSalesPaymentsRouteChildren =
+  {
+    AuthenticatedSalesPaymentsIdRoute: AuthenticatedSalesPaymentsIdRoute,
+  }
+
+const AuthenticatedSalesPaymentsRouteWithChildren =
+  AuthenticatedSalesPaymentsRoute._addFileChildren(
+    AuthenticatedSalesPaymentsRouteChildren,
+  )
+
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAuditEventsRoute: typeof AuthenticatedAuditEventsRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
@@ -2603,7 +2637,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedReportsManufacturingRoute: typeof AuthenticatedReportsManufacturingRoute
   AuthenticatedReportsPurchasesRoute: typeof AuthenticatedReportsPurchasesRoute
   AuthenticatedReportsSalesRoute: typeof AuthenticatedReportsSalesRoute
-  AuthenticatedSalesPaymentsRoute: typeof AuthenticatedSalesPaymentsRoute
+  AuthenticatedSalesPaymentsRoute: typeof AuthenticatedSalesPaymentsRouteWithChildren
   AuthenticatedSettingsApiKeysRoute: typeof AuthenticatedSettingsApiKeysRoute
   AuthenticatedSettingsCompanyRoute: typeof AuthenticatedSettingsCompanyRoute
   AuthenticatedSettingsCurrenciesRoute: typeof AuthenticatedSettingsCurrenciesRoute
@@ -2701,7 +2735,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
     AuthenticatedReportsManufacturingRoute,
   AuthenticatedReportsPurchasesRoute: AuthenticatedReportsPurchasesRoute,
   AuthenticatedReportsSalesRoute: AuthenticatedReportsSalesRoute,
-  AuthenticatedSalesPaymentsRoute: AuthenticatedSalesPaymentsRoute,
+  AuthenticatedSalesPaymentsRoute: AuthenticatedSalesPaymentsRouteWithChildren,
   AuthenticatedSettingsApiKeysRoute: AuthenticatedSettingsApiKeysRoute,
   AuthenticatedSettingsCompanyRoute: AuthenticatedSettingsCompanyRoute,
   AuthenticatedSettingsCurrenciesRoute: AuthenticatedSettingsCurrenciesRoute,
