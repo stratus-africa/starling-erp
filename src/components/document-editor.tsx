@@ -1509,13 +1509,14 @@ export function DocumentEditor({
                     <td className="px-2 py-1.5">
                       {/* Stock requisitions require item pick; purchase requisitions allow free-text only */}
                       <Select
-                        value={l.item_id ?? ""}
+                        value={l.item_id ?? "__no_item__"}
                         onValueChange={(v) => {
-                          const it = items.find((i) => i.id === v);
+                          const itemId = v === "__no_item__" ? null : v;
+                          const it = items.find((i) => i.id === itemId);
                           const price =
                             kind === "po" || kind === "bill" ? Number(it?.cost ?? 0) : Number(it?.price ?? 0);
                           updateLine(idx, {
-                            item_id: v || null,
+                            item_id: itemId,
                             description: l.description || it?.name || "",
                             unit_price: l.unit_price || price,
                           });
@@ -1527,7 +1528,7 @@ export function DocumentEditor({
                         </SelectTrigger>
                         <SelectContent>
                           {!isStockReq && (
-                            <SelectItem value="">— No item (free-text) —</SelectItem>
+                            <SelectItem value="__no_item__">— No item (free-text) —</SelectItem>
                           )}
                           {items.map((i) => (
                             <SelectItem key={i.id} value={i.id}>
