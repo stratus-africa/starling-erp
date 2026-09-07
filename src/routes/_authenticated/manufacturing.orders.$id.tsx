@@ -22,6 +22,8 @@ import { useState } from "react";
 import { db } from "@/lib/typed-db";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
+import { RecordEditor } from "@/components/record-editor";
+import { productionOrderFields } from "@/lib/module-field-definitions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
@@ -627,6 +629,7 @@ function ProductionOrderDetailPage() {
   // Dialog state
   const [showRunDialog, setShowRunDialog] = useState(false);
   const [showPauseDialog, setShowPauseDialog] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
   const [cancelConfirm, setCancelConfirm] = useState(false);
   const [postConfirm, setPostConfirm] = useState(false);
   const [qcConfirm, setQcConfirm] = useState(false);
@@ -902,6 +905,9 @@ function ProductionOrderDetailPage() {
 
         {canWrite && (
           <div className="ml-auto flex items-center gap-2 flex-wrap justify-end">
+            <Button size="sm" variant="outline" onClick={() => setShowEditDialog(true)}>
+              Edit
+            </Button>
             {/* Record Run — primary action when In Progress or Paused */}
             {canRecord && (
               <Button size="sm" className="gap-1.5" onClick={() => setShowRunDialog(true)}>
@@ -1022,6 +1028,27 @@ function ProductionOrderDetailPage() {
           </div>
         )}
       </div>
+
+      {canWrite && (
+        <Dialog open={showEditDialog} onOpenChange={(open) => setShowEditDialog(open)}>
+          <DialogContent className="max-h-[92vh] max-w-4xl overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Edit Production Order</DialogTitle>
+              <DialogDescription>Update the order header details and planning fields.</DialogDescription>
+            </DialogHeader>
+            <RecordEditor
+              id={id}
+              table="production_orders"
+              fields={productionOrderFields}
+              entityLabel="Production Order"
+              listHref="/manufacturing/orders"
+              titleKey="number"
+              writeRoles={["manufacturing"]}
+              permissionModule="manufacturing"
+            />
+          </DialogContent>
+        </Dialog>
+      )}
 
       {/* ── Workflow stepper ──────────────────────────────────────────── */}
       {!["Cancelled"].includes(status) && (

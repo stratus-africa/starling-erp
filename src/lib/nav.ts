@@ -127,9 +127,9 @@ export const navGroups: NavGroup[] = [
   {
     label: "Manufacturing",
     items: [
-      { title: "Production Items", url: "/manufacturing/items", icon: Factory, feature: "manufacturing" },
+      { title: "Production Items", url: "/manufacturing/items/", icon: Factory, feature: "manufacturing" },
       { title: "Bill of Materials", url: "/manufacturing/bom", icon: ListTree, feature: "manufacturing" },
-      { title: "Production Orders", url: "/manufacturing/orders", icon: Cog, feature: "manufacturing" },
+      { title: "Production Orders", url: "/manufacturing/orders/", icon: Cog, feature: "manufacturing" },
       { title: "Production Runs", url: "/manufacturing/runs", icon: PlayCircle, feature: "manufacturing" },
     ],
   },
