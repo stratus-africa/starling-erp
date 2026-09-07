@@ -142,6 +142,7 @@ import { Route as AuthenticatedReportsSalesCustomersRouteImport } from './routes
 import { Route as AuthenticatedReportsSalesCustomerStatementsRouteImport } from './routes/_authenticated/reports.sales.customer-statements'
 import { Route as AuthenticatedReportsSalesCollectionsRouteImport } from './routes/_authenticated/reports.sales.collections'
 import { Route as AuthenticatedReportsPurchasesSuppliersRouteImport } from './routes/_authenticated/reports.purchases.suppliers'
+import { Route as AuthenticatedReportsPurchasesSupplierStatementsRouteImport } from './routes/_authenticated/reports.purchases.supplier-statements'
 import { Route as AuthenticatedReportsPurchasesReceivingRouteImport } from './routes/_authenticated/reports.purchases.receiving'
 import { Route as AuthenticatedReportsPurchasesProductsRouteImport } from './routes/_authenticated/reports.purchases.products'
 import { Route as AuthenticatedReportsPurchasesPriceVarianceRouteImport } from './routes/_authenticated/reports.purchases.price-variance'
@@ -930,6 +931,12 @@ const AuthenticatedReportsPurchasesSuppliersRoute =
     path: '/suppliers',
     getParentRoute: () => AuthenticatedReportsPurchasesRoute,
   } as any)
+const AuthenticatedReportsPurchasesSupplierStatementsRoute =
+  AuthenticatedReportsPurchasesSupplierStatementsRouteImport.update({
+    id: '/supplier-statements',
+    path: '/supplier-statements',
+    getParentRoute: () => AuthenticatedReportsPurchasesRoute,
+  } as any)
 const AuthenticatedReportsPurchasesReceivingRoute =
   AuthenticatedReportsPurchasesReceivingRouteImport.update({
     id: '/receiving',
@@ -1094,9 +1101,9 @@ const AuthenticatedReportsSalesCustomerStatementsCustomerIdRoute =
   } as any)
 const AuthenticatedReportsPurchasesSupplierStatementsSupplierIdRoute =
   AuthenticatedReportsPurchasesSupplierStatementsSupplierIdRouteImport.update({
-    id: '/supplier-statements/$supplierId',
-    path: '/supplier-statements/$supplierId',
-    getParentRoute: () => AuthenticatedReportsPurchasesRoute,
+    id: '/$supplierId',
+    path: '/$supplierId',
+    getParentRoute: () => AuthenticatedReportsPurchasesSupplierStatementsRoute,
   } as any)
 
 export interface FileRoutesByFullPath {
@@ -1219,6 +1226,7 @@ export interface FileRoutesByFullPath {
   '/reports/purchases/price-variance': typeof AuthenticatedReportsPurchasesPriceVarianceRoute
   '/reports/purchases/products': typeof AuthenticatedReportsPurchasesProductsRoute
   '/reports/purchases/receiving': typeof AuthenticatedReportsPurchasesReceivingRoute
+  '/reports/purchases/supplier-statements': typeof AuthenticatedReportsPurchasesSupplierStatementsRouteWithChildren
   '/reports/purchases/suppliers': typeof AuthenticatedReportsPurchasesSuppliersRoute
   '/reports/sales/collections': typeof AuthenticatedReportsSalesCollectionsRoute
   '/reports/sales/customer-statements': typeof AuthenticatedReportsSalesCustomerStatementsRouteWithChildren
@@ -1378,6 +1386,7 @@ export interface FileRoutesByTo {
   '/reports/purchases/price-variance': typeof AuthenticatedReportsPurchasesPriceVarianceRoute
   '/reports/purchases/products': typeof AuthenticatedReportsPurchasesProductsRoute
   '/reports/purchases/receiving': typeof AuthenticatedReportsPurchasesReceivingRoute
+  '/reports/purchases/supplier-statements': typeof AuthenticatedReportsPurchasesSupplierStatementsRouteWithChildren
   '/reports/purchases/suppliers': typeof AuthenticatedReportsPurchasesSuppliersRoute
   '/reports/sales/collections': typeof AuthenticatedReportsSalesCollectionsRoute
   '/reports/sales/customer-statements': typeof AuthenticatedReportsSalesCustomerStatementsRouteWithChildren
@@ -1542,6 +1551,7 @@ export interface FileRoutesById {
   '/_authenticated/reports/purchases/price-variance': typeof AuthenticatedReportsPurchasesPriceVarianceRoute
   '/_authenticated/reports/purchases/products': typeof AuthenticatedReportsPurchasesProductsRoute
   '/_authenticated/reports/purchases/receiving': typeof AuthenticatedReportsPurchasesReceivingRoute
+  '/_authenticated/reports/purchases/supplier-statements': typeof AuthenticatedReportsPurchasesSupplierStatementsRouteWithChildren
   '/_authenticated/reports/purchases/suppliers': typeof AuthenticatedReportsPurchasesSuppliersRoute
   '/_authenticated/reports/sales/collections': typeof AuthenticatedReportsSalesCollectionsRoute
   '/_authenticated/reports/sales/customer-statements': typeof AuthenticatedReportsSalesCustomerStatementsRouteWithChildren
@@ -1705,6 +1715,7 @@ export interface FileRouteTypes {
     | '/reports/purchases/price-variance'
     | '/reports/purchases/products'
     | '/reports/purchases/receiving'
+    | '/reports/purchases/supplier-statements'
     | '/reports/purchases/suppliers'
     | '/reports/sales/collections'
     | '/reports/sales/customer-statements'
@@ -1864,6 +1875,7 @@ export interface FileRouteTypes {
     | '/reports/purchases/price-variance'
     | '/reports/purchases/products'
     | '/reports/purchases/receiving'
+    | '/reports/purchases/supplier-statements'
     | '/reports/purchases/suppliers'
     | '/reports/sales/collections'
     | '/reports/sales/customer-statements'
@@ -2027,6 +2039,7 @@ export interface FileRouteTypes {
     | '/_authenticated/reports/purchases/price-variance'
     | '/_authenticated/reports/purchases/products'
     | '/_authenticated/reports/purchases/receiving'
+    | '/_authenticated/reports/purchases/supplier-statements'
     | '/_authenticated/reports/purchases/suppliers'
     | '/_authenticated/reports/sales/collections'
     | '/_authenticated/reports/sales/customer-statements'
@@ -3009,6 +3022,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedReportsPurchasesSuppliersRouteImport
       parentRoute: typeof AuthenticatedReportsPurchasesRoute
     }
+    '/_authenticated/reports/purchases/supplier-statements': {
+      id: '/_authenticated/reports/purchases/supplier-statements'
+      path: '/supplier-statements'
+      fullPath: '/reports/purchases/supplier-statements'
+      preLoaderRoute: typeof AuthenticatedReportsPurchasesSupplierStatementsRouteImport
+      parentRoute: typeof AuthenticatedReportsPurchasesRoute
+    }
     '/_authenticated/reports/purchases/receiving': {
       id: '/_authenticated/reports/purchases/receiving'
       path: '/receiving'
@@ -3200,10 +3220,10 @@ declare module '@tanstack/react-router' {
     }
     '/_authenticated/reports/purchases/supplier-statements/$supplierId': {
       id: '/_authenticated/reports/purchases/supplier-statements/$supplierId'
-      path: '/supplier-statements/$supplierId'
+      path: '/$supplierId'
       fullPath: '/reports/purchases/supplier-statements/$supplierId'
       preLoaderRoute: typeof AuthenticatedReportsPurchasesSupplierStatementsSupplierIdRouteImport
-      parentRoute: typeof AuthenticatedReportsPurchasesRoute
+      parentRoute: typeof AuthenticatedReportsPurchasesSupplierStatementsRoute
     }
   }
 }
@@ -3252,6 +3272,21 @@ const AuthenticatedReportsExpensesRouteWithChildren =
     AuthenticatedReportsExpensesRouteChildren,
   )
 
+interface AuthenticatedReportsPurchasesSupplierStatementsRouteChildren {
+  AuthenticatedReportsPurchasesSupplierStatementsSupplierIdRoute: typeof AuthenticatedReportsPurchasesSupplierStatementsSupplierIdRoute
+}
+
+const AuthenticatedReportsPurchasesSupplierStatementsRouteChildren: AuthenticatedReportsPurchasesSupplierStatementsRouteChildren =
+  {
+    AuthenticatedReportsPurchasesSupplierStatementsSupplierIdRoute:
+      AuthenticatedReportsPurchasesSupplierStatementsSupplierIdRoute,
+  }
+
+const AuthenticatedReportsPurchasesSupplierStatementsRouteWithChildren =
+  AuthenticatedReportsPurchasesSupplierStatementsRoute._addFileChildren(
+    AuthenticatedReportsPurchasesSupplierStatementsRouteChildren,
+  )
+
 interface AuthenticatedReportsPurchasesRouteChildren {
   AuthenticatedReportsPurchasesCollectionsRoute: typeof AuthenticatedReportsPurchasesCollectionsRoute
   AuthenticatedReportsPurchasesCommitmentsRoute: typeof AuthenticatedReportsPurchasesCommitmentsRoute
@@ -3261,8 +3296,8 @@ interface AuthenticatedReportsPurchasesRouteChildren {
   AuthenticatedReportsPurchasesPriceVarianceRoute: typeof AuthenticatedReportsPurchasesPriceVarianceRoute
   AuthenticatedReportsPurchasesProductsRoute: typeof AuthenticatedReportsPurchasesProductsRoute
   AuthenticatedReportsPurchasesReceivingRoute: typeof AuthenticatedReportsPurchasesReceivingRoute
+  AuthenticatedReportsPurchasesSupplierStatementsRoute: typeof AuthenticatedReportsPurchasesSupplierStatementsRouteWithChildren
   AuthenticatedReportsPurchasesSuppliersRoute: typeof AuthenticatedReportsPurchasesSuppliersRoute
-  AuthenticatedReportsPurchasesSupplierStatementsSupplierIdRoute: typeof AuthenticatedReportsPurchasesSupplierStatementsSupplierIdRoute
 }
 
 const AuthenticatedReportsPurchasesRouteChildren: AuthenticatedReportsPurchasesRouteChildren =
@@ -3283,10 +3318,10 @@ const AuthenticatedReportsPurchasesRouteChildren: AuthenticatedReportsPurchasesR
       AuthenticatedReportsPurchasesProductsRoute,
     AuthenticatedReportsPurchasesReceivingRoute:
       AuthenticatedReportsPurchasesReceivingRoute,
+    AuthenticatedReportsPurchasesSupplierStatementsRoute:
+      AuthenticatedReportsPurchasesSupplierStatementsRouteWithChildren,
     AuthenticatedReportsPurchasesSuppliersRoute:
       AuthenticatedReportsPurchasesSuppliersRoute,
-    AuthenticatedReportsPurchasesSupplierStatementsSupplierIdRoute:
-      AuthenticatedReportsPurchasesSupplierStatementsSupplierIdRoute,
   }
 
 const AuthenticatedReportsPurchasesRouteWithChildren =
