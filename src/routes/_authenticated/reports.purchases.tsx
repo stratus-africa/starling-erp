@@ -1,10 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { ModulePage } from "@/components/module-page";
-import { modules } from "@/lib/modules";
+import { ReportsListingPage } from "@/components/reports-listing-page";
+import { purchasesReportsConfig } from "@/components/reports-configs";
 
 export const Route = createFileRoute("/_authenticated/reports/purchases")({
-  component: () => {
-    const m = modules["reports.purchases"];
-    return <ModulePage {...m} />;
-  },
+  component: () => <ReportsListingPage config={purchasesReportsConfig} />,
 });
