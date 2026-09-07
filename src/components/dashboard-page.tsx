@@ -11,6 +11,8 @@ import {
 } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import type { ReactNode } from "react";
+import { useExecutiveDashboard } from "@/hooks/use-executive-dashboard";
+import { useAuth } from "@/hooks/use-auth";
 
 const revenue = [
   { m: "Jan", rev: 214, exp: 148 }, { m: "Feb", rev: 232, exp: 152 },
@@ -61,6 +63,11 @@ const tooltipStyle = {
 };
 
 export function DashboardPage() {
+  const { tenant } = useAuth();
+  const { data } = useExecutiveDashboard();
+  const currency = tenant?.currency_symbol ?? tenant?.currency ?? "KES";
+  const money = (value: number) => `${currency} ${value.toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
+
   return (
     <div className="flex flex-col gap-4 p-4 md:p-6">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
@@ -70,7 +77,7 @@ export function DashboardPage() {
             <Badge variant="secondary" className="bg-primary/10 text-primary border-0">Live</Badge>
           </div>
           <p className="text-sm text-muted-foreground mt-0.5">
-            Acme Manufacturing Ltd · Fiscal Year 2026 · <span className="text-foreground">July MTD</span>
+            {tenant?.name ?? "Organization"} · Fiscal Year {new Date().getFullYear()} · <span className="text-foreground">Current MTD</span>
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -80,10 +87,10 @@ export function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-        <KpiCard label="Revenue MTD" value="$348,210" delta="+12.4%" up icon={<DollarSign className="h-4 w-4" />} />
-        <KpiCard label="Orders" value="1,284" delta="+8.1%" up icon={<ShoppingCart className="h-4 w-4" />} />
-        <KpiCard label="Active Customers" value="642" delta="+3.9%" up icon={<Users className="h-4 w-4" />} />
-        <KpiCard label="Inventory Value" value="$612,400" delta="-1.8%" up={false} icon={<Package className="h-4 w-4" />} />
+        <KpiCard label="Revenue MTD" value={money(data?.revenueMtd ?? 0)} delta="Live" up icon={<DollarSign className="h-4 w-4" />} />
+        <KpiCard label="Orders" value={String(data?.orders ?? 0)} delta="Live" up icon={<ShoppingCart className="h-4 w-4" />} />
+        <KpiCard label="Active Customers" value={String(data?.activeCustomers ?? 0)} delta="Live" up icon={<Users className="h-4 w-4" />} />
+        <KpiCard label="Inventory Value" value={money(data?.inventoryValue ?? 0)} delta="Live" up icon={<Package className="h-4 w-4" />} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
@@ -97,7 +104,7 @@ export function DashboardPage() {
           </div>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={revenue} margin={{ left: -20, right: 8, top: 8, bottom: 0 }}>
+              <AreaChart data={data?.revenue ?? []} margin={{ left: -20, right: 8, top: 8, bottom: 0 }}>
                 <defs>
                   <linearGradient id="revG" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="0%" stopColor="#2563eb" stopOpacity={0.35} />
@@ -127,8 +134,8 @@ export function DashboardPage() {
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
-                <Pie data={stockByWh} dataKey="value" nameKey="name" innerRadius={50} outerRadius={80} paddingAngle={2}>
-                  {stockByWh.map((_, i) => <Cell key={i} fill={chartColors[i % chartColors.length]} />)}
+                <Pie data={data?.stockByWh ?? []} dataKey="value" nameKey="name" innerRadius={50} outerRadius={80} paddingAngle={2}>
+                  {(data?.stockByWh ?? []).map((_, i) => <Cell key={i} fill={chartColors[i % chartColors.length]} />)}
                 </Pie>
                 <Tooltip {...tooltipStyle} />
                 <Legend iconSize={8} wrapperStyle={{ fontSize: 11 }} />
@@ -148,7 +155,7 @@ export function DashboardPage() {
           </div>
           <div className="h-56">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={sales} margin={{ left: -20, right: 8, top: 8, bottom: 0 }}>
+              <BarChart data={data?.sales ?? []} margin={{ left: -20, right: 8, top: 8, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
                 <XAxis dataKey="d" stroke="#64748b" fontSize={11} tickLine={false} axisLine={false} />
                 <YAxis stroke="#64748b" fontSize={11} tickLine={false} axisLine={false} />
@@ -165,12 +172,7 @@ export function DashboardPage() {
             <AlertTriangle className="h-4 w-4 text-warning" />
           </div>
           <div className="space-y-2.5">
-            {[
-              { t: "Sahara Motors invoice overdue", s: "$210,500 · 7 days late", type: "destructive" },
-              { t: "Low stock: Corrugated Box 60cm", s: "240 pc · reorder at 500", type: "warning" },
-              { t: "PR-2026-0088 awaiting approval", s: "Production · $34,200", type: "info" },
-              { t: "Bank reconciliation pending", s: "USD Trade · Jun 2026", type: "info" },
-            ].map((a, i) => (
+            {(data?.alerts ?? []).map((a, i) => (
               <div key={i} className="flex items-start gap-2.5 p-2.5 rounded-md hover:bg-muted/40 transition-colors">
                 <div className={"mt-1 h-1.5 w-1.5 rounded-full " + (
                   a.type === "destructive" ? "bg-destructive" : a.type === "warning" ? "bg-warning" : "bg-info"
@@ -192,19 +194,13 @@ export function DashboardPage() {
             <p className="text-xs text-muted-foreground">By revenue · MTD</p>
           </div>
           <div className="space-y-2">
-            {[
-              { n: "Sahara Motors", v: 210500, p: 100 },
-              { n: "Kilimanjaro Coffee Co.", v: 142800, p: 68 },
-              { n: "Blue Ocean Logistics", v: 96400, p: 46 },
-              { n: "Nairobi Traders Ltd", v: 48450, p: 23 },
-              { n: "Rift Valley Foods", v: 24300, p: 12 },
-            ].map((c) => (
+            {(data?.topCustomers ?? []).map((c) => (
               <div key={c.n} className="flex items-center gap-3">
                 <div className="w-40 text-sm truncate">{c.n}</div>
                 <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
                   <div className="h-full bg-primary rounded-full" style={{ width: c.p + "%" }} />
                 </div>
-                <div className="w-24 text-right text-sm font-mono tabular-nums">${c.v.toLocaleString()}</div>
+                <div className="w-24 text-right text-sm font-mono tabular-nums">{money(c.v)}</div>
               </div>
             ))}
           </div>
@@ -217,7 +213,7 @@ export function DashboardPage() {
           </div>
           <div className="h-52">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={revenue} margin={{ left: -20, right: 8, top: 8, bottom: 0 }}>
+              <LineChart data={data?.revenue ?? []} margin={{ left: -20, right: 8, top: 8, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
                 <XAxis dataKey="m" stroke="#64748b" fontSize={11} tickLine={false} axisLine={false} />
                 <YAxis stroke="#64748b" fontSize={11} tickLine={false} axisLine={false} />
