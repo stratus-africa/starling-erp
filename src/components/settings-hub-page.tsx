@@ -37,12 +37,7 @@ import {
 // ─────────────────────────────────────────────────────────────────────────────
 
 type SettingsCategory =
-  | "organization"
-  | "finance"
-  | "operations"
-  | "documents"
-  | "automation"
-  | "developer";
+  "organization" | "finance" | "operations" | "documents" | "automation" | "developer";
 
 interface SettingEntry {
   id: string;
@@ -292,11 +287,31 @@ const REGISTRY: SettingEntry[] = [
 // ─────────────────────────────────────────────────────────────────────────────
 
 const CATEGORIES: { id: SettingsCategory; label: string; description: string }[] = [
-  { id: "organization", label: "Organization", description: "Company identity, team access, and workspace configuration." },
-  { id: "finance", label: "Finance", description: "Accounting, banking, taxes, and financial setup." },
-  { id: "operations", label: "Operations", description: "Inventory, production, and operational configuration." },
-  { id: "documents", label: "Documents & Communication", description: "Numbering, email templates, and notification preferences." },
-  { id: "automation", label: "Automation", description: "Approval workflows and automated business rules." },
+  {
+    id: "organization",
+    label: "Organization",
+    description: "Company identity, team access, and workspace configuration.",
+  },
+  {
+    id: "finance",
+    label: "Finance",
+    description: "Accounting, banking, taxes, and financial setup.",
+  },
+  {
+    id: "operations",
+    label: "Operations",
+    description: "Inventory, production, and operational configuration.",
+  },
+  {
+    id: "documents",
+    label: "Documents & Communication",
+    description: "Numbering, email templates, and notification preferences.",
+  },
+  {
+    id: "automation",
+    label: "Automation",
+    description: "Approval workflows and automated business rules.",
+  },
   { id: "developer", label: "Developer", description: "API access and integration tools." },
 ];
 
@@ -350,10 +365,7 @@ export function SettingsHubPage() {
   }, [query, visibleEntries]);
 
   // Quick-access entries (permission-filtered)
-  const quickAccess = useMemo(
-    () => visibleEntries.filter((e) => e.quickAccess),
-    [visibleEntries],
-  );
+  const quickAccess = useMemo(() => visibleEntries.filter((e) => e.quickAccess), [visibleEntries]);
 
   return (
     <div className="flex min-h-[calc(100vh-3.5rem)]">
@@ -381,8 +393,7 @@ export function SettingsHubPage() {
 
       {/* ── Main content ─────────────────────────────────────────────────────── */}
       <div className="flex-1 min-w-0 overflow-y-auto">
-        <div className="max-w-5xl mx-auto px-5 py-8 md:px-8 space-y-10">
-
+        <div className="mx-auto w-full max-w-[1600px] px-5 py-8 md:px-8 space-y-10">
           {/* ── Page header ─────────────────────────────────────────────────── */}
           <div className="space-y-4">
             <div>
@@ -423,9 +434,7 @@ export function SettingsHubPage() {
                   ? `No results for "${query}"`
                   : `${searchResults.length} result${searchResults.length === 1 ? "" : "s"} for "${query}"`}
               </h2>
-              {searchResults.length > 0 && (
-                <SettingsGrid entries={searchResults} />
-              )}
+              {searchResults.length > 0 && <SettingsGrid entries={searchResults} />}
             </section>
           ) : (
             <>
@@ -458,40 +467,44 @@ export function SettingsHubPage() {
                 className="lg:hidden flex gap-2 overflow-x-auto pb-1 -mx-5 px-5 scrollbar-none"
                 aria-label="Settings categories"
               >
-                {CATEGORIES.filter((cat) =>
-                  visibleEntries.some((e) => e.category === cat.id),
-                ).map((cat) => (
-                  <a
-                    key={cat.id}
-                    href={`#cat-${cat.id}`}
-                    className="shrink-0 rounded-full border bg-card px-3.5 py-1.5 text-xs font-medium text-foreground/70 hover:text-foreground hover:border-primary/40 transition-colors whitespace-nowrap"
-                  >
-                    {cat.label}
-                  </a>
-                ))}
+                {CATEGORIES.filter((cat) => visibleEntries.some((e) => e.category === cat.id)).map(
+                  (cat) => (
+                    <a
+                      key={cat.id}
+                      href={`#cat-${cat.id}`}
+                      className="shrink-0 rounded-full border bg-card px-3.5 py-1.5 text-xs font-medium text-foreground/70 hover:text-foreground hover:border-primary/40 transition-colors whitespace-nowrap"
+                    >
+                      {cat.label}
+                    </a>
+                  ),
+                )}
               </nav>
 
               {/* ── Categorised settings ─────────────────────────────────── */}
-              {CATEGORIES.filter((cat) =>
-                visibleEntries.some((e) => e.category === cat.id),
-              ).map((cat) => {
-                const entries = visibleEntries.filter((e) => e.category === cat.id);
-                return (
-                  <section key={cat.id} id={`cat-${cat.id}`} aria-labelledby={`heading-${cat.id}`}>
-                    <div className="mb-4 flex flex-col gap-0.5">
-                      <h2
-                        id={`heading-${cat.id}`}
-                        className="text-sm font-semibold text-foreground"
-                      >
-                        {cat.label}
-                      </h2>
-                      <p className="text-xs text-muted-foreground">{cat.description}</p>
-                      <div className="mt-2 h-px bg-border" />
-                    </div>
-                    <SettingsGrid entries={entries} />
-                  </section>
-                );
-              })}
+              {CATEGORIES.filter((cat) => visibleEntries.some((e) => e.category === cat.id)).map(
+                (cat) => {
+                  const entries = visibleEntries.filter((e) => e.category === cat.id);
+                  return (
+                    <section
+                      key={cat.id}
+                      id={`cat-${cat.id}`}
+                      aria-labelledby={`heading-${cat.id}`}
+                    >
+                      <div className="mb-4 flex flex-col gap-0.5">
+                        <h2
+                          id={`heading-${cat.id}`}
+                          className="text-sm font-semibold text-foreground"
+                        >
+                          {cat.label}
+                        </h2>
+                        <p className="text-xs text-muted-foreground">{cat.description}</p>
+                        <div className="mt-2 h-px bg-border" />
+                      </div>
+                      <SettingsGrid entries={entries} />
+                    </section>
+                  );
+                },
+              )}
             </>
           )}
         </div>
