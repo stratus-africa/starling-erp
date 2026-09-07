@@ -87,6 +87,7 @@ import { Route as AuthenticatedExpensesReimbursementsRouteImport } from './route
 import { Route as AuthenticatedExpensesApprovalsRouteImport } from './routes/_authenticated/expenses.approvals'
 import { Route as AuthenticatedExpensesIdRouteImport } from './routes/_authenticated/expenses.$id'
 import { Route as AuthenticatedDashboardsSalesRouteImport } from './routes/_authenticated/dashboards.sales'
+import { Route as AuthenticatedDashboardsPurchasesRouteImport } from './routes/_authenticated/dashboards.purchases'
 import { Route as AuthenticatedDashboardsProductionRouteImport } from './routes/_authenticated/dashboards.production'
 import { Route as AuthenticatedDashboardsProcurementRouteImport } from './routes/_authenticated/dashboards.procurement'
 import { Route as AuthenticatedDashboardsLogisticsRouteImport } from './routes/_authenticated/dashboards.logistics'
@@ -599,6 +600,12 @@ const AuthenticatedDashboardsSalesRoute =
   AuthenticatedDashboardsSalesRouteImport.update({
     id: '/dashboards/sales',
     path: '/dashboards/sales',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedDashboardsPurchasesRoute =
+  AuthenticatedDashboardsPurchasesRouteImport.update({
+    id: '/dashboards/purchases',
+    path: '/dashboards/purchases',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedDashboardsProductionRoute =
@@ -1156,6 +1163,7 @@ export interface FileRoutesByFullPath {
   '/dashboards/logistics': typeof AuthenticatedDashboardsLogisticsRoute
   '/dashboards/procurement': typeof AuthenticatedDashboardsProcurementRoute
   '/dashboards/production': typeof AuthenticatedDashboardsProductionRoute
+  '/dashboards/purchases': typeof AuthenticatedDashboardsPurchasesRoute
   '/dashboards/sales': typeof AuthenticatedDashboardsSalesRoute
   '/expenses/$id': typeof AuthenticatedExpensesIdRoute
   '/expenses/approvals': typeof AuthenticatedExpensesApprovalsRoute
@@ -1317,6 +1325,7 @@ export interface FileRoutesByTo {
   '/dashboards/logistics': typeof AuthenticatedDashboardsLogisticsRoute
   '/dashboards/procurement': typeof AuthenticatedDashboardsProcurementRoute
   '/dashboards/production': typeof AuthenticatedDashboardsProductionRoute
+  '/dashboards/purchases': typeof AuthenticatedDashboardsPurchasesRoute
   '/dashboards/sales': typeof AuthenticatedDashboardsSalesRoute
   '/expenses/$id': typeof AuthenticatedExpensesIdRoute
   '/expenses/approvals': typeof AuthenticatedExpensesApprovalsRoute
@@ -1481,6 +1490,7 @@ export interface FileRoutesById {
   '/_authenticated/dashboards/logistics': typeof AuthenticatedDashboardsLogisticsRoute
   '/_authenticated/dashboards/procurement': typeof AuthenticatedDashboardsProcurementRoute
   '/_authenticated/dashboards/production': typeof AuthenticatedDashboardsProductionRoute
+  '/_authenticated/dashboards/purchases': typeof AuthenticatedDashboardsPurchasesRoute
   '/_authenticated/dashboards/sales': typeof AuthenticatedDashboardsSalesRoute
   '/_authenticated/expenses/$id': typeof AuthenticatedExpensesIdRoute
   '/_authenticated/expenses/approvals': typeof AuthenticatedExpensesApprovalsRoute
@@ -1645,6 +1655,7 @@ export interface FileRouteTypes {
     | '/dashboards/logistics'
     | '/dashboards/procurement'
     | '/dashboards/production'
+    | '/dashboards/purchases'
     | '/dashboards/sales'
     | '/expenses/$id'
     | '/expenses/approvals'
@@ -1806,6 +1817,7 @@ export interface FileRouteTypes {
     | '/dashboards/logistics'
     | '/dashboards/procurement'
     | '/dashboards/production'
+    | '/dashboards/purchases'
     | '/dashboards/sales'
     | '/expenses/$id'
     | '/expenses/approvals'
@@ -1969,6 +1981,7 @@ export interface FileRouteTypes {
     | '/_authenticated/dashboards/logistics'
     | '/_authenticated/dashboards/procurement'
     | '/_authenticated/dashboards/production'
+    | '/_authenticated/dashboards/purchases'
     | '/_authenticated/dashboards/sales'
     | '/_authenticated/expenses/$id'
     | '/_authenticated/expenses/approvals'
@@ -2635,6 +2648,13 @@ declare module '@tanstack/react-router' {
       path: '/dashboards/sales'
       fullPath: '/dashboards/sales'
       preLoaderRoute: typeof AuthenticatedDashboardsSalesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/dashboards/purchases': {
+      id: '/_authenticated/dashboards/purchases'
+      path: '/dashboards/purchases'
+      fullPath: '/dashboards/purchases'
+      preLoaderRoute: typeof AuthenticatedDashboardsPurchasesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/dashboards/production': {
@@ -3417,6 +3437,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedDashboardsLogisticsRoute: typeof AuthenticatedDashboardsLogisticsRoute
   AuthenticatedDashboardsProcurementRoute: typeof AuthenticatedDashboardsProcurementRoute
   AuthenticatedDashboardsProductionRoute: typeof AuthenticatedDashboardsProductionRoute
+  AuthenticatedDashboardsPurchasesRoute: typeof AuthenticatedDashboardsPurchasesRoute
   AuthenticatedDashboardsSalesRoute: typeof AuthenticatedDashboardsSalesRoute
   AuthenticatedExpensesIdRoute: typeof AuthenticatedExpensesIdRoute
   AuthenticatedExpensesApprovalsRoute: typeof AuthenticatedExpensesApprovalsRoute
@@ -3521,6 +3542,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
     AuthenticatedDashboardsProcurementRoute,
   AuthenticatedDashboardsProductionRoute:
     AuthenticatedDashboardsProductionRoute,
+  AuthenticatedDashboardsPurchasesRoute: AuthenticatedDashboardsPurchasesRoute,
   AuthenticatedDashboardsSalesRoute: AuthenticatedDashboardsSalesRoute,
   AuthenticatedExpensesIdRoute: AuthenticatedExpensesIdRoute,
   AuthenticatedExpensesApprovalsRoute: AuthenticatedExpensesApprovalsRoute,
