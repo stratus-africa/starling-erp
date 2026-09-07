@@ -240,6 +240,537 @@ const fmtDate = (v: string | null | undefined) => {
       });
 };
 
+function getInvoicePaymentState(doc: Record<string, any>) {
+  const total = Number(doc?.grand_total ?? 0);
+  const paid = Number(doc?.amount_paid ?? 0);
+  const outstanding = Math.max(0, total - paid);
+  const isOverdue = Number(outstanding) > 0 && doc?.due_date && new Date(doc.due_date) < new Date();
+
+  if (outstanding <= 0.01) return { label: "Paid", tone: "bg-emerald-50 text-emerald-700 border-emerald-200", pct: 100, outstanding };
+  if (paid > 0) return { label: "Partially Paid", tone: "bg-amber-50 text-amber-700 border-amber-200", pct: total > 0 ? (paid / total) * 100 : 0, outstanding };
+  if (isOverdue) return { label: "Overdue", tone: "bg-red-50 text-red-700 border-red-200", pct: 0, outstanding };
+  return { label: "Unpaid", tone: "bg-slate-100 text-slate-700 border-slate-200", pct: 0, outstanding };
+}
+
+function InvoiceOverviewView({ id }: { id: string }) {
+  const { tenant, can } = useAuth();
+  const qc = useQueryClient();
+  const [tab, setTab] = useState<"overview" | "line-items" | "customer" | "payments" | "documents" | "activity" | "audit">("overview");
+  const [editing, setEditing] = useState(false);
+  const [payOpen, setPayOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+
+  const { data: invoice, isLoading } = useQuery({
+    queryKey: ["invoices", id, "invoice-overview"],
+    queryFn: async () => {
+      const { data, error } = await db.from("invoices").select("*").eq("id", id).maybeSingle();
+      if (error) throw error;
+      return (data ?? null) as Record<string, any> | null;
+    },
+  });
+
+  const { data: lines = [] } = useQuery({
+    queryKey: ["invoice_lines", id, "invoice-overview"],
+    enabled: !!id,
+    queryFn: async () => {
+      const { data, error } = await db.from("invoice_lines").select("*").eq("document_id", id).is("deleted_at", null).order("line_no");
+      if (error) throw error;
+      return (data ?? []) as Record<string, any>[];
+    },
+  });
+
+  const itemIds = useMemo(() => Array.from(new Set(lines.map((line) => line.item_id).filter(Boolean))), [lines]);
+  const { data: items = [] } = useQuery({
+    queryKey: ["items", "invoice-overview", itemIds],
+    enabled: itemIds.length > 0,
+    queryFn: async () => {
+      const { data, error } = await db.from("items").select("id,name,sku").in("id", itemIds).is("deleted_at", null);
+      if (error) throw error;
+      return (data ?? []) as Record<string, any>[];
+    },
+  });
+
+  const { data: customer } = useQuery({
+    queryKey: ["customers", invoice?.customer_id],
+    enabled: !!invoice?.customer_id,
+    queryFn: async () => {
+      const { data, error } = await db.from("customers").select("* ").eq("id", invoice.customer_id).maybeSingle();
+      if (error) throw error;
+      return (data ?? null) as Record<string, any> | null;
+    },
+  });
+
+  const { data: salesperson } = useQuery({
+    queryKey: ["profiles", invoice?.created_by],
+    enabled: !!invoice?.created_by,
+    queryFn: async () => {
+      const { data, error } = await db.from("profiles").select("full_name,email").eq("id", invoice.created_by).maybeSingle();
+      if (error) throw error;
+      return (data ?? null) as Record<string, any> | null;
+    },
+  });
+
+  const { data: sourceOrder } = useQuery({
+    queryKey: ["sales_orders", invoice?.source_order_id],
+    enabled: !!invoice?.source_order_id,
+    queryFn: async () => {
+      const { data, error } = await db.from("sales_orders").select("id,number").eq("id", invoice.source_order_id).maybeSingle();
+      if (error) throw error;
+      return (data ?? null) as Record<string, any> | null;
+    },
+  });
+
+  const { data: payments = [] } = useQuery({
+    queryKey: ["payments_received", id],
+    enabled: !!invoice?.id,
+    queryFn: async () => {
+      const { data, error } = await db.from("payments_received").select("*").eq("invoice_id", id).is("deleted_at", null).order("payment_date", { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as Record<string, any>[];
+    },
+  });
+
+  const { data: events = [] } = useDocumentEvents("invoice", id);
+  const { data: audit = [] } = useQuery({
+    queryKey: ["audit_logs", "invoices", id],
+    enabled: !!id,
+    queryFn: async () => {
+      const { data, error } = await db.from("audit_logs").select("*").eq("table_name", "invoices").eq("record_id", id).order("created_at", { ascending: false }).limit(50);
+      if (error) throw error;
+      return (data ?? []) as Record<string, any>[];
+    },
+  });
+
+  const canWrite = can(["sales.create", "sales.update", "accounting.journal.create", "accounting.journal.update"]);
+  const canRecordPayment = can(["payments.create", "payments.post"]);
+  const canDelete = can(["sales.delete", "admin"]);
+
+  if (isLoading) return <div className="flex h-64 items-center justify-center text-sm text-muted-foreground">Loading invoice…</div>;
+  if (!invoice) return <div className="flex h-64 items-center justify-center text-sm text-muted-foreground">Invoice not found.</div>;
+
+  const currency = invoice.currency ?? tenant?.currency_symbol ?? tenant?.currency ?? "KES";
+  const invoiceTotal = Number(invoice.grand_total ?? 0);
+  const paid = Number(invoice.amount_paid ?? 0);
+  const outstanding = Math.max(0, invoiceTotal - paid);
+  const paymentState = getInvoicePaymentState(invoice);
+  const progress = invoiceTotal > 0 ? Math.min(100, (paid / invoiceTotal) * 100) : 0;
+
+  const totals = {
+    subtotal: Number(invoice.subtotal ?? 0),
+    discount: Number(invoice.discount_total ?? 0),
+    tax: Number(invoice.tax_total ?? 0),
+    total: invoiceTotal,
+  };
+
+  const tabOptions = [
+    { key: "overview", label: "Overview" },
+    { key: "line-items", label: "Line Items" },
+    { key: "customer", label: "Customer" },
+    { key: "payments", label: "Payments" },
+    { key: "documents", label: "Documents" },
+    { key: "activity", label: "Activity" },
+    { key: "audit", label: "Audit Trail" },
+  ] as const;
+
+  const headerTitle = invoice.number ?? "Invoice";
+
+  return (
+    <div className="min-h-full bg-muted/20 p-4 md:p-6">
+      <div className="mx-auto flex max-w-[1600px] flex-col gap-4">
+        <header className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+          <div className="flex min-w-0 items-start gap-3">
+            <Button variant="ghost" size="sm" onClick={() => window.history.back()}>
+              <ArrowLeft className="mr-1 h-4 w-4" /> Back
+            </Button>
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <h1 className="text-2xl font-semibold tracking-tight">{headerTitle}</h1>
+                <span className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-semibold ${paymentState.tone}`}>
+                  {paymentState.label}
+                </span>
+              </div>
+              <div className="mt-2 flex flex-wrap items-center gap-x-6 gap-y-1 text-sm text-muted-foreground">
+                <span><span className="font-medium text-foreground">Customer</span> {customer?.name ?? "—"}</span>
+                <span><span className="font-medium text-foreground">Invoice Date</span> {fmtDate(invoice.date)}</span>
+                <span><span className="font-medium text-foreground">Due Date</span> {fmtDate(invoice.due_date)}</span>
+                <span><span className="font-medium text-foreground">Salesperson</span> {salesperson?.full_name ?? "—"}</span>
+              </div>
+              {sourceOrder && (
+                <div className="mt-2 text-sm text-muted-foreground">
+                  <span className="font-medium text-foreground">Order</span> {sourceOrder.number}
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2 xl:justify-end">
+            <Button variant="outline" size="sm" onClick={() => downloadDocumentPdf({
+              title: "Invoice",
+              number: String(invoice.number ?? ""),
+              companyName: tenant?.name ?? "Company",
+              partyLabel: "Customer",
+              partyName: customer?.name ?? "—",
+              currency,
+              meta: [
+                { label: "Invoice Date", value: fmtDate(invoice.date) },
+                { label: "Due Date", value: fmtDate(invoice.due_date) },
+                { label: "Status", value: String(invoice.status ?? paymentState.label) },
+              ],
+              lines: lines.map((line) => ({
+                description: line.description ?? "",
+                quantity: Number(line.quantity ?? 0),
+                unit_price: Number(line.unit_price ?? 0),
+                discount_pct: Number(line.discount_pct ?? 0),
+                tax_pct: Number(line.tax_pct ?? 0),
+                line_total: Number(line.line_total ?? 0),
+              })),
+              totals: { subtotal: totals.subtotal, discount_total: totals.discount, tax_total: totals.tax, grand_total: totals.total },
+              branding: { primaryColor: "#2563eb", logoUrl: "" },
+              notes: invoice.notes ?? null,
+            })}>
+              <Download className="mr-1.5 h-4 w-4" /> Download PDF
+            </Button>
+            {canRecordPayment && outstanding > 0 && (
+              <Button variant="default" size="sm" onClick={() => setPayOpen(true)}>
+                <DollarSign className="mr-1.5 h-4 w-4" /> Record Payment
+              </Button>
+            )}
+            {canWrite && (
+              <Button variant="outline" size="sm" onClick={() => setEditing(true)}>
+                <Pencil className="mr-1.5 h-4 w-4" /> Edit
+              </Button>
+            )}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="gap-1.5">
+                  More
+                  <ChevronDown className="h-3.5 w-3.5" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => window.print()}>
+                  <Printer className="mr-2 h-4 w-4" /> Print
+                </DropdownMenuItem>
+                {canDelete && (
+                  <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => setDeleteOpen(true)}>
+                    <Trash2 className="mr-2 h-4 w-4" /> Delete Invoice
+                  </DropdownMenuItem>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </header>
+
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-5">
+          {[
+            { label: "Invoice Total", value: `${currency} ${Number(invoiceTotal).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, icon: FileText },
+            { label: "Amount Paid", value: `${currency} ${Number(paid).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, sub: `${Math.round(progress)}%`, icon: CheckCircle2 },
+            { label: "Outstanding", value: `${currency} ${Number(outstanding).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, sub: paymentState.label === "Paid" ? "Fully Paid" : paymentState.label, icon: Wallet },
+            { label: "Due Date", value: fmtDate(invoice.due_date), icon: CalendarDays },
+            { label: "Payment Status", value: paymentState.label, icon: Receipt },
+          ].map((kpi) => (
+            <Card key={kpi.label} className="p-4">
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="text-xs text-muted-foreground">{kpi.label}</p>
+                  <p className="mt-1 truncate font-mono text-lg font-semibold tabular-nums">{kpi.value}</p>
+                  {kpi.sub && <p className="mt-1 text-[11px] text-muted-foreground">{kpi.sub}</p>}
+                </div>
+                <kpi.icon className="h-4 w-4 shrink-0 text-primary" />
+              </div>
+            </Card>
+          ))}
+        </div>
+
+        <div className="overflow-hidden rounded-lg border bg-background">
+          <div className="flex flex-wrap items-center gap-1 border-b bg-muted/30 p-2">
+            {tabOptions.map((item) => (
+              <button
+                key={item.key}
+                type="button"
+                onClick={() => setTab(item.key)}
+                className={`rounded-md px-3 py-2 text-sm font-medium transition-colors ${tab === item.key ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+              >
+                {item.label}
+              </button>
+            ))}
+          </div>
+
+          {tab === "overview" && (
+            <div className="grid items-start gap-4 p-4 lg:grid-cols-[minmax(0,2fr)_minmax(300px,1fr)]">
+              <div className="space-y-4">
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-sm">Invoice Summary</CardTitle>
+                  </CardHeader>
+                  <CardContent className="grid gap-4 md:grid-cols-2">
+                    <div className="space-y-3">
+                      <Info label="Invoice Number" value={invoice.number ?? "—"} />
+                      <Info label="Customer" value={customer?.name ?? "—"} />
+                      <Info label="Sales Order" value={sourceOrder?.number ?? "—"} />
+                      <Info label="Invoice Date" value={fmtDate(invoice.date)} />
+                    </div>
+                    <div className="space-y-3">
+                      <Info label="Due Date" value={fmtDate(invoice.due_date)} />
+                      <Info label="Payment Terms" value={invoice.payment_terms ?? customer?.payment_terms ?? "—"} />
+                      <Info label="Currency" value={currency} />
+                      <Info label="Salesperson" value={salesperson?.full_name ?? "—"} />
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between pb-3">
+                    <CardTitle className="text-sm">Line Items</CardTitle>
+                    <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] text-muted-foreground">{lines.length} items</span>
+                  </CardHeader>
+                  <CardContent className="p-0">
+                    <div className="overflow-x-auto">
+                      <table className="w-full min-w-[760px] text-sm">
+                        <thead>
+                          <tr className="border-b bg-muted/40 text-[11px] uppercase tracking-wide text-muted-foreground">
+                            <th className="px-4 py-3 text-left">#</th>
+                            <th className="px-4 py-3 text-left">Item / SKU</th>
+                            <th className="px-4 py-3 text-left">Description</th>
+                            <th className="px-4 py-3 text-right">Qty</th>
+                            <th className="px-4 py-3 text-right">Unit Price</th>
+                            <th className="px-4 py-3 text-right">Discount</th>
+                            <th className="px-4 py-3 text-right">Tax</th>
+                            <th className="px-4 py-3 text-right">Amount</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {lines.length === 0 ? (
+                            <tr><td colSpan={8} className="px-4 py-8 text-center text-sm text-muted-foreground">No line items on this invoice.</td></tr>
+                          ) : lines.map((line, index) => {
+                            const item = items.find((candidate) => candidate.id === line.item_id);
+                            return (
+                              <tr key={line.id ?? index} className="border-b last:border-0">
+                                <td className="px-4 py-3 text-muted-foreground">{index + 1}</td>
+                                <td className="px-4 py-3">
+                                  <div className="font-medium">{item?.name ?? line.description ?? "Item"}</div>
+                                  <div className="text-[11px] text-muted-foreground">{item?.sku ?? "No SKU"}</div>
+                                </td>
+                                <td className="px-4 py-3 text-muted-foreground">{line.description ?? "—"}</td>
+                                <td className="px-4 py-3 text-right">{Number(line.quantity ?? 0)}</td>
+                                <td className="px-4 py-3 text-right font-mono text-xs">{currency} {Number(line.unit_price ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                                <td className="px-4 py-3 text-right">{Number(line.discount_pct ?? 0)}%</td>
+                                <td className="px-4 py-3 text-right">{Number(line.tax_pct ?? 0)}%</td>
+                                <td className="px-4 py-3 text-right font-mono font-medium">{currency} {Number(line.line_total ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                    <div className="flex flex-col gap-3 border-t bg-muted/10 p-4 md:items-end">
+                      <div className="grid w-full max-w-xs gap-2 text-sm md:ml-auto">
+                        <TotalRow label="Subtotal" value={`${currency} ${totals.subtotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} />
+                        <TotalRow label="Discount" value={`${currency} ${totals.discount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} />
+                        <TotalRow label="Tax" value={`${currency} ${totals.tax.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} />
+                        <div className="border-t pt-2">
+                          <TotalRow label="Grand Total" value={`${currency} ${totals.total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} bold />
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              <aside className="space-y-4">
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-sm">Payment Status</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <span className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-semibold ${paymentState.tone}`}>{paymentState.label}</span>
+                      <span className="font-mono text-xs text-muted-foreground">{Math.round(progress)}% paid</span>
+                    </div>
+                    <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+                      <div className="h-full rounded-full bg-emerald-500" style={{ width: `${Math.max(0, Math.min(100, progress))}%` }} />
+                    </div>
+                    <div className="space-y-2 text-sm">
+                      <TotalRow label="Invoice Total" value={`${currency} ${totals.total.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`} />
+                      <TotalRow label="Amount Paid" value={`${currency} ${paid.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} />
+                      <TotalRow label="Outstanding" value={`${currency} ${outstanding.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} />
+                    </div>
+                    <div className="space-y-2 border-t pt-3 text-xs text-muted-foreground">
+                      {payments.length ? payments.map((payment) => (
+                        <div key={payment.id} className="flex items-start justify-between gap-2 border-b pb-2 last:border-0 last:pb-0">
+                          <div>
+                            <div className="font-medium text-foreground">{payment.mode ?? "Payment"}</div>
+                            <div>{fmtDate(payment.payment_date)}</div>
+                          </div>
+                          <div className="font-mono text-foreground">{currency} {Number(payment.amount ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                        </div>
+                      )) : (
+                        <div className="space-y-2">
+                          <p>No payments recorded.</p>
+                          {canRecordPayment && outstanding > 0 && <Button variant="secondary" size="sm" className="w-full" onClick={() => setPayOpen(true)}>Record Payment</Button>}
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-sm">Activity</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    {events.length ? events.slice(-5).reverse().map((event) => (
+                      <div key={event.id} className="flex gap-2 border-b pb-2 last:border-0 last:pb-0">
+                        <div className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full bg-primary" />
+                        <div>
+                          <p className="text-sm font-medium">{event.note ?? event.status}</p>
+                          <p className="text-[11px] text-muted-foreground">{fmtDate(event.created_at)} · {event.actor_email ?? "System"}</p>
+                        </div>
+                      </div>
+                    )) : <p className="text-sm text-muted-foreground">No activity yet.</p>}
+                    <Button variant="link" size="sm" className="h-auto px-0" onClick={() => setTab("activity")}>View All</Button>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between pb-3">
+                    <CardTitle className="text-sm">Notes</CardTitle>
+                    {canWrite && <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setEditing(true)}><Pencil className="h-3.5 w-3.5" /></Button>}
+                  </CardHeader>
+                  <CardContent>
+                    <p className="whitespace-pre-wrap text-sm text-muted-foreground">{invoice.notes || "No notes added."}</p>
+                  </CardContent>
+                </Card>
+              </aside>
+            </div>
+          )}
+
+          {tab === "line-items" && (
+            <div className="p-4">
+              <Card>
+                <CardHeader className="pb-3"><CardTitle className="text-sm">Line Items</CardTitle></CardHeader>
+                <CardContent className="p-0">
+                  <div className="overflow-x-auto"><table className="w-full min-w-[760px] text-sm">...</table></div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {tab === "customer" && (
+            <div className="p-4">
+              <Card>
+                <CardHeader><CardTitle className="text-sm">Customer</CardTitle></CardHeader>
+                <CardContent className="grid gap-4 md:grid-cols-2">
+                  <Info label="Customer name" value={customer?.name ?? "—"} />
+                  <Info label="Customer code" value={customer?.code ?? "—"} />
+                  <Info label="Contact person" value={customer?.contact_person ?? "—"} />
+                  <Info label="Email" value={customer?.email ?? "—"} />
+                  <Info label="Phone" value={customer?.phone ?? "—"} />
+                  <Info label="Payment terms" value={invoice.payment_terms ?? customer?.payment_terms ?? "—"} />
+                  <Info label="Currency" value={currency} />
+                  <div className="md:col-span-2"><Info label="Billing address" value={customer?.billing_address ?? "—"} /></div>
+                  <div className="md:col-span-2"><Info label="Shipping address" value={customer?.shipping_address ?? "—"} /></div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {tab === "payments" && (
+            <div className="p-4">
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between pb-3">
+                  <CardTitle className="text-sm">Payments</CardTitle>
+                  {canRecordPayment && outstanding > 0 && <Button variant="secondary" size="sm" onClick={() => setPayOpen(true)}>Record Payment</Button>}
+                </CardHeader>
+                <CardContent>
+                  {payments.length ? (
+                    <div className="overflow-x-auto"><table className="w-full text-sm"><thead>...</thead><tbody>...</tbody></table></div>
+                  ) : <div className="rounded border border-dashed p-6 text-sm text-muted-foreground">No payments recorded.</div>}
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {tab === "documents" && (
+            <div className="p-4">
+              <Card>
+                <CardHeader><CardTitle className="text-sm">Documents</CardTitle></CardHeader>
+                <CardContent>
+                  <AttachmentsPanel entityType="invoice" entityId={id} />
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {tab === "activity" && (
+            <div className="p-4">
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between pb-3">
+                  <CardTitle className="text-sm">Activity</CardTitle>
+                  <Button variant="ghost" size="sm" className="h-7 px-2" onClick={() => setTab("overview")}>Back</Button>
+                </CardHeader>
+                <CardContent>
+                  <DocumentTimeline entityType="invoice" entityId={id} stages={["Draft", "Sent", "Posted", "Paid", "Overdue", "Cancelled"]} currentStage={invoice.status ?? "Draft"} />
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {tab === "audit" && (
+            <div className="p-4">
+              <Card>
+                <CardHeader><CardTitle className="text-sm">Audit Trail</CardTitle></CardHeader>
+                <CardContent>
+                  {audit.length ? (
+                    <div className="space-y-3 text-sm">
+                      {audit.map((entry) => (
+                        <div key={entry.id} className="border-b pb-2 last:border-0 last:pb-0">
+                          <div className="flex items-center justify-between gap-3"><span className="font-medium">{entry.user_name ?? entry.actor_email ?? "System"}</span><span className="text-[11px] text-muted-foreground">{fmtDate(entry.created_at)}</span></div>
+                          <div className="mt-1 text-muted-foreground">{entry.action ?? entry.note ?? "Audit event"}</div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : <p className="text-sm text-muted-foreground">No audit entries yet.</p>}
+                </CardContent>
+              </Card>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {payOpen && (
+        <RecordPaymentDialog
+          open={payOpen}
+          onOpenChange={setPayOpen}
+          kind="receive"
+          docId={id}
+          docNumber={invoice.number}
+          partyId={invoice.customer_id}
+          balanceDue={outstanding}
+          currency={currency}
+        />
+      )}
+
+      {deleteOpen && (
+        <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete invoice?</AlertDialogTitle>
+              <AlertDialogDescription>This will remove the invoice and its lines.</AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction className="bg-destructive text-destructive-foreground" onClick={() => { qc.invalidateQueries({ queryKey: ["invoices"] }); setDeleteOpen(false); }}>Delete</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
+
+      {editing && <DocumentEditor kind="invoice" id={id} onClose={() => setEditing(false)} onSaved={() => { setEditing(false); qc.invalidateQueries({ queryKey: ["invoices", id] }); qc.invalidateQueries({ queryKey: ["invoice_lines", id] }); }} />}
+    </div>
+  );
+}
+
 // ── DetailsView ───────────────────────────────────────────────────────────────
 
 function DetailsView({ kind, id }: { kind: DocKind; id: string }) {
@@ -330,6 +861,10 @@ function DetailsView({ kind, id }: { kind: DocKind; id: string }) {
     return (
       <div className="flex h-48 items-center justify-center text-sm text-muted-foreground">Document not found.</div>
     );
+  }
+
+  if (kind === "invoice") {
+    return <InvoiceOverviewView id={id} />;
   }
 
   const currency = doc.currency ?? "USD";
@@ -699,6 +1234,7 @@ export function DocViewPanel({ kind, id, embedded = false, onClose, onSaved }: D
   const [editMode, setEditMode] = useState(isNew);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [emailOpen, setEmailOpen] = useState(false);
+  const [payOpen, setPayOpen] = useState(false);
 
   const canDelete = can([cfg.deletePermission, "admin"]);
   const permModule = kind === "po" || kind === "bill" || kind === "requisition" ? "purchasing" : "sales";
@@ -841,6 +1377,13 @@ export function DocViewPanel({ kind, id, embedded = false, onClose, onSaved }: D
 
         {/* Divider */}
         <div className="h-5 w-px bg-border mx-0.5" />
+
+        {kind === "invoice" && can(["payments.create", "payments.post"]) && Number(doc?.balance_due ?? doc?.grand_total ?? 0) > 0.001 && (
+          <Button variant="ghost" size="sm" className="h-8 gap-1.5" onClick={() => setPayOpen(true)}>
+            <DollarSign className="h-3.5 w-3.5" />
+            Record Payment
+          </Button>
+        )}
 
         {/* Mails */}
         <DropdownMenu>
@@ -1025,6 +1568,19 @@ export function DocViewPanel({ kind, id, embedded = false, onClose, onSaved }: D
       </AlertDialog>
 
       {/* ══ Email dialog ═════════════════════════════════════════════════════════ */}
+      {kind === "invoice" && doc && payOpen && (
+        <RecordPaymentDialog
+          open={payOpen}
+          onOpenChange={setPayOpen}
+          kind="receive"
+          docId={id}
+          docNumber={doc.number}
+          partyId={doc.customer_id}
+          balanceDue={Number(doc.balance_due ?? doc.grand_total ?? 0)}
+          currency={String(doc.currency ?? "KES")}
+        />
+      )}
+
       {emailOpen && (
         <EmailDocumentDialog
           open={emailOpen}
