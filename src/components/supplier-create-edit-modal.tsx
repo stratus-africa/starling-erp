@@ -18,13 +18,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -294,142 +287,144 @@ export function SupplierCreateEditWindow({
   if (!open) return null;
   return (
     <>
-      <Dialog open={open} onOpenChange={(nextOpen) => (nextOpen ? onOpenChange?.(true) : close())}>
-        <DialogContent className="flex max-h-[92vh] w-[calc(100%-1rem)] max-w-6xl flex-col gap-0 overflow-hidden p-0">
-          <DialogHeader className="shrink-0 border-b px-6 py-5">
-            <DialogTitle className="flex items-center gap-3">
+      <section
+        className="fixed inset-0 z-40 flex flex-col overflow-hidden bg-background"
+        aria-label={isNew ? "Create Supplier" : "Edit Supplier"}
+      >
+        <header className="flex shrink-0 items-center justify-between border-b px-5 py-4 md:px-8">
+          <div>
+            <h1 className="flex items-center gap-3 text-lg font-semibold leading-none tracking-tight">
               <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
                 <Building2 className="h-5 w-5" />
               </span>
               {isNew ? "Create Supplier" : "Edit Supplier"}
-            </DialogTitle>
-            <DialogDescription className="pl-[52px]">
+            </h1>
+            <p className="mt-2 pl-[52px] text-sm text-muted-foreground">
               {isNew
                 ? "Add a new supplier account to your system"
                 : "Update supplier account information"}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="min-h-0 flex-1 overflow-y-auto">
-            <div className="min-h-full">
-              <main className="min-w-0 p-5 md:p-7">
-                <Tabs
-                  value={activeTab}
-                  onValueChange={(value) => setActiveTab(value as typeof activeTab)}
-                >
-                  <TabsList className="mb-6 h-auto w-full justify-start overflow-x-auto bg-muted/50 p-1">
-                    {SUPPLIER_TABS.map((tab) => (
-                      <TabsTrigger
-                        key={tab.value}
-                        value={tab.value}
-                        className="whitespace-nowrap text-xs md:text-sm"
-                      >
-                        {tab.label}
-                      </TabsTrigger>
-                    ))}
-                  </TabsList>
-                  {SUPPLIER_TABS.map((tab) => (
-                    <TabsContent key={tab.value} value={tab.value} className="mt-0">
-                      <div className="mb-5">
-                        <h2 className="text-lg font-semibold">{tab.label}</h2>
-                        <p className="mt-1 text-sm text-muted-foreground">
-                          {tab.value === "basic"
-                            ? "Set the supplier identity and account defaults."
-                            : tab.value === "contact"
-                              ? "Add the people and channels used to communicate."
-                              : tab.value === "address"
-                                ? "Keep supplier address information accurate."
-                                : tab.value === "financial"
-                                  ? "Set currency, tax, payment, and credit information."
-                                  : "Add supplier notes and additional context."}
-                        </p>
-                      </div>
-                      <div className="grid gap-4 sm:grid-cols-2">
-                        {fieldsByTab[tab.value].map(renderField)}
-                      </div>
-                      {tab.value === "basic" && duplicates.length > 0 && (
-                        <div className="mt-5 rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
-                          <p className="font-medium">Possible duplicate supplier</p>
-                          {duplicates.map((duplicate) => (
-                            <p key={duplicate.id} className="mt-1 text-xs">
-                              {duplicate.name} · {duplicate.code ?? "No code"} ·{" "}
-                              {duplicate.country ?? "Country not set"}
-                            </p>
-                          ))}
-                        </div>
-                      )}
-                      {tab.value === "basic" && (
-                        <div className="mt-5 flex items-center gap-2 rounded-md border bg-muted/20 p-3 text-xs text-muted-foreground">
-                          <Badge variant="secondary">Supplier</Badge> Account type follows the
-                          existing supplier master model.
-                        </div>
-                      )}
-                      {tab.value === "address" && (
-                        <label className="mt-5 flex items-center gap-2 text-sm">
-                          <Checkbox
-                            checked={sameAddress}
-                            onCheckedChange={(checked) => {
-                              setSameAddress(Boolean(checked));
-                              setDirty(true);
-                            }}
-                          />{" "}
-                          Shipping address is same as billing
-                        </label>
-                      )}
-                      {tab.value === "additional" && (
-                        <div className="mt-6 rounded-md border bg-muted/20 p-4 text-sm text-muted-foreground">
-                          You can add more details in the other tabs, or save now and continue
-                          later.
-                        </div>
-                      )}
-                    </TabsContent>
-                  ))}
-                </Tabs>
-              </main>
-              <aside className="hidden border-l bg-muted/10 p-5 xl:block">
-                <div className="rounded-lg border bg-background p-4">
-                  <div className="flex items-center gap-2 font-medium">
-                    <CircleHelp className="h-4 w-4 text-primary" /> Why this matters
-                  </div>
-                  <p className="mt-3 text-xs leading-5 text-muted-foreground">
-                    Accurate supplier information helps you manage payments, track purchase orders,
-                    and maintain strong supplier relationships.
-                  </p>
-                </div>
-                <div className="mt-4 rounded-lg border bg-background p-4">
-                  <p className="text-sm font-medium">Quick Tips</p>
-                  <ul className="mt-3 space-y-2 text-xs text-muted-foreground">
-                    <li>✓ Use a unique supplier code</li>
-                    <li>✓ Select the correct supplier category</li>
-                    <li>✓ Add contact details for faster communication</li>
-                    <li>✓ Set payment terms and lead time</li>
-                    <li>✓ Include complete addresses</li>
-                  </ul>
-                </div>
-              </aside>
-            </div>
+            </p>
           </div>
-          <footer className="flex shrink-0 flex-col-reverse gap-2 border-t bg-background px-5 py-3 md:flex-row md:items-center md:justify-between md:px-6">
-            <Button variant="ghost" onClick={close}>
-              Cancel
-            </Button>
-            <div className="flex gap-2">
-              {isNew && (
-                <Button
-                  variant="outline"
-                  onClick={() => save.mutate({ createAnother: true })}
-                  disabled={!canWrite || save.isPending}
-                >
-                  Save & Create Another
-                </Button>
-              )}
-              <Button onClick={() => save.mutate()} disabled={!canWrite || save.isPending}>
-                {save.isPending && <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />}
-                {isNew ? "Create Supplier" : "Save Changes"}
+        </header>
+        <div className="min-h-0 flex-1 overflow-y-auto">
+          <div className="min-h-full">
+            <main className="min-w-0 p-5 md:p-7">
+              <Tabs
+                value={activeTab}
+                onValueChange={(value) => setActiveTab(value as typeof activeTab)}
+              >
+                <TabsList className="mb-6 h-auto w-full justify-start overflow-x-auto bg-muted/50 p-1">
+                  {SUPPLIER_TABS.map((tab) => (
+                    <TabsTrigger
+                      key={tab.value}
+                      value={tab.value}
+                      className="whitespace-nowrap text-xs md:text-sm"
+                    >
+                      {tab.label}
+                    </TabsTrigger>
+                  ))}
+                </TabsList>
+                {SUPPLIER_TABS.map((tab) => (
+                  <TabsContent key={tab.value} value={tab.value} className="mt-0">
+                    <div className="mb-5">
+                      <h2 className="text-lg font-semibold">{tab.label}</h2>
+                      <p className="mt-1 text-sm text-muted-foreground">
+                        {tab.value === "basic"
+                          ? "Set the supplier identity and account defaults."
+                          : tab.value === "contact"
+                            ? "Add the people and channels used to communicate."
+                            : tab.value === "address"
+                              ? "Keep supplier address information accurate."
+                              : tab.value === "financial"
+                                ? "Set currency, tax, payment, and credit information."
+                                : "Add supplier notes and additional context."}
+                      </p>
+                    </div>
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      {fieldsByTab[tab.value].map(renderField)}
+                    </div>
+                    {tab.value === "basic" && duplicates.length > 0 && (
+                      <div className="mt-5 rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
+                        <p className="font-medium">Possible duplicate supplier</p>
+                        {duplicates.map((duplicate) => (
+                          <p key={duplicate.id} className="mt-1 text-xs">
+                            {duplicate.name} · {duplicate.code ?? "No code"} ·{" "}
+                            {duplicate.country ?? "Country not set"}
+                          </p>
+                        ))}
+                      </div>
+                    )}
+                    {tab.value === "basic" && (
+                      <div className="mt-5 flex items-center gap-2 rounded-md border bg-muted/20 p-3 text-xs text-muted-foreground">
+                        <Badge variant="secondary">Supplier</Badge> Account type follows the
+                        existing supplier master model.
+                      </div>
+                    )}
+                    {tab.value === "address" && (
+                      <label className="mt-5 flex items-center gap-2 text-sm">
+                        <Checkbox
+                          checked={sameAddress}
+                          onCheckedChange={(checked) => {
+                            setSameAddress(Boolean(checked));
+                            setDirty(true);
+                          }}
+                        />{" "}
+                        Shipping address is same as billing
+                      </label>
+                    )}
+                    {tab.value === "additional" && (
+                      <div className="mt-6 rounded-md border bg-muted/20 p-4 text-sm text-muted-foreground">
+                        You can add more details in the other tabs, or save now and continue later.
+                      </div>
+                    )}
+                  </TabsContent>
+                ))}
+              </Tabs>
+            </main>
+            <aside className="hidden border-l bg-muted/10 p-5 xl:block">
+              <div className="rounded-lg border bg-background p-4">
+                <div className="flex items-center gap-2 font-medium">
+                  <CircleHelp className="h-4 w-4 text-primary" /> Why this matters
+                </div>
+                <p className="mt-3 text-xs leading-5 text-muted-foreground">
+                  Accurate supplier information helps you manage payments, track purchase orders,
+                  and maintain strong supplier relationships.
+                </p>
+              </div>
+              <div className="mt-4 rounded-lg border bg-background p-4">
+                <p className="text-sm font-medium">Quick Tips</p>
+                <ul className="mt-3 space-y-2 text-xs text-muted-foreground">
+                  <li>✓ Use a unique supplier code</li>
+                  <li>✓ Select the correct supplier category</li>
+                  <li>✓ Add contact details for faster communication</li>
+                  <li>✓ Set payment terms and lead time</li>
+                  <li>✓ Include complete addresses</li>
+                </ul>
+              </div>
+            </aside>
+          </div>
+        </div>
+        <footer className="flex shrink-0 flex-col-reverse gap-2 border-t bg-background px-5 py-3 md:flex-row md:items-center md:justify-between md:px-6">
+          <Button variant="ghost" onClick={close}>
+            Cancel
+          </Button>
+          <div className="flex gap-2">
+            {isNew && (
+              <Button
+                variant="outline"
+                onClick={() => save.mutate({ createAnother: true })}
+                disabled={!canWrite || save.isPending}
+              >
+                Save & Create Another
               </Button>
-            </div>
-          </footer>
-        </DialogContent>
-      </Dialog>
+            )}
+            <Button onClick={() => save.mutate()} disabled={!canWrite || save.isPending}>
+              {save.isPending && <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />}
+              {isNew ? "Create Supplier" : "Save Changes"}
+            </Button>
+          </div>
+        </footer>
+      </section>
       <AlertDialog open={discardOpen} onOpenChange={setDiscardOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
