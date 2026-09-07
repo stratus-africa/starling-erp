@@ -1,6 +1,5 @@
--- Tenant-scoped sales overview aggregation for the reporting UI.
--- Use the existing reports.read permission; permission codes are constrained
--- to the repository's module.action format.
+-- Fix deployed sales overview RPCs for payment schemas that use posted_at
+-- as the posting marker and do not expose payments_received.status.
 
 CREATE OR REPLACE FUNCTION public.get_sales_overview(
   _date_from date,
@@ -29,7 +28,7 @@ BEGIN
   END IF;
 
   WITH posted_invoices AS (
-    SELECT i.id, i.date::date AS document_date, i.grand_total, i.balance_due, i.due_date
+    SELECT i.date::date AS document_date, i.grand_total, i.balance_due, i.due_date
     FROM public.invoices i
     WHERE i.tenant_id = v_tenant
       AND i.deleted_at IS NULL
@@ -43,11 +42,11 @@ BEGIN
     WHERE p.tenant_id = v_tenant
       AND p.deleted_at IS NULL
       AND p.voided_at IS NULL
-        AND p.posted_at IS NOT NULL
+      AND p.posted_at IS NOT NULL
       AND p.date::date BETWEEN _date_from AND _date_to
       AND (v_currency IS NULL OR upper(p.currency) = v_currency)
   ), order_totals AS (
-    SELECT so.id, so.grand_total
+    SELECT so.grand_total
     FROM public.sales_orders so
     WHERE so.tenant_id = v_tenant
       AND so.deleted_at IS NULL

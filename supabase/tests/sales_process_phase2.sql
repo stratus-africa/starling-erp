@@ -1,7 +1,10 @@
 -- Phase 2 payment lifecycle tests.
--- The harness must provide fixture UUIDs through test.phase2.* settings.
+
+CREATE EXTENSION IF NOT EXISTS pgtap WITH SCHEMA extensions;
+SET search_path = public, extensions;
 
 BEGIN;
+
 SELECT plan(13);
 
 SELECT lives_ok(

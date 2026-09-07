@@ -5,7 +5,6 @@ import { db } from "@/lib/typed-db";
 import { useAuth } from "@/hooks/use-auth";
 import { useDocumentEvents } from "@/lib/document-events";
 import { logDocumentEvent } from "@/lib/document-events";
-import { callRpc } from "@/lib/db-rpc";
 import { useDocumentBranding } from "@/hooks/use-document-branding";
 import { downloadDocumentPdf, type PdfDocInput } from "@/lib/document-pdf";
 import { DocumentEditor } from "@/components/document-editor";
@@ -15,6 +14,11 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { SalesDocumentLineage } from "@/components/sales-document-lineage";
+import { SalesNextAction } from "@/components/sales-next-action";
+import { SalesFinancialSummary } from "@/components/sales-financial-summary";
+import { CreditLimitWarning } from "@/components/credit-limit-warning";
+import { CreateInvoiceFromOrderDialog } from "@/components/create-invoice-from-order-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   AlertDialog,
@@ -234,6 +238,7 @@ export function SalesOrderViewPage({ id }: { id: string }) {
   const [editing, setEditing] = useState(false);
   const [tab, setTab] = useState("overview");
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [invoiceDialogOpen, setInvoiceDialogOpen] = useState(false);
   const { data: order, isLoading } = useQuery({
     queryKey: ["sales_orders", id, "view"],
     queryFn: async () => {
@@ -390,14 +395,6 @@ export function SalesOrderViewPage({ id }: { id: string }) {
     },
     onError: (error: Error) => toast.error(error.message),
   });
-  const convertToInvoice = useMutation({
-    mutationFn: () => callRpc("convert_order_to_invoice", { _order_id: id }),
-    onSuccess: (invoiceId) => {
-      toast.success("Invoice created");
-      nav({ to: `/sales/invoices/${invoiceId}` as never });
-    },
-    onError: (error: Error) => toast.error(error.message),
-  });
   if (editing)
     return (
       <DocumentEditor
@@ -430,6 +427,10 @@ export function SalesOrderViewPage({ id }: { id: string }) {
       : fulfilled >= ordered && ordered > 0
         ? "Fulfilled"
         : "Partially Fulfilled");
+  const creditExceeded =
+    Number(customer?.credit_limit ?? 0) > 0 &&
+    Number(customer?.balance ?? 0) + Number(order.grand_total ?? 0) >
+      Number(customer?.credit_limit ?? 0);
   const currentStatus = order.status ?? "Draft";
   const currentStage = ORDER_STAGES.indexOf(currentStatus);
   const canDelete = can(["sales.delete", "admin"]);
@@ -500,7 +501,8 @@ export function SalesOrderViewPage({ id }: { id: string }) {
               <Button
                 size="sm"
                 onClick={() => setStatus.mutate("Confirmed")}
-                disabled={setStatus.isPending}
+                disabled={setStatus.isPending || creditExceeded}
+                title={creditExceeded ? "Credit limit exceeded; approval is required" : undefined}
               >
                 <CheckCircle2 className="mr-1.5 h-4 w-4" /> Confirm Order
               </Button>
@@ -523,12 +525,7 @@ export function SalesOrderViewPage({ id }: { id: string }) {
               currentStatus === "Partially Fulfilled" ||
               currentStatus === "Fulfilled") &&
               canWrite && (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => convertToInvoice.mutate()}
-                  disabled={convertToInvoice.isPending}
-                >
+                <Button size="sm" variant="outline" onClick={() => setInvoiceDialogOpen(true)}>
                   <FileText className="mr-1.5 h-4 w-4" /> Create Invoice
                 </Button>
               )}
@@ -594,6 +591,37 @@ export function SalesOrderViewPage({ id }: { id: string }) {
             </Card>
           ))}
         </div>
+        <CreditLimitWarning
+          creditLimit={Number(customer?.credit_limit ?? 0)}
+          outstanding={Number(customer?.balance ?? 0)}
+          orderValue={Number(order.grand_total ?? 0)}
+          currency={currency}
+        />
+        <SalesFinancialSummary
+          summary={{
+            orderTotal: Number(order.grand_total ?? 0),
+            fulfillmentPercent: progress,
+            invoicedAmount: Number(financialSummary?.invoiced_amount ?? 0),
+            paidAmount: paid,
+            outstandingAmount: outstanding,
+            currency,
+          }}
+        />
+        <SalesNextAction
+          state={{
+            kind: "order",
+            status: currentStatus,
+            fulfillmentStatus,
+            invoiceStatus: order.invoice_status,
+            outstanding,
+            currency,
+          }}
+          onAction={() =>
+            fulfillmentStatus === "Not Started"
+              ? nav({ to: `/sales/packages/new?order=${id}` as never })
+              : setInvoiceDialogOpen(true)
+          }
+        />
         <Tabs value={tab} onValueChange={setTab}>
           <TabsList className="w-full justify-start overflow-x-auto">
             <TabsTrigger value="overview">Overview</TabsTrigger>
@@ -836,6 +864,28 @@ export function SalesOrderViewPage({ id }: { id: string }) {
                 onEdit={() => setEditing(true)}
               />
               <aside className="flex flex-col gap-4">
+                <SalesDocumentLineage
+                  nodes={[
+                    {
+                      type: "Sales Order",
+                      number: order.number,
+                      status: currentStatus,
+                      amount: order.grand_total,
+                      currency,
+                      date: order.date,
+                      href: `/sales/orders/${id}`,
+                    },
+                    ...invoices.slice(0, 3).map((invoice) => ({
+                      type: "Invoice",
+                      number: invoice.number,
+                      status: invoice.status,
+                      amount: invoice.grand_total,
+                      currency: invoice.currency ?? currency,
+                      date: invoice.date,
+                      href: `/sales/invoices/${invoice.id}`,
+                    })),
+                  ]}
+                />
                 <SideCard title="Order Status & Fulfillment">
                   <div className="space-y-2">
                     {ORDER_STAGES.map((stage, index) => (
@@ -914,6 +964,12 @@ export function SalesOrderViewPage({ id }: { id: string }) {
           </TabsContent>
         </Tabs>
       </div>
+      <CreateInvoiceFromOrderDialog
+        open={invoiceDialogOpen}
+        onOpenChange={setInvoiceDialogOpen}
+        orderId={id}
+        onCreated={(invoiceId) => nav({ to: `/sales/invoices/${invoiceId}` as never })}
+      />
       <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>

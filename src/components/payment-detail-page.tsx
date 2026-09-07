@@ -14,6 +14,9 @@ import { BusinessEventTimeline } from "@/components/business-event-timeline";
 import { PaymentAllocationDialog } from "@/components/payment-allocation-dialog";
 import { useAuth } from "@/hooks/use-auth";
 import { usePaymentAllocations } from "@/hooks/use-payment-allocations";
+import { SalesDocumentLineage } from "@/components/sales-document-lineage";
+import { SalesNextAction } from "@/components/sales-next-action";
+import { AllocationSummary } from "@/components/payment-allocation-summary";
 
 type PaymentRow = {
   id: string;
@@ -200,6 +203,44 @@ export function PaymentDetailPage({ id }: { id: string }) {
             value={<Badge variant="outline">{summary?.allocation_status ?? "Unallocated"}</Badge>}
           />
         </Card>
+        <SalesNextAction
+          state={{
+            kind: "payment",
+            status: payment.posted_at ? "Posted" : "Draft",
+            unallocated: unallocatedAmount,
+            currency,
+          }}
+          onAction={() => setAllocationOpen(true)}
+        />
+        <AllocationSummary
+          amount={Number(payment.amount ?? 0)}
+          allocated={allocatedAmount}
+          unallocated={unallocatedAmount}
+          currency={currency}
+          status={summary?.allocation_status}
+        />
+        <SalesDocumentLineage
+          nodes={[
+            {
+              type: "Payment",
+              number: payment.number,
+              status: payment.posted_at ? "Posted" : "Draft",
+              amount: payment.amount,
+              currency,
+              date: payment.date,
+              href: `/sales/payments/${id}`,
+            },
+            ...allocations.map((allocation) => ({
+              type: "Invoice",
+              number: allocation.invoice_id,
+              status: "Allocated",
+              amount: allocation.amount,
+              currency,
+              date: allocation.allocation_date,
+              href: `/sales/invoices/${allocation.invoice_id}`,
+            })),
+          ]}
+        />
         <Card className="p-5">
           <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold">
             <FileText className="h-4 w-4" />

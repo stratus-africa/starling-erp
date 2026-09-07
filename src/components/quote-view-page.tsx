@@ -17,6 +17,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { SalesDocumentLineage } from "@/components/sales-document-lineage";
+import { SalesNextAction } from "@/components/sales-next-action";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   DropdownMenu,
@@ -284,6 +286,19 @@ export function QuoteViewPage({ id }: { id: string }) {
         .from("customers")
         .select("*")
         .eq("id", quote.customer_id)
+        .maybeSingle();
+      if (error) throw error;
+      return data as Row | null;
+    },
+  });
+  const { data: convertedOrder } = useQuery({
+    queryKey: ["sales_orders", "quote-lineage", quote?.converted_order_id],
+    enabled: !!quote?.converted_order_id,
+    queryFn: async () => {
+      const { data, error } = await db
+        .from("sales_orders")
+        .select("id,number,status,date,grand_total,currency")
+        .eq("id", quote.converted_order_id)
         .maybeSingle();
       if (error) throw error;
       return data as Row | null;
@@ -706,6 +721,36 @@ export function QuoteViewPage({ id }: { id: string }) {
             />
           </div>
           <aside className="flex min-w-0 flex-col gap-4">
+            <SalesNextAction
+              state={{ kind: "quote", status: currentStatus }}
+              onAction={() =>
+                currentStatus === "Accepted" ? convertMutation.mutate() : setEmailOpen(true)
+              }
+            />
+            <SalesDocumentLineage
+              nodes={
+                [
+                  {
+                    type: "Quote",
+                    number: quote.number,
+                    status: currentStatus,
+                    amount: total,
+                    currency,
+                    date: quote.date,
+                    href: `/sales/quotes/${id}`,
+                  },
+                  convertedOrder && {
+                    type: "Sales Order",
+                    number: convertedOrder.number,
+                    status: convertedOrder.status,
+                    amount: convertedOrder.grand_total,
+                    currency: convertedOrder.currency ?? currency,
+                    date: convertedOrder.date,
+                    href: `/sales/orders/${convertedOrder.id}`,
+                  },
+                ].filter(Boolean) as never[]
+              }
+            />
             <SidebarCard title="Status & Workflow">
               <div className="flex flex-wrap items-center gap-1 text-xs">
                 {workflow.map((stage, index) => (

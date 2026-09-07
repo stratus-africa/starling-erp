@@ -2,12 +2,10 @@
 -- The test harness must provide UUID settings for the fixture rows below. This
 -- keeps the suite independent of production data and lets the same cases run
 -- against a disposable tenant under an authenticated database role.
---
--- Required settings:
--- test.phase1.tenant_id, customer_a, customer_b, other_tenant,
--- payment_full, payment_partial, payment_multi_invoice, payment_unallocated,
--- invoice_full, invoice_partial, invoice_second, invoice_other_customer,
--- invoice_other_currency, invoice_voided, payment_deleted.
+-- pgTAP is a test dependency, not a core PostgreSQL function. Supabase hosts
+-- extensions in the extensions schema, so load it before calling plan().
+CREATE EXTENSION IF NOT EXISTS pgtap WITH SCHEMA extensions;
+SET search_path = public, extensions;
 
 BEGIN;
 

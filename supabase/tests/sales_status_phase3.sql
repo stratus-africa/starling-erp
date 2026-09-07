@@ -1,7 +1,10 @@
 -- Phase 3 canonical status and transition tests.
--- Fixture UUIDs are supplied by the database test harness via test.phase3.*.
+
+CREATE EXTENSION IF NOT EXISTS pgtap WITH SCHEMA extensions;
+SET search_path = public, extensions;
 
 BEGIN;
+
 SELECT plan(17);
 
 SELECT is(

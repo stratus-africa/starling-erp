@@ -79,7 +79,12 @@ export const navGroups: NavGroup[] = [
       { title: "Accounting", url: "/accounting", icon: Wallet2 },
       { title: "Sales", url: "/dashboards/sales", icon: TrendingUp },
       { title: "Logistics", url: "/dashboards/logistics", icon: TruckIcon },
-      { title: "Production", url: "/dashboards/production", icon: HardHat, feature: "manufacturing" },
+      {
+        title: "Production",
+        url: "/dashboards/production",
+        icon: HardHat,
+        feature: "manufacturing",
+      },
       { title: "Procurement", url: "/dashboards/procurement", icon: Gauge },
       { title: "Inventory", url: "/dashboards/inventory", icon: PackageSearch },
     ],
@@ -93,8 +98,7 @@ export const navGroups: NavGroup[] = [
     items: [
       { title: "Quotes", url: "/sales/quotes", icon: FileText },
       { title: "Sales Orders", url: "/sales/orders", icon: ShoppingCart },
-      { title: "Packages", url: "/sales/packages", icon: Package },
-      { title: "Shipments", url: "/sales/shipments", icon: Truck },
+      { title: "Fulfillment", url: "/sales/packages", icon: Package },
       { title: "Invoices", url: "/sales/invoices", icon: Receipt },
       { title: "Payments Received", url: "/sales/payments", icon: Wallet },
       { title: "Credit Notes", url: "/sales/credit-notes", icon: FileMinus },
@@ -118,7 +122,12 @@ export const navGroups: NavGroup[] = [
       { title: "Items", url: "/inventory/items", icon: Boxes },
       { title: "Warehouses", url: "/inventory/warehouses", icon: Warehouse },
       { title: "Adjustments", url: "/inventory/adjustments", icon: PackagePlus },
-      { title: "Stock Transfers", url: "/inventory/transfers", icon: ArrowLeftRight, feature: "multi_location" },
+      {
+        title: "Stock Transfers",
+        url: "/inventory/transfers",
+        icon: ArrowLeftRight,
+        feature: "multi_location",
+      },
       { title: "Lots & Batches", url: "/inventory/lots", icon: FlaskConical },
       { title: "Serial Numbers", url: "/inventory/serials", icon: Fingerprint },
       { title: "Inventory Ledger", url: "/inventory/ledger", icon: BookOpen },
@@ -127,10 +136,30 @@ export const navGroups: NavGroup[] = [
   {
     label: "Manufacturing",
     items: [
-      { title: "Production Items", url: "/manufacturing/items/", icon: Factory, feature: "manufacturing" },
-      { title: "Bill of Materials", url: "/manufacturing/bom", icon: ListTree, feature: "manufacturing" },
-      { title: "Production Orders", url: "/manufacturing/orders/", icon: Cog, feature: "manufacturing" },
-      { title: "Production Runs", url: "/manufacturing/runs", icon: PlayCircle, feature: "manufacturing" },
+      {
+        title: "Production Items",
+        url: "/manufacturing/items/",
+        icon: Factory,
+        feature: "manufacturing",
+      },
+      {
+        title: "Bill of Materials",
+        url: "/manufacturing/bom",
+        icon: ListTree,
+        feature: "manufacturing",
+      },
+      {
+        title: "Production Orders",
+        url: "/manufacturing/orders/",
+        icon: Cog,
+        feature: "manufacturing",
+      },
+      {
+        title: "Production Runs",
+        url: "/manufacturing/runs",
+        icon: PlayCircle,
+        feature: "manufacturing",
+      },
     ],
   },
   {
@@ -149,7 +178,12 @@ export const navGroups: NavGroup[] = [
       { title: "Sales Reports", url: "/reports/sales", icon: BarChart3 },
       { title: "Purchase Reports", url: "/reports/purchases", icon: LineChart },
       { title: "Inventory Reports", url: "/reports/inventory", icon: PieChart },
-      { title: "Manufacturing Reports", url: "/reports/manufacturing", icon: Activity, feature: "manufacturing" },
+      {
+        title: "Manufacturing Reports",
+        url: "/reports/manufacturing",
+        icon: Activity,
+        feature: "manufacturing",
+      },
     ],
   },
   {

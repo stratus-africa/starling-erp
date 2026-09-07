@@ -73,6 +73,11 @@ import { EmailDocumentDialog } from "@/components/email-document-dialog";
 import { AttachmentsPanel } from "@/components/attachments-panel";
 import { RecordPaymentDialog } from "@/components/record-payment-dialog";
 import { getDocumentTemplate } from "@/lib/document-template-types";
+import { SalesDocumentLineage } from "@/components/sales-document-lineage";
+import { SalesNextAction } from "@/components/sales-next-action";
+import { PaymentProgress } from "@/components/payment-progress";
+import { AgingBadge } from "@/components/aging-badge";
+import { RelatedDocuments } from "@/components/related-documents";
 
 // ── Config ────────────────────────────────────────────────────────────────────
 
@@ -402,11 +407,31 @@ function InvoiceOverviewView({ id }: { id: string }) {
       if (!invoice?.source_order_id) throw new Error("Invoice source order is unavailable");
       const { data, error } = await db
         .from("sales_orders")
-        .select("id,number")
+        .select("id,number,date,status,grand_total,currency")
         .eq("id", invoice.source_order_id)
         .maybeSingle();
       if (error) throw error;
       return (data ?? null) as Record<string, any> | null;
+    },
+  });
+  const { data: sourceOrderInvoicing } = useQuery({
+    queryKey: ["sales_orders", invoice?.source_order_id, "invoicing-status"],
+    enabled: !!invoice?.source_order_id,
+    queryFn: async () => {
+      const { data, error } = await db.rpc("get_sales_order_invoicing_status", {
+        _order_id: invoice?.source_order_id,
+      });
+      if (error) throw error;
+      return data as {
+        lines: Array<{
+          order_line_id: string;
+          item_name?: string;
+          description?: string;
+          ordered_quantity: number;
+          already_invoiced_quantity: number;
+          remaining_quantity: number;
+        }>;
+      } | null;
     },
   });
 
@@ -785,6 +810,52 @@ function InvoiceOverviewView({ id }: { id: string }) {
               </div>
 
               <aside className="space-y-4">
+                <SalesNextAction
+                  state={{
+                    kind: "invoice",
+                    status: invoice.status ?? paymentState.label,
+                    outstanding,
+                    currency,
+                  }}
+                  onAction={() => (paymentState.label === "Overdue" ? undefined : setPayOpen(true))}
+                />
+                <SalesDocumentLineage
+                  nodes={
+                    [
+                      sourceOrder && {
+                        type: "Sales Order",
+                        number: sourceOrder.number,
+                        status: "Related",
+                        href: `/sales/orders/${sourceOrder.id}`,
+                      },
+                      {
+                        type: "Invoice",
+                        number: invoice.number,
+                        status: paymentState.label,
+                        amount: invoiceTotal,
+                        currency,
+                        date: invoice.date,
+                        href: `/sales/invoices/${id}`,
+                      },
+                      ...payments.slice(0, 3).map((payment) => ({
+                        type: "Payment",
+                        number: payment.number,
+                        status: payment.posted_at ? "Posted" : "Draft",
+                        amount: payment.amount,
+                        currency: payment.currency ?? currency,
+                        date: payment.date ?? payment.payment_date,
+                        href: `/sales/payments/${payment.id}`,
+                      })),
+                    ].filter(Boolean) as never[]
+                  }
+                />
+                <PaymentProgress
+                  total={invoiceTotal}
+                  paid={paid}
+                  outstanding={outstanding}
+                  currency={currency}
+                />
+                <AgingBadge dueDate={invoice.due_date} balance={outstanding} />
                 <Card>
                   <CardHeader className="pb-3">
                     <CardTitle className="text-sm">Payment Status</CardTitle>
@@ -860,6 +931,51 @@ function InvoiceOverviewView({ id }: { id: string }) {
                     </div>
                   </CardContent>
                 </Card>
+                <RelatedDocuments
+                  documents={payments.map((payment) => ({
+                    type: "Payment",
+                    number: payment.number,
+                    status: payment.posted_at ? "Posted" : "Draft",
+                    amount: payment.amount,
+                    currency: payment.currency ?? currency,
+                    href: `/sales/payments/${payment.id}`,
+                  }))}
+                />
+                {sourceOrder && sourceOrderInvoicing && (
+                  <Card>
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-sm">Source Order Quantities</CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-0">
+                      <div className="overflow-x-auto">
+                        <table className="w-full min-w-[520px] text-sm">
+                          <thead className="bg-muted/40 text-xs uppercase text-muted-foreground">
+                            <tr>
+                              <th className="px-4 py-2 text-left">Product</th>
+                              <th className="px-4 py-2 text-right">Ordered</th>
+                              <th className="px-4 py-2 text-right">Invoiced</th>
+                              <th className="px-4 py-2 text-right">Remaining</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {sourceOrderInvoicing.lines.map((line) => (
+                              <tr key={line.order_line_id} className="border-t">
+                                <td className="px-4 py-2">
+                                  {line.item_name ?? line.description ?? "Item"}
+                                </td>
+                                <td className="px-4 py-2 text-right">{line.ordered_quantity}</td>
+                                <td className="px-4 py-2 text-right">
+                                  {line.already_invoiced_quantity}
+                                </td>
+                                <td className="px-4 py-2 text-right">{line.remaining_quantity}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
 
                 <Card>
                   <CardHeader className="pb-3">
