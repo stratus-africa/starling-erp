@@ -219,14 +219,6 @@ const TEMPLATE_KIND: Record<DocKind, DocTemplateKind> = {
 
 const money = (n: number) =>
   (n || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-const ORDER_EDITOR_STEPS = [
-  "Customer",
-  "Order Details",
-  "Products",
-  "Pricing & Tax",
-  "Delivery",
-  "Review & Confirm",
-];
 
 const STATUS_SELECT_COLORS: Record<string, string> = {
   Draft:
@@ -329,7 +321,6 @@ export function DocumentEditor({
   const [payOpen, setPayOpen] = useState(false);
   const [emailOpen, setEmailOpen] = useState(false);
   const [postOpen, setPostOpen] = useState(false);
-  const [orderStep, setOrderStep] = useState(0);
   const { branding } = useDocumentBranding(TEMPLATE_KIND[kind]);
   const { data: quoteStatusEvents = [] } = useDocumentEvents(kind, kind === "quote" ? id : null);
   const latestQuoteEventByStatus = useMemo(
@@ -450,13 +441,6 @@ export function DocumentEditor({
 
   const isOrderKind = kind === "order";
   const isInvoiceKind = kind === "invoice";
-  const orderStepReady = (step: number) => {
-    if (!isOrderKind) return true;
-    if (step === 0) return !!header.customer_id;
-    if (step === 2)
-      return lines.length > 0 && lines.every((line) => line.quantity > 0 && line.unit_price >= 0);
-    return true;
-  };
 
   const { data: eligibleQuotes = [] } = useEligibleQuotesForSalesOrder(
     isNew && isOrderKind ? selectedCustomerId : null,
@@ -759,6 +743,13 @@ export function DocumentEditor({
         throw new Error("Posted documents are locked. Use Void & Reverse instead.");
       if (cfg.partyRequired !== false && !header[cfg.partyField])
         throw new Error(`Please select a ${cfg.partyLabel.toLowerCase()}`);
+      if ((kind === "quote" || kind === "order") && lines.length === 0)
+        throw new Error(`Add at least one line item to this ${cfg.label.toLowerCase()}`);
+      if (
+        (kind === "quote" || kind === "order") &&
+        lines.some((line) => line.quantity <= 0 || line.unit_price < 0)
+      )
+        throw new Error("Line quantities must be greater than zero and prices cannot be negative");
 
       // Enforce remaining quantity cap on invoice creation from a sales order
       if (
@@ -840,18 +831,18 @@ export function DocumentEditor({
       toast.success("Saved");
       qc.invalidateQueries({ queryKey: [cfg.table] });
       qc.invalidateQueries({ queryKey: [cfg.lines] });
-      if (createAnother && isOrderKind) {
+      if (createAnother && (isOrderKind || kind === "quote")) {
         setHeader({
           number: "",
-          customer_id: "",
+          [cfg.partyField]: "",
           date: new Date().toISOString().slice(0, 10),
+          ...(cfg.extraDate ? { [cfg.extraDate.field]: "" } : {}),
           currency: tenant?.currency ?? "KES",
           notes: "",
-          status: "Draft",
+          status: cfg.statuses[0],
         });
         setLines([]);
         setImportedSource(null);
-        setOrderStep(0);
         return;
       }
       if (isNew && docId) {
@@ -1274,67 +1265,6 @@ export function DocumentEditor({
                 <DollarSign className="h-4 w-4 mr-1.5" /> Record Payment
               </Button>
             )}
-            {isOrderKind && (
-              <>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setOrderStep((step) => Math.max(0, step - 1))}
-                  disabled={orderStep === 0}
-                >
-                  Back
-                </Button>
-                {orderStep < ORDER_EDITOR_STEPS.length - 1 ? (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      if (!orderStepReady(orderStep)) {
-                        toast.error(
-                          orderStep === 0
-                            ? "Select a customer first"
-                            : "Add at least one valid product line",
-                        );
-                        return;
-                      }
-                      setOrderStep((step) => step + 1);
-                    }}
-                  >
-                    Next
-                  </Button>
-                ) : (
-                  <>
-                    {isNew && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        disabled={!canWrite || save.isPending}
-                        onClick={() => save.mutate({ createAnother: true })}
-                      >
-                        Save &amp; Create Another
-                      </Button>
-                    )}
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      disabled={!canWrite || save.isPending}
-                      onClick={() => save.mutate()}
-                    >
-                      Save Draft
-                    </Button>
-                    <Button
-                      size="sm"
-                      disabled={
-                        !canWrite || save.isPending || !orderStepReady(0) || !orderStepReady(2)
-                      }
-                      onClick={() => save.mutate({ statusOverride: "Confirmed" })}
-                    >
-                      Confirm Order
-                    </Button>
-                  </>
-                )}
-              </>
-            )}
             {canVoid && (
               <Button
                 variant="destructive"
@@ -1345,7 +1275,7 @@ export function DocumentEditor({
                 <Ban className="h-4 w-4 mr-1.5" /> Void & Reverse
               </Button>
             )}
-            {canWrite && !isOrderKind && (
+            {canWrite && !isOrderKind && kind !== "quote" && (
               <Button
                 size="sm"
                 disabled={save.isPending || !!doc?.posted_at}
@@ -1356,40 +1286,14 @@ export function DocumentEditor({
                 ) : (
                   <Save className="h-4 w-4 mr-1.5" />
                 )}{" "}
-                Save
+                {isNew ? `Create ${cfg.label}` : "Save Changes"}
               </Button>
             )}
           </div>
         </div>
 
-        {isOrderKind && (
-          <Card className="overflow-hidden p-0">
-            <div className="flex gap-2 overflow-x-auto border-b bg-muted/20 p-2 md:grid md:grid-cols-6">
-              {ORDER_EDITOR_STEPS.map((label, index) => (
-                <button
-                  key={label}
-                  type="button"
-                  onClick={() => index <= orderStep && setOrderStep(index)}
-                  className={`flex min-w-[145px] items-center gap-2 rounded-md px-3 py-2 text-left text-xs md:min-w-0 ${orderStep === index ? "bg-primary text-primary-foreground" : index < orderStep ? "text-foreground hover:bg-muted" : "text-muted-foreground"}`}
-                >
-                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border text-[10px]">
-                    {index < orderStep ? "✓" : index + 1}
-                  </span>
-                  <span>{label}</span>
-                </button>
-              ))}
-            </div>
-            <div className="border-b px-4 py-3 text-sm text-muted-foreground">
-              Step {orderStep + 1} of {ORDER_EDITOR_STEPS.length}:{" "}
-              <span className="font-medium text-foreground">{ORDER_EDITOR_STEPS[orderStep]}</span>
-            </div>
-          </Card>
-        )}
-
-        <Card
-          className={`grid grid-cols-1 gap-4 p-3 sm:p-4 sm:grid-cols-2 lg:grid-cols-4 ${isOrderKind && orderStep !== 0 && orderStep !== 1 ? "hidden" : ""}`}
-        >
-          <div className={`grid gap-1.5 ${isOrderKind && orderStep !== 1 ? "hidden" : ""}`}>
+        <Card className="grid grid-cols-1 gap-4 p-3 sm:p-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-1.5">
             <Label>Number</Label>
             <Input
               value={header.number ?? ""}
@@ -1400,7 +1304,7 @@ export function DocumentEditor({
           </div>
           {/* Requisitions do NOT show a supplier — that is selected at PO conversion time */}
           {!isReq && (
-            <div className={`grid gap-1.5 ${isOrderKind && orderStep !== 0 ? "hidden" : ""}`}>
+            <div className="grid gap-1.5">
               <Label>{cfg.partyLabel}</Label>
               <Select
                 value={header[cfg.partyField] ?? ""}
@@ -1470,7 +1374,7 @@ export function DocumentEditor({
               </Select>
             </div>
           )}
-          <div className={`grid gap-1.5 ${isOrderKind && orderStep !== 1 ? "hidden" : ""}`}>
+          <div className="grid gap-1.5">
             <Label>Date</Label>
             <Input
               type="date"
@@ -1512,7 +1416,7 @@ export function DocumentEditor({
             </div>
           )}
           {!isStockReq && (
-            <div className={`grid gap-1.5 ${isOrderKind && orderStep !== 1 ? "hidden" : ""}`}>
+            <div className="grid gap-1.5">
               <Label>Currency</Label>
               <Select
                 value={header.currency ?? "USD"}
@@ -1532,7 +1436,7 @@ export function DocumentEditor({
               </Select>
             </div>
           )}
-          <div className={`grid gap-1.5 ${isOrderKind && orderStep !== 1 ? "hidden" : ""}`}>
+          <div className="grid gap-1.5">
             <Label>Status</Label>
             <Select
               value={header.status ?? cfg.statuses[0]}
@@ -1607,9 +1511,7 @@ export function DocumentEditor({
               />
             </div>
           )}
-          <div
-            className={`grid gap-1.5 md:col-span-2 ${isOrderKind && orderStep !== 1 ? "hidden" : ""}`}
-          >
+          <div className="grid gap-1.5 md:col-span-2">
             <Label>Notes</Label>
             <Textarea
               rows={1}
@@ -1621,7 +1523,7 @@ export function DocumentEditor({
         </Card>
 
         {(kind === "quote" || kind === "order" || kind === "invoice") && selectedCustomer && (
-          <Card className={`p-4 ${isOrderKind && orderStep !== 0 ? "hidden" : ""}`}>
+          <Card className="p-4">
             <div className="flex items-center justify-between gap-3 border-b pb-3">
               <div>
                 <p className="text-sm font-semibold">Customer Details</p>
@@ -1670,7 +1572,7 @@ export function DocumentEditor({
         )}
 
         {/* ── Source document suggestion banner (only when creating new sales orders / invoices) ── */}
-        {isNew && (kind === "order" || kind === "invoice") && (!isOrderKind || orderStep === 2) && (
+        {isNew && (kind === "order" || kind === "invoice") && (
           <SourceDocumentSuggestionBanner
             kind={kind as "order" | "invoice"}
             eligibleQuotes={kind === "order" ? eligibleQuotes : []}
@@ -1686,9 +1588,7 @@ export function DocumentEditor({
           />
         )}
 
-        <Card
-          className={`p-0 overflow-hidden ${isOrderKind && orderStep !== 2 && orderStep !== 3 ? "hidden" : ""}`}
-        >
+        <Card className="p-0 overflow-hidden">
           <div className="flex items-center justify-between px-4 py-2 border-b bg-muted/30">
             <div className="text-sm font-medium">Line items</div>
             {canWrite && (
@@ -1869,90 +1769,6 @@ export function DocumentEditor({
           )}
         </Card>
 
-        {isOrderKind && orderStep === 3 && (
-          <Card className="p-4">
-            <div className="mb-4">
-              <p className="text-sm font-semibold">Pricing & Tax</p>
-              <p className="text-xs text-muted-foreground">
-                Review the calculated values from the order lines.
-              </p>
-            </div>
-            <div className="ml-auto grid w-full max-w-sm gap-2 text-sm">
-              <Row label="Subtotal" v={totals.subtotal} />
-              <Row label="Discount" v={-totals.discount_total} />
-              <Row label="Tax" v={totals.tax_total} />
-              <div className="border-t pt-2">
-                <Row label="Grand Total" v={totals.grand_total} />
-              </div>
-            </div>
-          </Card>
-        )}
-        {isOrderKind && orderStep === 4 && (
-          <Card className="p-4">
-            <div className="mb-4">
-              <p className="text-sm font-semibold">Delivery</p>
-              <p className="text-xs text-muted-foreground">
-                Delivery-specific fields are shown when supported by the Sales Order schema.
-              </p>
-            </div>
-            <div className="grid gap-4 md:grid-cols-2">
-              <div>
-                <p className="text-xs text-muted-foreground">Shipping Address</p>
-                <p className="mt-1 whitespace-pre-line text-sm">
-                  {selectedCustomer?.shipping_address ||
-                    "No shipping address on the customer record."}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Billing Address</p>
-                <p className="mt-1 whitespace-pre-line text-sm">
-                  {selectedCustomer?.billing_address ||
-                    "No billing address on the customer record."}
-                </p>
-              </div>
-            </div>
-          </Card>
-        )}
-        {isOrderKind && orderStep === 5 && (
-          <Card className="p-4">
-            <div className="mb-4">
-              <p className="text-sm font-semibold">Review Sales Order</p>
-              <p className="text-xs text-muted-foreground">
-                Confirm the order details before saving.
-              </p>
-            </div>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div>
-                <p className="text-xs text-muted-foreground">Customer</p>
-                <p className="font-medium">{selectedCustomer?.name || "Not selected"}</p>
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Order Date</p>
-                <p className="font-medium">{header.date || "Not set"}</p>
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Items</p>
-                <p className="font-medium">
-                  {lines.length} products ·{" "}
-                  {lines.reduce((sum, line) => sum + Number(line.quantity || 0), 0)} units
-                </p>
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Grand Total</p>
-                <p className="font-mono font-semibold">
-                  {header.currency ?? "USD"} {money(totals.grand_total)}
-                </p>
-              </div>
-              <div className="sm:col-span-2">
-                <p className="text-xs text-muted-foreground">Delivery Address</p>
-                <p className="whitespace-pre-line text-sm">
-                  {selectedCustomer?.shipping_address || "Not set"}
-                </p>
-              </div>
-            </div>
-          </Card>
-        )}
-
         {kind === "order" && !isNew && (
           <Card className="p-0 overflow-hidden">
             <div className="flex items-center justify-between px-4 py-2 border-b bg-muted/30">
@@ -2075,6 +1891,49 @@ export function DocumentEditor({
                 : (header.status ?? null)
             }
           />
+        )}
+
+        {(kind === "quote" || kind === "order") && (
+          <div className="sticky bottom-0 z-20 -mx-3 flex flex-wrap items-center justify-between gap-3 border-t bg-background/95 px-3 py-3 shadow-[0_-4px_12px_rgba(15,23,42,0.06)] backdrop-blur sm:-mx-4 sm:px-4 md:-mx-6 md:px-6">
+            <Button
+              variant="ghost"
+              onClick={() => (embedded && onClose ? onClose() : nav({ to: cfg.listPath as never }))}
+              disabled={save.isPending}
+            >
+              Cancel
+            </Button>
+            <div className="flex flex-wrap justify-end gap-2">
+              {isNew && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={!canWrite || save.isPending}
+                  onClick={() => save.mutate({ createAnother: true })}
+                >
+                  Save &amp; Create Another
+                </Button>
+              )}
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={!canWrite || save.isPending}
+                onClick={() => save.mutate()}
+              >
+                {isNew ? "Save Draft" : "Save Changes"}
+              </Button>
+              {isNew && (
+                <Button
+                  size="sm"
+                  disabled={!canWrite || save.isPending}
+                  onClick={() =>
+                    save.mutate({ statusOverride: kind === "order" ? "Confirmed" : undefined })
+                  }
+                >
+                  {kind === "order" ? "Create Sales Order" : "Create Quote"}
+                </Button>
+              )}
+            </div>
+          </div>
         )}
       </div>
       {/* end left / main column */}
