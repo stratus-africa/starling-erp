@@ -35,16 +35,17 @@ export function useExecutiveDashboard() {
       const currentMonth = month(now);
       const start = new Date(now.getFullYear(), now.getMonth() - 6, 1);
       const startDate = start.toISOString().slice(0, 10);
-      const [invoices, orders, customers, stock, warehouses, expenses, requisitions] = await Promise.all([
+      const [invoices, orders, customers, stock, items, warehouses, expenses, requisitions] = await Promise.all([
         db.from("invoices").select("date,grand_total,balance_due,customer_id,due_date,status").is("deleted_at", null),
         db.from("sales_orders").select("id,date,status").is("deleted_at", null),
-        db.from("customers").select("id").is("deleted_at", null).eq("status", "Active"),
+        db.from("customers").select("id,name").is("deleted_at", null).eq("status", "Active"),
         db.from("inventory_item_stock").select("item_id,on_hand").eq("tenant_id", tenant.id),
+        db.from("items").select("id,cost").is("deleted_at", null),
         db.from("inventory_warehouse_stock").select("warehouse_id,on_hand").eq("tenant_id", tenant.id),
         db.from("expenses").select("date,total,amount,status").is("deleted_at", null),
         db.from("purchase_requisitions").select("id,status").is("deleted_at", null),
       ]);
-      for (const result of [invoices, orders, customers, stock, warehouses, expenses, requisitions]) {
+      for (const result of [invoices, orders, customers, stock, items, warehouses, expenses, requisitions]) {
         if (result.error) throw result.error;
       }
 
@@ -52,7 +53,8 @@ export function useExecutiveDashboard() {
       const expenseRows = expenses.data ?? [];
       const orderRows = orders.data ?? [];
       const revenueMtd = invoiceRows.filter((row: Row) => day(row.date).slice(0, 7) === currentMonth).reduce((sum: number, row: Row) => sum + Number(row.grand_total ?? 0), 0);
-      const inventoryValue = (stock.data ?? []).reduce((sum: number, row: Row) => sum + Number(row.on_hand ?? 0), 0);
+      const costByItem = Object.fromEntries((items.data ?? []).map((row: Row) => [row.id, Number(row.cost ?? 0)]));
+      const inventoryValue = (stock.data ?? []).reduce((sum: number, row: Row) => sum + Number(row.on_hand ?? 0) * (costByItem[row.item_id] ?? 0), 0);
       const monthBuckets = Array.from({ length: 7 }, (_, index) => {
         const d = new Date(start.getFullYear(), start.getMonth() + index, 1);
         return { key: month(d), label: d.toLocaleString(undefined, { month: "short" }), rev: 0, exp: 0 };
@@ -69,6 +71,11 @@ export function useExecutiveDashboard() {
       const warehouseNames = Object.fromEntries((warehouseRows ?? []).map((row: Row) => [row.id, row.name]));
       const overdue = invoiceRows.filter((row: Row) => Number(row.balance_due ?? 0) > 0 && row.due_date && day(row.due_date) < day(now.toISOString())).length;
       const lowStock = (stock.data ?? []).filter((row: Row) => Number(row.on_hand ?? 0) <= 0).length;
+      const customerNames = Object.fromEntries((customers.data ?? []).map((row: Row) => [row.id, row.name]));
+      const customerTotals = new Map<string, number>();
+      invoiceRows.forEach((row: Row) => customerTotals.set(row.customer_id, (customerTotals.get(row.customer_id) ?? 0) + Number(row.grand_total ?? 0)));
+      const rankedCustomers = Array.from(customerTotals.entries()).sort((a, b) => b[1] - a[1]).slice(0, 5);
+      const maxCustomerTotal = rankedCustomers[0]?.[1] ?? 1;
       return {
         revenue: monthBuckets.map(({ label: m, rev, exp }) => ({ m, rev, exp })),
         sales,
@@ -77,7 +84,7 @@ export function useExecutiveDashboard() {
         orders: orderRows.length,
         activeCustomers: customers.data?.length ?? 0,
         inventoryValue,
-        topCustomers: [],
+        topCustomers: rankedCustomers.map(([id, value]) => ({ n: customerNames[id] ?? "Unknown customer", v: value, p: Math.round((value / maxCustomerTotal) * 100) })),
         alerts: [
           ...(overdue ? [{ t: `${overdue} overdue invoice${overdue === 1 ? "" : "s"}`, s: "Review outstanding receivables", type: "destructive" as const }] : []),
           ...(lowStock ? [{ t: `${lowStock} item${lowStock === 1 ? "" : "s"} out of stock`, s: "Review inventory replenishment", type: "warning" as const }] : []),
