@@ -31,12 +31,10 @@ import { CompanyBrandingCard } from "./company-branding-card";
 import { CompanyDocumentSettingsCard } from "./company-document-settings-card";
 import { CompanyLocationsSummary } from "./company-locations-summary";
 import { CompanyAuditHistory } from "./company-audit-history";
-import { useTheme } from "@/components/theme-provider";
 
 export function CompanyProfilePage() {
   const qc = useQueryClient();
   const { tenant, can, refresh } = useAuth();
-  const { theme } = useTheme();
   const canUpdate = can("settings.company.update") || can("settings.roles");
 
   // Local draft state for public.tenants
@@ -127,10 +125,6 @@ export function CompanyProfilePage() {
   const saveMutation = useMutation({
     mutationFn: async () => {
       if (!tenant?.id) throw new Error("No active tenant");
-
-      if (typeof window !== "undefined") {
-        localStorage.setItem("erp-theme", theme);
-      }
 
       // Validation
       if (!draft.name?.trim()) {
@@ -234,9 +228,6 @@ export function CompanyProfilePage() {
       toast.success("Company profile saved successfully");
       setIsDirty(false);
       setIsTemplateDirty(false);
-      if (typeof window !== "undefined") {
-        localStorage.setItem("erp-theme", theme);
-      }
       await Promise.all([
         qc.invalidateQueries({ queryKey: ["company_profile", tenant?.id] }),
         qc.invalidateQueries({ queryKey: ["document_templates"] }),
