@@ -9,7 +9,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Loader2, Save, User2 } from "lucide-react";
 
@@ -173,19 +172,18 @@ export function CustomerCreateEditWindow({
 
   return (
     <>
-      <Dialog open={open} onOpenChange={(nextOpen) => (nextOpen ? onOpenChange?.(true) : close())}>
-        <DialogContent className="flex max-h-[92vh] w-[calc(100%-1rem)] max-w-5xl flex-col gap-0 overflow-hidden p-0">
-          <DialogHeader className="shrink-0 border-b px-6 py-5">
-            <DialogTitle className="flex items-center gap-3">
+      <section className="fixed inset-0 z-40 flex flex-col overflow-hidden bg-background" aria-label={isNew ? "Create Customer" : "Edit Customer"}>
+          <header className="shrink-0 border-b px-6 py-5">
+            <h1 className="flex items-center gap-3 text-lg font-semibold leading-none tracking-tight">
               <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
                 <User2 className="h-5 w-5" />
               </span>
               {isNew ? "Create Customer" : "Edit Customer"}
-            </DialogTitle>
-            <DialogDescription className="pl-[52px]">
+            </h1>
+            <p className="pl-[52px] text-sm text-muted-foreground">
               {isNew ? "Add a new customer account to your system" : "Update customer account information"}
-            </DialogDescription>
-          </DialogHeader>
+            </p>
+          </header>
 
           <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">
             {isLoading ? (
@@ -219,7 +217,7 @@ export function CustomerCreateEditWindow({
             )}
           </div>
 
-          <DialogFooter className="border-t px-6 py-4">
+          <footer className="flex shrink-0 flex-col-reverse gap-2 border-t px-6 py-4 sm:flex-row sm:justify-end">
             <Button variant="outline" onClick={close} disabled={save.isPending}>
               Cancel
             </Button>
@@ -228,9 +226,8 @@ export function CustomerCreateEditWindow({
               <Save className="mr-2 h-4 w-4" />
               {isNew ? "Create Customer" : "Save Changes"}
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </footer>
+      </section>
 
       <AlertDialog open={discardOpen} onOpenChange={setDiscardOpen}>
         <AlertDialogContent>
