@@ -84,7 +84,7 @@ interface DataModulePageProps {
   defaultOrder?: string;
   rowHref?: (row: any) => string;
   createHref?: string;
-  filterFields?: { key: string; label: string; options: string[] }[];
+  filterFields?: { key: string; label: string; options: string[]; type?: "select" | "date" }[];
   postAction?: {
     rpc: string;
     paramName: string;
@@ -292,7 +292,20 @@ export function DataModulePage(props: DataModulePageProps) {
           ) : (
             <div className="flex items-center gap-2">
               <Filter className="h-3.5 w-3.5 text-muted-foreground" />
-              {filterFields.map((f) => (
+              {filterFields.map((f) => f.type === "date" ? (
+                <Input
+                  key={f.key}
+                  type="date"
+                  value={filters[f.key] ?? ""}
+                  aria-label={f.label}
+                  title={f.label}
+                  className="h-8 w-[150px] bg-background text-xs"
+                  onChange={(e) => {
+                    setFilters((p) => ({ ...p, [f.key]: e.target.value }));
+                    setPage(1);
+                  }}
+                />
+              ) : (
                 <Select
                   key={f.key}
                   value={filters[f.key] ?? "all"}

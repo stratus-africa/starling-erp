@@ -5,16 +5,24 @@ import { productionOrderFields } from "@/lib/module-field-definitions";
 export const Route = createFileRoute("/_authenticated/manufacturing/orders/")({
   component: () => (
     <DataModulePage
-      title="Production Orders"
-      description="Plan and track manufacturing runs."
+      title="Manufacturing Orders"
+      description="Plan, reserve, and track MTO and MTS production."
       table="production_orders"
-      entityLabel="Production Order"
+      entityLabel="Manufacturing Order"
       fields={productionOrderFields}
       writeRoles={["manufacturing"]}
       searchColumn="number"
       rowHref={(row) => `/manufacturing/orders/${row.id}`}
       createHref="/manufacturing/orders/new"
       filterFields={[
+        { key: "manufacturing_type", label: "Type", options: ["MTO", "MTS"] },
+        {
+          key: "source_type",
+          label: "Source",
+          options: ["sales_order", "production_plan", "stock_replenishment", "manual_manufacturing"],
+        },
+        { key: "planned_start_from", label: "Start From", options: [], type: "date" },
+        { key: "planned_start_to", label: "Start To", options: [], type: "date" },
         {
           key: "status",
           label: "Status",

@@ -24,7 +24,10 @@ export function useModuleList(table: string, opts: ListOpts = {}) {
       let q = db.from(table).select("*", { count: "exact" }).is("deleted_at", null);
       if (search && search.trim()) q = q.ilike(searchColumn, `%${search.trim()}%`);
       for (const [k, v] of Object.entries(filters ?? {})) {
-        if (v != null && v !== "" && v !== "all") q = q.eq(k, v);
+        if (v == null || v === "" || v === "all") continue;
+        if (k.endsWith("_from")) q = q.gte(k.slice(0, -5), v);
+        else if (k.endsWith("_to")) q = q.lte(k.slice(0, -3), v);
+        else q = q.eq(k, v);
       }
       q = q.order(orderBy, { ascending: orderAsc }).range((page - 1) * pageSize, page * pageSize - 1);
       const { data, error, count } = await q;

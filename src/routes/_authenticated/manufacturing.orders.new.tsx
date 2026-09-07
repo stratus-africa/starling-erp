@@ -12,7 +12,7 @@ function ProductionOrderNewPage() {
       id="new"
       table="production_orders"
       fields={productionOrderFields}
-      entityLabel="Production Order"
+      entityLabel="Manufacturing Order"
       listHref="/manufacturing/orders"
       titleKey="number"
       writeRoles={["manufacturing"]}

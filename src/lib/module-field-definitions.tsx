@@ -954,6 +954,14 @@ export const bomFields: FieldDef[] = [
 
 export const productionOrderFields: FieldDef[] = [
   { key: "number", label: "MO #", required: true, render: mono },
+  {
+    key: "manufacturing_type",
+    label: "Type",
+    type: "select",
+    options: ["MTO", "MTS"],
+    defaultValue: "MTS",
+  },
+  { key: "product_id", label: "Finished Item", type: "fk", fkTable: "items", fkLabel: "name", required: true },
   { key: "date", label: "Date", type: "date", render: dateFmt },
   {
     key: "bom_id",
@@ -964,7 +972,7 @@ export const productionOrderFields: FieldDef[] = [
     required: true,
     hideInTable: true,
   },
-  { key: "warehouse_id", label: "Warehouse", type: "fk", fkTable: "warehouses", hideInTable: true },
+  { key: "warehouse_id", label: "Warehouse", type: "fk", fkTable: "warehouses" },
   {
     key: "location_id",
     label: "Production Location",
@@ -974,6 +982,7 @@ export const productionOrderFields: FieldDef[] = [
     hideInTable: true,
   },
   { key: "quantity", label: "Qty Planned", type: "number", className: "text-right", render: monoRight },
+  { key: "quantity_uom", label: "UOM", hideInTable: true },
   { key: "qty_produced", label: "Produced", type: "number", className: "text-right", render: monoRight, writable: false },
   { key: "qty_remaining", label: "Remaining", type: "number", className: "text-right", render: monoRight, writable: false },
   {
@@ -984,8 +993,16 @@ export const productionOrderFields: FieldDef[] = [
     defaultValue: "3",
     hideInTable: true,
   },
-  { key: "planned_start", label: "Planned Start", type: "date", render: dateFmt, hideInTable: true },
-  { key: "planned_end", label: "Planned End", type: "date", render: dateFmt, hideInTable: true },
+  { key: "planned_start", label: "Planned Start", type: "date", render: dateFmt },
+  { key: "planned_end", label: "Planned Completion", type: "date", render: dateFmt },
+  {
+    key: "source_type",
+    label: "Source",
+    type: "select",
+    options: ["sales_order", "production_plan", "stock_replenishment", "manual_manufacturing"],
+    defaultValue: "manual_manufacturing",
+  },
+  { key: "source_id", label: "Source ID", hideInTable: true },
   {
     key: "status",
     label: "Status",

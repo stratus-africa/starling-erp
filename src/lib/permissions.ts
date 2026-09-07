@@ -111,6 +111,11 @@ export const PERMISSIONS = {
   manufacturingUpdate: "manufacturing.update",
   manufacturingPost: "manufacturing.post",
   manufacturingVoid: "manufacturing.void",
+  manufacturingBomView: "manufacturing.bom.view",
+  manufacturingBomCreate: "manufacturing.bom.create",
+  manufacturingBomEdit: "manufacturing.bom.edit",
+  manufacturingBomActivate: "manufacturing.bom.activate",
+  manufacturingBomArchive: "manufacturing.bom.archive",
 
   // ── Reports ──────────────────────────────────────────────────────────────────
   reportsRead: "reports.read",

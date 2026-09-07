@@ -100,7 +100,7 @@ type ExplosionRow = {
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const APPROVAL_STATUSES = ["Draft", "Pending Approval", "Approved", "Active", "Inactive", "Obsolete"] as const;
+const APPROVAL_STATUSES = ["Draft", "Pending Approval", "Approved", "Active", "Inactive", "Archived", "Obsolete"] as const;
 
 const STATUS_COLORS: Record<string, string> = {
   Draft: "bg-muted text-muted-foreground",
@@ -108,6 +108,7 @@ const STATUS_COLORS: Record<string, string> = {
   Approved: "bg-info/15 text-info",
   Active: "bg-success/15 text-success",
   Inactive: "bg-muted text-muted-foreground",
+  Archived: "bg-muted text-muted-foreground",
   Obsolete: "bg-destructive/15 text-destructive",
 };
 
@@ -134,12 +135,17 @@ function BomEditor({ id }: { id: string }) {
   const { tenant, can } = useAuth();
   const qc = useQueryClient();
   const nav = useNavigate();
-  const canWrite = can(["manufacturing.create", "manufacturing.update"]);
+  const canWrite = isNew
+    ? can(["manufacturing.bom.create", "manufacturing.create"])
+    : can(["manufacturing.bom.edit", "manufacturing.update"]);
+  const canActivate = can(["manufacturing.bom.activate", "manufacturing.update"]);
+  const canArchive = can(["manufacturing.bom.archive"]);
 
   // ── Header state ──────────────────────────────────────────────────────────
   const [header, setHeader] = useState({
     code: "",
     product_id: "",
+    uom: "",
     version: "v1",
     yield_qty: 1,
     approval_status: "Draft",
@@ -183,6 +189,7 @@ function BomEditor({ id }: { id: string }) {
       setHeader({
         code: doc.code ?? "",
         product_id: doc.product_id ?? "",
+        uom: doc.uom ?? "",
         version: doc.version ?? "v1",
         yield_qty: doc.yield_qty ?? 1,
         approval_status: doc.approval_status ?? "Draft",
@@ -389,6 +396,7 @@ function BomEditor({ id }: { id: string }) {
       const payload = {
         code: header.code.trim(),
         product_id: header.product_id,
+        uom: header.uom || null,
         version: header.version || null,
         yield_qty: Number(header.yield_qty) || 1,
         approval_status: header.approval_status,
@@ -478,6 +486,18 @@ function BomEditor({ id }: { id: string }) {
     }
   };
 
+  const archive = useMutation({
+    mutationFn: async () => {
+      const { error } = await (db as any).rpc("archive_bom", { _bom_id: id });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("BOM archived.");
+      qc.invalidateQueries({ queryKey: ["bom_headers", id] });
+    },
+    onError: (e: any) => toast.error(e.message ?? "Archive failed"),
+  });
+
   // ── Clone BOM ─────────────────────────────────────────────────────────────
   const [showCloneConfirm, setShowCloneConfirm] = useState(false);
 
@@ -494,6 +514,7 @@ function BomEditor({ id }: { id: string }) {
           tenant_id: tenant.id,
           code: doc.code + "-" + newVersion.replace(/\s+/g, ""),
           product_id: doc.product_id,
+          uom: doc.uom,
           version: newVersion,
           yield_qty: doc.yield_qty,
           status: "Draft",
@@ -612,9 +633,14 @@ function BomEditor({ id }: { id: string }) {
               <ShieldCheck className="h-3.5 w-3.5 mr-1.5" /> Submit for Approval
             </Button>
           )}
-          {!isNew && canWrite && header.approval_status === "Approved" && (
+          {!isNew && canActivate && header.approval_status === "Approved" && (
             <Button variant="outline" size="sm" onClick={() => setApprovingAction("activate")}>
               <CheckCircle2 className="h-3.5 w-3.5 mr-1.5 text-success" /> Activate
+            </Button>
+          )}
+          {!isNew && canArchive && ["Inactive", "Active"].includes(header.approval_status) && (
+            <Button variant="outline" size="sm" onClick={() => archive.mutate()} disabled={archive.isPending}>
+              <Lock className="h-3.5 w-3.5 mr-1.5" /> Archive
             </Button>
           )}
           {!isNew && canWrite && (
@@ -665,7 +691,10 @@ function BomEditor({ id }: { id: string }) {
               </Label>
               <Select
                 value={header.product_id || undefined}
-                onValueChange={(v) => setHeader((h) => ({ ...h, product_id: v }))}
+                onValueChange={(v) => {
+                  const item = (items as any[]).find((it: any) => it.id === v);
+                  setHeader((h) => ({ ...h, product_id: v, uom: item?.uom ?? h.uom }));
+                }}
                 disabled={!isEditable}
               >
                 <SelectTrigger>
@@ -691,6 +720,19 @@ function BomEditor({ id }: { id: string }) {
               />
             </div>
             <div className="space-y-1">
+              <Label>UOM</Label>
+              <Select
+                value={header.uom || undefined}
+                onValueChange={(v) => setHeader((h) => ({ ...h, uom: v }))}
+                disabled={!isEditable}
+              >
+                <SelectTrigger><SelectValue placeholder="Select UOM" /></SelectTrigger>
+                <SelectContent>
+                  {uomOptions.map((uom) => <SelectItem key={uom} value={uom}>{uom}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
               <Label>
                 Yield Qty <span className="text-destructive">*</span>
               </Label>
@@ -709,7 +751,7 @@ function BomEditor({ id }: { id: string }) {
               <Select
                 value={header.approval_status}
                 onValueChange={(v) => setHeader((h) => ({ ...h, approval_status: v }))}
-                disabled={!isEditable}
+                disabled={!isEditable || !isNew}
               >
                 <SelectTrigger>
                   <SelectValue />

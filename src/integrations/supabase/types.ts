@@ -941,6 +941,7 @@ export type Database = {
           status: string | null
           tenant_id: string
           updated_at: string
+          uom: string | null
           used_in_production: boolean
           version: string | null
           yield_qty: number | null
@@ -961,6 +962,7 @@ export type Database = {
           revision_notes?: string | null
           status?: string | null
           tenant_id: string
+          uom?: string | null
           updated_at?: string
           used_in_production?: boolean
           version?: string | null
@@ -982,6 +984,7 @@ export type Database = {
           revision_notes?: string | null
           status?: string | null
           tenant_id?: string
+          uom?: string | null
           updated_at?: string
           used_in_production?: boolean
           version?: string | null
@@ -4341,6 +4344,7 @@ export type Database = {
           actual_end: string | null
           actual_start: string | null
           allow_overproduction: boolean
+          manufacturing_type: string
           approved_at: string | null
           approved_by: string | null
           bom_id: string | null
@@ -4365,6 +4369,7 @@ export type Database = {
           planned_end: string | null
           planned_start: string | null
           posted_at: string | null
+          product_id: string | null
           priority: number
           qty_produced: number
           qty_remaining: number
@@ -4379,6 +4384,8 @@ export type Database = {
           reserved_by: string | null
           reversal_id: string | null
           status: string | null
+          source_id: string | null
+          source_type: string
           tenant_id: string
           uom_factor: number | null
           updated_at: string
@@ -4390,6 +4397,7 @@ export type Database = {
           actual_end?: string | null
           actual_start?: string | null
           allow_overproduction?: boolean
+          manufacturing_type?: string
           approved_at?: string | null
           approved_by?: string | null
           bom_id?: string | null
@@ -4414,6 +4422,7 @@ export type Database = {
           planned_end?: string | null
           planned_start?: string | null
           posted_at?: string | null
+          product_id?: string | null
           priority?: number
           qty_produced?: number
           qty_remaining?: number
@@ -4428,6 +4437,8 @@ export type Database = {
           reserved_by?: string | null
           reversal_id?: string | null
           status?: string | null
+          source_id?: string | null
+          source_type?: string
           tenant_id: string
           uom_factor?: number | null
           updated_at?: string
@@ -4439,6 +4450,7 @@ export type Database = {
           actual_end?: string | null
           actual_start?: string | null
           allow_overproduction?: boolean
+          manufacturing_type?: string
           approved_at?: string | null
           approved_by?: string | null
           bom_id?: string | null
@@ -4463,6 +4475,7 @@ export type Database = {
           planned_end?: string | null
           planned_start?: string | null
           posted_at?: string | null
+          product_id?: string | null
           priority?: number
           qty_produced?: number
           qty_remaining?: number
@@ -4477,6 +4490,8 @@ export type Database = {
           reserved_by?: string | null
           reversal_id?: string | null
           status?: string | null
+          source_id?: string | null
+          source_type?: string
           tenant_id?: string
           uom_factor?: number | null
           updated_at?: string
@@ -4525,6 +4540,13 @@ export type Database = {
             columns: ["location_id"]
             isOneToOne: false
             referencedRelation: "warehouse_locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "production_orders_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "items"
             referencedColumns: ["id"]
           },
           {

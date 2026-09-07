@@ -660,13 +660,14 @@ function ProductionOrderDetailPage() {
   });
 
   const { data: product } = useQuery({
-    queryKey: ["items", bom?.product_id],
-    enabled: !!bom?.product_id,
+    queryKey: ["items", order?.product_id ?? bom?.product_id],
+    enabled: !!(order?.product_id ?? bom?.product_id),
     queryFn: async () => {
+      const productId = order?.product_id ?? bom?.product_id;
       const { data, error } = await db
         .from("items")
         .select("id, name, sku, uom")
-        .eq("id", bom!.product_id)
+        .eq("id", productId!)
         .maybeSingle();
       if (error) throw error;
       return data as any;
@@ -1085,6 +1086,7 @@ function ProductionOrderDetailPage() {
           {/* Row 1: core identity */}
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
             <FieldRow label="MO Number" value={<span className="font-mono">{order.number}</span>} />
+            <FieldRow label="Manufacturing Type" value={order.manufacturing_type ?? "MTS"} />
             <FieldRow label="Date" value={fmtDate(order.date)} />
             <FieldRow
               label="Product"
@@ -1116,6 +1118,7 @@ function ProductionOrderDetailPage() {
                 )
               }
             />
+            <FieldRow label="BOM Version" value={order.bom_version_snapshot ?? bom?.version ?? "—"} />
             <FieldRow
               label="Priority"
               value={
@@ -1160,6 +1163,10 @@ function ProductionOrderDetailPage() {
             <FieldRow
               label="Location"
               value={location ? `${location.code}${location.name ? ` — ${location.name}` : ""}` : "—"}
+            />
+            <FieldRow
+              label="Source"
+              value={order.source_type ? `${order.source_type}${order.source_id ? ` · ${order.source_id}` : ""}` : "—"}
             />
           </div>
 
