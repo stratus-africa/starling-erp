@@ -288,7 +288,7 @@ export function SupplierCreateEditWindow({
   return (
     <>
       <section
-        className="fixed inset-0 z-40 flex flex-col overflow-hidden bg-background"
+        className="relative flex w-full flex-col overflow-hidden rounded-xl border bg-background shadow-sm"
         aria-label={isNew ? "Create Supplier" : "Edit Supplier"}
       >
         <header className="flex shrink-0 items-center justify-between border-b px-5 py-4 md:px-8">
