@@ -158,8 +158,8 @@ function RolesPage() {
     onError: (error: Error) => toast.error(error.message || "Permission update failed"),
   });
 
-  const grants = new Set((data?.grants ?? []).map((row: any) => `${row.role}:${row.permission_code}`));
-  const overrides = new Map((data?.overrides ?? []).map((row: any) => [`${row.role}:${row.permission_code}`, Boolean(row.enabled)]));
+  const grants = new Set<string>((data?.grants ?? []).map((row: any) => `${row.role}:${row.permission_code}`));
+  const overrides = new Map<string, boolean>((data?.overrides ?? []).map((row: any) => [`${row.role}:${row.permission_code}`, Boolean(row.enabled)] as [string, boolean]));
   const accountingPermissions = (data?.permissions ?? []).filter((permission) => ACCOUNTING_MODULES.has(permission.module.split(".")[0]));
   const otherPermissions = (data?.permissions ?? []).filter((permission) => !ACCOUNTING_MODULES.has(permission.module.split(".")[0]));
   const changing = updatePermission.isPending ? `${updatePermission.variables?.role}:${updatePermission.variables?.permission}` : null;
