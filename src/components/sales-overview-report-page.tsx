@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { BarChart3, CalendarDays, Loader2, RefreshCw } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
+import { db } from "@/lib/typed-db";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -18,11 +18,6 @@ type Overview = {
   trend: Array<{ date: string; sales: number; collections: number }>;
 };
 
-type RpcClient = (
-  functionName: string,
-  args: Record<string, unknown>,
-) => Promise<{ data: unknown; error: Error | null }>;
-
 const today = () => new Date().toISOString().slice(0, 10);
 const yearStart = () => `${new Date().getFullYear()}-01-01`;
 
@@ -36,8 +31,7 @@ export function SalesOverviewReportPage() {
     queryKey: ["sales", "overview", dateFrom, dateTo, currency],
     enabled: !!tenant?.id && !!dateFrom && !!dateTo,
     queryFn: async () => {
-      const rpc = supabase.rpc as unknown as RpcClient;
-      const { data, error } = await rpc("get_sales_overview", {
+      const { data, error } = await db.rpc("get_sales_overview", {
         _date_from: dateFrom,
         _date_to: dateTo,
         _currency: currency || null,

@@ -1,17 +1,6 @@
 -- Tenant-scoped sales overview aggregation for the reporting UI.
-
-INSERT INTO public.permissions (code, module, action, description)
-VALUES ('reports.sales.view', 'reports', 'read', 'View sales reports')
-ON CONFLICT (code) DO UPDATE SET
-  module = EXCLUDED.module,
-  action = EXCLUDED.action,
-  description = EXCLUDED.description;
-
-INSERT INTO public.role_permissions (role, permission_code)
-VALUES
-  ('viewer', 'reports.sales.view'),
-  ('sales', 'reports.sales.view')
-ON CONFLICT DO NOTHING;
+-- Use the existing reports.read permission; permission codes are constrained
+-- to the repository's module.action format.
 
 CREATE OR REPLACE FUNCTION public.get_sales_overview(
   _date_from date,
@@ -32,8 +21,8 @@ BEGIN
   IF v_tenant IS NULL THEN
     RAISE EXCEPTION 'No active tenant' USING ERRCODE = '42501';
   END IF;
-  IF NOT public.has_permission('reports.sales.view') THEN
-    RAISE EXCEPTION 'Not authorized: reports.sales.view' USING ERRCODE = '42501';
+  IF NOT public.has_permission('reports.read') THEN
+    RAISE EXCEPTION 'Not authorized: reports.read' USING ERRCODE = '42501';
   END IF;
   IF _date_from IS NULL OR _date_to IS NULL OR _date_from > _date_to THEN
     RAISE EXCEPTION 'A valid reporting date range is required';
