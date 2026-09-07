@@ -1,45 +1,34 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { DataModulePage } from "@/components/data-module-page";
-import { productionOrderFields } from "@/lib/module-field-definitions";
+import { itemFields } from "@/lib/module-field-definitions";
 
 export const Route = createFileRoute("/_authenticated/manufacturing/items/")({
   component: () => (
     <DataModulePage
-      title="Production Orders"
-      description="Plan and track manufacturing runs."
-      table="production_orders"
-      entityLabel="Production Order"
-      fields={productionOrderFields}
+      title="Production Items"
+      description="Items used in manufacturing — finished goods, raw materials and sub-assemblies."
+      table="items"
+      entityLabel="Item"
+      fields={itemFields.filter((f) =>
+        // Show the same columns as the inventory items list
+        !["category_id", "barcode", "manufacturer", "model", "description"].includes(f.key)
+      )}
+      permissionModule="manufacturing"
       writeRoles={["manufacturing"]}
-      searchColumn="number"
-      rowHref={(row) => `/manufacturing/orders/${row.id}`}
-      createHref="/manufacturing/orders/new"
+      searchColumn="name"
+      rowHref={(row) => `/manufacturing/items/${row.id}`}
       filterFields={[
+        {
+          key: "type",
+          label: "Type",
+          options: ["Finished Good", "Raw Material", "Sub-assembly", "Consumable"],
+        },
         {
           key: "status",
           label: "Status",
-          options: [
-            "Draft",
-            "Planned",
-            "Confirmed",
-            "Material Reserved",
-            "Released",
-            "In Progress",
-            "Paused",
-            "Quality Check",
-            "Completed",
-            "Closed",
-            "Cancelled",
-          ],
+          options: ["Active", "Inactive"],
         },
       ]}
-      postAction={{
-        rpc: "post_production_order",
-        paramName: "_order_id",
-        label: "Complete & Post",
-        showWhen: (row) => row.status === "Quality Check",
-      }}
-      voidAction={{ entityType: "production_order", permission: "manufacturing.void" }}
     />
   ),
 });
