@@ -68,7 +68,8 @@ export function RecordPaymentDialog({
       if (isNaN(amt) || amt <= 0) throw new Error("Enter a valid amount greater than zero");
 
       if (kind === "receive") {
-        const { data, error } = await (supabase as any).rpc("create_customer_payment", {
+        const allocationAmount = Math.min(amt, Math.max(0, balanceDue));
+        const { data, error } = await (supabase as any).rpc("create_and_post_customer_payment", {
           _customer_id: partyId,
           _amount: amt,
           _date: date,
@@ -76,9 +77,11 @@ export function RecordPaymentDialog({
           _reference: reference || null,
           _notes: notes || null,
           _currency: currency,
+          _allocations:
+            allocationAmount > 0 ? [{ invoice_id: docId, amount: allocationAmount }] : [],
         });
         if (error) throw error;
-        return data;
+        return data as string;
       }
 
       const payload: Record<string, unknown> = {
@@ -117,7 +120,7 @@ export function RecordPaymentDialog({
       }
     },
     onSuccess: () => {
-      toast.success(kind === "receive" ? "Draft payment created" : "Payment recorded");
+      toast.success(kind === "receive" ? "Payment posted" : "Payment recorded");
       qc.invalidateQueries({ queryKey: [kind === "receive" ? "invoices" : "bills", docId] });
       qc.invalidateQueries({ queryKey: [table, "list"] });
       onOpenChange(false);

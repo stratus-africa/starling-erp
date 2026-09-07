@@ -8,7 +8,7 @@
  *  1. Select customer/supplier
  *  2. All outstanding invoices/bills for that party are listed with checkboxes
  *  3. User checks which ones to pay and enters amounts per doc (defaults to balance due)
- *  4. A single payment record is created + each doc's balance updated
+ *  4. A customer payment is created through the server-side payment lifecycle
  */
 import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -180,7 +180,16 @@ export function CreatePaymentDialog({ open, onOpenChange, kind }: CreatePaymentD
       if (totalAmt <= 0) throw new Error("Total payment amount must be greater than zero");
 
       if (isReceived) {
-        const { data, error } = await (supabase as any).rpc("create_customer_payment", {
+        const allocations = selectedDocs
+          .map((doc) => ({
+            invoice_id: doc.id,
+            amount: Math.round((parseFloat(applied[doc.id] ?? "0") || 0) * 100) / 100,
+          }))
+          .filter((allocation) => allocation.amount > 0);
+
+        const rpcName =
+          allocations.length > 0 ? "create_and_post_customer_payment" : "create_customer_payment";
+        const rpcArgs = {
           _customer_id: partyId,
           _amount: totalAmt,
           _date: date,
@@ -188,9 +197,11 @@ export function CreatePaymentDialog({ open, onOpenChange, kind }: CreatePaymentD
           _reference: reference || null,
           _notes: notes || null,
           _currency: currency,
-        });
+          ...(allocations.length > 0 ? { _allocations: allocations } : {}),
+        };
+        const { data, error } = await (supabase as any).rpc(rpcName, rpcArgs);
         if (error) throw error;
-        return data;
+        return data as string;
       }
 
       if (checked.size === 0) throw new Error(`Select at least one ${docLabel.toLowerCase()}`);
@@ -219,7 +230,7 @@ export function CreatePaymentDialog({ open, onOpenChange, kind }: CreatePaymentD
       if (payError) throw payError;
       const paymentId = (payment as any).id;
 
-      // For each checked doc, insert a payment allocation and update balances
+      // Supplier payments retain their existing AP flow until it is migrated.
       for (const doc of selectedDocs) {
         const amt = Math.round((parseFloat(applied[doc.id] ?? "0") || 0) * 100) / 100;
         if (amt <= 0) continue;
@@ -234,27 +245,15 @@ export function CreatePaymentDialog({ open, onOpenChange, kind }: CreatePaymentD
         const newPaid = Math.round((doc.grand_total - doc.balance_due + amt) * 100) / 100;
         const newBalance = Math.max(0, Math.round((doc.grand_total - newPaid) * 100) / 100);
 
-        if (isReceived) {
-          await supabase
-            .from("invoices")
-            .update({
-              amount_paid: newPaid,
-              balance_due: newBalance,
-              balance: newBalance,
-              status: newBalance <= 0.001 ? "Paid" : "Posted",
-            })
-            .eq("id", doc.id);
-        } else {
-          await supabase
-            .from("bills")
-            .update({
-              amount_paid: newPaid,
-              balance_due: newBalance,
-              balance: newBalance,
-              status: newBalance <= 0.001 ? "Paid" : "Posted",
-            })
-            .eq("id", doc.id);
-        }
+        await supabase
+          .from("bills")
+          .update({
+            amount_paid: newPaid,
+            balance_due: newBalance,
+            balance: newBalance,
+            status: newBalance <= 0.001 ? "Paid" : "Posted",
+          })
+          .eq("id", doc.id);
       }
 
       return paymentId;

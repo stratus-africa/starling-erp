@@ -20,8 +20,11 @@ import { useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
+import { useDocumentEvents } from "@/lib/document-events";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -49,6 +52,13 @@ import {
   Loader2,
   Send,
   ArrowRight,
+  ArrowLeft,
+  Download,
+  DollarSign,
+  FileText,
+  CheckCircle2,
+  Wallet,
+  Receipt,
 } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { ExternalLink } from "lucide-react";
@@ -60,6 +70,8 @@ import { useDocumentBranding, type DocTemplateKind } from "@/hooks/use-document-
 import { db } from "@/lib/typed-db";
 import type { TableName } from "@/lib/typed-db";
 import { EmailDocumentDialog } from "@/components/email-document-dialog";
+import { AttachmentsPanel } from "@/components/attachments-panel";
+import { RecordPaymentDialog } from "@/components/record-payment-dialog";
 import { getDocumentTemplate } from "@/lib/document-template-types";
 
 // ── Config ────────────────────────────────────────────────────────────────────
@@ -98,7 +110,7 @@ const DOC_CONFIG: Record<
     prefix: "QT",
     templateKind: "quote",
     deletePermission: "sales.delete",
-    statuses: ["Draft", "Sent", "Accepted", "Rejected", "Expired"],
+    statuses: ["Draft", "Sent", "Viewed", "Accepted", "Rejected", "Expired", "Cancelled"],
     converts: [{ label: "Convert to Order", action: "convert_quote_to_order" }],
   },
   order: {
@@ -115,7 +127,7 @@ const DOC_CONFIG: Record<
     prefix: "SO",
     templateKind: "order",
     deletePermission: "sales.delete",
-    statuses: ["Draft", "Confirmed", "Processing", "Packed", "Shipped", "Delivered", "Invoiced", "Cancelled"],
+    statuses: ["Draft", "Confirmed", "Processing", "Completed", "Cancelled"],
     converts: [{ label: "Convert to Invoice", action: "convert_order_to_invoice" }],
   },
   invoice: {
@@ -132,7 +144,16 @@ const DOC_CONFIG: Record<
     prefix: "INV",
     templateKind: "invoice",
     deletePermission: "sales.delete",
-    statuses: ["Draft", "Sent", "Posted", "Paid", "Overdue", "Cancelled"],
+    statuses: [
+      "Draft",
+      "Posted",
+      "Sent",
+      "Partially Paid",
+      "Paid",
+      "Overdue",
+      "Voided",
+      "Cancelled",
+    ],
   },
   credit_note: {
     table: "credit_notes",
@@ -223,6 +244,29 @@ const STATUS_COLORS: Record<string, string> = {
   Pending: "bg-slate-100 text-slate-600 border-slate-300",
 };
 
+function TotalRow({
+  label,
+  value,
+  muted = false,
+  bold = false,
+}: {
+  label: string;
+  value: string;
+  muted?: boolean;
+  bold?: boolean;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-3">
+      <span
+        className={muted ? "text-sm text-muted-foreground" : bold ? "font-semibold" : "text-sm"}
+      >
+        {label}
+      </span>
+      <span className={`font-mono ${bold ? "font-bold" : "text-sm"}`}>{value}</span>
+    </div>
+  );
+}
+
 const money = (n: number | null | undefined, currency = "USD") =>
   `${currency} ${(Number(n) || 0).toLocaleString(undefined, {
     minimumFractionDigits: 2,
@@ -247,10 +291,28 @@ function getInvoicePaymentState(doc: Record<string, any>) {
   const outstanding = Math.max(0, total - paid);
   const isOverdue = Number(outstanding) > 0 && doc?.due_date && new Date(doc.due_date) < new Date();
 
-  if (outstanding <= 0.01) return { label: "Paid", tone: "bg-emerald-50 text-emerald-700 border-emerald-200", pct: 100, outstanding };
-  if (paid > 0) return { label: "Partially Paid", tone: "bg-amber-50 text-amber-700 border-amber-200", pct: total > 0 ? (paid / total) * 100 : 0, outstanding };
-  if (isOverdue) return { label: "Overdue", tone: "bg-red-50 text-red-700 border-red-200", pct: 0, outstanding };
-  return { label: "Unpaid", tone: "bg-slate-100 text-slate-700 border-slate-200", pct: 0, outstanding };
+  if (outstanding <= 0.01)
+    return {
+      label: "Paid",
+      tone: "bg-emerald-50 text-emerald-700 border-emerald-200",
+      pct: 100,
+      outstanding,
+    };
+  if (paid > 0)
+    return {
+      label: "Partially Paid",
+      tone: "bg-amber-50 text-amber-700 border-amber-200",
+      pct: total > 0 ? (paid / total) * 100 : 0,
+      outstanding,
+    };
+  if (isOverdue)
+    return { label: "Overdue", tone: "bg-red-50 text-red-700 border-red-200", pct: 0, outstanding };
+  return {
+    label: "Unpaid",
+    tone: "bg-slate-100 text-slate-700 border-slate-200",
+    pct: 0,
+    outstanding,
+  };
 }
 
 function InvoiceOverviewView({ id }: { id: string }) {
@@ -274,18 +336,30 @@ function InvoiceOverviewView({ id }: { id: string }) {
     queryKey: ["invoice_lines", id, "invoice-overview"],
     enabled: !!id,
     queryFn: async () => {
-      const { data, error } = await db.from("invoice_lines").select("*").eq("document_id", id).is("deleted_at", null).order("line_no");
+      const { data, error } = await db
+        .from("invoice_lines")
+        .select("*")
+        .eq("document_id", id)
+        .is("deleted_at", null)
+        .order("line_no");
       if (error) throw error;
       return (data ?? []) as Record<string, any>[];
     },
   });
 
-  const itemIds = useMemo(() => Array.from(new Set(lines.map((line) => line.item_id).filter(Boolean))), [lines]);
+  const itemIds = useMemo(
+    () => Array.from(new Set(lines.map((line) => line.item_id).filter(Boolean))),
+    [lines],
+  );
   const { data: items = [] } = useQuery({
     queryKey: ["items", "invoice-overview", itemIds],
     enabled: itemIds.length > 0,
     queryFn: async () => {
-      const { data, error } = await db.from("items").select("id,name,sku").in("id", itemIds).is("deleted_at", null);
+      const { data, error } = await db
+        .from("items")
+        .select("id,name,sku")
+        .in("id", itemIds)
+        .is("deleted_at", null);
       if (error) throw error;
       return (data ?? []) as Record<string, any>[];
     },
@@ -295,7 +369,12 @@ function InvoiceOverviewView({ id }: { id: string }) {
     queryKey: ["customers", invoice?.customer_id],
     enabled: !!invoice?.customer_id,
     queryFn: async () => {
-      const { data, error } = await db.from("customers").select("* ").eq("id", invoice.customer_id).maybeSingle();
+      if (!invoice?.customer_id) throw new Error("Invoice customer is unavailable");
+      const { data, error } = await db
+        .from("customers")
+        .select("* ")
+        .eq("id", invoice.customer_id)
+        .maybeSingle();
       if (error) throw error;
       return (data ?? null) as Record<string, any> | null;
     },
@@ -305,7 +384,12 @@ function InvoiceOverviewView({ id }: { id: string }) {
     queryKey: ["profiles", invoice?.created_by],
     enabled: !!invoice?.created_by,
     queryFn: async () => {
-      const { data, error } = await db.from("profiles").select("full_name,email").eq("id", invoice.created_by).maybeSingle();
+      if (!invoice?.created_by) throw new Error("Invoice creator is unavailable");
+      const { data, error } = await db
+        .from("profiles")
+        .select("full_name,email")
+        .eq("id", invoice.created_by)
+        .maybeSingle();
       if (error) throw error;
       return (data ?? null) as Record<string, any> | null;
     },
@@ -315,7 +399,12 @@ function InvoiceOverviewView({ id }: { id: string }) {
     queryKey: ["sales_orders", invoice?.source_order_id],
     enabled: !!invoice?.source_order_id,
     queryFn: async () => {
-      const { data, error } = await db.from("sales_orders").select("id,number").eq("id", invoice.source_order_id).maybeSingle();
+      if (!invoice?.source_order_id) throw new Error("Invoice source order is unavailable");
+      const { data, error } = await db
+        .from("sales_orders")
+        .select("id,number")
+        .eq("id", invoice.source_order_id)
+        .maybeSingle();
       if (error) throw error;
       return (data ?? null) as Record<string, any> | null;
     },
@@ -325,9 +414,23 @@ function InvoiceOverviewView({ id }: { id: string }) {
     queryKey: ["payments_received", id],
     enabled: !!invoice?.id,
     queryFn: async () => {
-      const { data, error } = await db.from("payments_received").select("*").eq("invoice_id", id).is("deleted_at", null).order("payment_date", { ascending: false });
+      const { data, error } = await db
+        .from("payments_received")
+        .select("*")
+        .eq("invoice_id", id)
+        .is("deleted_at", null)
+        .order("payment_date", { ascending: false });
       if (error) throw error;
       return (data ?? []) as Record<string, any>[];
+    },
+  });
+  const { data: paymentSummary } = useQuery({
+    queryKey: ["invoices", id, "payment-summary"],
+    enabled: !!invoice?.id,
+    queryFn: async () => {
+      const { data, error } = await db.rpc("get_invoice_payment_summary", { _invoice_id: id });
+      if (error) throw error;
+      return (data?.[0] ?? data) as Record<string, any>;
     },
   });
 
@@ -336,24 +439,59 @@ function InvoiceOverviewView({ id }: { id: string }) {
     queryKey: ["audit_logs", "invoices", id],
     enabled: !!id,
     queryFn: async () => {
-      const { data, error } = await db.from("audit_logs").select("*").eq("table_name", "invoices").eq("record_id", id).order("created_at", { ascending: false }).limit(50);
+      const { data, error } = await db
+        .from("audit_logs")
+        .select("*")
+        .eq("table_name", "invoices")
+        .eq("record_id", id)
+        .order("created_at", { ascending: false })
+        .limit(50);
       if (error) throw error;
       return (data ?? []) as Record<string, any>[];
     },
   });
 
-  const canWrite = can(["sales.create", "sales.update", "accounting.journal.create", "accounting.journal.update"]);
+  const canWrite = can([
+    "sales.create",
+    "sales.update",
+    "accounting.journal.create",
+    "accounting.journal.update",
+  ]);
   const canRecordPayment = can(["payments.create", "payments.post"]);
   const canDelete = can(["sales.delete", "admin"]);
 
-  if (isLoading) return <div className="flex h-64 items-center justify-center text-sm text-muted-foreground">Loading invoice…</div>;
-  if (!invoice) return <div className="flex h-64 items-center justify-center text-sm text-muted-foreground">Invoice not found.</div>;
+  if (isLoading)
+    return (
+      <div className="flex h-64 items-center justify-center text-sm text-muted-foreground">
+        Loading invoice…
+      </div>
+    );
+  if (!invoice)
+    return (
+      <div className="flex h-64 items-center justify-center text-sm text-muted-foreground">
+        Invoice not found.
+      </div>
+    );
 
   const currency = invoice.currency ?? tenant?.currency_symbol ?? tenant?.currency ?? "KES";
   const invoiceTotal = Number(invoice.grand_total ?? 0);
-  const paid = Number(invoice.amount_paid ?? 0);
-  const outstanding = Math.max(0, invoiceTotal - paid);
-  const paymentState = getInvoicePaymentState(invoice);
+  const paid = Number(paymentSummary?.allocated_amount ?? invoice.amount_paid ?? 0);
+  const outstanding = Number(paymentSummary?.balance_due ?? Math.max(0, invoiceTotal - paid));
+  const paymentState = paymentSummary
+    ? {
+        label: paymentSummary.payment_status,
+        tone:
+          paymentSummary.payment_status === "Paid"
+            ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+            : paymentSummary.payment_status === "Overdue"
+              ? "bg-red-50 text-red-700 border-red-200"
+              : paymentSummary.payment_status === "Partially Paid"
+                ? "bg-amber-50 text-amber-700 border-amber-200"
+                : "bg-slate-100 text-slate-700 border-slate-200",
+        pct: invoiceTotal > 0 ? (paid / invoiceTotal) * 100 : 0,
+        outstanding,
+      }
+    : getInvoicePaymentState(invoice);
   const progress = invoiceTotal > 0 ? Math.min(100, (paid / invoiceTotal) * 100) : 0;
 
   const totals = {
@@ -383,15 +521,29 @@ function InvoiceOverviewView({ id }: { id: string }) {
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
                 <h1 className="text-2xl font-semibold tracking-tight">{headerTitle}</h1>
-                <span className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-semibold ${paymentState.tone}`}>
+                <span
+                  className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-semibold ${paymentState.tone}`}
+                >
                   {paymentState.label}
                 </span>
               </div>
               <div className="mt-2 flex flex-wrap items-center gap-x-6 gap-y-1 text-sm text-muted-foreground">
-                <span><span className="font-medium text-foreground">Customer</span> {customer?.name ?? "—"}</span>
-                <span><span className="font-medium text-foreground">Invoice Date</span> {fmtDate(invoice.date)}</span>
-                <span><span className="font-medium text-foreground">Due Date</span> {fmtDate(invoice.due_date)}</span>
-                <span><span className="font-medium text-foreground">Salesperson</span> {salesperson?.full_name ?? "—"}</span>
+                <span>
+                  <span className="font-medium text-foreground">Customer</span>{" "}
+                  {customer?.name ?? "—"}
+                </span>
+                <span>
+                  <span className="font-medium text-foreground">Invoice Date</span>{" "}
+                  {fmtDate(invoice.date)}
+                </span>
+                <span>
+                  <span className="font-medium text-foreground">Due Date</span>{" "}
+                  {fmtDate(invoice.due_date)}
+                </span>
+                <span>
+                  <span className="font-medium text-foreground">Salesperson</span>{" "}
+                  {salesperson?.full_name ?? "—"}
+                </span>
               </div>
               {sourceOrder && (
                 <div className="mt-2 text-sm text-muted-foreground">
@@ -402,30 +554,41 @@ function InvoiceOverviewView({ id }: { id: string }) {
           </div>
 
           <div className="flex flex-wrap items-center gap-2 xl:justify-end">
-            <Button variant="outline" size="sm" onClick={() => downloadDocumentPdf({
-              title: "Invoice",
-              number: String(invoice.number ?? ""),
-              companyName: tenant?.name ?? "Company",
-              partyLabel: "Customer",
-              partyName: customer?.name ?? "—",
-              currency,
-              meta: [
-                { label: "Invoice Date", value: fmtDate(invoice.date) },
-                { label: "Due Date", value: fmtDate(invoice.due_date) },
-                { label: "Status", value: String(invoice.status ?? paymentState.label) },
-              ],
-              lines: lines.map((line) => ({
-                description: line.description ?? "",
-                quantity: Number(line.quantity ?? 0),
-                unit_price: Number(line.unit_price ?? 0),
-                discount_pct: Number(line.discount_pct ?? 0),
-                tax_pct: Number(line.tax_pct ?? 0),
-                line_total: Number(line.line_total ?? 0),
-              })),
-              totals: { subtotal: totals.subtotal, discount_total: totals.discount, tax_total: totals.tax, grand_total: totals.total },
-              branding: { primaryColor: "#2563eb", logoUrl: "" },
-              notes: invoice.notes ?? null,
-            })}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() =>
+                downloadDocumentPdf({
+                  title: "Invoice",
+                  number: String(invoice.number ?? ""),
+                  companyName: tenant?.name ?? "Company",
+                  partyLabel: "Customer",
+                  partyName: customer?.name ?? "—",
+                  currency,
+                  meta: [
+                    { label: "Invoice Date", value: fmtDate(invoice.date) },
+                    { label: "Due Date", value: fmtDate(invoice.due_date) },
+                    { label: "Status", value: String(invoice.status ?? paymentState.label) },
+                  ],
+                  lines: lines.map((line) => ({
+                    description: line.description ?? "",
+                    quantity: Number(line.quantity ?? 0),
+                    unit_price: Number(line.unit_price ?? 0),
+                    discount_pct: Number(line.discount_pct ?? 0),
+                    tax_pct: Number(line.tax_pct ?? 0),
+                    line_total: Number(line.line_total ?? 0),
+                  })),
+                  totals: {
+                    subtotal: totals.subtotal,
+                    discount_total: totals.discount,
+                    tax_total: totals.tax,
+                    grand_total: totals.total,
+                  },
+                  branding: { accentColor: "#2563eb", logoUrl: "" },
+                  notes: invoice.notes ?? null,
+                })
+              }
+            >
               <Download className="mr-1.5 h-4 w-4" /> Download PDF
             </Button>
             {canRecordPayment && outstanding > 0 && (
@@ -450,7 +613,10 @@ function InvoiceOverviewView({ id }: { id: string }) {
                   <Printer className="mr-2 h-4 w-4" /> Print
                 </DropdownMenuItem>
                 {canDelete && (
-                  <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => setDeleteOpen(true)}>
+                  <DropdownMenuItem
+                    className="text-destructive focus:text-destructive"
+                    onClick={() => setDeleteOpen(true)}
+                  >
                     <Trash2 className="mr-2 h-4 w-4" /> Delete Invoice
                   </DropdownMenuItem>
                 )}
@@ -461,16 +627,32 @@ function InvoiceOverviewView({ id }: { id: string }) {
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
           {[
-            { label: "Invoice Total", value: `${currency} ${Number(invoiceTotal).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, icon: FileText },
-            { label: "Amount Paid", value: `${currency} ${Number(paid).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, sub: `${Math.round(progress)}%`, icon: CheckCircle2 },
-            { label: "Outstanding", value: `${currency} ${Number(outstanding).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, sub: paymentState.label === "Paid" ? "Fully Paid" : paymentState.label, icon: Wallet },
+            {
+              label: "Invoice Total",
+              value: `${currency} ${Number(invoiceTotal).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+              icon: FileText,
+            },
+            {
+              label: "Amount Paid",
+              value: `${currency} ${Number(paid).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+              sub: `${Math.round(progress)}%`,
+              icon: CheckCircle2,
+            },
+            {
+              label: "Outstanding",
+              value: `${currency} ${Number(outstanding).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+              sub: paymentState.label === "Paid" ? "Fully Paid" : paymentState.label,
+              icon: Wallet,
+            },
             { label: "Status", value: paymentState.label, icon: Receipt },
           ].map((kpi) => (
             <Card key={kpi.label} className="p-4">
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
                   <p className="text-xs text-muted-foreground">{kpi.label}</p>
-                  <p className="mt-1 truncate font-mono text-lg font-semibold tabular-nums">{kpi.value}</p>
+                  <p className="mt-1 truncate font-mono text-lg font-semibold tabular-nums">
+                    {kpi.value}
+                  </p>
                   {kpi.sub && <p className="mt-1 text-[11px] text-muted-foreground">{kpi.sub}</p>}
                 </div>
                 <kpi.icon className="h-4 w-4 shrink-0 text-primary" />
@@ -499,7 +681,9 @@ function InvoiceOverviewView({ id }: { id: string }) {
                 <Card>
                   <CardHeader className="flex flex-row items-center justify-between pb-3">
                     <CardTitle className="text-sm">Line Items</CardTitle>
-                    <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] text-muted-foreground">{lines.length} items</span>
+                    <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] text-muted-foreground">
+                      {lines.length} items
+                    </span>
                   </CardHeader>
                   <CardContent className="p-0">
                     <div className="overflow-x-auto">
@@ -518,35 +702,81 @@ function InvoiceOverviewView({ id }: { id: string }) {
                         </thead>
                         <tbody>
                           {lines.length === 0 ? (
-                            <tr><td colSpan={8} className="px-4 py-8 text-center text-sm text-muted-foreground">No line items on this invoice.</td></tr>
-                          ) : lines.map((line, index) => {
-                            const item = items.find((candidate) => candidate.id === line.item_id);
-                            return (
-                              <tr key={line.id ?? index} className="border-b last:border-0">
-                                <td className="px-4 py-3 text-muted-foreground">{index + 1}</td>
-                                <td className="px-4 py-3">
-                                  <div className="font-medium">{item?.name ?? line.description ?? "Item"}</div>
-                                  <div className="text-[11px] text-muted-foreground">{item?.sku ?? "No SKU"}</div>
-                                </td>
-                                <td className="px-4 py-3 text-muted-foreground">{line.description ?? "—"}</td>
-                                <td className="px-4 py-3 text-right">{Number(line.quantity ?? 0)}</td>
-                                <td className="px-4 py-3 text-right font-mono text-xs">{currency} {Number(line.unit_price ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                                <td className="px-4 py-3 text-right">{Number(line.discount_pct ?? 0)}%</td>
-                                <td className="px-4 py-3 text-right">{Number(line.tax_pct ?? 0)}%</td>
-                                <td className="px-4 py-3 text-right font-mono font-medium">{currency} {Number(line.line_total ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                              </tr>
-                            );
-                          })}
+                            <tr>
+                              <td
+                                colSpan={8}
+                                className="px-4 py-8 text-center text-sm text-muted-foreground"
+                              >
+                                No line items on this invoice.
+                              </td>
+                            </tr>
+                          ) : (
+                            lines.map((line, index) => {
+                              const item = items.find((candidate) => candidate.id === line.item_id);
+                              return (
+                                <tr key={line.id ?? index} className="border-b last:border-0">
+                                  <td className="px-4 py-3 text-muted-foreground">{index + 1}</td>
+                                  <td className="px-4 py-3">
+                                    <div className="font-medium">
+                                      {item?.name ?? line.description ?? "Item"}
+                                    </div>
+                                    <div className="text-[11px] text-muted-foreground">
+                                      {item?.sku ?? "No SKU"}
+                                    </div>
+                                  </td>
+                                  <td className="px-4 py-3 text-muted-foreground">
+                                    {line.description ?? "—"}
+                                  </td>
+                                  <td className="px-4 py-3 text-right">
+                                    {Number(line.quantity ?? 0)}
+                                  </td>
+                                  <td className="px-4 py-3 text-right font-mono text-xs">
+                                    {currency}{" "}
+                                    {Number(line.unit_price ?? 0).toLocaleString(undefined, {
+                                      minimumFractionDigits: 2,
+                                      maximumFractionDigits: 2,
+                                    })}
+                                  </td>
+                                  <td className="px-4 py-3 text-right">
+                                    {Number(line.discount_pct ?? 0)}%
+                                  </td>
+                                  <td className="px-4 py-3 text-right">
+                                    {Number(line.tax_pct ?? 0)}%
+                                  </td>
+                                  <td className="px-4 py-3 text-right font-mono font-medium">
+                                    {currency}{" "}
+                                    {Number(line.line_total ?? 0).toLocaleString(undefined, {
+                                      minimumFractionDigits: 2,
+                                      maximumFractionDigits: 2,
+                                    })}
+                                  </td>
+                                </tr>
+                              );
+                            })
+                          )}
                         </tbody>
                       </table>
                     </div>
                     <div className="flex flex-col gap-3 border-t bg-muted/10 p-4 md:items-end">
                       <div className="grid w-full max-w-xs gap-2 text-sm md:ml-auto">
-                        <TotalRow label="Subtotal" value={`${currency} ${totals.subtotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} />
-                        <TotalRow label="Discount" value={`${currency} ${totals.discount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} />
-                        <TotalRow label="Tax" value={`${currency} ${totals.tax.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} />
+                        <TotalRow
+                          label="Subtotal"
+                          value={`${currency} ${totals.subtotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                        />
+                        <TotalRow
+                          label="Discount"
+                          value={`${currency} ${totals.discount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                        />
+                        <TotalRow
+                          label="Tax"
+                          value={`${currency} ${totals.tax.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                        />
                         <div className="border-t pt-2">
-                          <TotalRow label="Grand Total" value={`${currency} ${totals.total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} bold />
+                          <TotalRow
+                            label="Grand Total"
+                            value={`${currency} ${totals.total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                            bold
+                          />
                         </div>
                       </div>
                     </div>
@@ -561,30 +791,70 @@ function InvoiceOverviewView({ id }: { id: string }) {
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="flex items-center justify-between">
-                      <span className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-semibold ${paymentState.tone}`}>{paymentState.label}</span>
-                      <span className="font-mono text-xs text-muted-foreground">{Math.round(progress)}% paid</span>
+                      <span
+                        className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-semibold ${paymentState.tone}`}
+                      >
+                        {paymentState.label}
+                      </span>
+                      <span className="font-mono text-xs text-muted-foreground">
+                        {Math.round(progress)}% paid
+                      </span>
                     </div>
                     <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
-                      <div className="h-full rounded-full bg-emerald-500" style={{ width: `${Math.max(0, Math.min(100, progress))}%` }} />
+                      <div
+                        className="h-full rounded-full bg-emerald-500"
+                        style={{ width: `${Math.max(0, Math.min(100, progress))}%` }}
+                      />
                     </div>
                     <div className="space-y-2 text-sm">
-                      <TotalRow label="Invoice Total" value={`${currency} ${totals.total.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`} />
-                      <TotalRow label="Amount Paid" value={`${currency} ${paid.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} />
-                      <TotalRow label="Outstanding" value={`${currency} ${outstanding.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} />
+                      <TotalRow
+                        label="Invoice Total"
+                        value={`${currency} ${totals.total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                      />
+                      <TotalRow
+                        label="Amount Paid"
+                        value={`${currency} ${paid.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                      />
+                      <TotalRow
+                        label="Outstanding"
+                        value={`${currency} ${outstanding.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                      />
                     </div>
                     <div className="space-y-2 border-t pt-3 text-xs text-muted-foreground">
-                      {payments.length ? payments.map((payment) => (
-                        <div key={payment.id} className="flex items-start justify-between gap-2 border-b pb-2 last:border-0 last:pb-0">
-                          <div>
-                            <div className="font-medium text-foreground">{payment.mode ?? "Payment"}</div>
-                            <div>{fmtDate(payment.payment_date)}</div>
+                      {payments.length ? (
+                        payments.map((payment) => (
+                          <div
+                            key={payment.id}
+                            className="flex items-start justify-between gap-2 border-b pb-2 last:border-0 last:pb-0"
+                          >
+                            <div>
+                              <div className="font-medium text-foreground">
+                                {payment.mode ?? "Payment"}
+                              </div>
+                              <div>{fmtDate(payment.payment_date)}</div>
+                            </div>
+                            <div className="font-mono text-foreground">
+                              {currency}{" "}
+                              {Number(payment.amount ?? 0).toLocaleString(undefined, {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2,
+                              })}
+                            </div>
                           </div>
-                          <div className="font-mono text-foreground">{currency} {Number(payment.amount ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-                        </div>
-                      )) : (
+                        ))
+                      ) : (
                         <div className="space-y-2">
                           <p>No payments recorded.</p>
-                          {canRecordPayment && outstanding > 0 && <Button variant="secondary" size="sm" className="w-full" onClick={() => setPayOpen(true)}>Record Payment</Button>}
+                          {canRecordPayment && outstanding > 0 && (
+                            <Button
+                              variant="secondary"
+                              size="sm"
+                              className="w-full"
+                              onClick={() => setPayOpen(true)}
+                            >
+                              Record Payment
+                            </Button>
+                          )}
                         </div>
                       )}
                     </div>
@@ -596,26 +866,56 @@ function InvoiceOverviewView({ id }: { id: string }) {
                     <CardTitle className="text-sm">Activity</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-3">
-                    {events.length ? events.slice(-5).reverse().map((event) => (
-                      <div key={event.id} className="flex gap-2 border-b pb-2 last:border-0 last:pb-0">
-                        <div className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full bg-primary" />
-                        <div>
-                          <p className="text-sm font-medium">{event.note ?? event.status}</p>
-                          <p className="text-[11px] text-muted-foreground">{fmtDate(event.created_at)} · {event.actor_email ?? "System"}</p>
-                        </div>
-                      </div>
-                    )) : <p className="text-sm text-muted-foreground">No activity yet.</p>}
-                    <Button variant="link" size="sm" className="h-auto px-0" onClick={() => setTab("activity")}>View All</Button>
+                    {events.length ? (
+                      events
+                        .slice(-5)
+                        .reverse()
+                        .map((event) => (
+                          <div
+                            key={event.id}
+                            className="flex gap-2 border-b pb-2 last:border-0 last:pb-0"
+                          >
+                            <div className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full bg-primary" />
+                            <div>
+                              <p className="text-sm font-medium">{event.note ?? event.status}</p>
+                              <p className="text-[11px] text-muted-foreground">
+                                {fmtDate(event.created_at)} · {event.actor_email ?? "System"}
+                              </p>
+                            </div>
+                          </div>
+                        ))
+                    ) : (
+                      <p className="text-sm text-muted-foreground">No activity yet.</p>
+                    )}
+                    <Button
+                      variant="link"
+                      size="sm"
+                      className="h-auto px-0"
+                      onClick={() => setTab("activity")}
+                    >
+                      View All
+                    </Button>
                   </CardContent>
                 </Card>
 
                 <Card>
                   <CardHeader className="flex flex-row items-center justify-between pb-3">
                     <CardTitle className="text-sm">Notes</CardTitle>
-                    {canWrite && <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setEditing(true)}><Pencil className="h-3.5 w-3.5" /></Button>}
+                    {canWrite && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7"
+                        onClick={() => setEditing(true)}
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                      </Button>
+                    )}
                   </CardHeader>
                   <CardContent>
-                    <p className="whitespace-pre-wrap text-sm text-muted-foreground">{invoice.notes || "No notes added."}</p>
+                    <p className="whitespace-pre-wrap text-sm text-muted-foreground">
+                      {invoice.notes || "No notes added."}
+                    </p>
                   </CardContent>
                 </Card>
               </aside>
@@ -627,12 +927,25 @@ function InvoiceOverviewView({ id }: { id: string }) {
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between pb-3">
                   <CardTitle className="text-sm">Payments</CardTitle>
-                  {canRecordPayment && outstanding > 0 && <Button variant="secondary" size="sm" onClick={() => setPayOpen(true)}>Record Payment</Button>}
+                  {canRecordPayment && outstanding > 0 && (
+                    <Button variant="secondary" size="sm" onClick={() => setPayOpen(true)}>
+                      Record Payment
+                    </Button>
+                  )}
                 </CardHeader>
                 <CardContent>
                   {payments.length ? (
-                    <div className="overflow-x-auto"><table className="w-full text-sm"><thead>...</thead><tbody>...</tbody></table></div>
-                  ) : <div className="rounded border border-dashed p-6 text-sm text-muted-foreground">No payments recorded.</div>}
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead>...</thead>
+                        <tbody>...</tbody>
+                      </table>
+                    </div>
+                  ) : (
+                    <div className="rounded border border-dashed p-6 text-sm text-muted-foreground">
+                      No payments recorded.
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </div>
@@ -641,7 +954,9 @@ function InvoiceOverviewView({ id }: { id: string }) {
           {tab === "documents" && (
             <div className="p-4">
               <Card>
-                <CardHeader><CardTitle className="text-sm">Documents</CardTitle></CardHeader>
+                <CardHeader>
+                  <CardTitle className="text-sm">Documents</CardTitle>
+                </CardHeader>
                 <CardContent>
                   <AttachmentsPanel entityType="invoice" entityId={id} />
                 </CardContent>
@@ -654,15 +969,26 @@ function InvoiceOverviewView({ id }: { id: string }) {
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between pb-3">
                   <CardTitle className="text-sm">Activity</CardTitle>
-                  <Button variant="ghost" size="sm" className="h-7 px-2" onClick={() => setTab("overview")}>Back</Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 px-2"
+                    onClick={() => setTab("overview")}
+                  >
+                    Back
+                  </Button>
                 </CardHeader>
                 <CardContent>
-                  <DocumentTimeline entityType="invoice" entityId={id} stages={["Draft", "Sent", "Posted", "Paid", "Overdue", "Cancelled"]} currentStage={invoice.status ?? "Draft"} />
+                  <DocumentTimeline
+                    entityType="invoice"
+                    entityId={id}
+                    stages={["Draft", "Sent", "Posted", "Paid", "Overdue", "Cancelled"]}
+                    currentStage={invoice.status ?? "Draft"}
+                  />
                 </CardContent>
               </Card>
             </div>
           )}
-
         </div>
       </div>
 
@@ -684,17 +1010,38 @@ function InvoiceOverviewView({ id }: { id: string }) {
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>Delete invoice?</AlertDialogTitle>
-              <AlertDialogDescription>This will remove the invoice and its lines.</AlertDialogDescription>
+              <AlertDialogDescription>
+                This will remove the invoice and its lines.
+              </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction className="bg-destructive text-destructive-foreground" onClick={() => { qc.invalidateQueries({ queryKey: ["invoices"] }); setDeleteOpen(false); }}>Delete</AlertDialogAction>
+              <AlertDialogAction
+                className="bg-destructive text-destructive-foreground"
+                onClick={() => {
+                  qc.invalidateQueries({ queryKey: ["invoices"] });
+                  setDeleteOpen(false);
+                }}
+              >
+                Delete
+              </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
       )}
 
-      {editing && <DocumentEditor kind="invoice" id={id} onClose={() => setEditing(false)} onSaved={() => { setEditing(false); qc.invalidateQueries({ queryKey: ["invoices", id] }); qc.invalidateQueries({ queryKey: ["invoice_lines", id] }); }} />}
+      {editing && (
+        <DocumentEditor
+          kind="invoice"
+          id={id}
+          onClose={() => setEditing(false)}
+          onSaved={() => {
+            setEditing(false);
+            qc.invalidateQueries({ queryKey: ["invoices", id] });
+            qc.invalidateQueries({ queryKey: ["invoice_lines", id] });
+          }}
+        />
+      )}
     </div>
   );
 }
@@ -747,7 +1094,11 @@ function DetailsView({ kind, id }: { kind: DocKind; id: string }) {
     queryKey: ["sales_quotes", "source-quote", sourceQuoteId],
     enabled: !!sourceQuoteId,
     queryFn: async () => {
-      const { data } = await db.from("sales_quotes").select("id, number").eq("id", sourceQuoteId!).maybeSingle();
+      const { data } = await db
+        .from("sales_quotes")
+        .select("id, number")
+        .eq("id", sourceQuoteId!)
+        .maybeSingle();
       return data as { id: string; number: string | null } | null;
     },
   });
@@ -758,7 +1109,11 @@ function DetailsView({ kind, id }: { kind: DocKind; id: string }) {
     queryKey: ["sales_orders", "source-order", sourceOrderId],
     enabled: !!sourceOrderId,
     queryFn: async () => {
-      const { data } = await db.from("sales_orders").select("id, number").eq("id", sourceOrderId!).maybeSingle();
+      const { data } = await db
+        .from("sales_orders")
+        .select("id, number")
+        .eq("id", sourceOrderId!)
+        .maybeSingle();
       return data as { id: string; number: string | null } | null;
     },
   });
@@ -787,7 +1142,9 @@ function DetailsView({ kind, id }: { kind: DocKind; id: string }) {
 
   if (!doc) {
     return (
-      <div className="flex h-48 items-center justify-center text-sm text-muted-foreground">Document not found.</div>
+      <div className="flex h-48 items-center justify-center text-sm text-muted-foreground">
+        Document not found.
+      </div>
     );
   }
 
@@ -809,7 +1166,9 @@ function DetailsView({ kind, id }: { kind: DocKind; id: string }) {
         <div className="flex items-center gap-3 mb-1">
           <h2 className="text-2xl font-bold tracking-tight">{doc.number ?? "—"}</h2>
           {doc.status && (
-            <span className={`rounded border px-2.5 py-0.5 text-xs font-semibold ${statusColor}`}>{doc.status}</span>
+            <span className={`rounded border px-2.5 py-0.5 text-xs font-semibold ${statusColor}`}>
+              {doc.status}
+            </span>
           )}
         </div>
         <p className="text-sm text-muted-foreground">Total: {money(grandTotal, currency)}</p>
@@ -820,7 +1179,9 @@ function DetailsView({ kind, id }: { kind: DocKind; id: string }) {
         <MetaRow label={`${cfg.label} Number`} value={doc.number} />
         <MetaRow label={`${cfg.label} Date`} value={fmtDate(doc[cfg.dateField])} />
         <MetaRow label="Creation Date" value={fmtDate(doc.created_at)} />
-        {cfg.extraDate && <MetaRow label={cfg.extraDate.label} value={fmtDate(doc[cfg.extraDate.field])} />}
+        {cfg.extraDate && (
+          <MetaRow label={cfg.extraDate.label} value={fmtDate(doc[cfg.extraDate.field])} />
+        )}
         {doc.notes && <MetaRow label="Reference / Notes" value={String(doc.notes)} />}
         <MetaRow label="Currency" value={currency} />
         {doc.payment_terms && <MetaRow label="Payment Terms" value={String(doc.payment_terms)} />}
@@ -834,16 +1195,24 @@ function DetailsView({ kind, id }: { kind: DocKind; id: string }) {
         {isReq && warehouseDoc && (
           <MetaRow
             label="From Warehouse"
-            value={warehouseDoc.code ? `${warehouseDoc.code} — ${warehouseDoc.name}` : warehouseDoc.name}
+            value={
+              warehouseDoc.code ? `${warehouseDoc.code} — ${warehouseDoc.name}` : warehouseDoc.name
+            }
           />
         )}
         {isReq && doc.department && <MetaRow label="Department" value={String(doc.department)} />}
-        {isReq && doc.requested_by && <MetaRow label="Requested By" value={String(doc.requested_by)} />}
-        {isReq && doc.converted_po_id && <MetaRow label="Converted PO" value="See Purchase Orders" />}
+        {isReq && doc.requested_by && (
+          <MetaRow label="Requested By" value={String(doc.requested_by)} />
+        )}
+        {isReq && doc.converted_po_id && (
+          <MetaRow label="Converted PO" value="See Purchase Orders" />
+        )}
         {/* Source document links */}
         {kind === "order" && sourceQuote && (
           <div className="col-span-2 flex items-center gap-2">
-            <span className="text-[11px] uppercase tracking-wide text-muted-foreground">Source Quote</span>
+            <span className="text-[11px] uppercase tracking-wide text-muted-foreground">
+              Source Quote
+            </span>
             <Link
               to={`/sales/quotes/${sourceQuote.id}` as any}
               className="flex items-center gap-1 text-sm font-medium text-primary hover:underline"
@@ -853,9 +1222,11 @@ function DetailsView({ kind, id }: { kind: DocKind; id: string }) {
             </Link>
           </div>
         )}
-        {kind === "invoice" && sourceOrder && (
+        {String(kind) === "invoice" && sourceOrder && (
           <div className="col-span-2 flex items-center gap-2">
-            <span className="text-[11px] uppercase tracking-wide text-muted-foreground">Source Sales Order</span>
+            <span className="text-[11px] uppercase tracking-wide text-muted-foreground">
+              Source Sales Order
+            </span>
             <Link
               to={`/sales/orders/${sourceOrder.id}` as any}
               className="flex items-center gap-1 text-sm font-medium text-primary hover:underline"
@@ -892,13 +1263,17 @@ function DetailsView({ kind, id }: { kind: DocKind; id: string }) {
             )}
             {party?.billing_address && (
               <div className="space-y-1">
-                <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Billing Address</p>
+                <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                  Billing Address
+                </p>
                 <p className="text-sm whitespace-pre-line">{party.billing_address}</p>
               </div>
             )}
             {party?.shipping_address && (
               <div className="space-y-1">
-                <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Shipping Address</p>
+                <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                  Shipping Address
+                </p>
                 <p className="text-sm whitespace-pre-line">{party.shipping_address}</p>
               </div>
             )}
@@ -909,7 +1284,9 @@ function DetailsView({ kind, id }: { kind: DocKind; id: string }) {
       {/* ── Items table ── */}
       <section>
         <div className="flex items-center gap-2 mb-3">
-          <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Items</h3>
+          <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+            Items
+          </h3>
           <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
             {lines.length}
           </span>
@@ -938,7 +1315,9 @@ function DetailsView({ kind, id }: { kind: DocKind; id: string }) {
                 <tr key={l.id ?? i} className="border-b last:border-0 hover:bg-muted/20">
                   <td className="px-4 py-2.5 text-muted-foreground text-xs">{i + 1}</td>
                   <td className="px-4 py-2.5">
-                    <p className="font-medium text-primary text-sm leading-tight">{l.description || "—"}</p>
+                    <p className="font-medium text-primary text-sm leading-tight">
+                      {l.description || "—"}
+                    </p>
                   </td>
                   <td className="px-4 py-2.5 text-right text-xs tabular-nums">{l.quantity ?? 0}</td>
                   <td className="px-4 py-2.5 text-right font-mono text-xs tabular-nums">
@@ -961,7 +1340,9 @@ function DetailsView({ kind, id }: { kind: DocKind; id: string }) {
       <div className="flex justify-end">
         <div className="w-full max-w-xs space-y-2 rounded-lg border bg-muted/20 px-5 py-4">
           <TotalsRow label="Sub Total (Tax Inclusive)" value={money(subtotal, currency)} />
-          {discountTotal > 0 && <TotalsRow label="Discount" value={`− ${money(discountTotal, currency)}`} muted />}
+          {discountTotal > 0 && (
+            <TotalsRow label="Discount" value={`− ${money(discountTotal, currency)}`} muted />
+          )}
           {taxTotal > 0 && <TotalsRow label="Tax" value={money(taxTotal, currency)} muted />}
           <div className="border-t pt-2">
             <TotalsRow label="Total" value={money(grandTotal, currency)} bold />
@@ -973,7 +1354,11 @@ function DetailsView({ kind, id }: { kind: DocKind; id: string }) {
                 label="Balance Due"
                 value={money(doc.balance_due ?? doc.balance ?? 0, currency)}
                 bold
-                accent={Number(doc.balance_due ?? doc.balance ?? 0) > 0 ? "text-destructive" : "text-emerald-600"}
+                accent={
+                  Number(doc.balance_due ?? doc.balance ?? 0) > 0
+                    ? "text-destructive"
+                    : "text-emerald-600"
+                }
               />
             </>
           )}
@@ -983,7 +1368,9 @@ function DetailsView({ kind, id }: { kind: DocKind; id: string }) {
       {/* ── Notes ── */}
       {doc.notes && (
         <section>
-          <h3 className="mb-2 text-sm font-semibold text-muted-foreground uppercase tracking-wide">Notes</h3>
+          <h3 className="mb-2 text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+            Notes
+          </h3>
           <p className="text-sm text-muted-foreground whitespace-pre-line rounded border bg-muted/20 px-4 py-3">
             {doc.notes}
           </p>
@@ -1017,7 +1404,11 @@ function TotalsRow({
 }) {
   return (
     <div className="flex items-center justify-between gap-4">
-      <span className={`text-sm ${muted ? "text-muted-foreground" : ""} ${bold ? "font-semibold" : ""}`}>{label}</span>
+      <span
+        className={`text-sm ${muted ? "text-muted-foreground" : ""} ${bold ? "font-semibold" : ""}`}
+      >
+        {label}
+      </span>
       <span
         className={`font-mono text-sm tabular-nums ${bold ? "font-bold" : ""} ${accent ?? ""} ${muted ? "text-muted-foreground" : ""}`}
       >
@@ -1080,7 +1471,9 @@ function PdfPreview({ kind, id }: { kind: DocKind; id: string }) {
     };
     const meta: { label: string; value: string }[] = [
       { label: "Date", value: fmtDate(doc[cfg.dateField]) },
-      ...(cfg.extraDate ? [{ label: cfg.extraDate.label, value: fmtDate(doc[cfg.extraDate.field]) }] : []),
+      ...(cfg.extraDate
+        ? [{ label: cfg.extraDate.label, value: fmtDate(doc[cfg.extraDate.field]) }]
+        : []),
       { label: "Status", value: String(doc.status ?? "") },
     ];
     try {
@@ -1135,7 +1528,9 @@ function PdfPreview({ kind, id }: { kind: DocKind; id: string }) {
     <div className="flex h-full min-h-[600px] flex-col">
       <div className="flex items-center justify-between border-b bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
         <span>Document Preview</span>
-        <span>Template: <strong className="text-foreground">{templateName}</strong></span>
+        <span>
+          Template: <strong className="text-foreground">{templateName}</strong>
+        </span>
       </div>
       <iframe
         src={pdfUri}
@@ -1175,7 +1570,8 @@ export function DocViewPanel({ kind, id, embedded = false, onClose, onSaved }: D
   const [payOpen, setPayOpen] = useState(false);
 
   const canDelete = can([cfg.deletePermission, "admin"]);
-  const permModule = kind === "po" || kind === "bill" || kind === "requisition" ? "purchasing" : "sales";
+  const permModule =
+    kind === "po" || kind === "bill" || kind === "requisition" ? "purchasing" : "sales";
   const canWrite = can([`${permModule}.create`, `${permModule}.update`]);
 
   // Fetch lightweight header doc
@@ -1212,14 +1608,19 @@ export function DocViewPanel({ kind, id, embedded = false, onClose, onSaved }: D
     enabled: !isNew && !!(doc?.customer_id ?? doc?.supplier_id),
     queryFn: async () => {
       const partyId = doc?.customer_id ?? doc?.supplier_id;
-      const { data } = await db.from(cfg.partyTable).select("id,name,email").eq("id", partyId).maybeSingle();
+      const { data } = await db
+        .from(cfg.partyTable)
+        .select("id,name,email")
+        .eq("id", partyId)
+        .maybeSingle();
       return data as Record<string, any> | null;
     },
   });
 
   const deleteMutation = useMutation({
     mutationFn: async () => {
-      if (doc?.posted_at) throw new Error("Posted documents cannot be deleted. Use Void & Reverse instead.");
+      if (doc?.posted_at)
+        throw new Error("Posted documents cannot be deleted. Use Void & Reverse instead.");
       const { error } = await supabase
         .from(cfg.table as any)
         .update({ deleted_at: new Date().toISOString() })
@@ -1249,7 +1650,9 @@ export function DocViewPanel({ kind, id, embedded = false, onClose, onSaved }: D
     currency: String(doc?.currency ?? "USD"),
     meta: [
       { label: "Date", value: fmtDate(doc?.[cfg.dateField]) },
-      ...(cfg.extraDate ? [{ label: cfg.extraDate.label, value: fmtDate(doc?.[cfg.extraDate.field]) }] : []),
+      ...(cfg.extraDate
+        ? [{ label: cfg.extraDate.label, value: fmtDate(doc?.[cfg.extraDate.field]) }]
+        : []),
       { label: "Status", value: String(doc?.status ?? "") },
     ],
     lines: lines.map((l) => ({
@@ -1307,7 +1710,12 @@ export function DocViewPanel({ kind, id, embedded = false, onClose, onSaved }: D
       <div className="flex shrink-0 items-center gap-1.5 border-b px-4 py-2 bg-background">
         {/* Edit */}
         {canWrite && !doc?.posted_at && (
-          <Button variant="ghost" size="sm" className="h-8 gap-1.5" onClick={() => setEditMode(true)}>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 gap-1.5"
+            onClick={() => setEditMode(true)}
+          >
             <Pencil className="h-3.5 w-3.5" />
             Edit
           </Button>
@@ -1316,12 +1724,19 @@ export function DocViewPanel({ kind, id, embedded = false, onClose, onSaved }: D
         {/* Divider */}
         <div className="h-5 w-px bg-border mx-0.5" />
 
-        {kind === "invoice" && can(["payments.create", "payments.post"]) && Number(doc?.balance_due ?? doc?.grand_total ?? 0) > 0.001 && (
-          <Button variant="ghost" size="sm" className="h-8 gap-1.5" onClick={() => setPayOpen(true)}>
-            <DollarSign className="h-3.5 w-3.5" />
-            Record Payment
-          </Button>
-        )}
+        {kind === "invoice" &&
+          can(["payments.create", "payments.post"]) &&
+          Number(doc?.balance_due ?? doc?.grand_total ?? 0) > 0.001 && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 gap-1.5"
+              onClick={() => setPayOpen(true)}
+            >
+              <DollarSign className="h-3.5 w-3.5" />
+              Record Payment
+            </Button>
+          )}
 
         {/* Mails */}
         <DropdownMenu>
@@ -1363,7 +1778,9 @@ export function DocViewPanel({ kind, id, embedded = false, onClose, onSaved }: D
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start">
-            <DropdownMenuItem onClick={() => downloadDocumentPdf(buildPdfInput())}>Download PDF</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => downloadDocumentPdf(buildPdfInput())}>
+              Download PDF
+            </DropdownMenuItem>
             <DropdownMenuItem
               onClick={() => {
                 setTab("details");
@@ -1402,7 +1819,10 @@ export function DocViewPanel({ kind, id, embedded = false, onClose, onSaved }: D
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             {canDelete && !doc?.posted_at && (
-              <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => setDeleteOpen(true)}>
+              <DropdownMenuItem
+                className="text-destructive focus:text-destructive"
+                onClick={() => setDeleteOpen(true)}
+              >
                 <Trash2 className="mr-2 h-3.5 w-3.5" />
                 Delete {cfg.label}
               </DropdownMenuItem>
@@ -1482,8 +1902,9 @@ export function DocViewPanel({ kind, id, embedded = false, onClose, onSaved }: D
           <AlertDialogHeader>
             <AlertDialogTitle>Delete {cfg.label}?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently remove <span className="font-semibold">{doc?.number ?? cfg.label}</span> and all its
-              line items. This cannot be undone.
+              This will permanently remove{" "}
+              <span className="font-semibold">{doc?.number ?? cfg.label}</span> and all its line
+              items. This cannot be undone.
               {doc?.posted_at && (
                 <span className="mt-2 block font-medium text-destructive">
                   Posted documents cannot be deleted — use Void &amp; Reverse instead.
@@ -1537,7 +1958,15 @@ export function DocViewPanel({ kind, id, embedded = false, onClose, onSaved }: D
 
 // ── Tab button ────────────────────────────────────────────────────────────────
 
-function TabBtn({ active, onClick, children }: { active: boolean; onClick: () => void; children: ReactNode }) {
+function TabBtn({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: ReactNode;
+}) {
   return (
     <button
       type="button"

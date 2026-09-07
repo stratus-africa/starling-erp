@@ -271,6 +271,7 @@ export function SalesOrderViewPage({ id }: { id: string }) {
     queryKey: ["customers", order?.customer_id],
     enabled: !!order?.customer_id,
     queryFn: async () => {
+      if (!order?.customer_id) throw new Error("Sales order customer is unavailable");
       const { data } = await db
         .from("customers")
         .select("*")
@@ -329,6 +330,14 @@ export function SalesOrderViewPage({ id }: { id: string }) {
         )
         .is("deleted_at", null);
       return (data ?? []) as Row[];
+    },
+  });
+  const { data: financialSummary } = useQuery({
+    queryKey: ["sales_orders", id, "financial-summary"],
+    queryFn: async () => {
+      const { data, error } = await db.rpc("get_sales_order_financial_summary", { _order_id: id });
+      if (error) throw error;
+      return (data?.[0] ?? data) as Row;
     },
   });
   const { data: events = [] } = useDocumentEvents("order", id);
@@ -409,20 +418,18 @@ export function SalesOrderViewPage({ id }: { id: string }) {
   const ordered = lines.reduce((sum, line) => sum + Number(line.quantity ?? 0), 0);
   const fulfilled = packageLines.reduce((sum, line) => sum + Number(line.quantity ?? 0), 0);
   const progress = ordered ? Math.min(100, (fulfilled / ordered) * 100) : 0;
-  const paid = invoices.reduce((sum, invoice) => sum + Number(invoice.amount_paid ?? 0), 0);
-  const outstanding = Math.max(0, Number(order.grand_total ?? 0) - paid);
-  const paymentStatus =
-    outstanding <= 0.01 && Number(order.grand_total ?? 0) > 0
-      ? "Paid"
-      : paid > 0
-        ? "Partially Paid"
-        : "Unpaid";
+  const paid = Number(financialSummary?.paid_amount ?? 0);
+  const outstanding = Number(
+    financialSummary?.outstanding_amount ?? Math.max(0, Number(order.grand_total ?? 0) - paid),
+  );
+  const paymentStatus = order.payment_status ?? (paid > 0 ? "Partially Paid" : "Unpaid");
   const fulfillmentStatus =
-    fulfilled <= 0
+    order.fulfillment_status ??
+    (fulfilled <= 0
       ? "Not Started"
       : fulfilled >= ordered && ordered > 0
         ? "Fulfilled"
-        : "Partially Fulfilled";
+        : "Partially Fulfilled");
   const currentStatus = order.status ?? "Draft";
   const currentStage = ORDER_STAGES.indexOf(currentStatus);
   const canDelete = can(["sales.delete", "admin"]);

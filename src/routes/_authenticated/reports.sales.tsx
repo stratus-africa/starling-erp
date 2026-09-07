@@ -1,7 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { ReportsListingPage } from "@/components/reports-listing-page";
-import { salesReportsConfig } from "@/components/reports-configs";
+import { SalesOverviewReportPage } from "@/components/sales-overview-report-page";
 
 export const Route = createFileRoute("/_authenticated/reports/sales")({
-  component: () => <ReportsListingPage config={salesReportsConfig} />,
+  component: SalesOverviewReportPage,
 });
