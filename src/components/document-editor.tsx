@@ -1123,651 +1123,759 @@ export function DocumentEditor({
             </div>
           </div>
           <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
-            {!isNew && <EmailStatus entityType={kind} entityId={id} />}
-            {!isNew && (
-              <>
-                <Button variant="outline" size="sm" onClick={() => downloadDocumentPdf(buildPdf())}>
-                  <Printer className="h-4 w-4 mr-1.5" /> Print PDF
-                </Button>
-                <Button variant="outline" size="sm" onClick={() => setEmailOpen(true)}>
-                  <Mail className="h-4 w-4 mr-1.5" /> Email
-                </Button>
-              </>
-            )}
-            {!isNew && (doc?.posted_at || kind === "credit_note") && (
-              <Button variant="outline" size="sm" onClick={() => setPostOpen(true)}>
-                <Receipt className="h-4 w-4 mr-1.5" />{" "}
-                {kind === "credit_note" ? "Inventory movements" : "Post details"}
-              </Button>
-            )}
-
-            {canWrite && kind === "order" && !isNew && (
-              <Button variant="outline" size="sm" asChild>
-                <Link to={"/sales/packages/new" as never} search={{ order: id } as never}>
-                  <PackageIcon className="h-4 w-4 mr-1.5" /> New Package
-                </Link>
-              </Button>
-            )}
-            {canWrite && kind === "quote" && !isNew && (
+            {(kind === "quote" || kind === "order") && (
               <Button
                 variant="outline"
                 size="sm"
-                disabled={runRpc.isPending}
-                onClick={() => runRpc.mutate("convert_quote_to_order")}
-              >
-                <Send className="h-4 w-4 mr-1.5" /> Convert to Order
-              </Button>
-            )}
-            {canWrite && kind === "order" && !isNew && (
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={runRpc.isPending}
-                onClick={() => runRpc.mutate("convert_order_to_invoice")}
-              >
-                <Send className="h-4 w-4 mr-1.5" /> Convert to Invoice
-              </Button>
-            )}
-            {isReq && !isNew && canWrite && header.status === "Draft" && (
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={setReqStatus.isPending}
                 onClick={() =>
-                  setReqStatus.mutate({ status: "Submitted", note: "Submitted for approval" })
+                  embedded && onClose ? onClose() : nav({ to: cfg.listPath as never })
                 }
               >
-                <Send className="h-4 w-4 mr-1.5" /> Submit for Approval
+                Cancel
               </Button>
             )}
-            {isReq && !isNew && canApprove && header.status === "Submitted" && (
+            {kind !== "quote" && kind !== "order" && (
               <>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={setReqStatus.isPending || approveStockReq.isPending}
-                  onClick={() =>
-                    setReqStatus.mutate({ status: "Rejected", note: "Rejected by approver" })
-                  }
-                >
-                  Reject
-                </Button>
-                <Button
-                  variant="default"
-                  size="sm"
-                  disabled={setReqStatus.isPending || approveStockReq.isPending}
-                  onClick={() =>
-                    isStockReq
-                      ? approveStockReq.mutate()
-                      : setReqStatus.mutate({ status: "Approved", note: "Approved" })
-                  }
-                >
-                  {(setReqStatus.isPending || approveStockReq.isPending) && (
-                    <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
-                  )}
-                  <CheckCircle2 className="h-4 w-4 mr-1.5" /> Approve
-                </Button>
+                {!isNew && <EmailStatus entityType={kind} entityId={id} />}
+                {!isNew && (
+                  <>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => downloadDocumentPdf(buildPdf())}
+                    >
+                      <Printer className="h-4 w-4 mr-1.5" /> Print PDF
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => setEmailOpen(true)}>
+                      <Mail className="h-4 w-4 mr-1.5" /> Email
+                    </Button>
+                  </>
+                )}
+                {!isNew && (doc?.posted_at || kind === "credit_note") && (
+                  <Button variant="outline" size="sm" onClick={() => setPostOpen(true)}>
+                    <Receipt className="h-4 w-4 mr-1.5" />{" "}
+                    {kind === "credit_note" ? "Inventory movements" : "Post details"}
+                  </Button>
+                )}
+
+                {canWrite && kind === "order" && !isNew && (
+                  <Button variant="outline" size="sm" asChild>
+                    <Link to={"/sales/packages/new" as never} search={{ order: id } as never}>
+                      <PackageIcon className="h-4 w-4 mr-1.5" /> New Package
+                    </Link>
+                  </Button>
+                )}
+                {canWrite && kind === "quote" && !isNew && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={runRpc.isPending}
+                    onClick={() => runRpc.mutate("convert_quote_to_order")}
+                  >
+                    <Send className="h-4 w-4 mr-1.5" /> Convert to Order
+                  </Button>
+                )}
+                {canWrite && kind === "order" && !isNew && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={runRpc.isPending}
+                    onClick={() => runRpc.mutate("convert_order_to_invoice")}
+                  >
+                    <Send className="h-4 w-4 mr-1.5" /> Convert to Invoice
+                  </Button>
+                )}
+                {isReq && !isNew && canWrite && header.status === "Draft" && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={setReqStatus.isPending}
+                    onClick={() =>
+                      setReqStatus.mutate({ status: "Submitted", note: "Submitted for approval" })
+                    }
+                  >
+                    <Send className="h-4 w-4 mr-1.5" /> Submit for Approval
+                  </Button>
+                )}
+                {isReq && !isNew && canApprove && header.status === "Submitted" && (
+                  <>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={setReqStatus.isPending || approveStockReq.isPending}
+                      onClick={() =>
+                        setReqStatus.mutate({ status: "Rejected", note: "Rejected by approver" })
+                      }
+                    >
+                      Reject
+                    </Button>
+                    <Button
+                      variant="default"
+                      size="sm"
+                      disabled={setReqStatus.isPending || approveStockReq.isPending}
+                      onClick={() =>
+                        isStockReq
+                          ? approveStockReq.mutate()
+                          : setReqStatus.mutate({ status: "Approved", note: "Approved" })
+                      }
+                    >
+                      {(setReqStatus.isPending || approveStockReq.isPending) && (
+                        <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
+                      )}
+                      <CheckCircle2 className="h-4 w-4 mr-1.5" /> Approve
+                    </Button>
+                  </>
+                )}
+                {isReq && !isNew && canWrite && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={!reqApproved}
+                    title={reqApproved ? undefined : "Requires approval before converting"}
+                    onClick={() => setConvertPoOpen(true)}
+                  >
+                    <Send className="h-4 w-4 mr-1.5" /> Convert to PO
+                  </Button>
+                )}
+                {canWrite && kind === "po" && !isNew && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={runRpc.isPending}
+                    onClick={() => runRpc.mutate("convert_po_to_bill")}
+                  >
+                    <Send className="h-4 w-4 mr-1.5" /> Convert to Bill
+                  </Button>
+                )}
+                {canPost && kind === "invoice" && !isNew && !doc?.posted_at && (
+                  <Button
+                    variant="default"
+                    size="sm"
+                    disabled={runRpc.isPending}
+                    onClick={() => runRpc.mutate("post_invoice")}
+                  >
+                    <DollarSign className="h-4 w-4 mr-1.5" /> Post Invoice
+                  </Button>
+                )}
+                {canPost && kind === "bill" && !isNew && !doc?.posted_at && (
+                  <Button
+                    variant="default"
+                    size="sm"
+                    disabled={runRpc.isPending}
+                    onClick={() => runRpc.mutate("post_bill")}
+                  >
+                    <DollarSign className="h-4 w-4 mr-1.5" /> Post Bill
+                  </Button>
+                )}
+                {canPost && kind === "credit_note" && !isNew && !doc?.posted_at && (
+                  <Button
+                    variant="default"
+                    size="sm"
+                    disabled={runRpc.isPending}
+                    onClick={() => runRpc.mutate("post_credit_note")}
+                  >
+                    <DollarSign className="h-4 w-4 mr-1.5" /> Post Credit Note
+                  </Button>
+                )}
+                {canRecordPayment && showRecordPayment && (
+                  <Button variant="secondary" size="sm" onClick={() => setPayOpen(true)}>
+                    <DollarSign className="h-4 w-4 mr-1.5" /> Record Payment
+                  </Button>
+                )}
+                {canVoid && (
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => setVoidOpen(true)}
+                    disabled={voidDocument.isPending}
+                  >
+                    <Ban className="h-4 w-4 mr-1.5" /> Void & Reverse
+                  </Button>
+                )}
+                {canWrite && !isOrderKind && kind !== "quote" && (
+                  <Button
+                    size="sm"
+                    disabled={save.isPending || !!doc?.posted_at}
+                    onClick={() => save.mutate()}
+                  >
+                    {save.isPending ? (
+                      <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
+                    ) : (
+                      <Save className="h-4 w-4 mr-1.5" />
+                    )}{" "}
+                    {isNew ? `Create ${cfg.label}` : "Save Changes"}
+                  </Button>
+                )}
               </>
-            )}
-            {isReq && !isNew && canWrite && (
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={!reqApproved}
-                title={reqApproved ? undefined : "Requires approval before converting"}
-                onClick={() => setConvertPoOpen(true)}
-              >
-                <Send className="h-4 w-4 mr-1.5" /> Convert to PO
-              </Button>
-            )}
-            {canWrite && kind === "po" && !isNew && (
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={runRpc.isPending}
-                onClick={() => runRpc.mutate("convert_po_to_bill")}
-              >
-                <Send className="h-4 w-4 mr-1.5" /> Convert to Bill
-              </Button>
-            )}
-            {canPost && kind === "invoice" && !isNew && !doc?.posted_at && (
-              <Button
-                variant="default"
-                size="sm"
-                disabled={runRpc.isPending}
-                onClick={() => runRpc.mutate("post_invoice")}
-              >
-                <DollarSign className="h-4 w-4 mr-1.5" /> Post Invoice
-              </Button>
-            )}
-            {canPost && kind === "bill" && !isNew && !doc?.posted_at && (
-              <Button
-                variant="default"
-                size="sm"
-                disabled={runRpc.isPending}
-                onClick={() => runRpc.mutate("post_bill")}
-              >
-                <DollarSign className="h-4 w-4 mr-1.5" /> Post Bill
-              </Button>
-            )}
-            {canPost && kind === "credit_note" && !isNew && !doc?.posted_at && (
-              <Button
-                variant="default"
-                size="sm"
-                disabled={runRpc.isPending}
-                onClick={() => runRpc.mutate("post_credit_note")}
-              >
-                <DollarSign className="h-4 w-4 mr-1.5" /> Post Credit Note
-              </Button>
-            )}
-            {canRecordPayment && showRecordPayment && (
-              <Button variant="secondary" size="sm" onClick={() => setPayOpen(true)}>
-                <DollarSign className="h-4 w-4 mr-1.5" /> Record Payment
-              </Button>
-            )}
-            {canVoid && (
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={() => setVoidOpen(true)}
-                disabled={voidDocument.isPending}
-              >
-                <Ban className="h-4 w-4 mr-1.5" /> Void & Reverse
-              </Button>
-            )}
-            {canWrite && !isOrderKind && kind !== "quote" && (
-              <Button
-                size="sm"
-                disabled={save.isPending || !!doc?.posted_at}
-                onClick={() => save.mutate()}
-              >
-                {save.isPending ? (
-                  <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
-                ) : (
-                  <Save className="h-4 w-4 mr-1.5" />
-                )}{" "}
-                {isNew ? `Create ${cfg.label}` : "Save Changes"}
-              </Button>
             )}
           </div>
         </div>
 
-        <Card className="grid grid-cols-1 gap-4 p-3 sm:p-4 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="grid gap-1.5">
-            <Label>Number</Label>
-            <Input
-              value={header.number ?? ""}
-              onChange={(e) => setHeader({ ...header, number: e.target.value })}
-              placeholder="Auto"
-              disabled={!canWrite}
-            />
-          </div>
-          {/* Requisitions do NOT show a supplier — that is selected at PO conversion time */}
-          {!isReq && (
-            <div className="grid gap-1.5">
-              <Label>{cfg.partyLabel}</Label>
-              <Select
-                value={header[cfg.partyField] ?? ""}
-                onValueChange={handlePartyChange}
-                disabled={!canWrite}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={`Select ${cfg.partyLabel.toLowerCase()}…`} />
-                </SelectTrigger>
-                <SelectContent>
-                  {parties.map((c) => (
-                    <SelectItem key={c.id} value={c.id}>
-                      {c.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-          {/* Requisition type selector */}
-          {isReq && (
-            <div className="grid gap-1.5">
-              <Label>Requisition Type</Label>
-              <Select
-                value={header.requisition_type ?? "purchase"}
-                onValueChange={(v) =>
-                  setHeader({
-                    ...header,
-                    requisition_type: v,
-                    from_warehouse_id: v === "purchase" ? "" : header.from_warehouse_id,
-                  })
-                }
-                disabled={!canWrite}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="purchase">Purchase Requisition</SelectItem>
-                  <SelectItem value="stock">Stock Requisition</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-          {/* Warehouse selector — only for stock requisitions */}
-          {isStockReq && (
-            <div className="grid gap-1.5">
-              <Label>
-                From Warehouse <span className="text-destructive">*</span>
-              </Label>
-              <Select
-                value={header.from_warehouse_id ?? ""}
-                onValueChange={(v) => setHeader({ ...header, from_warehouse_id: v })}
-                disabled={!canWrite}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select warehouse…" />
-                </SelectTrigger>
-                <SelectContent>
-                  {warehouses.map((w) => (
-                    <SelectItem key={w.id} value={w.id}>
-                      {w.code ? `${w.code} — ` : ""}
-                      {w.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-          <div className="grid gap-1.5">
-            <Label>Date</Label>
-            <Input
-              type="date"
-              value={header[cfg.dateField] ?? ""}
-              onChange={(e) => setHeader({ ...header, [cfg.dateField]: e.target.value })}
-              disabled={!canWrite}
-            />
-          </div>
-          {cfg.extraDate && (
-            <div className="grid gap-1.5">
-              <Label>{cfg.extraDate.label}</Label>
-              <Input
-                type="date"
-                value={header[cfg.extraDate.field] ?? ""}
-                onChange={(e) => setHeader({ ...header, [cfg.extraDate!.field]: e.target.value })}
-                disabled={!canWrite}
-              />
-            </div>
-          )}
-          {cfg.linkFk && (
-            <div className="grid gap-1.5">
-              <Label>{cfg.linkFk.label}</Label>
-              <Select
-                value={header[cfg.linkFk.field] ?? ""}
-                onValueChange={(v) => setHeader({ ...header, [cfg.linkFk!.field]: v })}
-                disabled={!canWrite}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select invoice…" />
-                </SelectTrigger>
-                <SelectContent>
-                  {linkOptions.map((o) => (
-                    <SelectItem key={o.id} value={o.id}>
-                      {o[cfg.linkFk!.labelKey] ?? o.id.slice(0, 8)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-          {!isStockReq && (
-            <div className="grid gap-1.5">
-              <Label>Currency</Label>
-              <Select
-                value={header.currency ?? "USD"}
-                onValueChange={(v) => setHeader({ ...header, currency: v })}
-                disabled={!canWrite}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {["USD", "EUR", "GBP", "KES", "AED", "EGP", "INR", "ZAR"].map((c) => (
-                    <SelectItem key={c} value={c}>
-                      {c}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-          <div className="grid gap-1.5">
-            <Label>Status</Label>
-            <Select
-              value={header.status ?? cfg.statuses[0]}
-              onValueChange={(v) => setHeader({ ...header, status: v })}
-              disabled={!canWrite}
-            >
-              <SelectTrigger
-                className={
-                  kind === "quote"
-                    ? STATUS_SELECT_COLORS[header.status ?? cfg.statuses[0]]
-                    : undefined
-                }
-              >
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className={kind === "quote" ? "min-w-[19rem]" : undefined}>
-                {cfg.statuses
-                  .filter((s) => !(isReq && !canApprove && (s === "Approved" || s === "Rejected")))
-                  .map((s) => {
-                    const event = kind === "quote" ? latestQuoteEventByStatus.get(s) : undefined;
-                    return (
-                      <SelectItem
-                        key={s}
-                        value={s}
-                        className={
-                          kind === "quote"
-                            ? `my-1 border ${STATUS_SELECT_COLORS[s] ?? ""}`
-                            : undefined
-                        }
-                      >
-                        <span className="flex min-w-0 items-center gap-2">
-                          {kind === "quote" && (
-                            <CheckCircle2
-                              className={`h-3.5 w-3.5 shrink-0 ${event ? "opacity-100" : "opacity-30"}`}
-                            />
-                          )}
-                          <span className="min-w-0">
-                            <span className="block font-medium">{s}</span>
-                            {kind === "quote" && event && (
-                              <span className="block truncate text-[10px] opacity-75">
-                                {formatStatusEvent(event.created_at, event.actor_email)}
+        <div
+          className={
+            kind === "quote" || kind === "order"
+              ? "grid min-w-0 gap-4 lg:grid-cols-[minmax(0,1fr)_240px]"
+              : "min-w-0"
+          }
+        >
+          <main className="min-w-0 space-y-4">
+            <Card className="grid grid-cols-1 gap-4 p-3 sm:p-4 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="grid gap-1.5">
+                <Label>Number</Label>
+                <Input
+                  value={header.number ?? ""}
+                  onChange={(e) => setHeader({ ...header, number: e.target.value })}
+                  placeholder="Auto"
+                  disabled={!canWrite}
+                />
+              </div>
+              {/* Requisitions do NOT show a supplier — that is selected at PO conversion time */}
+              {!isReq && (
+                <div className="grid gap-1.5">
+                  <Label>{cfg.partyLabel}</Label>
+                  <Select
+                    value={header[cfg.partyField] ?? ""}
+                    onValueChange={handlePartyChange}
+                    disabled={!canWrite}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder={`Select ${cfg.partyLabel.toLowerCase()}…`} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {parties.map((c) => (
+                        <SelectItem key={c.id} value={c.id}>
+                          {c.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+              {/* Requisition type selector */}
+              {isReq && (
+                <div className="grid gap-1.5">
+                  <Label>Requisition Type</Label>
+                  <Select
+                    value={header.requisition_type ?? "purchase"}
+                    onValueChange={(v) =>
+                      setHeader({
+                        ...header,
+                        requisition_type: v,
+                        from_warehouse_id: v === "purchase" ? "" : header.from_warehouse_id,
+                      })
+                    }
+                    disabled={!canWrite}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="purchase">Purchase Requisition</SelectItem>
+                      <SelectItem value="stock">Stock Requisition</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+              {/* Warehouse selector — only for stock requisitions */}
+              {isStockReq && (
+                <div className="grid gap-1.5">
+                  <Label>
+                    From Warehouse <span className="text-destructive">*</span>
+                  </Label>
+                  <Select
+                    value={header.from_warehouse_id ?? ""}
+                    onValueChange={(v) => setHeader({ ...header, from_warehouse_id: v })}
+                    disabled={!canWrite}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select warehouse…" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {warehouses.map((w) => (
+                        <SelectItem key={w.id} value={w.id}>
+                          {w.code ? `${w.code} — ` : ""}
+                          {w.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+              <div className="grid gap-1.5">
+                <Label>Date</Label>
+                <Input
+                  type="date"
+                  value={header[cfg.dateField] ?? ""}
+                  onChange={(e) => setHeader({ ...header, [cfg.dateField]: e.target.value })}
+                  disabled={!canWrite}
+                />
+              </div>
+              {cfg.extraDate && (
+                <div className="grid gap-1.5">
+                  <Label>{cfg.extraDate.label}</Label>
+                  <Input
+                    type="date"
+                    value={header[cfg.extraDate.field] ?? ""}
+                    onChange={(e) =>
+                      setHeader({ ...header, [cfg.extraDate!.field]: e.target.value })
+                    }
+                    disabled={!canWrite}
+                  />
+                </div>
+              )}
+              {cfg.linkFk && (
+                <div className="grid gap-1.5">
+                  <Label>{cfg.linkFk.label}</Label>
+                  <Select
+                    value={header[cfg.linkFk.field] ?? ""}
+                    onValueChange={(v) => setHeader({ ...header, [cfg.linkFk!.field]: v })}
+                    disabled={!canWrite}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select invoice…" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {linkOptions.map((o) => (
+                        <SelectItem key={o.id} value={o.id}>
+                          {o[cfg.linkFk!.labelKey] ?? o.id.slice(0, 8)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+              {!isStockReq && (
+                <div className="grid gap-1.5">
+                  <Label>Currency</Label>
+                  <Select
+                    value={header.currency ?? "USD"}
+                    onValueChange={(v) => setHeader({ ...header, currency: v })}
+                    disabled={!canWrite}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {["USD", "EUR", "GBP", "KES", "AED", "EGP", "INR", "ZAR"].map((c) => (
+                        <SelectItem key={c} value={c}>
+                          {c}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+              <div className="grid gap-1.5">
+                <Label>Status</Label>
+                <Select
+                  value={header.status ?? cfg.statuses[0]}
+                  onValueChange={(v) => setHeader({ ...header, status: v })}
+                  disabled={!canWrite}
+                >
+                  <SelectTrigger
+                    className={
+                      kind === "quote"
+                        ? STATUS_SELECT_COLORS[header.status ?? cfg.statuses[0]]
+                        : undefined
+                    }
+                  >
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className={kind === "quote" ? "min-w-[19rem]" : undefined}>
+                    {cfg.statuses
+                      .filter(
+                        (s) => !(isReq && !canApprove && (s === "Approved" || s === "Rejected")),
+                      )
+                      .map((s) => {
+                        const event =
+                          kind === "quote" ? latestQuoteEventByStatus.get(s) : undefined;
+                        return (
+                          <SelectItem
+                            key={s}
+                            value={s}
+                            className={
+                              kind === "quote"
+                                ? `my-1 border ${STATUS_SELECT_COLORS[s] ?? ""}`
+                                : undefined
+                            }
+                          >
+                            <span className="flex min-w-0 items-center gap-2">
+                              {kind === "quote" && (
+                                <CheckCircle2
+                                  className={`h-3.5 w-3.5 shrink-0 ${event ? "opacity-100" : "opacity-30"}`}
+                                />
+                              )}
+                              <span className="min-w-0">
+                                <span className="block font-medium">{s}</span>
+                                {kind === "quote" && event && (
+                                  <span className="block truncate text-[10px] opacity-75">
+                                    {formatStatusEvent(event.created_at, event.actor_email)}
+                                  </span>
+                                )}
                               </span>
-                            )}
-                          </span>
-                        </span>
-                      </SelectItem>
-                    );
-                  })}
-              </SelectContent>
-            </Select>
-          </div>
-          {/* Requisition extra fields: department & requested_by */}
-          {isReq && (
-            <div className="grid gap-1.5">
-              <Label>Department</Label>
-              <Input
-                value={header.department ?? ""}
-                onChange={(e) => setHeader({ ...header, department: e.target.value })}
-                placeholder="e.g. Operations"
-                disabled={!canWrite}
-              />
-            </div>
-          )}
-          {isReq && (
-            <div className="grid gap-1.5">
-              <Label>Requested By</Label>
-              <Input
-                value={header.requested_by ?? ""}
-                onChange={(e) => setHeader({ ...header, requested_by: e.target.value })}
-                placeholder="Name of requester"
-                disabled={!canWrite}
-              />
-            </div>
-          )}
-          <div className="grid gap-1.5 md:col-span-2">
-            <Label>Notes</Label>
-            <Textarea
-              rows={1}
-              value={header.notes ?? ""}
-              onChange={(e) => setHeader({ ...header, notes: e.target.value })}
-              disabled={!canWrite}
-            />
-          </div>
-        </Card>
-
-        {(kind === "quote" || kind === "order" || kind === "invoice") && selectedCustomer && (
-          <Card className="p-4">
-            <div className="flex items-center justify-between gap-3 border-b pb-3">
-              <div>
-                <p className="text-sm font-semibold">Customer Details</p>
-                <p className="text-xs text-muted-foreground">
-                  Details are automatically loaded from the selected customer.
-                </p>
+                            </span>
+                          </SelectItem>
+                        );
+                      })}
+                  </SelectContent>
+                </Select>
               </div>
-              <Badge variant="outline">
-                {selectedCustomer.currency ?? header.currency ?? "USD"}
-              </Badge>
-            </div>
-            <div className="grid grid-cols-1 gap-4 pt-4 md:grid-cols-2">
-              <div className="space-y-2 text-sm">
-                <div>
-                  <span className="text-xs text-muted-foreground">Customer</span>
-                  <div className="font-medium">{selectedCustomer.name || "—"}</div>
+              {/* Requisition extra fields: department & requested_by */}
+              {isReq && (
+                <div className="grid gap-1.5">
+                  <Label>Department</Label>
+                  <Input
+                    value={header.department ?? ""}
+                    onChange={(e) => setHeader({ ...header, department: e.target.value })}
+                    placeholder="e.g. Operations"
+                    disabled={!canWrite}
+                  />
                 </div>
-                <div>
-                  <span className="text-xs text-muted-foreground">Contact Person</span>
-                  <div>{selectedCustomer.contact_person || "—"}</div>
+              )}
+              {isReq && (
+                <div className="grid gap-1.5">
+                  <Label>Requested By</Label>
+                  <Input
+                    value={header.requested_by ?? ""}
+                    onChange={(e) => setHeader({ ...header, requested_by: e.target.value })}
+                    placeholder="Name of requester"
+                    disabled={!canWrite}
+                  />
                 </div>
-                <div>
-                  <span className="text-xs text-muted-foreground">Email / Phone</span>
+              )}
+              <div className="grid gap-1.5 md:col-span-2">
+                <Label>Notes</Label>
+                <Textarea
+                  rows={1}
+                  value={header.notes ?? ""}
+                  onChange={(e) => setHeader({ ...header, notes: e.target.value })}
+                  disabled={!canWrite}
+                />
+              </div>
+            </Card>
+
+            {(kind === "quote" || kind === "order" || kind === "invoice") && selectedCustomer && (
+              <Card className="p-4">
+                <div className="flex items-center justify-between gap-3 border-b pb-3">
                   <div>
-                    {[selectedCustomer.email, selectedCustomer.phone].filter(Boolean).join(" · ") ||
-                      "—"}
+                    <p className="text-sm font-semibold">Customer Details</p>
+                    <p className="text-xs text-muted-foreground">
+                      Details are automatically loaded from the selected customer.
+                    </p>
+                  </div>
+                  <Badge variant="outline">
+                    {selectedCustomer.currency ?? header.currency ?? "USD"}
+                  </Badge>
+                </div>
+                <div className="grid grid-cols-1 gap-4 pt-4 md:grid-cols-2">
+                  <div className="space-y-2 text-sm">
+                    <div>
+                      <span className="text-xs text-muted-foreground">Customer</span>
+                      <div className="font-medium">{selectedCustomer.name || "—"}</div>
+                    </div>
+                    <div>
+                      <span className="text-xs text-muted-foreground">Contact Person</span>
+                      <div>{selectedCustomer.contact_person || "—"}</div>
+                    </div>
+                    <div>
+                      <span className="text-xs text-muted-foreground">Email / Phone</span>
+                      <div>
+                        {[selectedCustomer.email, selectedCustomer.phone]
+                          .filter(Boolean)
+                          .join(" · ") || "—"}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <div>
+                      <span className="text-xs text-muted-foreground">Billing Address</span>
+                      <div className="mt-1 whitespace-pre-line text-sm">
+                        {selectedCustomer.billing_address || "—"}
+                      </div>
+                    </div>
+                    <div>
+                      <span className="text-xs text-muted-foreground">Shipping Address</span>
+                      <div className="mt-1 whitespace-pre-line text-sm">
+                        {selectedCustomer.shipping_address || "—"}
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <div>
-                  <span className="text-xs text-muted-foreground">Billing Address</span>
-                  <div className="mt-1 whitespace-pre-line text-sm">
-                    {selectedCustomer.billing_address || "—"}
-                  </div>
-                </div>
-                <div>
-                  <span className="text-xs text-muted-foreground">Shipping Address</span>
-                  <div className="mt-1 whitespace-pre-line text-sm">
-                    {selectedCustomer.shipping_address || "—"}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </Card>
-        )}
-
-        {/* ── Source document suggestion banner (only when creating new sales orders / invoices) ── */}
-        {isNew && (kind === "order" || kind === "invoice") && (
-          <SourceDocumentSuggestionBanner
-            kind={kind as "order" | "invoice"}
-            eligibleQuotes={kind === "order" ? eligibleQuotes : []}
-            eligibleOrders={kind === "invoice" ? eligibleOrders : []}
-            fallbackQuotes={kind === "invoice" ? fallbackQuotes : []}
-            onIncludeQuote={handleIncludeQuote}
-            onIncludeOrder={handleIncludeOrder}
-            onUnlink={importedSource ? handleUnlink : undefined}
-            linkedQuoteId={importedSource?.type === "quote" ? importedSource.id : null}
-            linkedQuoteNumber={importedSource?.type === "quote" ? importedSource.number : null}
-            linkedOrderId={importedSource?.type === "order" ? importedSource.id : null}
-            linkedOrderNumber={importedSource?.type === "order" ? importedSource.number : null}
-          />
-        )}
-
-        <Card className="p-0 overflow-hidden">
-          <div className="flex items-center justify-between px-4 py-2 border-b bg-muted/30">
-            <div className="text-sm font-medium">Line items</div>
-            {canWrite && (
-              <Button size="sm" variant="outline" onClick={addLine}>
-                <Plus className="h-3.5 w-3.5 mr-1" /> Add line
-              </Button>
+              </Card>
             )}
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b bg-muted/10 text-xs uppercase tracking-wide text-muted-foreground">
-                  <th className="text-left px-3 py-2 w-8">#</th>
-                  <th className="text-left px-3 py-2 min-w-[200px]">Item</th>
-                  <th className="text-left px-3 py-2 min-w-[220px]">Description</th>
-                  <th className="text-right px-3 py-2 w-20">Qty</th>
-                  {!isStockReq && <th className="text-right px-3 py-2 w-28">Unit Price</th>}
-                  {!isStockReq && <th className="text-right px-3 py-2 w-20">Disc %</th>}
-                  {!isStockReq && <th className="text-right px-3 py-2 w-20">Tax %</th>}
-                  {!isStockReq && <th className="text-right px-3 py-2 w-28">Total</th>}
-                  <th className="w-10" />
-                </tr>
-              </thead>
-              <tbody>
-                {lines.length === 0 && (
-                  <tr>
-                    <td
-                      colSpan={isStockReq ? 5 : 9}
-                      className="text-center text-sm text-muted-foreground py-10"
-                    >
-                      No lines yet. {canWrite && "Click Add line to begin."}
-                    </td>
-                  </tr>
+
+            {/* ── Source document suggestion banner (only when creating new sales orders / invoices) ── */}
+            {isNew && (kind === "order" || kind === "invoice") && (
+              <SourceDocumentSuggestionBanner
+                kind={kind as "order" | "invoice"}
+                eligibleQuotes={kind === "order" ? eligibleQuotes : []}
+                eligibleOrders={kind === "invoice" ? eligibleOrders : []}
+                fallbackQuotes={kind === "invoice" ? fallbackQuotes : []}
+                onIncludeQuote={handleIncludeQuote}
+                onIncludeOrder={handleIncludeOrder}
+                onUnlink={importedSource ? handleUnlink : undefined}
+                linkedQuoteId={importedSource?.type === "quote" ? importedSource.id : null}
+                linkedQuoteNumber={importedSource?.type === "quote" ? importedSource.number : null}
+                linkedOrderId={importedSource?.type === "order" ? importedSource.id : null}
+                linkedOrderNumber={importedSource?.type === "order" ? importedSource.number : null}
+              />
+            )}
+
+            <Card className="p-0 overflow-hidden">
+              <div className="flex items-center justify-between px-4 py-2 border-b bg-muted/30">
+                <div className="text-sm font-medium">Line items</div>
+                {canWrite && (
+                  <Button size="sm" variant="outline" onClick={addLine}>
+                    <Plus className="h-3.5 w-3.5 mr-1" /> Add line
+                  </Button>
                 )}
-                {lines.map((l, idx) => (
-                  <tr key={idx} className="border-b hover:bg-muted/20">
-                    <td className="px-3 py-1.5 text-muted-foreground">{idx + 1}</td>
-                    <td className="px-2 py-1.5">
-                      {/* Stock requisitions require item pick; purchase requisitions allow free-text only */}
-                      <Select
-                        value={l.item_id ?? "__no_item__"}
-                        onValueChange={(v) => {
-                          const itemId = v === "__no_item__" ? null : v;
-                          const it = items.find((i) => i.id === itemId);
-                          const price =
-                            kind === "po" || kind === "bill"
-                              ? Number(it?.cost ?? 0)
-                              : Number(it?.price ?? 0);
-                          updateLine(idx, {
-                            item_id: itemId,
-                            description: l.description || it?.name || "",
-                            unit_price: l.unit_price || price,
-                          });
-                        }}
-                        disabled={!canWrite}
-                      >
-                        <SelectTrigger className="h-8">
-                          <SelectValue
-                            placeholder={isStockReq ? "Pick item… *" : "Pick item (optional)"}
-                          />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {!isStockReq && (
-                            <SelectItem value="__no_item__">— No item (free-text) —</SelectItem>
-                          )}
-                          {items.map((i) => (
-                            <SelectItem key={i.id} value={i.id}>
-                              {i.sku ? `${i.sku} — ` : ""}
-                              {i.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </td>
-                    <td className="px-2 py-1.5">
-                      <Input
-                        className="h-8"
-                        value={l.description}
-                        onChange={(e) => updateLine(idx, { description: e.target.value })}
-                        disabled={!canWrite}
-                      />
-                    </td>
-                    <td className="px-2 py-1.5">
-                      <Input
-                        className="h-8 text-right"
-                        type="number"
-                        step="any"
-                        value={l.quantity}
-                        onChange={(e) => updateLine(idx, { quantity: Number(e.target.value) })}
-                        disabled={!canWrite}
-                      />
-                    </td>
-                    {!isStockReq && (
-                      <td className="px-2 py-1.5">
-                        <Input
-                          className="h-8 text-right"
-                          type="number"
-                          step="any"
-                          value={l.unit_price}
-                          onChange={(e) => updateLine(idx, { unit_price: Number(e.target.value) })}
-                          disabled={!canWrite}
-                        />
-                      </td>
-                    )}
-                    {!isStockReq && (
-                      <td className="px-2 py-1.5">
-                        <Input
-                          className="h-8 text-right"
-                          type="number"
-                          step="any"
-                          value={l.discount_pct}
-                          onChange={(e) =>
-                            updateLine(idx, { discount_pct: Number(e.target.value) })
-                          }
-                          disabled={!canWrite}
-                        />
-                      </td>
-                    )}
-                    {!isStockReq && (
-                      <td className="px-2 py-1.5">
-                        <Input
-                          className="h-8 text-right"
-                          type="number"
-                          step="any"
-                          value={l.tax_pct}
-                          onChange={(e) => updateLine(idx, { tax_pct: Number(e.target.value) })}
-                          disabled={!canWrite}
-                        />
-                      </td>
-                    )}
-                    {!isStockReq && (
-                      <td className="px-3 py-1.5 text-right font-mono tabular-nums">
-                        {money(computeLine(l))}
-                      </td>
-                    )}
-                    <td className="px-2 py-1.5">
-                      {canWrite && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-7 w-7"
-                          onClick={() => removeLine(idx)}
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b bg-muted/10 text-xs uppercase tracking-wide text-muted-foreground">
+                      <th className="text-left px-3 py-2 w-8">#</th>
+                      <th className="text-left px-3 py-2 min-w-[200px]">Item</th>
+                      <th className="text-left px-3 py-2 min-w-[220px]">Description</th>
+                      <th className="text-right px-3 py-2 w-20">Qty</th>
+                      {!isStockReq && <th className="text-right px-3 py-2 w-28">Unit Price</th>}
+                      {!isStockReq && <th className="text-right px-3 py-2 w-20">Disc %</th>}
+                      {!isStockReq && <th className="text-right px-3 py-2 w-20">Tax %</th>}
+                      {!isStockReq && <th className="text-right px-3 py-2 w-28">Total</th>}
+                      <th className="w-10" />
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {lines.length === 0 && (
+                      <tr>
+                        <td
+                          colSpan={isStockReq ? 5 : 9}
+                          className="text-center text-sm text-muted-foreground py-10"
                         >
-                          <Trash2 className="h-3.5 w-3.5 text-destructive" />
-                        </Button>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          {!isStockReq && (
-            <div className="flex justify-end border-t bg-muted/10 px-3 py-3 sm:px-4">
-              <div className="w-72 max-w-full space-y-1 text-sm">
-                <Row label="Subtotal" v={totals.subtotal} />
-                <Row label="Discount" v={-totals.discount_total} />
-                <Row label="Tax" v={totals.tax_total} />
-                <div className="border-t mt-1 pt-1 flex justify-between font-semibold text-base">
-                  <span>Grand Total</span>
-                  <span className="font-mono tabular-nums">
-                    {header.currency ?? "USD"} {money(totals.grand_total)}
-                  </span>
-                </div>
-                {(kind === "invoice" || kind === "bill") && Number(doc?.amount_paid ?? 0) > 0 && (
-                  <>
-                    <Row label="Paid" v={-Number(doc?.amount_paid)} />
-                    <div className="flex justify-between font-medium">
-                      <span>Balance Due</span>
+                          No lines yet. {canWrite && "Click Add line to begin."}
+                        </td>
+                      </tr>
+                    )}
+                    {lines.map((l, idx) => (
+                      <tr key={idx} className="border-b hover:bg-muted/20">
+                        <td className="px-3 py-1.5 text-muted-foreground">{idx + 1}</td>
+                        <td className="px-2 py-1.5">
+                          {/* Stock requisitions require item pick; purchase requisitions allow free-text only */}
+                          <Select
+                            value={l.item_id ?? "__no_item__"}
+                            onValueChange={(v) => {
+                              const itemId = v === "__no_item__" ? null : v;
+                              const it = items.find((i) => i.id === itemId);
+                              const price =
+                                kind === "po" || kind === "bill"
+                                  ? Number(it?.cost ?? 0)
+                                  : Number(it?.price ?? 0);
+                              updateLine(idx, {
+                                item_id: itemId,
+                                description: l.description || it?.name || "",
+                                unit_price: l.unit_price || price,
+                              });
+                            }}
+                            disabled={!canWrite}
+                          >
+                            <SelectTrigger className="h-8">
+                              <SelectValue
+                                placeholder={isStockReq ? "Pick item… *" : "Pick item (optional)"}
+                              />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {!isStockReq && (
+                                <SelectItem value="__no_item__">— No item (free-text) —</SelectItem>
+                              )}
+                              {items.map((i) => (
+                                <SelectItem key={i.id} value={i.id}>
+                                  {i.sku ? `${i.sku} — ` : ""}
+                                  {i.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </td>
+                        <td className="px-2 py-1.5">
+                          <Input
+                            className="h-8"
+                            value={l.description}
+                            onChange={(e) => updateLine(idx, { description: e.target.value })}
+                            disabled={!canWrite}
+                          />
+                        </td>
+                        <td className="px-2 py-1.5">
+                          <Input
+                            className="h-8 text-right"
+                            type="number"
+                            step="any"
+                            value={l.quantity}
+                            onChange={(e) => updateLine(idx, { quantity: Number(e.target.value) })}
+                            disabled={!canWrite}
+                          />
+                        </td>
+                        {!isStockReq && (
+                          <td className="px-2 py-1.5">
+                            <Input
+                              className="h-8 text-right"
+                              type="number"
+                              step="any"
+                              value={l.unit_price}
+                              onChange={(e) =>
+                                updateLine(idx, { unit_price: Number(e.target.value) })
+                              }
+                              disabled={!canWrite}
+                            />
+                          </td>
+                        )}
+                        {!isStockReq && (
+                          <td className="px-2 py-1.5">
+                            <Input
+                              className="h-8 text-right"
+                              type="number"
+                              step="any"
+                              value={l.discount_pct}
+                              onChange={(e) =>
+                                updateLine(idx, { discount_pct: Number(e.target.value) })
+                              }
+                              disabled={!canWrite}
+                            />
+                          </td>
+                        )}
+                        {!isStockReq && (
+                          <td className="px-2 py-1.5">
+                            <Input
+                              className="h-8 text-right"
+                              type="number"
+                              step="any"
+                              value={l.tax_pct}
+                              onChange={(e) => updateLine(idx, { tax_pct: Number(e.target.value) })}
+                              disabled={!canWrite}
+                            />
+                          </td>
+                        )}
+                        {!isStockReq && (
+                          <td className="px-3 py-1.5 text-right font-mono tabular-nums">
+                            {money(computeLine(l))}
+                          </td>
+                        )}
+                        <td className="px-2 py-1.5">
+                          {canWrite && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7"
+                              onClick={() => removeLine(idx)}
+                            >
+                              <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                            </Button>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              {!isStockReq && (
+                <div className="flex justify-end border-t bg-muted/10 px-3 py-3 sm:px-4">
+                  <div className="w-72 max-w-full space-y-1 text-sm">
+                    <Row label="Subtotal" v={totals.subtotal} />
+                    <Row label="Discount" v={-totals.discount_total} />
+                    <Row label="Tax" v={totals.tax_total} />
+                    <div className="border-t mt-1 pt-1 flex justify-between font-semibold text-base">
+                      <span>Grand Total</span>
                       <span className="font-mono tabular-nums">
-                        {money(totals.grand_total - Number(doc?.amount_paid || 0))}
+                        {header.currency ?? "USD"} {money(totals.grand_total)}
                       </span>
                     </div>
-                  </>
+                    {(kind === "invoice" || kind === "bill") &&
+                      Number(doc?.amount_paid ?? 0) > 0 && (
+                        <>
+                          <Row label="Paid" v={-Number(doc?.amount_paid)} />
+                          <div className="flex justify-between font-medium">
+                            <span>Balance Due</span>
+                            <span className="font-mono tabular-nums">
+                              {money(totals.grand_total - Number(doc?.amount_paid || 0))}
+                            </span>
+                          </div>
+                        </>
+                      )}
+                  </div>
+                </div>
+              )}
+            </Card>
+          </main>
+          {(kind === "quote" || kind === "order") && (
+            <aside className="hidden space-y-4 lg:block">
+              <Card className="p-4">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-sm font-semibold">Customer Preview</p>
+                  <Badge variant="outline">
+                    {selectedCustomer?.currency ?? header.currency ?? "USD"}
+                  </Badge>
+                </div>
+                {selectedCustomer ? (
+                  <div className="mt-4 space-y-2 text-xs">
+                    <p className="font-semibold text-foreground">{selectedCustomer.name}</p>
+                    <p className="text-muted-foreground">
+                      {selectedCustomer.contact_person || "No contact person"}
+                    </p>
+                    <p className="text-muted-foreground">{selectedCustomer.email || "No email"}</p>
+                    <p className="text-muted-foreground">{selectedCustomer.phone || "No phone"}</p>
+                    <div className="border-t pt-2 text-muted-foreground">
+                      <span className="font-medium text-foreground">Payment Terms</span>
+                      <br />
+                      {selectedCustomer.payment_terms || header.payment_terms || "Not set"}
+                    </div>
+                  </div>
+                ) : (
+                  <p className="mt-4 text-center text-xs text-muted-foreground">
+                    Select a customer to see details.
+                  </p>
                 )}
-              </div>
-            </div>
+              </Card>
+              <Card className="border-primary/15 bg-primary/[0.03] p-4">
+                <div className="flex items-center gap-2 text-sm font-semibold">
+                  <CircleHelp className="h-4 w-4 text-primary" /> Why this matters?
+                </div>
+                <p className="mt-3 text-xs leading-5 text-muted-foreground">
+                  {kind === "order"
+                    ? "Sales orders help you track customer demand, manage inventory, and ensure timely delivery."
+                    : "Quotes help you present clear pricing and terms before the customer commits."}
+                </p>
+              </Card>
+              <Card className="p-4">
+                <p className="text-sm font-semibold">Quick Tips</p>
+                <ul className="mt-3 space-y-2 text-xs text-muted-foreground">
+                  <li className="flex gap-2">
+                    <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-emerald-500" /> Select an
+                    active customer
+                  </li>
+                  <li className="flex gap-2">
+                    <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-emerald-500" /> Verify the
+                    correct pricing
+                  </li>
+                  <li className="flex gap-2">
+                    <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-emerald-500" /> Check
+                    discounts and tax
+                  </li>
+                  <li className="flex gap-2">
+                    <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-emerald-500" /> Include
+                    complete addresses
+                  </li>
+                </ul>
+              </Card>
+              <Card className="hidden min-h-32 items-center justify-center border-dashed bg-muted/20 p-4 text-center xl:flex">
+                <div>
+                  <FileText className="mx-auto h-8 w-8 text-primary/60" />
+                  <p className="mt-2 text-[11px] text-muted-foreground">
+                    Complete the form to create a new {kind}.
+                  </p>
+                </div>
+              </Card>
+            </aside>
           )}
-        </Card>
+        </div>
 
         {kind === "order" && !isNew && (
           <Card className="p-0 overflow-hidden">
