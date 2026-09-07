@@ -1,4 +1,5 @@
 import { useState, type ReactNode } from "react";
+import { useEffect } from "react";
 import type { ZodTypeAny } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -63,6 +65,8 @@ export interface FieldDef {
   group?: string;
   /** Return an error message when the value is invalid, otherwise null. */
   validate?: (value: any, values: Record<string, any>) => string | null;
+  /** Prevent calculated/display-only fields from being sent to PostgREST. */
+  writable?: boolean;
 }
 
 interface DataModulePageProps {
@@ -497,8 +501,11 @@ export function DataModulePage(props: DataModulePageProps) {
         attachments={attachments}
         canWrite={canWrite && !(editing?.posted_at || editing?.status === "Voided")}
         onSubmit={async (values) => {
-          if (editing) await update.mutateAsync({ id: editing.id, values });
-          else await create.mutateAsync(values);
+          const { items, ...commonValues } = values;
+          if (editing) await update.mutateAsync({ id: editing.id, values: commonValues });
+          else if (Array.isArray(items)) {
+            await Promise.all(items.map((item) => create.mutateAsync({ ...commonValues, ...item })));
+          } else await create.mutateAsync(values);
           setCreating(false);
           setEditing(null);
         }}
@@ -513,6 +520,8 @@ export function DataModulePage(props: DataModulePageProps) {
             : undefined
         }
         postBusy={post.isPending}
+        windowed={table === "inventory_adjustments" || table === "inventory_transfers"}
+        multiItem={table === "inventory_adjustments" || table === "inventory_transfers"}
       />
 
       <AlertDialog open={!!voidingRow} onOpenChange={(o) => !o && setVoidingRow(null)}>
@@ -592,6 +601,8 @@ function RecordSheet({
   postBusy,
   schema,
   tenantId,
+  windowed = false,
+  multiItem = false,
 }: {
   open: boolean;
   onOpenChange: (o: boolean) => void;
@@ -608,24 +619,24 @@ function RecordSheet({
   postBusy?: boolean;
   schema?: ZodTypeAny;
   tenantId?: string;
+  windowed?: boolean;
+  multiItem?: boolean;
 }) {
   const [values, setValues] = useState<Record<string, any>>({});
+  const [lineItems, setLineItems] = useState<{ item_id: string; quantity: number | null }[]>([
+    { item_id: "", quantity: null },
+  ]);
 
-  // Reset values when opening
-  useState(() => values);
   const key = row?.id ?? (open ? "new" : "closed");
+  const Footer = windowed ? DialogFooter : SheetFooter;
 
-  return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="sm:max-w-lg overflow-y-auto">
-        <SheetHeader>
-          <SheetTitle>{row ? `Edit ${entityLabel}` : `New ${entityLabel}`}</SheetTitle>
-          <SheetDescription>
-            {row ? "Update the record details." : `Add a new ${entityLabel.toLowerCase()} to your workspace.`}
-          </SheetDescription>
-        </SheetHeader>
+  useEffect(() => {
+    setValues({});
+    setLineItems([{ item_id: row?.item_id ?? "", quantity: row?.quantity ?? null }]);
+  }, [key, row?.item_id, row?.quantity]);
 
-        <form
+  const form = (
+    <form
           key={key}
           className="grid gap-4 py-4 px-4"
           onSubmit={async (e) => {
@@ -633,6 +644,7 @@ function RecordSheet({
             const fd = new FormData(e.currentTarget);
             const v: Record<string, any> = { ...values };
             fields.forEach((f) => {
+              if (!f.writable || (multiItem && (f.key === "item_id" || f.key === "quantity"))) return;
               if (v[f.key] === undefined) {
                 const raw = fd.get(f.key);
                 if (raw != null && raw !== "") v[f.key] = f.type === "number" ? Number(raw) : raw;
@@ -649,10 +661,18 @@ function RecordSheet({
                 return;
               }
             }
+            if (multiItem) {
+              const validItems = lineItems.filter((line) => line.item_id && line.quantity != null && line.quantity !== 0);
+              if (!validItems.length) {
+                toast.error("Select at least one item and enter a non-zero quantity");
+                return;
+              }
+              v.items = validItems;
+            }
             await onSubmit(v);
           }}
         >
-          {fields.map((f) => (
+          {fields.filter((f) => !multiItem || (f.key !== "item_id" && f.key !== "quantity")).map((f) => (
             <FieldInput
               key={f.key}
               field={f}
@@ -661,7 +681,15 @@ function RecordSheet({
               disabled={!canWrite}
             />
           ))}
-          <SheetFooter className="px-0">
+          {multiItem && (
+            <MultiItemFields
+              itemField={fields.find((field) => field.key === "item_id")!}
+              lineItems={lineItems}
+              onChange={setLineItems}
+              disabled={!canWrite}
+            />
+          )}
+          <Footer className="px-0">
             <Button type="submit" disabled={!canWrite || busy}>
               {busy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {row ? "Save changes" : "Create"}
@@ -672,9 +700,41 @@ function RecordSheet({
                 {postAction.label}
               </Button>
             )}
-          </SheetFooter>
+          </Footer>
         </form>
+  );
 
+  if (windowed) {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{row ? `Edit ${entityLabel}` : `New ${entityLabel}`}</DialogTitle>
+            <DialogDescription>
+              {row ? "Update the record details." : `Add a new ${entityLabel.toLowerCase()} to your workspace.`}
+            </DialogDescription>
+          </DialogHeader>
+          {form}
+          {attachments && row?.id && (
+            <div className="border-t pt-4 pb-2">
+              <AttachmentsPanel entityType={entityType} entityId={row.id} />
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  return (
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent className="sm:max-w-lg overflow-y-auto">
+        <SheetHeader>
+          <SheetTitle>{row ? `Edit ${entityLabel}` : `New ${entityLabel}`}</SheetTitle>
+          <SheetDescription>
+            {row ? "Update the record details." : `Add a new ${entityLabel.toLowerCase()} to your workspace.`}
+          </SheetDescription>
+        </SheetHeader>
+        {form}
         {attachments && row?.id && (
           <div className="border-t pt-4 px-4 pb-6">
             <AttachmentsPanel entityType={entityType} entityId={row.id} />
@@ -756,6 +816,71 @@ function FieldInput({
     <div className="grid gap-1.5">
       {label}
       <Input {...commonProps} onChange={(e) => onChange(e.target.value)} />
+    </div>
+  );
+}
+
+function MultiItemFields({
+  itemField,
+  lineItems,
+  onChange,
+  disabled,
+}: {
+  itemField: FieldDef;
+  lineItems: { item_id: string; quantity: number | null }[];
+  onChange: (items: { item_id: string; quantity: number | null }[]) => void;
+  disabled: boolean;
+}) {
+  return (
+    <div className="grid gap-2 rounded-md border p-3">
+      <div className="flex items-center justify-between">
+        <Label>{itemField.label}s</Label>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => onChange([...lineItems, { item_id: "", quantity: null }])}
+          disabled={disabled}
+        >
+          <Plus className="mr-1.5 h-3.5 w-3.5" /> Add item
+        </Button>
+      </div>
+      {lineItems.map((line, index) => (
+        <div key={index} className="grid grid-cols-[1fr_120px_auto] items-end gap-2">
+          <FieldInput
+            field={{ ...itemField, label: index === 0 ? itemField.label : "" }}
+            defaultValue={line.item_id}
+            onChange={(item_id) => onChange(lineItems.map((item, i) => (i === index ? { ...item, item_id } : item)))}
+            disabled={disabled}
+          />
+          <div className="grid gap-1.5">
+            {index === 0 && <Label>Qty</Label>}
+            <Input
+              type="number"
+              step="any"
+              value={line.quantity ?? ""}
+              onChange={(event) =>
+                onChange(
+                  lineItems.map((item, i) =>
+                    i === index ? { ...item, quantity: event.target.value ? Number(event.target.value) : null } : item,
+                  ),
+                )
+              }
+              disabled={disabled}
+            />
+          </div>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            aria-label="Remove item"
+            onClick={() => onChange(lineItems.filter((_, i) => i !== index))}
+            disabled={disabled || lineItems.length === 1}
+          >
+            ×
+          </Button>
+        </div>
+      ))}
     </div>
   );
 }

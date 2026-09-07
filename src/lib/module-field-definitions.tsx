@@ -281,7 +281,7 @@ export const itemFields: FieldDef[] = [
     options: ["Active", "Inactive"],
     defaultValue: "Active",
   },
-  { key: "stock", label: "On Hand", type: "number", className: "text-right", render: monoRight },
+  { key: "stock", label: "On Hand", type: "number", className: "text-right", render: monoRight, writable: false },
   { key: "cost", label: "Avg Cost", type: "number", className: "text-right", render: moneyRight },
   { key: "price", label: "Sell Price", type: "number", className: "text-right", render: moneyRight },
 
@@ -974,8 +974,8 @@ export const productionOrderFields: FieldDef[] = [
     hideInTable: true,
   },
   { key: "quantity", label: "Qty Planned", type: "number", className: "text-right", render: monoRight },
-  { key: "qty_produced", label: "Produced", type: "number", className: "text-right", render: monoRight },
-  { key: "qty_remaining", label: "Remaining", type: "number", className: "text-right", render: monoRight },
+  { key: "qty_produced", label: "Produced", type: "number", className: "text-right", render: monoRight, writable: false },
+  { key: "qty_remaining", label: "Remaining", type: "number", className: "text-right", render: monoRight, writable: false },
   {
     key: "priority",
     label: "Priority",

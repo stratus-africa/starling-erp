@@ -5263,6 +5263,7 @@ export type Database = {
       warehouses: {
         Row: {
           code: string | null
+          capacity_sqm: number | null
           created_at: string
           created_by: string | null
           deleted_at: string | null
@@ -5275,6 +5276,7 @@ export type Database = {
         }
         Insert: {
           code?: string | null
+          capacity_sqm?: number | null
           created_at?: string
           created_by?: string | null
           deleted_at?: string | null
@@ -5287,6 +5289,7 @@ export type Database = {
         }
         Update: {
           code?: string | null
+          capacity_sqm?: number | null
           created_at?: string
           created_by?: string | null
           deleted_at?: string | null
