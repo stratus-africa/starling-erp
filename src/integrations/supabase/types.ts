@@ -831,6 +831,7 @@ export type Database = {
           grand_total: number
           id: string
           notes: string | null
+          payment_terms: string | null
           number: string | null
           posted_at: string | null
           reversal_id: string | null
@@ -860,6 +861,7 @@ export type Database = {
           grand_total?: number
           id?: string
           notes?: string | null
+          payment_terms?: string | null
           number?: string | null
           posted_at?: string | null
           reversal_id?: string | null
@@ -889,6 +891,7 @@ export type Database = {
           grand_total?: number
           id?: string
           notes?: string | null
+          payment_terms?: string | null
           number?: string | null
           posted_at?: string | null
           reversal_id?: string | null
@@ -5219,6 +5222,7 @@ export type Database = {
           grand_total: number
           id: string
           notes: string | null
+          payment_terms: string | null
           number: string | null
           search_vec: unknown
           status: string | null
@@ -5241,6 +5245,7 @@ export type Database = {
           grand_total?: number
           id?: string
           notes?: string | null
+          payment_terms?: string | null
           number?: string | null
           search_vec?: unknown
           status?: string | null
@@ -5263,6 +5268,7 @@ export type Database = {
           grand_total?: number
           id?: string
           notes?: string | null
+          payment_terms?: string | null
           number?: string | null
           search_vec?: unknown
           status?: string | null
