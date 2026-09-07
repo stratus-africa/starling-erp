@@ -318,7 +318,7 @@ export function CustomerCreateEditWindow({
         className="relative flex w-full flex-col overflow-hidden rounded-xl border bg-background shadow-sm"
         aria-label={isNew ? "Create Customer" : "Edit Customer"}
       >
-        <header className="flex shrink-0 items-center justify-between border-b px-5 py-4 md:px-6">
+        <header className="shrink-0 border-b px-5 py-5 md:px-8">
           <div>
             <h1 className="text-xl font-semibold leading-none tracking-tight">
               {isNew ? "Create Customer" : "Edit Customer"}
@@ -329,20 +329,6 @@ export function CustomerCreateEditWindow({
                 : "Update customer account information"}
             </p>
           </div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" onClick={close} disabled={save.isPending}>
-              Cancel
-            </Button>
-            <Button variant="secondary" onClick={() => save.mutate()} disabled={!canWrite || save.isPending}>
-              {save.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              <Save className="mr-2 h-4 w-4" />
-              Save Draft
-            </Button>
-            <Button onClick={() => save.mutate()} disabled={!canWrite || save.isPending}>
-              {save.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {isNew ? "Create Customer" : "Save Changes"}
-            </Button>
-          </div>
         </header>
 
         <div className="min-h-0 flex-1 overflow-y-auto">
@@ -352,7 +338,7 @@ export function CustomerCreateEditWindow({
             </div>
           ) : (
             <div className="min-h-[560px] xl:grid xl:grid-cols-[minmax(0,1fr)_320px]">
-              <main className="min-w-0 px-5 py-5 md:px-6 md:py-6">
+              <main className="min-w-0 px-5 py-6 md:px-8 md:py-8">
                 <Tabs
                   value={activeTab}
                   onValueChange={(value) => setActiveTab(value as typeof activeTab)}
@@ -426,8 +412,8 @@ export function CustomerCreateEditWindow({
                   ))}
                 </Tabs>
               </main>
-              <aside className="hidden border-l bg-muted/10 p-5 xl:block">
-                <div className="rounded-lg border bg-background p-4">
+              <aside className="hidden border-l bg-muted/10 px-6 py-8 xl:block">
+                <div className="border-b pb-6">
                   <div className="flex items-center gap-2 font-medium">
                     <CircleHelp className="h-4 w-4 text-primary" /> Why this matters
                   </div>
@@ -436,7 +422,7 @@ export function CustomerCreateEditWindow({
                     maintain strong customer relationships.
                   </p>
                 </div>
-                <div className="mt-4 rounded-lg border bg-background p-4">
+                <div className="pt-6">
                   <p className="text-sm font-medium">Quick Tips</p>
                   <ul className="mt-3 space-y-2 text-xs text-muted-foreground">
                     <li>✓ Use a unique customer code</li>
@@ -450,6 +436,22 @@ export function CustomerCreateEditWindow({
             </div>
           )}
         </div>
+        <footer className="sticky bottom-0 z-20 flex shrink-0 flex-wrap items-center justify-between gap-3 border-t bg-background/95 px-5 py-3 shadow-[0_-4px_12px_rgba(15,23,42,0.06)] backdrop-blur md:px-8">
+          <Button variant="ghost" onClick={close} disabled={save.isPending}>
+            Cancel
+          </Button>
+          <div className="flex flex-wrap justify-end gap-2">
+            <Button variant="outline" onClick={() => save.mutate()} disabled={!canWrite || save.isPending}>
+              {save.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              <Save className="mr-2 h-4 w-4" />
+              Save Draft
+            </Button>
+            <Button onClick={() => save.mutate()} disabled={!canWrite || save.isPending}>
+              {save.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {isNew ? "Create Customer" : "Save Changes"}
+            </Button>
+          </div>
+        </footer>
       </section>
 
       <AlertDialog open={discardOpen} onOpenChange={setDiscardOpen}>
