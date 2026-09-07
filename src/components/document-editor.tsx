@@ -150,7 +150,7 @@ const CFG: Record<DocKind, CfgEntry> = {
     prefix: "PO",
     dateField: "date",
     extraDate: { field: "expected_date", label: "Expected" },
-    statuses: ["Draft", "Confirmed", "Processing", "Delivered", "Billed", "Cancelled"],
+    statuses: ["Draft", "Pending Approval", "Approved", "Sent", "Acknowledged", "Closed", "Cancelled"],
     partyField: "supplier_id",
     partyTable: "suppliers",
     partyLabel: "Supplier",
@@ -164,7 +164,7 @@ const CFG: Record<DocKind, CfgEntry> = {
     prefix: "BILL",
     dateField: "date",
     extraDate: { field: "due_date", label: "Due Date" },
-    statuses: ["Pending", "Posted", "Paid", "Overdue", "Cancelled"],
+    statuses: ["Draft", "Pending Approval", "Approved", "Posted", "Partially Paid", "Paid", "Overdue", "Voided", "Cancelled"],
     partyField: "supplier_id",
     partyTable: "suppliers",
     partyLabel: "Supplier",
@@ -199,7 +199,7 @@ const CFG: Record<DocKind, CfgEntry> = {
     prefix: "REQ",
     dateField: "date",
     extraDate: { field: "required_date", label: "Required By" },
-    statuses: ["Draft", "Submitted", "Approved", "Rejected", "Ordered", "Cancelled"],
+    statuses: ["Draft", "Submitted", "Pending Approval", "Approved", "Rejected", "Cancelled", "Converted"],
     partyField: "supplier_id",
     partyTable: "suppliers",
     partyLabel: "Preferred Supplier",
@@ -881,7 +881,7 @@ export function DocumentEditor({
         case "convert_po_to_bill":
           return callRpc("convert_po_to_bill", { _po_id: id });
         case "post_bill":
-          return callRpc("post_bill", { _bill_id: id });
+          return callRpc("transition_supplier_bill", { _bill_id: id, _new_status: "Posted", _reason: "Bill posted" });
         case "post_credit_note":
           return callRpc("post_credit_note", { _credit_note_id: id });
       }
@@ -939,7 +939,7 @@ export function DocumentEditor({
   });
 
   const canApprove = can(["purchasing.create", "purchasing.update"]);
-  const reqApproved = header.status === "Approved" || header.status === "Ordered";
+  const reqApproved = header.status === "Approved";
   const isStockReq = isReq && header.requisition_type === "stock";
 
   // C: Default purchase req currency to tenant currency on new documents
@@ -974,20 +974,13 @@ export function DocumentEditor({
 
   const setReqStatus = useMutation({
     mutationFn: async ({ status, note }: { status: string; note: string }) => {
-      const { error } = await db.from(cfg.table).update({ status }).eq("id", id);
+      const { data, error } = await db.rpc("transition_purchase_requisition", {
+        _requisition_id: id,
+        _new_status: status,
+        _reason: note,
+      });
       if (error) throw error;
-      if (tenant?.id) {
-        await logDocumentEvent({
-          tenantId: tenant.id,
-          entityType: kind,
-          entityId: id,
-          status,
-          note,
-          actorId: user?.id ?? null,
-          actorEmail: profile?.email ?? null,
-        });
-      }
-      return status;
+      return String(data ?? status);
     },
     onSuccess: (status) => {
       setHeader((h) => ({ ...h, status }));
@@ -995,6 +988,20 @@ export function DocumentEditor({
       qc.invalidateQueries();
     },
     onError: (e: Error) => toast.error(e.message ?? "Update failed"),
+  });
+
+  const transitionProcurement = useMutation({
+    mutationFn: async ({ status, reason, forceClose = false }: { status: string; reason: string; forceClose?: boolean }) => {
+      const rpc = kind === "po" ? "transition_purchase_order" : "transition_supplier_bill";
+      const args = kind === "po"
+        ? { _order_id: id, _new_status: status, _reason: reason, _force_close: forceClose }
+        : { _bill_id: id, _new_status: status, _reason: reason };
+      const { data, error } = await db.rpc(rpc, args);
+      if (error) throw error;
+      return String(data ?? status);
+    },
+    onSuccess: (status) => { setHeader((current) => ({ ...current, status })); toast.success(`${cfg.label} ${status.toLowerCase()}`); qc.invalidateQueries(); },
+    onError: (e: Error) => toast.error(e.message ?? "Transition failed"),
   });
 
   const partyId = header[cfg.partyField] || null;
@@ -1208,6 +1215,16 @@ export function DocumentEditor({
                   </Button>
                 )}
                 {isReq && !isNew && canApprove && header.status === "Submitted" && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={setReqStatus.isPending}
+                    onClick={() => setReqStatus.mutate({ status: "Pending Approval", note: "Sent to approval" })}
+                  >
+                    <Send className="h-4 w-4 mr-1.5" /> Send to Approval
+                  </Button>
+                )}
+                {isReq && !isNew && canApprove && header.status === "Pending Approval" && (
                   <>
                     <Button
                       variant="outline"
@@ -1246,6 +1263,27 @@ export function DocumentEditor({
                   >
                     <Send className="h-4 w-4 mr-1.5" /> Convert to PO
                   </Button>
+                )}
+                {kind === "po" && !isNew && canWrite && header.status === "Draft" && (
+                  <Button variant="outline" size="sm" onClick={() => transitionProcurement.mutate({ status: "Pending Approval", reason: "Submitted for approval" })}>Submit for Approval</Button>
+                )}
+                {kind === "po" && !isNew && canWrite && header.status === "Pending Approval" && (
+                  <Button variant="outline" size="sm" onClick={() => transitionProcurement.mutate({ status: "Approved", reason: "Purchase order approved" })}>Approve</Button>
+                )}
+                {kind === "po" && !isNew && canWrite && header.status === "Approved" && (
+                  <Button variant="outline" size="sm" onClick={() => transitionProcurement.mutate({ status: "Sent", reason: "Sent to supplier" })}>Send to Supplier</Button>
+                )}
+                {kind === "po" && !isNew && canWrite && header.status === "Sent" && (
+                  <Button variant="outline" size="sm" onClick={() => transitionProcurement.mutate({ status: "Acknowledged", reason: "Supplier acknowledged" })}>Acknowledge</Button>
+                )}
+                {kind === "po" && !isNew && canWrite && header.status === "Acknowledged" && (
+                  <Button variant="outline" size="sm" onClick={() => transitionProcurement.mutate({ status: "Closed", reason: "Purchase order closed" })}>Close</Button>
+                )}
+                {kind === "bill" && !isNew && canWrite && header.status === "Draft" && (
+                  <Button variant="outline" size="sm" onClick={() => transitionProcurement.mutate({ status: "Pending Approval", reason: "Submitted for approval" })}>Submit for Approval</Button>
+                )}
+                {kind === "bill" && !isNew && canWrite && header.status === "Pending Approval" && (
+                  <Button variant="outline" size="sm" onClick={() => transitionProcurement.mutate({ status: "Approved", reason: "Supplier bill approved" })}>Approve</Button>
                 )}
                 {canWrite && kind === "po" && !isNew && (
                   <Button
@@ -1478,7 +1516,7 @@ export function DocumentEditor({
               )}
               <div className="grid gap-1.5">
                 <Label>Status</Label>
-                <Select
+                {!(isReq || kind === "po" || kind === "bill") ? <Select
                   value={header.status ?? cfg.statuses[0]}
                   onValueChange={(v) => setHeader({ ...header, status: v })}
                   disabled={!canWrite}
@@ -1529,7 +1567,7 @@ export function DocumentEditor({
                         );
                       })}
                   </SelectContent>
-                </Select>
+                </Select> : <Badge variant="outline">{header.status ?? cfg.statuses[0]}</Badge>}
               </div>
               {/* Requisition extra fields: department & requested_by */}
               {isReq && (

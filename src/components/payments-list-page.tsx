@@ -142,12 +142,17 @@ export function PaymentsListPage({ kind }: { kind: PaymentKind }) {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [createOpen, setCreateOpen] = useState(false);
 
-  const rpc = isReceived ? "post_payment_received" : "post_payment_made";
   const voidEntityType = isReceived ? "payment_received" : "payment_made";
 
   const postMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await (supabase as any).rpc(rpc, { _payment_id: id });
+      const { error } = isReceived
+        ? await (supabase as any).rpc("post_payment_received", { _payment_id: id })
+        : await (supabase as any).rpc("transition_supplier_payment", {
+            _payment_id: id,
+            _new_status: "Posted",
+            _reason: "Supplier payment posted",
+          });
       if (error) throw error;
     },
     onSuccess: () => {
@@ -159,12 +164,18 @@ export function PaymentsListPage({ kind }: { kind: PaymentKind }) {
 
   const voidMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await (supabase as any).rpc("void_posted_document", {
-        _entity_type: voidEntityType,
-        _entity_id: id,
-        _permission: "payments.void",
-        _reason: "Payment voided",
-      });
+      const { error } = isReceived
+        ? await (supabase as any).rpc("void_posted_document", {
+            _entity_type: voidEntityType,
+            _entity_id: id,
+            _permission: "payments.void",
+            _reason: "Payment voided",
+          })
+        : await (supabase as any).rpc("transition_supplier_payment", {
+            _payment_id: id,
+            _new_status: "Voided",
+            _reason: "Supplier payment voided",
+          });
       if (error) throw error;
     },
     onSuccess: () => {

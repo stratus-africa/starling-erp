@@ -228,8 +228,10 @@ export function CreatePaymentDialog({ open, onOpenChange, kind }: CreatePaymentD
         },
       );
       if (createError) throw createError;
-      const { error: postError } = await (supabase as any).rpc("post_supplier_payment", {
+      const { error: postError } = await (supabase as any).rpc("transition_supplier_payment", {
         _payment_id: paymentId,
+        _new_status: "Posted",
+        _reason: "Supplier payment posted",
       });
       if (postError) throw postError;
       const { error: allocationError } = await (supabase as any).rpc(

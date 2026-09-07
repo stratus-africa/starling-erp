@@ -1,0 +1,25 @@
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Link } from "@tanstack/react-router";
+import { ArrowLeft, Loader2 } from "lucide-react";
+import { toast } from "sonner";
+import { db } from "@/lib/typed-db";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { AttachmentsPanel } from "@/components/attachments-panel";
+import { AccountingAuditTrail } from "@/components/accounting-audit-trail";
+import { BusinessEventTimeline } from "@/components/business-event-timeline";
+import { ReceiptLineTable } from "@/components/receipt-line-table";
+import { PurchaseOrderReceiptSummary } from "@/components/purchase-order-receipt-summary";
+
+export function PurchaseReceiptDetailPage({ id }: { id: string }) {
+  const qc = useQueryClient();
+  const { data: receipt, isLoading } = useQuery({ queryKey: ["goods_receipts", id], queryFn: async () => { const { data, error } = await db.from("goods_receipts").select("*").eq("id", id).is("deleted_at", null).single(); if (error) throw error; return data as Record<string, any>; } });
+  const { data: lines = [] } = useQuery({ queryKey: ["goods_receipt_lines", id], enabled: Boolean(receipt), queryFn: async () => { const { data, error } = await db.from("goods_receipt_lines").select("*, purchase_order_lines(description,quantity,item_id)").eq("receipt_id", id).is("deleted_at", null); if (error) throw error; return (data ?? []).map((line: Record<string, any>) => ({ ...line, item_name: line.purchase_order_lines?.description, ordered_quantity: line.purchase_order_lines?.quantity })); } });
+  const post = useMutation({ mutationFn: async () => { const { error } = await db.rpc("post_purchase_receipt", { _receipt_id: id }); if (error) throw error; }, onSuccess: () => { toast.success("Receipt posted and inventory updated"); qc.invalidateQueries({ queryKey: ["goods_receipts", id] }); qc.invalidateQueries({ queryKey: ["purchase_orders"] }); }, onError: (error: Error) => toast.error(error.message) });
+  if (isLoading) return <div className="p-6"><Loader2 className="h-5 w-5 animate-spin" /></div>;
+  if (!receipt) return <div className="p-6 text-sm text-muted-foreground">Receipt not found.</div>;
+  return <div className="h-full overflow-auto bg-background p-6"><div className="mx-auto max-w-6xl space-y-5"><div className="flex items-center justify-between"><div className="flex items-center gap-3"><Link to="/purchases/receipts"><Button variant="ghost" size="icon"><ArrowLeft className="h-4 w-4" /></Button></Link><div><div className="text-xs text-muted-foreground">Purchase receipt</div><h1 className="text-xl font-semibold">{receipt.receipt_number ?? id.slice(0, 8)}</h1></div></div>{receipt.status === "Draft" && <Button onClick={() => post.mutate()} disabled={post.isPending}>{post.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Post Receipt</Button>}</div><Tabs defaultValue="overview"><TabsList><TabsTrigger value="overview">Overview</TabsTrigger><TabsTrigger value="items">Items</TabsTrigger><TabsTrigger value="source">Source PO</TabsTrigger><TabsTrigger value="inventory">Inventory</TabsTrigger><TabsTrigger value="attachments">Attachments</TabsTrigger><TabsTrigger value="activity">Activity</TabsTrigger><TabsTrigger value="audit">Audit</TabsTrigger></TabsList><TabsContent value="overview"><Card className="grid gap-4 p-5 sm:grid-cols-2 lg:grid-cols-4"><Field label="Date" value={receipt.receipt_date} /><Field label="Type" value={receipt.receipt_type} /><Field label="Status" value={<Badge variant="outline">{receipt.status}</Badge>} /><Field label="Receiving Status" value={<Badge variant="outline">{receipt.receiving_status}</Badge>} /><Field label="Purchase Order" value={receipt.purchase_order_id} /><Field label="Warehouse" value={receipt.warehouse_id ?? "Service confirmation"} /><Field label="Accepted By" value={receipt.accepted_by ?? "—"} /><Field label="Description" value={receipt.description ?? "—"} /></Card></TabsContent><TabsContent value="items"><Card className="p-5"><ReceiptLineTable lines={lines} readOnly /></Card></TabsContent><TabsContent value="source"><PurchaseOrderReceiptSummary orderId={receipt.purchase_order_id} /></TabsContent><TabsContent value="inventory"><Card className="p-5"><p className="text-sm text-muted-foreground">Accepted goods post to the existing stock movement ledger. Rejected quantities are excluded from inventory.</p></Card></TabsContent><TabsContent value="attachments"><AttachmentsPanel entityType="purchase_receipt" entityId={id} /></TabsContent><TabsContent value="activity"><BusinessEventTimeline entityType="purchase_receipt" entityId={id} /></TabsContent><TabsContent value="audit"><AccountingAuditTrail entityType="purchase_receipt" entityId={id} /></TabsContent></Tabs></div></div>;
+}
+function Field({ label, value }: { label: string; value: React.ReactNode }) { return <div><p className="text-xs text-muted-foreground">{label}</p><p className="mt-1 text-sm font-medium">{value}</p></div>; }

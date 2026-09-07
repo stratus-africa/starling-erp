@@ -111,6 +111,7 @@ import { Route as AuthenticatedPurchasingRequisitionsIndexRouteImport } from './
 import { Route as AuthenticatedPurchasingOrdersIndexRouteImport } from './routes/_authenticated/purchasing.orders.index'
 import { Route as AuthenticatedPurchasingExpensesIndexRouteImport } from './routes/_authenticated/purchasing.expenses.index'
 import { Route as AuthenticatedPurchasingBillsIndexRouteImport } from './routes/_authenticated/purchasing.bills.index'
+import { Route as AuthenticatedPurchasesReceiptsIndexRouteImport } from './routes/_authenticated/purchases.receipts.index'
 import { Route as AuthenticatedManufacturingOrdersIndexRouteImport } from './routes/_authenticated/manufacturing.orders.index'
 import { Route as AuthenticatedManufacturingItemsIndexRouteImport } from './routes/_authenticated/manufacturing.items.index'
 import { Route as AuthenticatedManufacturingBomIndexRouteImport } from './routes/_authenticated/manufacturing.bom.index'
@@ -140,6 +141,7 @@ import { Route as AuthenticatedPurchasingRequisitionsIdRouteImport } from './rou
 import { Route as AuthenticatedPurchasingOrdersIdRouteImport } from './routes/_authenticated/purchasing.orders.$id'
 import { Route as AuthenticatedPurchasingExpensesIdRouteImport } from './routes/_authenticated/purchasing.expenses.$id'
 import { Route as AuthenticatedPurchasingBillsIdRouteImport } from './routes/_authenticated/purchasing.bills.$id'
+import { Route as AuthenticatedPurchasesReceiptsIdRouteImport } from './routes/_authenticated/purchases.receipts.$id'
 import { Route as AuthenticatedPurchasesPaymentsIdRouteImport } from './routes/_authenticated/purchases.payments.$id'
 import { Route as AuthenticatedManufacturingOrdersNewRouteImport } from './routes/_authenticated/manufacturing.orders.new'
 import { Route as AuthenticatedManufacturingOrdersIdRouteImport } from './routes/_authenticated/manufacturing.orders.$id'
@@ -724,6 +726,12 @@ const AuthenticatedPurchasingBillsIndexRoute =
     path: '/purchasing/bills/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedPurchasesReceiptsIndexRoute =
+  AuthenticatedPurchasesReceiptsIndexRouteImport.update({
+    id: '/purchases/receipts/',
+    path: '/purchases/receipts/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedManufacturingOrdersIndexRoute =
   AuthenticatedManufacturingOrdersIndexRouteImport.update({
     id: '/manufacturing/orders/',
@@ -898,6 +906,12 @@ const AuthenticatedPurchasingBillsIdRoute =
     path: '/purchasing/bills/$id',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedPurchasesReceiptsIdRoute =
+  AuthenticatedPurchasesReceiptsIdRouteImport.update({
+    id: '/purchases/receipts/$id',
+    path: '/purchases/receipts/$id',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedPurchasesPaymentsIdRoute =
   AuthenticatedPurchasesPaymentsIdRouteImport.update({
     id: '/purchases/payments/$id',
@@ -1050,6 +1064,7 @@ export interface FileRoutesByFullPath {
   '/manufacturing/orders/$id': typeof AuthenticatedManufacturingOrdersIdRoute
   '/manufacturing/orders/new': typeof AuthenticatedManufacturingOrdersNewRoute
   '/purchases/payments/$id': typeof AuthenticatedPurchasesPaymentsIdRoute
+  '/purchases/receipts/$id': typeof AuthenticatedPurchasesReceiptsIdRoute
   '/purchasing/bills/$id': typeof AuthenticatedPurchasingBillsIdRoute
   '/purchasing/expenses/$id': typeof AuthenticatedPurchasingExpensesIdRoute
   '/purchasing/orders/$id': typeof AuthenticatedPurchasingOrdersIdRoute
@@ -1079,6 +1094,7 @@ export interface FileRoutesByFullPath {
   '/manufacturing/bom/': typeof AuthenticatedManufacturingBomIndexRoute
   '/manufacturing/items/': typeof AuthenticatedManufacturingItemsIndexRoute
   '/manufacturing/orders/': typeof AuthenticatedManufacturingOrdersIndexRoute
+  '/purchases/receipts/': typeof AuthenticatedPurchasesReceiptsIndexRoute
   '/purchasing/bills/': typeof AuthenticatedPurchasingBillsIndexRoute
   '/purchasing/expenses/': typeof AuthenticatedPurchasingExpensesIndexRoute
   '/purchasing/orders/': typeof AuthenticatedPurchasingOrdersIndexRoute
@@ -1188,6 +1204,7 @@ export interface FileRoutesByTo {
   '/manufacturing/orders/$id': typeof AuthenticatedManufacturingOrdersIdRoute
   '/manufacturing/orders/new': typeof AuthenticatedManufacturingOrdersNewRoute
   '/purchases/payments/$id': typeof AuthenticatedPurchasesPaymentsIdRoute
+  '/purchases/receipts/$id': typeof AuthenticatedPurchasesReceiptsIdRoute
   '/purchasing/bills/$id': typeof AuthenticatedPurchasingBillsIdRoute
   '/purchasing/expenses/$id': typeof AuthenticatedPurchasingExpensesIdRoute
   '/purchasing/orders/$id': typeof AuthenticatedPurchasingOrdersIdRoute
@@ -1217,6 +1234,7 @@ export interface FileRoutesByTo {
   '/manufacturing/bom': typeof AuthenticatedManufacturingBomIndexRoute
   '/manufacturing/items': typeof AuthenticatedManufacturingItemsIndexRoute
   '/manufacturing/orders': typeof AuthenticatedManufacturingOrdersIndexRoute
+  '/purchases/receipts': typeof AuthenticatedPurchasesReceiptsIndexRoute
   '/purchasing/bills': typeof AuthenticatedPurchasingBillsIndexRoute
   '/purchasing/expenses': typeof AuthenticatedPurchasingExpensesIndexRoute
   '/purchasing/orders': typeof AuthenticatedPurchasingOrdersIndexRoute
@@ -1331,6 +1349,7 @@ export interface FileRoutesById {
   '/_authenticated/manufacturing/orders/$id': typeof AuthenticatedManufacturingOrdersIdRoute
   '/_authenticated/manufacturing/orders/new': typeof AuthenticatedManufacturingOrdersNewRoute
   '/_authenticated/purchases/payments/$id': typeof AuthenticatedPurchasesPaymentsIdRoute
+  '/_authenticated/purchases/receipts/$id': typeof AuthenticatedPurchasesReceiptsIdRoute
   '/_authenticated/purchasing/bills/$id': typeof AuthenticatedPurchasingBillsIdRoute
   '/_authenticated/purchasing/expenses/$id': typeof AuthenticatedPurchasingExpensesIdRoute
   '/_authenticated/purchasing/orders/$id': typeof AuthenticatedPurchasingOrdersIdRoute
@@ -1360,6 +1379,7 @@ export interface FileRoutesById {
   '/_authenticated/manufacturing/bom/': typeof AuthenticatedManufacturingBomIndexRoute
   '/_authenticated/manufacturing/items/': typeof AuthenticatedManufacturingItemsIndexRoute
   '/_authenticated/manufacturing/orders/': typeof AuthenticatedManufacturingOrdersIndexRoute
+  '/_authenticated/purchases/receipts/': typeof AuthenticatedPurchasesReceiptsIndexRoute
   '/_authenticated/purchasing/bills/': typeof AuthenticatedPurchasingBillsIndexRoute
   '/_authenticated/purchasing/expenses/': typeof AuthenticatedPurchasingExpensesIndexRoute
   '/_authenticated/purchasing/orders/': typeof AuthenticatedPurchasingOrdersIndexRoute
@@ -1473,6 +1493,7 @@ export interface FileRouteTypes {
     | '/manufacturing/orders/$id'
     | '/manufacturing/orders/new'
     | '/purchases/payments/$id'
+    | '/purchases/receipts/$id'
     | '/purchasing/bills/$id'
     | '/purchasing/expenses/$id'
     | '/purchasing/orders/$id'
@@ -1502,6 +1523,7 @@ export interface FileRouteTypes {
     | '/manufacturing/bom/'
     | '/manufacturing/items/'
     | '/manufacturing/orders/'
+    | '/purchases/receipts/'
     | '/purchasing/bills/'
     | '/purchasing/expenses/'
     | '/purchasing/orders/'
@@ -1611,6 +1633,7 @@ export interface FileRouteTypes {
     | '/manufacturing/orders/$id'
     | '/manufacturing/orders/new'
     | '/purchases/payments/$id'
+    | '/purchases/receipts/$id'
     | '/purchasing/bills/$id'
     | '/purchasing/expenses/$id'
     | '/purchasing/orders/$id'
@@ -1640,6 +1663,7 @@ export interface FileRouteTypes {
     | '/manufacturing/bom'
     | '/manufacturing/items'
     | '/manufacturing/orders'
+    | '/purchases/receipts'
     | '/purchasing/bills'
     | '/purchasing/expenses'
     | '/purchasing/orders'
@@ -1753,6 +1777,7 @@ export interface FileRouteTypes {
     | '/_authenticated/manufacturing/orders/$id'
     | '/_authenticated/manufacturing/orders/new'
     | '/_authenticated/purchases/payments/$id'
+    | '/_authenticated/purchases/receipts/$id'
     | '/_authenticated/purchasing/bills/$id'
     | '/_authenticated/purchasing/expenses/$id'
     | '/_authenticated/purchasing/orders/$id'
@@ -1782,6 +1807,7 @@ export interface FileRouteTypes {
     | '/_authenticated/manufacturing/bom/'
     | '/_authenticated/manufacturing/items/'
     | '/_authenticated/manufacturing/orders/'
+    | '/_authenticated/purchases/receipts/'
     | '/_authenticated/purchasing/bills/'
     | '/_authenticated/purchasing/expenses/'
     | '/_authenticated/purchasing/orders/'
@@ -2520,6 +2546,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPurchasingBillsIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/purchases/receipts/': {
+      id: '/_authenticated/purchases/receipts/'
+      path: '/purchases/receipts'
+      fullPath: '/purchases/receipts/'
+      preLoaderRoute: typeof AuthenticatedPurchasesReceiptsIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/manufacturing/orders/': {
       id: '/_authenticated/manufacturing/orders/'
       path: '/manufacturing/orders'
@@ -2721,6 +2754,13 @@ declare module '@tanstack/react-router' {
       path: '/purchasing/bills/$id'
       fullPath: '/purchasing/bills/$id'
       preLoaderRoute: typeof AuthenticatedPurchasingBillsIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/purchases/receipts/$id': {
+      id: '/_authenticated/purchases/receipts/$id'
+      path: '/purchases/receipts/$id'
+      fullPath: '/purchases/receipts/$id'
+      preLoaderRoute: typeof AuthenticatedPurchasesReceiptsIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/purchases/payments/$id': {
@@ -2934,6 +2974,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedManufacturingOrdersIdRoute: typeof AuthenticatedManufacturingOrdersIdRoute
   AuthenticatedManufacturingOrdersNewRoute: typeof AuthenticatedManufacturingOrdersNewRoute
   AuthenticatedPurchasesPaymentsIdRoute: typeof AuthenticatedPurchasesPaymentsIdRoute
+  AuthenticatedPurchasesReceiptsIdRoute: typeof AuthenticatedPurchasesReceiptsIdRoute
   AuthenticatedPurchasingBillsIdRoute: typeof AuthenticatedPurchasingBillsIdRoute
   AuthenticatedPurchasingExpensesIdRoute: typeof AuthenticatedPurchasingExpensesIdRoute
   AuthenticatedPurchasingOrdersIdRoute: typeof AuthenticatedPurchasingOrdersIdRoute
@@ -2952,6 +2993,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedManufacturingBomIndexRoute: typeof AuthenticatedManufacturingBomIndexRoute
   AuthenticatedManufacturingItemsIndexRoute: typeof AuthenticatedManufacturingItemsIndexRoute
   AuthenticatedManufacturingOrdersIndexRoute: typeof AuthenticatedManufacturingOrdersIndexRoute
+  AuthenticatedPurchasesReceiptsIndexRoute: typeof AuthenticatedPurchasesReceiptsIndexRoute
   AuthenticatedPurchasingBillsIndexRoute: typeof AuthenticatedPurchasingBillsIndexRoute
   AuthenticatedPurchasingExpensesIndexRoute: typeof AuthenticatedPurchasingExpensesIndexRoute
   AuthenticatedPurchasingOrdersIndexRoute: typeof AuthenticatedPurchasingOrdersIndexRoute
@@ -3039,6 +3081,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedManufacturingOrdersNewRoute:
     AuthenticatedManufacturingOrdersNewRoute,
   AuthenticatedPurchasesPaymentsIdRoute: AuthenticatedPurchasesPaymentsIdRoute,
+  AuthenticatedPurchasesReceiptsIdRoute: AuthenticatedPurchasesReceiptsIdRoute,
   AuthenticatedPurchasingBillsIdRoute: AuthenticatedPurchasingBillsIdRoute,
   AuthenticatedPurchasingExpensesIdRoute:
     AuthenticatedPurchasingExpensesIdRoute,
@@ -3065,6 +3108,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
     AuthenticatedManufacturingItemsIndexRoute,
   AuthenticatedManufacturingOrdersIndexRoute:
     AuthenticatedManufacturingOrdersIndexRoute,
+  AuthenticatedPurchasesReceiptsIndexRoute:
+    AuthenticatedPurchasesReceiptsIndexRoute,
   AuthenticatedPurchasingBillsIndexRoute:
     AuthenticatedPurchasingBillsIndexRoute,
   AuthenticatedPurchasingExpensesIndexRoute:

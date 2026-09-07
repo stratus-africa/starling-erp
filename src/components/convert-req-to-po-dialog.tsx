@@ -1,9 +1,7 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
-import { useAuth } from "@/hooks/use-auth";
 import { db } from "@/lib/typed-db";
-import { logDocumentEvent } from "@/lib/document-events";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -27,6 +25,7 @@ import {
 import { Loader2, ShoppingCart } from "lucide-react";
 
 interface ReqLine {
+  id?: string;
   item_id: string | null;
   description: string | null;
   quantity: number;
@@ -63,7 +62,6 @@ export function ConvertReqToPoDialog({
   reqRequiredDate,
   onConverted,
 }: ConvertReqToPoDialogProps) {
-  const { tenant, user, profile } = useAuth();
   const qc = useQueryClient();
   const nav = useNavigate();
 
@@ -124,78 +122,23 @@ export function ConvertReqToPoDialog({
 
   const convert = useMutation({
     mutationFn: async () => {
-      if (!tenant?.id) throw new Error("No tenant context");
       if (!supplierId) throw new Error("Please select a supplier");
       if (reqLines.length === 0) throw new Error("Requisition has no line items");
-
-      const number = `PO-${Date.now().toString().slice(-8)}`;
-
-      // Create PO header
-      const { data: po, error: poErr } = await db
-        .from("purchase_orders")
-        .insert({
-          tenant_id: tenant.id,
-          number,
-          supplier_id: supplierId,
-          date: poDate,
-          expected_date: expectedDate || null,
-          status: "Draft",
-          currency,
-          subtotal: totals.subtotal,
-          discount_total: totals.discount_total,
-          tax_total: totals.tax_total,
-          grand_total: totals.grand_total,
-          amount: totals.grand_total,
-          notes: notes || null,
-        })
-        .select("id")
-        .single();
-      if (poErr) throw poErr;
-      const poId = po.id;
-
-      // Copy lines with (potentially adjusted) prices
-      const linePayload = reqLines.map((l, i) => ({
-        tenant_id: tenant.id,
-        document_id: poId,
-        line_no: i + 1,
-        item_id: l.item_id || null,
-        description: l.description || "",
-        quantity: l.quantity,
-        unit_price: linePrices[i] ?? l.unit_price,
-        discount_pct: l.discount_pct || 0,
-        tax_pct: l.tax_pct || 0,
-        line_total:
-          Math.round(
-            l.quantity *
-              (linePrices[i] ?? l.unit_price) *
-              (1 - (l.discount_pct || 0) / 100) *
-              (1 + (l.tax_pct || 0) / 100) *
-              100,
-          ) / 100,
+      const unitPrices = reqLines.map((line, index) => ({
+        line_id: (line as ReqLine & { id?: string }).id,
+        unit_price: linePrices[index] ?? line.unit_price,
       }));
-      const { error: lineErr } = await db.from("purchase_order_lines").insert(linePayload);
-      if (lineErr) throw lineErr;
-
-      // Mark the requisition as Ordered and link to the PO
-      await db
-        .from("purchase_requisitions")
-        .update({ status: "Ordered", converted_po_id: poId })
-        .eq("id", reqId);
-
-      // Write audit event
-      if (tenant?.id) {
-        await logDocumentEvent({
-          tenantId: tenant.id,
-          entityType: "requisition",
-          entityId: reqId,
-          status: "Ordered",
-          note: `Converted to purchase order ${number} with supplier ${suppliers.find((s) => s.id === supplierId)?.name ?? supplierId}`,
-          actorId: user?.id ?? null,
-          actorEmail: profile?.email ?? null,
-        });
-      }
-
-      return poId;
+      const { data, error } = await db.rpc("convert_requisition_to_purchase_order", {
+        _requisition_id: reqId,
+        _supplier_id: supplierId,
+        _po_date: poDate,
+        _expected_date: expectedDate || null,
+        _currency: currency,
+        _notes: notes || null,
+        _unit_prices: unitPrices,
+      });
+      if (error) throw error;
+      return String(data);
     },
     onSuccess: (poId) => {
       toast.success("Converted to Purchase Order successfully");

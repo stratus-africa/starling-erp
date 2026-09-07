@@ -121,7 +121,11 @@ export function useSupplierPaymentActions() {
 
   const post = useMutation({
     mutationFn: async (paymentId: string) => {
-      const { data, error } = await db.rpc("post_supplier_payment", { _payment_id: paymentId });
+      const { data, error } = await db.rpc("transition_supplier_payment", {
+        _payment_id: paymentId,
+        _new_status: "Posted",
+        _reason: "Supplier payment posted",
+      });
       if (error) throw error;
       return String(data);
     },
@@ -130,8 +134,9 @@ export function useSupplierPaymentActions() {
 
   const voidPayment = useMutation({
     mutationFn: async ({ paymentId, reason }: { paymentId: string; reason?: string }) => {
-      const { data, error } = await db.rpc("void_supplier_payment", {
+      const { data, error } = await db.rpc("transition_supplier_payment", {
         _payment_id: paymentId,
+        _new_status: "Voided",
         _reason: reason ?? "Supplier payment voided",
       });
       if (error) throw error;
