@@ -85,7 +85,6 @@ export function CreatePaymentDialog({ open, onOpenChange, kind }: CreatePaymentD
   const partyTable = isReceived ? "customers" : "suppliers";
   const docTable = isReceived ? "invoices" : "bills";
   const paymentTable = isReceived ? "payments_received" : "payments_made";
-  const docField = isReceived ? "invoice_id" : "bill_id";
   const partyField = isReceived ? "customer_id" : "supplier_id";
   const partyLabel = isReceived ? "Customer" : "Supplier";
   const docLabel = isReceived ? "Invoice" : "Bill";
@@ -209,54 +208,36 @@ export function CreatePaymentDialog({ open, onOpenChange, kind }: CreatePaymentD
       // Build reference from doc numbers
       const docNumbers = selectedDocs.map((d) => d.number).join(", ");
 
-      // Supplier payments retain their existing flow until the AP lifecycle is migrated.
-      const { data: payment, error: payError } = await supabase
-        .from(paymentTable as any)
-        .insert({
-          tenant_id: tenant.id,
-          amount: totalAmt,
-          payment_date: date,
-          date: date,
-          mode,
-          reference: reference || docNumbers,
-          notes: notes || null,
-          [partyField]: partyId,
-          status: "Posted",
-          currency,
-        } as any)
-        .select("id")
-        .single();
-
-      if (payError) throw payError;
-      const paymentId = (payment as any).id;
-
-      // Supplier payments retain their existing AP flow until it is migrated.
-      for (const doc of selectedDocs) {
-        const amt = Math.round((parseFloat(applied[doc.id] ?? "0") || 0) * 100) / 100;
-        if (amt <= 0) continue;
-
-        // Insert the legacy supplier document relationship.
-        await supabase.from(paymentTable as any).upsert({
-          // We store the first doc reference on the payment row for backwards compat
-          [docField]: doc.id,
-        } as any);
-
-        // Update the supplier document balance.
-        const newPaid = Math.round((doc.grand_total - doc.balance_due + amt) * 100) / 100;
-        const newBalance = Math.max(0, Math.round((doc.grand_total - newPaid) * 100) / 100);
-
-        await supabase
-          .from("bills")
-          .update({
-            amount_paid: newPaid,
-            balance_due: newBalance,
-            balance: newBalance,
-            status: newBalance <= 0.001 ? "Paid" : "Posted",
-          })
-          .eq("id", doc.id);
-      }
-
-      return paymentId;
+      const allocations = selectedDocs
+        .map((doc) => ({
+          bill_id: doc.id,
+          amount: Math.round((parseFloat(applied[doc.id] ?? "0") || 0) * 100) / 100,
+        }))
+        .filter((allocation) => allocation.amount > 0);
+      const { data: paymentId, error: createError } = await (supabase as any).rpc(
+        "create_supplier_payment",
+        {
+          _supplier_id: partyId,
+          _amount: totalAmt,
+          _date: date,
+          _currency: currency,
+          _bank_account_id: null,
+          _payment_method: mode,
+          _reference: reference || docNumbers,
+          _notes: notes || null,
+        },
+      );
+      if (createError) throw createError;
+      const { error: postError } = await (supabase as any).rpc("post_supplier_payment", {
+        _payment_id: paymentId,
+      });
+      if (postError) throw postError;
+      const { error: allocationError } = await (supabase as any).rpc(
+        "allocate_supplier_payment",
+        { _payment_id: paymentId, _allocations: allocations },
+      );
+      if (allocationError) throw allocationError;
+      return paymentId as string;
     },
     onSuccess: () => {
       toast.success(`${isReceived ? "Payment received" : "Payment made"} recorded`);

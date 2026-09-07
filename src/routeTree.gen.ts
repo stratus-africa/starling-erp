@@ -140,6 +140,7 @@ import { Route as AuthenticatedPurchasingRequisitionsIdRouteImport } from './rou
 import { Route as AuthenticatedPurchasingOrdersIdRouteImport } from './routes/_authenticated/purchasing.orders.$id'
 import { Route as AuthenticatedPurchasingExpensesIdRouteImport } from './routes/_authenticated/purchasing.expenses.$id'
 import { Route as AuthenticatedPurchasingBillsIdRouteImport } from './routes/_authenticated/purchasing.bills.$id'
+import { Route as AuthenticatedPurchasesPaymentsIdRouteImport } from './routes/_authenticated/purchases.payments.$id'
 import { Route as AuthenticatedManufacturingOrdersNewRouteImport } from './routes/_authenticated/manufacturing.orders.new'
 import { Route as AuthenticatedManufacturingOrdersIdRouteImport } from './routes/_authenticated/manufacturing.orders.$id'
 import { Route as AuthenticatedManufacturingItemsIdRouteImport } from './routes/_authenticated/manufacturing.items.$id'
@@ -897,6 +898,12 @@ const AuthenticatedPurchasingBillsIdRoute =
     path: '/purchasing/bills/$id',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedPurchasesPaymentsIdRoute =
+  AuthenticatedPurchasesPaymentsIdRouteImport.update({
+    id: '/purchases/payments/$id',
+    path: '/purchases/payments/$id',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedManufacturingOrdersNewRoute =
   AuthenticatedManufacturingOrdersNewRouteImport.update({
     id: '/manufacturing/orders/new',
@@ -1042,6 +1049,7 @@ export interface FileRoutesByFullPath {
   '/manufacturing/items/$id': typeof AuthenticatedManufacturingItemsIdRoute
   '/manufacturing/orders/$id': typeof AuthenticatedManufacturingOrdersIdRoute
   '/manufacturing/orders/new': typeof AuthenticatedManufacturingOrdersNewRoute
+  '/purchases/payments/$id': typeof AuthenticatedPurchasesPaymentsIdRoute
   '/purchasing/bills/$id': typeof AuthenticatedPurchasingBillsIdRoute
   '/purchasing/expenses/$id': typeof AuthenticatedPurchasingExpensesIdRoute
   '/purchasing/orders/$id': typeof AuthenticatedPurchasingOrdersIdRoute
@@ -1179,6 +1187,7 @@ export interface FileRoutesByTo {
   '/manufacturing/items/$id': typeof AuthenticatedManufacturingItemsIdRoute
   '/manufacturing/orders/$id': typeof AuthenticatedManufacturingOrdersIdRoute
   '/manufacturing/orders/new': typeof AuthenticatedManufacturingOrdersNewRoute
+  '/purchases/payments/$id': typeof AuthenticatedPurchasesPaymentsIdRoute
   '/purchasing/bills/$id': typeof AuthenticatedPurchasingBillsIdRoute
   '/purchasing/expenses/$id': typeof AuthenticatedPurchasingExpensesIdRoute
   '/purchasing/orders/$id': typeof AuthenticatedPurchasingOrdersIdRoute
@@ -1321,6 +1330,7 @@ export interface FileRoutesById {
   '/_authenticated/manufacturing/items/$id': typeof AuthenticatedManufacturingItemsIdRoute
   '/_authenticated/manufacturing/orders/$id': typeof AuthenticatedManufacturingOrdersIdRoute
   '/_authenticated/manufacturing/orders/new': typeof AuthenticatedManufacturingOrdersNewRoute
+  '/_authenticated/purchases/payments/$id': typeof AuthenticatedPurchasesPaymentsIdRoute
   '/_authenticated/purchasing/bills/$id': typeof AuthenticatedPurchasingBillsIdRoute
   '/_authenticated/purchasing/expenses/$id': typeof AuthenticatedPurchasingExpensesIdRoute
   '/_authenticated/purchasing/orders/$id': typeof AuthenticatedPurchasingOrdersIdRoute
@@ -1462,6 +1472,7 @@ export interface FileRouteTypes {
     | '/manufacturing/items/$id'
     | '/manufacturing/orders/$id'
     | '/manufacturing/orders/new'
+    | '/purchases/payments/$id'
     | '/purchasing/bills/$id'
     | '/purchasing/expenses/$id'
     | '/purchasing/orders/$id'
@@ -1599,6 +1610,7 @@ export interface FileRouteTypes {
     | '/manufacturing/items/$id'
     | '/manufacturing/orders/$id'
     | '/manufacturing/orders/new'
+    | '/purchases/payments/$id'
     | '/purchasing/bills/$id'
     | '/purchasing/expenses/$id'
     | '/purchasing/orders/$id'
@@ -1740,6 +1752,7 @@ export interface FileRouteTypes {
     | '/_authenticated/manufacturing/items/$id'
     | '/_authenticated/manufacturing/orders/$id'
     | '/_authenticated/manufacturing/orders/new'
+    | '/_authenticated/purchases/payments/$id'
     | '/_authenticated/purchasing/bills/$id'
     | '/_authenticated/purchasing/expenses/$id'
     | '/_authenticated/purchasing/orders/$id'
@@ -2710,6 +2723,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPurchasingBillsIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/purchases/payments/$id': {
+      id: '/_authenticated/purchases/payments/$id'
+      path: '/purchases/payments/$id'
+      fullPath: '/purchases/payments/$id'
+      preLoaderRoute: typeof AuthenticatedPurchasesPaymentsIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/manufacturing/orders/new': {
       id: '/_authenticated/manufacturing/orders/new'
       path: '/manufacturing/orders/new'
@@ -2913,6 +2933,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedManufacturingItemsIdRoute: typeof AuthenticatedManufacturingItemsIdRoute
   AuthenticatedManufacturingOrdersIdRoute: typeof AuthenticatedManufacturingOrdersIdRoute
   AuthenticatedManufacturingOrdersNewRoute: typeof AuthenticatedManufacturingOrdersNewRoute
+  AuthenticatedPurchasesPaymentsIdRoute: typeof AuthenticatedPurchasesPaymentsIdRoute
   AuthenticatedPurchasingBillsIdRoute: typeof AuthenticatedPurchasingBillsIdRoute
   AuthenticatedPurchasingExpensesIdRoute: typeof AuthenticatedPurchasingExpensesIdRoute
   AuthenticatedPurchasingOrdersIdRoute: typeof AuthenticatedPurchasingOrdersIdRoute
@@ -3017,6 +3038,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
     AuthenticatedManufacturingOrdersIdRoute,
   AuthenticatedManufacturingOrdersNewRoute:
     AuthenticatedManufacturingOrdersNewRoute,
+  AuthenticatedPurchasesPaymentsIdRoute: AuthenticatedPurchasesPaymentsIdRoute,
   AuthenticatedPurchasingBillsIdRoute: AuthenticatedPurchasingBillsIdRoute,
   AuthenticatedPurchasingExpensesIdRoute:
     AuthenticatedPurchasingExpensesIdRoute,

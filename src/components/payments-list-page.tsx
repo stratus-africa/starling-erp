@@ -32,6 +32,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import { useNavigate } from "@tanstack/react-router";
+import { SupplierPaymentDialog } from "@/components/supplier-payment-dialog";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -124,6 +125,7 @@ export function PaymentsListPage({ kind }: { kind: PaymentKind }) {
 
   const canPost = can("payments.post");
   const canVoid = can("payments.void");
+  const canCreate = can("payments.create");
 
   const isReceived = kind === "received";
   const table = isReceived ? "payments_received" : "payments_made";
@@ -138,6 +140,7 @@ export function PaymentsListPage({ kind }: { kind: PaymentKind }) {
   const [statusFilter, setStatusFilter] = useState("all");
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [createOpen, setCreateOpen] = useState(false);
 
   const rpc = isReceived ? "post_payment_received" : "post_payment_made";
   const voidEntityType = isReceived ? "payment_received" : "payment_made";
@@ -257,7 +260,7 @@ export function PaymentsListPage({ kind }: { kind: PaymentKind }) {
     });
 
   const openDetail = (id: string) => {
-    if (isReceived) navigate({ to: "/sales/payments/$id", params: { id } });
+    navigate({ to: isReceived ? "/sales/payments/$id" : "/purchases/payments/$id", params: { id } });
   };
 
   // ─── Render ───────────────────────────────────────────────────────────────
@@ -271,6 +274,7 @@ export function PaymentsListPage({ kind }: { kind: PaymentKind }) {
           <span className="text-muted-foreground text-sm font-normal">▾</span>
         </h1>
         <div className="flex items-center gap-2">
+          {!isReceived && canCreate && <Button size="sm" className="h-8" onClick={() => setCreateOpen(true)}>New Payment</Button>}
           <div className="relative">
             <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
             <Input
@@ -566,6 +570,7 @@ export function PaymentsListPage({ kind }: { kind: PaymentKind }) {
           </Button>
         </div>
       </div>
+      {!isReceived && <SupplierPaymentDialog open={createOpen} onOpenChange={setCreateOpen} />}
     </div>
   );
 }

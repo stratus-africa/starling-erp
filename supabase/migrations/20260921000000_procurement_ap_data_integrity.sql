@@ -32,6 +32,26 @@ ALTER TABLE public.expenses
   ADD COLUMN IF NOT EXISTS accounting_status text NOT NULL DEFAULT 'Unposted',
   ADD COLUMN IF NOT EXISTS reimbursement_status text NOT NULL DEFAULT 'Not Applicable';
 
+-- These updates normalize historical rows during migration. The existing
+-- business-event triggers require an authenticated request actor, which is not
+-- available to a migration connection, so suppress only those triggers for
+-- this controlled rewrite and restore them before creating new objects.
+DO $$
+DECLARE v_table text;
+BEGIN
+  FOREACH v_table IN ARRAY ARRAY['purchase_orders', 'bills', 'payments_made'] LOOP
+    IF EXISTS (
+      SELECT 1
+      FROM pg_trigger
+      WHERE tgrelid = ('public.' || v_table)::regclass
+        AND tgname = 'trg_business_event_' || v_table
+        AND NOT tgisinternal
+    ) THEN
+      EXECUTE format('ALTER TABLE public.%I DISABLE TRIGGER %I', v_table, 'trg_business_event_' || v_table);
+    END IF;
+  END LOOP;
+END $$;
+
 UPDATE public.purchase_orders
 SET status = CASE lower(COALESCE(status, 'draft'))
   WHEN 'pending' THEN 'Pending Approval'
@@ -106,6 +126,22 @@ reimbursement_status = CASE
 END;
 
 DO $$
+DECLARE v_table text;
+BEGIN
+  FOREACH v_table IN ARRAY ARRAY['purchase_orders', 'bills', 'payments_made'] LOOP
+    IF EXISTS (
+      SELECT 1
+      FROM pg_trigger
+      WHERE tgrelid = ('public.' || v_table)::regclass
+        AND tgname = 'trg_business_event_' || v_table
+        AND NOT tgisinternal
+    ) THEN
+      EXECUTE format('ALTER TABLE public.%I ENABLE TRIGGER %I', v_table, 'trg_business_event_' || v_table);
+    END IF;
+  END LOOP;
+END $$;
+
+DO $$
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'purchase_orders_status_check') THEN
     ALTER TABLE public.purchase_orders ADD CONSTRAINT purchase_orders_status_check
@@ -145,9 +181,14 @@ BEGIN
   END IF;
 END $$;
 
-ALTER TABLE public.purchase_orders
-  ADD CONSTRAINT purchase_orders_source_requisition_fk
-  FOREIGN KEY (source_requisition_id) REFERENCES public.purchase_requisitions(id);
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'purchase_orders_source_requisition_fk') THEN
+    ALTER TABLE public.purchase_orders
+      ADD CONSTRAINT purchase_orders_source_requisition_fk
+      FOREIGN KEY (source_requisition_id) REFERENCES public.purchase_requisitions(id);
+  END IF;
+END $$;
 
 CREATE OR REPLACE FUNCTION public.validate_purchase_order_source_requisition()
 RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, pg_temp AS $$
@@ -247,9 +288,14 @@ CREATE TRIGGER trg_validate_goods_receipt_line
 BEFORE INSERT OR UPDATE ON public.goods_receipt_lines
 FOR EACH ROW EXECUTE FUNCTION public.validate_goods_receipt_line();
 
-ALTER TABLE public.bills
-  ADD CONSTRAINT bills_source_receipt_fk
-  FOREIGN KEY (source_receipt_id) REFERENCES public.goods_receipts(id);
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'bills_source_receipt_fk') THEN
+    ALTER TABLE public.bills
+      ADD CONSTRAINT bills_source_receipt_fk
+      FOREIGN KEY (source_receipt_id) REFERENCES public.goods_receipts(id);
+  END IF;
+END $$;
 
 -- -----------------------------------------------------------------------------
 -- Supplier payment allocations
@@ -297,6 +343,7 @@ CREATE TABLE IF NOT EXISTS public.supplier_payment_reconciliation_queue (
   UNIQUE (tenant_id, payment_id)
 );
 ALTER TABLE public.supplier_payment_reconciliation_queue ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS supplier_payment_reconciliation_queue_read ON public.supplier_payment_reconciliation_queue;
 CREATE POLICY supplier_payment_reconciliation_queue_read ON public.supplier_payment_reconciliation_queue FOR SELECT TO authenticated
   USING (tenant_id = public.current_tenant_id() AND public.has_permission('payments.read'));
 GRANT SELECT ON public.supplier_payment_reconciliation_queue TO authenticated;

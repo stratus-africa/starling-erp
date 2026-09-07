@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Download, FileText, Loader2, Printer, RefreshCw } from "lucide-react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import { supabase } from "@/integrations/supabase/client";
 import { db } from "@/lib/typed-db";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
@@ -34,6 +35,30 @@ const titles: Record<ReportKind, string> = {
   fulfillment: "Order Fulfillment",
   profitability: "Sales Profitability",
 };
+function useSalesReportRealtime(kind: ReportKind, tenantId: string | undefined, refetch: () => Promise<unknown>) {
+  useEffect(() => {
+    if (!tenantId) return;
+
+    const channel = supabase.channel(`sales-report-${kind}-${tenantId}`);
+
+    const refresh = () => {
+      void refetch();
+    };
+
+    channel
+      .on("postgres_changes", { event: "*", schema: "public", table: "invoices", filter: `tenant_id=eq.${tenantId}` }, refresh)
+      .on("postgres_changes", { event: "*", schema: "public", table: "sales_orders", filter: `tenant_id=eq.${tenantId}` }, refresh)
+      .on("postgres_changes", { event: "*", schema: "public", table: "sales_quotes", filter: `tenant_id=eq.${tenantId}` }, refresh)
+      .on("postgres_changes", { event: "*", schema: "public", table: "payments_received", filter: `tenant_id=eq.${tenantId}` }, refresh)
+      .on("postgres_changes", { event: "*", schema: "public", table: "customers", filter: `tenant_id=eq.${tenantId}` }, refresh)
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [kind, refetch, tenantId]);
+}
+
 export function SalesDimensionReportPage({ kind }: { kind: ReportKind }) {
   const { tenant } = useAuth();
   const [filters, setFilters] = useState(initial);
@@ -47,6 +72,9 @@ export function SalesDimensionReportPage({ kind }: { kind: ReportKind }) {
   const query = useQuery({
     queryKey: ["sales", kind, filters, page],
     enabled: !!tenant?.id && !!filters.currency,
+    staleTime: 15_000,
+    refetchInterval: 30_000,
+    refetchOnWindowFocus: true,
     queryFn: async () => {
       const names: Record<ReportKind, string> = {
         customers: "get_sales_by_customer",
@@ -106,6 +134,8 @@ export function SalesDimensionReportPage({ kind }: { kind: ReportKind }) {
       return data as Record<string, unknown>;
     },
   });
+  useSalesReportRealtime(kind, tenant?.id, query.refetch);
+
   const rows = (query.data?.rows ?? []) as Array<Record<string, string | number>>;
   const funnel = query.data ?? {};
   const columns = useMemo(

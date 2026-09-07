@@ -58,8 +58,6 @@ export function RecordPaymentDialog({
   const [notes, setNotes] = useState("");
 
   const table = kind === "receive" ? "payments_received" : "payments_made";
-  const docField = kind === "receive" ? "invoice_id" : "bill_id";
-  const partyField = kind === "receive" ? "customer_id" : "supplier_id";
 
   const record = useMutation({
     mutationFn: async () => {
@@ -84,39 +82,34 @@ export function RecordPaymentDialog({
         return data as string;
       }
 
-      const payload: Record<string, unknown> = {
-        tenant_id: tenant.id,
-        amount: amt,
-        payment_date: date,
-        mode,
-        reference: reference || null,
-        notes: notes || null,
-        [docField]: docId,
-        [partyField]: partyId ?? null,
-        status: "Posted",
-      };
+      if (!partyId) throw new Error("Supplier is required");
+      const { data: paymentId, error: createError } = await (supabase as any).rpc(
+        "create_supplier_payment",
+        {
+          _supplier_id: partyId,
+          _amount: amt,
+          _date: date,
+          _currency: currency,
+          _bank_account_id: null,
+          _payment_method: mode,
+          _reference: reference || null,
+          _notes: notes || null,
+        },
+      );
+      if (createError) throw createError;
 
-      const { error } = await supabase.from(table as any).insert(payload as any);
-      if (error) throw error;
+      const { error: postError } = await (supabase as any).rpc("post_supplier_payment", {
+        _payment_id: paymentId,
+      });
+      if (postError) throw postError;
 
-      const roundedAmt = Math.round(amt * 100) / 100;
-      const { data: bill } = await supabase
-        .from("bills")
-        .select("amount_paid, grand_total, balance_due")
-        .eq("id", docId)
-        .single();
-      if (bill) {
-        const newPaid = Math.round(((bill.amount_paid ?? 0) + roundedAmt) * 100) / 100;
-        const newBalance = Math.max(0, Math.round(((bill.grand_total ?? 0) - newPaid) * 100) / 100);
-        await supabase
-          .from("bills")
-          .update({
-            amount_paid: newPaid,
-            balance_due: newBalance,
-            balance: newBalance,
-            status: newBalance <= 0.001 ? "Paid" : "Posted",
-          })
-          .eq("id", docId);
+      const allocationAmount = Math.min(amt, Math.max(0, balanceDue));
+      if (allocationAmount > 0) {
+        const { error: allocationError } = await (supabase as any).rpc(
+          "allocate_supplier_payment",
+          { _payment_id: paymentId, _bill_id: docId, _amount: allocationAmount },
+        );
+        if (allocationError) throw allocationError;
       }
     },
     onSuccess: () => {

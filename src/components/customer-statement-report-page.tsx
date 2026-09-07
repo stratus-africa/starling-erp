@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Download, Mail, Printer, RefreshCw } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import { db } from "@/lib/typed-db";
 import { useAuth } from "@/hooks/use-auth";
 import { buildDocumentPdf, downloadDocumentPdf, type PdfDocInput } from "@/lib/document-pdf";
@@ -29,6 +30,24 @@ export function CustomerStatementReportPage({ customerId }: { customerId: string
   const [from, setFrom] = useState(`${new Date().getFullYear()}-01-01`);
   const [to, setTo] = useState(new Date().toISOString().slice(0, 10));
   const [emailOpen, setEmailOpen] = useState(false);
+
+  useEffect(() => {
+    if (!tenant?.id || !customerId) return;
+
+    const channel = supabase.channel(`customer-statement-${customerId}`);
+    const refresh = () => void report.refetch();
+
+    channel
+      .on("postgres_changes", { event: "*", schema: "public", table: "customers", filter: `id=eq.${customerId}` }, refresh)
+      .on("postgres_changes", { event: "*", schema: "public", table: "invoices", filter: `customer_id=eq.${customerId}` }, refresh)
+      .on("postgres_changes", { event: "*", schema: "public", table: "payments_received", filter: `customer_id=eq.${customerId}` }, refresh)
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [customerId, tenant?.id]);
+
   const { data: customer } = useQuery({
     queryKey: ["customers", customerId, "statement"],
     queryFn: async () => {
@@ -44,6 +63,9 @@ export function CustomerStatementReportPage({ customerId }: { customerId: string
   const report = useQuery({
     queryKey: ["sales", "statement", customerId, from, to],
     enabled: !!customerId,
+    staleTime: 15_000,
+    refetchInterval: 30_000,
+    refetchOnWindowFocus: true,
     queryFn: async () => {
       const { data, error } = await db.rpc("get_customer_statement", {
         _customer_id: customerId,
