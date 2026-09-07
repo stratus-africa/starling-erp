@@ -334,7 +334,7 @@ export function DocumentEditor({
     [cfg.partyField]: "",
     [cfg.dateField]: new Date().toISOString().slice(0, 10),
     ...(cfg.extraDate ? { [cfg.extraDate.field]: "" } : {}),
-    currency: "USD",
+    currency: tenant?.currency ?? "KES",
     notes: "",
     status: cfg.statuses[0],
     // Requisition-specific defaults

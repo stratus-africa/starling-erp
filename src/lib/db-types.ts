@@ -29,6 +29,7 @@ export type ChartOfAccount = Tables<"chart_of_accounts">;
 export type AppRole = Database["public"]["Enums"]["app_role"];
 export type Payment = PaymentReceived | PaymentMade;
 export type Tenant = Tables<"tenants"> & {
+  currency_symbol?: string | null;
   legal_name?: string | null;
   trading_name?: string | null;
   registration_number?: string | null;

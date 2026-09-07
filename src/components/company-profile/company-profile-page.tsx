@@ -153,6 +153,7 @@ export function CompanyProfilePage() {
         postal_code: draft.postal_code?.trim() || null,
         country: draft.country?.trim() || "Kenya",
         currency: draft.currency || "KES",
+        currency_symbol: draft.currency_symbol?.trim() || null,
         timezone: draft.timezone || "Africa/Nairobi",
         date_format: draft.date_format || "DD/MM/YYYY",
         number_format: draft.number_format || "1,234.56",

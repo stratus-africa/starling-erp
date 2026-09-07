@@ -1,8 +1,10 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 import { Globe2 } from "lucide-react";
 import type { Tenant } from "@/lib/db-types";
+import { currencySymbol } from "@/lib/currency";
 
 const CURRENCIES = [
   { code: "KES", label: "KES – Kenyan Shilling" },
@@ -73,7 +75,7 @@ export function CompanyLocalizationCard({ data, onChange, disabled }: Props) {
           </Label>
           <Select
             value={data.currency ?? "KES"}
-            onValueChange={(v) => onChange({ currency: v })}
+            onValueChange={(v) => onChange({ currency: v, currency_symbol: currencySymbol(v) })}
             disabled={disabled}
           >
             <SelectTrigger id="base-currency">
@@ -90,6 +92,20 @@ export function CompanyLocalizationCard({ data, onChange, disabled }: Props) {
           <p className="text-[11px] text-muted-foreground">
             Default monetary unit for trial balance, GL accounts, and financial statement consolidation.
           </p>
+        </div>
+
+        <div className="grid gap-1.5">
+          <Label htmlFor="currency-symbol" className="text-xs font-semibold">
+            Currency Symbol <span className="text-destructive">*</span>
+          </Label>
+          <Input
+            id="currency-symbol"
+            value={data.currency_symbol ?? currencySymbol(data.currency ?? "KES")}
+            onChange={(e) => onChange({ currency_symbol: e.target.value })}
+            disabled={disabled}
+            maxLength={8}
+          />
+          <p className="text-[11px] text-muted-foreground">Used beside amounts across organization reports and documents.</p>
         </div>
 
         <div className="grid gap-1.5">
