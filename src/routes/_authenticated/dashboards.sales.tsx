@@ -1,18 +1,30 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { RoleDashboard, makeChart } from "@/components/role-dashboard";
 import { TrendingUp, DollarSign, FileText, Receipt, Wallet, Plus, ShoppingCart } from "lucide-react";
+import { useRoleDashboardData } from "@/hooks/use-role-dashboard-data";
+import { useAuth } from "@/hooks/use-auth";
 
 export const Route = createFileRoute("/_authenticated/dashboards/sales")({
-  component: () => (
+  component: SalesDashboard,
+});
+
+function SalesDashboard() {
+  const { tenant } = useAuth();
+  const { data } = useRoleDashboardData();
+  const sales = data?.sales;
+  const currency = tenant?.currency_symbol ?? tenant?.currency ?? "KES";
+  const money = (value: number) => `${currency} ${value.toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
+
+  return (
     <RoleDashboard
       title="Sales Manager Dashboard"
       subtitle="Pipeline, revenue, and collections at a glance"
       metrics={[
-        { label: "Quotes", value: "38", delta: "+12%", up: true, icon: FileText },
-        { label: "Sales Orders", value: "142", delta: "+8%", up: true, icon: ShoppingCart },
-        { label: "Invoiced MTD", value: "$348,210", delta: "+14%", up: true, icon: Receipt },
-        { label: "Collected", value: "$286,400", delta: "+9%", up: true, icon: Wallet },
-        { label: "Outstanding", value: "$790,200", delta: "-3%", up: true, icon: DollarSign },
+        { label: "Quotes", value: String(sales?.quotes ?? 0), icon: FileText },
+        { label: "Sales Orders", value: String(sales?.orders ?? 0), icon: ShoppingCart },
+        { label: "Invoiced MTD", value: money(sales?.invoiced ?? 0), icon: Receipt },
+        { label: "Collected", value: money(sales?.collected ?? 0), icon: Wallet },
+        { label: "Outstanding", value: money(sales?.outstanding ?? 0), icon: DollarSign },
       ]}
       actions={[
         { label: "New Quote", to: "/sales/quotes", icon: Plus },
@@ -21,18 +33,9 @@ export const Route = createFileRoute("/_authenticated/dashboards/sales")({
       ]}
       chart="line"
       chartTitle="Sales Trend — Revenue vs Collections"
-      chartData={makeChart(
-        ["W1", "W2", "W3", "W4", "W5", "W6", "W7"],
-        [42, 58, 51, 71, 88, 62, 94],
-        [38, 45, 49, 66, 72, 58, 80],
-      )}
+      chartData={sales?.trend ?? makeChart([], [], [])}
       listTitle="Top Selling Products"
-      list={[
-        { primary: "Brake Assembly – Model X", secondary: "128 units · $11,392", status: "▲ 22%", tone: "success" },
-        { primary: "Exhaust Manifold", secondary: "74 units · $8,214", status: "▲ 14%", tone: "success" },
-        { primary: "Cold Rolled Steel 2mm", secondary: "1,820 kg · $3,367", status: "▲ 6%", tone: "info" },
-        { primary: "On-site Installation", secondary: "42 hrs · $1,890", status: "▼ 4%", tone: "warning" },
-      ]}
+      list={sales?.products ?? []}
     />
-  ),
-});
+  );
+}

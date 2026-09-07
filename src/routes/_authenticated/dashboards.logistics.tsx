@@ -1,18 +1,25 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { RoleDashboard, makeChart } from "@/components/role-dashboard";
 import { Package, Truck, CheckCircle2, Clock, Plus, Printer } from "lucide-react";
+import { useRoleDashboardData } from "@/hooks/use-role-dashboard-data";
 
 export const Route = createFileRoute("/_authenticated/dashboards/logistics")({
-  component: () => (
+  component: LogisticsDashboard,
+});
+
+function LogisticsDashboard() {
+  const { data } = useRoleDashboardData();
+  const logistics = data?.logistics;
+  return (
     <RoleDashboard
       title="Logistics Manager Dashboard"
       subtitle="Packages, shipments, and delivery performance"
       metrics={[
-        { label: "SOs to Fulfil", value: "24", icon: Package },
-        { label: "Awaiting Shipment", value: "12", delta: "+3", up: false, icon: Clock },
-        { label: "Packed Today", value: "18", delta: "+22%", up: true, icon: Package },
-        { label: "In Transit", value: "7", icon: Truck },
-        { label: "Delivered MTD", value: "128", delta: "+16%", up: true, icon: CheckCircle2 },
+        { label: "SOs to Fulfil", value: String(logistics?.fulfilment ?? 0), icon: Package },
+        { label: "Awaiting Shipment", value: String(logistics?.awaitingShipment ?? 0), icon: Clock },
+        { label: "Packed Today", value: String(logistics?.packedToday ?? 0), icon: Package },
+        { label: "In Transit", value: String(logistics?.inTransit ?? 0), icon: Truck },
+        { label: "Delivered MTD", value: String(logistics?.delivered ?? 0), icon: CheckCircle2 },
       ]}
       actions={[
         { label: "Create Package", to: "/sales/packages", icon: Plus },
@@ -20,14 +27,9 @@ export const Route = createFileRoute("/_authenticated/dashboards/logistics")({
         { label: "Print Packing List", to: "/sales/packages", icon: Printer },
       ]}
       chart="bar" chartTitle="Packages by Warehouse (packed vs shipped)"
-      chartData={makeChart(["Nairobi","Mombasa","Cairo","Dubai"],[42,18,26,14],[38,15,22,12])}
+      chartData={logistics?.trend ?? makeChart([], [], [])}
       listTitle="Delivery Performance"
-      list={[
-        { primary: "On-time deliveries", secondary: "This month", status: "94%", tone: "success" },
-        { primary: "Delayed shipments", secondary: "Awaiting driver update", status: "3", tone: "warning" },
-        { primary: "SHP-00420 — Fedex Egypt", secondary: "Cairo → Alexandria · ETA 13 Jul", status: "In Transit", tone: "info" },
-        { primary: "SHP-00419 — In-house Fleet", secondary: "Nairobi → Nakuru", status: "In Transit", tone: "info" },
-      ]}
+      list={logistics?.deliveries ?? []}
     />
-  ),
-});
+  );
+}
