@@ -255,7 +255,7 @@ function getInvoicePaymentState(doc: Record<string, any>) {
 function InvoiceOverviewView({ id }: { id: string }) {
   const { tenant, can } = useAuth();
   const qc = useQueryClient();
-  const [tab, setTab] = useState<"overview" | "line-items" | "customer" | "payments" | "documents" | "activity" | "audit">("overview");
+  const [tab, setTab] = useState<"overview" | "payments" | "documents" | "activity">("overview");
   const [editing, setEditing] = useState(false);
   const [payOpen, setPayOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -364,12 +364,9 @@ function InvoiceOverviewView({ id }: { id: string }) {
 
   const tabOptions = [
     { key: "overview", label: "Overview" },
-    { key: "line-items", label: "Line Items" },
-    { key: "customer", label: "Customer" },
     { key: "payments", label: "Payments" },
     { key: "documents", label: "Documents" },
     { key: "activity", label: "Activity" },
-    { key: "audit", label: "Audit Trail" },
   ] as const;
 
   const headerTitle = invoice.number ?? "Invoice";
@@ -461,13 +458,12 @@ function InvoiceOverviewView({ id }: { id: string }) {
           </div>
         </header>
 
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-5">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
           {[
             { label: "Invoice Total", value: `${currency} ${Number(invoiceTotal).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, icon: FileText },
             { label: "Amount Paid", value: `${currency} ${Number(paid).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, sub: `${Math.round(progress)}%`, icon: CheckCircle2 },
             { label: "Outstanding", value: `${currency} ${Number(outstanding).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, sub: paymentState.label === "Paid" ? "Fully Paid" : paymentState.label, icon: Wallet },
-            { label: "Due Date", value: fmtDate(invoice.due_date), icon: CalendarDays },
-            { label: "Payment Status", value: paymentState.label, icon: Receipt },
+            { label: "Status", value: paymentState.label, icon: Receipt },
           ].map((kpi) => (
             <Card key={kpi.label} className="p-4">
               <div className="flex items-start justify-between gap-2">
@@ -499,26 +495,6 @@ function InvoiceOverviewView({ id }: { id: string }) {
           {tab === "overview" && (
             <div className="grid items-start gap-4 p-4 lg:grid-cols-[minmax(0,2fr)_minmax(300px,1fr)]">
               <div className="space-y-4">
-                <Card>
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-sm">Invoice Summary</CardTitle>
-                  </CardHeader>
-                  <CardContent className="grid gap-4 md:grid-cols-2">
-                    <div className="space-y-3">
-                      <Info label="Invoice Number" value={invoice.number ?? "—"} />
-                      <Info label="Customer" value={customer?.name ?? "—"} />
-                      <Info label="Sales Order" value={sourceOrder?.number ?? "—"} />
-                      <Info label="Invoice Date" value={fmtDate(invoice.date)} />
-                    </div>
-                    <div className="space-y-3">
-                      <Info label="Due Date" value={fmtDate(invoice.due_date)} />
-                      <Info label="Payment Terms" value={invoice.payment_terms ?? customer?.payment_terms ?? "—"} />
-                      <Info label="Currency" value={currency} />
-                      <Info label="Salesperson" value={salesperson?.full_name ?? "—"} />
-                    </div>
-                  </CardContent>
-                </Card>
-
                 <Card>
                   <CardHeader className="flex flex-row items-center justify-between pb-3">
                     <CardTitle className="text-sm">Line Items</CardTitle>
@@ -645,36 +621,6 @@ function InvoiceOverviewView({ id }: { id: string }) {
             </div>
           )}
 
-          {tab === "line-items" && (
-            <div className="p-4">
-              <Card>
-                <CardHeader className="pb-3"><CardTitle className="text-sm">Line Items</CardTitle></CardHeader>
-                <CardContent className="p-0">
-                  <div className="overflow-x-auto"><table className="w-full min-w-[760px] text-sm">...</table></div>
-                </CardContent>
-              </Card>
-            </div>
-          )}
-
-          {tab === "customer" && (
-            <div className="p-4">
-              <Card>
-                <CardHeader><CardTitle className="text-sm">Customer</CardTitle></CardHeader>
-                <CardContent className="grid gap-4 md:grid-cols-2">
-                  <Info label="Customer name" value={customer?.name ?? "—"} />
-                  <Info label="Customer code" value={customer?.code ?? "—"} />
-                  <Info label="Contact person" value={customer?.contact_person ?? "—"} />
-                  <Info label="Email" value={customer?.email ?? "—"} />
-                  <Info label="Phone" value={customer?.phone ?? "—"} />
-                  <Info label="Payment terms" value={invoice.payment_terms ?? customer?.payment_terms ?? "—"} />
-                  <Info label="Currency" value={currency} />
-                  <div className="md:col-span-2"><Info label="Billing address" value={customer?.billing_address ?? "—"} /></div>
-                  <div className="md:col-span-2"><Info label="Shipping address" value={customer?.shipping_address ?? "—"} /></div>
-                </CardContent>
-              </Card>
-            </div>
-          )}
-
           {tab === "payments" && (
             <div className="p-4">
               <Card>
@@ -716,25 +662,6 @@ function InvoiceOverviewView({ id }: { id: string }) {
             </div>
           )}
 
-          {tab === "audit" && (
-            <div className="p-4">
-              <Card>
-                <CardHeader><CardTitle className="text-sm">Audit Trail</CardTitle></CardHeader>
-                <CardContent>
-                  {audit.length ? (
-                    <div className="space-y-3 text-sm">
-                      {audit.map((entry) => (
-                        <div key={entry.id} className="border-b pb-2 last:border-0 last:pb-0">
-                          <div className="flex items-center justify-between gap-3"><span className="font-medium">{entry.user_name ?? entry.actor_email ?? "System"}</span><span className="text-[11px] text-muted-foreground">{fmtDate(entry.created_at)}</span></div>
-                          <div className="mt-1 text-muted-foreground">{entry.action ?? entry.note ?? "Audit event"}</div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : <p className="text-sm text-muted-foreground">No audit entries yet.</p>}
-                </CardContent>
-              </Card>
-            </div>
-          )}
         </div>
       </div>
 

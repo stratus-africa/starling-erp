@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useNavigate } from "@tanstack/react-router";
 import { useModuleList } from "@/hooks/use-module-data";
 import { useAuth } from "@/hooks/use-auth";
 import { useQuery } from "@tanstack/react-query";
@@ -39,6 +40,8 @@ export function DocumentViewWindow({
   fields,
   searchColumn = "number",
   filters = [],
+  detailId,
+  renderDetail,
 }: {
   kind: DocKind;
   title: string;
@@ -47,7 +50,10 @@ export function DocumentViewWindow({
   fields: FieldDef[];
   searchColumn?: string;
   filters?: { key: string; label: string; options: string[] }[];
+  detailId?: string;
+  renderDetail?: (id: string) => ReactNode;
 }) {
+  const nav = useNavigate();
   const { can } = useAuth();
   const permissionModule = kind === "bill" ? "purchasing" : "sales";
   const canWrite = can([`${permissionModule}.create`, `${permissionModule}.update`]);
@@ -55,7 +61,7 @@ export function DocumentViewWindow({
     kind === "invoice" || kind === "credit_note" ? can("sales.void") : kind === "bill" ? can("purchasing.void") : false;
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(detailId ?? null);
   const [creating, setCreating] = useState(false);
   const [filterValues, setFilterValues] = useState<Record<string, string>>({});
   const pageSize = 25;
@@ -84,16 +90,15 @@ export function DocumentViewWindow({
   const customerNames = useMemo(() => Object.fromEntries(customers.map((c: any) => [c.id, c.name])), [customers]);
 
   useEffect(() => {
-    if (!creating && selectedId == null && rows[0]?.id) setSelectedId(rows[0].id);
-  }, [rows, selectedId, creating]);
+    if (detailId) setSelectedId(detailId);
+  }, [detailId]);
 
   const selectRow = (id: string) => {
     setCreating(false);
     setSelectedId(id);
   };
   const newDocument = () => {
-    setCreating(true);
-    setSelectedId(null);
+    nav({ to: `${window.location.pathname.replace(/\/$/, "")}/new` as never });
   };
 
   return (
@@ -111,7 +116,7 @@ export function DocumentViewWindow({
       </div>
 
       <Card className="flex min-h-0 flex-1 overflow-hidden p-0">
-        <aside className="flex w-[310px] shrink-0 flex-col border-r bg-background">
+        {detailId && <aside className="flex w-[310px] shrink-0 flex-col border-r bg-background">
           <div className="space-y-2 border-b p-3">
             <div className="relative">
               <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
@@ -167,7 +172,7 @@ export function DocumentViewWindow({
                 <button
                   key={row.id}
                   type="button"
-                  onClick={() => selectRow(row.id)}
+                  onClick={() => nav({ to: `${window.location.pathname.replace(/\/[^/]+$/, "")}/${row.id}` as never })}
                   className={`w-full border-b px-3 py-3 text-left transition-colors hover:bg-muted/40 ${active ? "bg-muted/60" : ""}`}
                 >
                   <div className="flex items-center justify-between gap-2">
@@ -227,10 +232,27 @@ export function DocumentViewWindow({
               </Button>
             </div>
           </div>
-        </aside>
+        </aside>}
 
         <main className="min-w-0 flex-1 overflow-y-auto bg-muted/10">
-          {creating ? (
+          {!detailId ? (
+            <div className="h-full overflow-y-auto p-3 md:p-4">
+              <div className="mb-3 flex items-center gap-3">
+                <div className="relative min-w-0 flex-1">
+                  <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                  <Input className="h-9 pl-8 text-sm" placeholder={`Search ${searchColumn}…`} value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} />
+                </div>
+                {filters.map((f) => (
+                  <Select key={f.key} value={filterValues[f.key] ?? "all"} onValueChange={(v) => { setFilterValues((p) => ({ ...p, [f.key]: v })); setPage(1); }}>
+                    <SelectTrigger className="h-9 w-36 text-xs"><SelectValue placeholder={f.label} /></SelectTrigger>
+                    <SelectContent><SelectItem value="all">All {f.label}</SelectItem>{f.options.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}</SelectContent>
+                  </Select>
+                ))}
+              </div>
+              {isLoading ? <div className="flex justify-center p-10"><Loader2 className="h-4 w-4 animate-spin text-muted-foreground" /></div> : rows.length === 0 ? <div className="rounded-lg border border-dashed p-10 text-center text-sm text-muted-foreground">No documents found.</div> : <div className="divide-y rounded-lg border bg-background">{rows.map((row: any) => <button key={row.id} type="button" onClick={() => nav({ to: `${window.location.pathname.replace(/\/$/, "")}/${row.id}` as never })} className="flex w-full items-center justify-between gap-4 px-4 py-3 text-left transition-colors hover:bg-muted/40"><span className="min-w-0 flex-1"><span className="block truncate text-sm font-medium">{row.number || "Untitled"}</span><span className="block truncate text-xs text-muted-foreground">{row.customer_name || customerNames[row.customer_id] || row.customer_id || "No customer"}</span></span><span className="shrink-0 text-right"><span className="block font-mono text-sm">{money(row.grand_total ?? row.amount, row.currency)}</span><span className="block text-[11px] text-muted-foreground">{row.date ? new Date(row.date).toLocaleDateString() : "—"}</span></span><Badge variant="outline" className={`border-0 text-[10px] ${statusVariant[row.status] ?? "text-muted-foreground"}`}>{row.status ?? "Draft"}</Badge></button>)}</div>}
+              <div className="mt-3 flex items-center justify-between text-[11px] text-muted-foreground"><span>Page {page} · {total}</span><div className="flex gap-1"><Button variant="outline" size="sm" className="h-7 px-2" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>‹</Button><Button variant="outline" size="sm" className="h-7 px-2" disabled={page * pageSize >= total} onClick={() => setPage((p) => p + 1)}>›</Button></div></div>
+            </div>
+          ) : creating ? (
             <DocViewPanel
               kind={kind}
               id="new"
@@ -242,7 +264,7 @@ export function DocumentViewWindow({
               }}
             />
           ) : selectedId ? (
-            <DocViewPanel key={selectedId} kind={kind} id={selectedId} embedded onClose={() => setSelectedId(null)} />
+            renderDetail ? renderDetail(selectedId) : <DocViewPanel key={selectedId} kind={kind} id={selectedId} embedded onClose={() => nav({ to: `/sales/${kind === "order" ? "orders" : kind === "invoice" ? "invoices" : "quotes"}` as never })} />
           ) : (
             <div className="flex h-full items-center justify-center p-8 text-sm text-muted-foreground">
               Select a document from the list.

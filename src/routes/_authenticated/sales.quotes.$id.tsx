@@ -1,5 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { DocViewPanel } from "@/components/doc-view-panel";
+import { DocumentViewWindow } from "@/components/document-view-window";
 import { QuoteViewPage } from "@/components/quote-view-page";
 
 export const Route = createFileRoute("/_authenticated/sales/quotes/$id")({
@@ -19,7 +20,16 @@ function QuoteDetailPage() {
           onSaved={(newId) => nav({ to: "/sales/quotes/$id" as any, params: { id: newId } as any })}
         />
       ) : (
-        <QuoteViewPage id={id} />
+        <DocumentViewWindow
+          kind="quote"
+          title="Quotes"
+          description="Prepare and send price quotes to customers."
+          table="sales_quotes"
+          fields={[]}
+          searchColumn="number"
+          detailId={id}
+          renderDetail={() => <QuoteViewPage id={id} />}
+        />
       )}
     </div>
   );

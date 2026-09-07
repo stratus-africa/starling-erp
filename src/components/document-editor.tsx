@@ -69,6 +69,7 @@ import {
   type EligibleOrder,
 } from "@/hooks/use-source-documents";
 import { SourceDocumentSuggestionBanner } from "@/components/sales/source-document-suggestion-banner";
+import { AttachmentsPanel } from "@/components/attachments-panel";
 
 export type DocKind = "quote" | "order" | "invoice" | "po" | "bill" | "credit_note" | "requisition";
 
@@ -809,7 +810,12 @@ export function DocumentEditor({
         await updateRow(cfg.table, id, headerPayload as TablesUpdate<typeof cfg.table>);
       }
 
-      await updateRow(cfg.lines, docId!, { deleted_at: new Date().toISOString() });
+      const { error: deleteLinesError } = await db
+        .from(cfg.lines)
+        .update({ deleted_at: new Date().toISOString() })
+        .eq("document_id", docId!)
+        .is("deleted_at", null);
+      if (deleteLinesError) throw deleteLinesError;
       if (lines.length) {
         const linePayload = lines.map((l, i) => ({
           tenant_id: tenant.id,
@@ -1317,7 +1323,7 @@ export function DocumentEditor({
 
         <div
           className={
-            kind === "quote" || kind === "order"
+            kind === "quote" || kind === "order" || kind === "invoice"
               ? "grid min-w-0 gap-4 lg:grid-cols-[minmax(0,1fr)_240px]"
               : "min-w-0"
           }
@@ -1330,7 +1336,8 @@ export function DocumentEditor({
                   value={header.number ?? ""}
                   onChange={(e) => setHeader({ ...header, number: e.target.value })}
                   placeholder="Auto"
-                  disabled={!canWrite}
+                  readOnly={kind === "invoice" && !isNew}
+                  disabled={!canWrite || (kind === "invoice" && !isNew)}
                 />
               </div>
               {/* Requisitions do NOT show a supplier — that is selected at PO conversion time */}
@@ -1876,6 +1883,24 @@ export function DocumentEditor({
                     Complete the form to create a new {kind}.
                   </p>
                 </div>
+              </Card>
+            </aside>
+          )}
+          {kind === "invoice" && (
+            <aside className="hidden space-y-4 lg:block">
+              <Card className="p-4">
+                <p className="mb-3 text-sm font-semibold">Attachments</p>
+                {isNew ? (
+                  <p className="text-xs text-muted-foreground">Save the invoice before adding documents.</p>
+                ) : (
+                  <AttachmentsPanel entityType="invoice" entityId={id} />
+                )}
+              </Card>
+              <Card className="p-4">
+                <p className="text-sm font-semibold">Notes</p>
+                <p className="mt-2 text-xs leading-5 text-muted-foreground">
+                  Notes are maintained in the invoice details section and included in the document.
+                </p>
               </Card>
             </aside>
           )}
