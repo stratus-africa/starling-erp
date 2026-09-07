@@ -11,17 +11,26 @@ const Ctx = createContext<ThemeCtx | null>(null);
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setTheme] = useState<Theme>("light");
 
+  const applyTheme = (nextTheme: Theme) => {
+    const root = document.documentElement;
+    root.classList.toggle("dark", nextTheme === "dark");
+    root.classList.toggle("nimbus", nextTheme === "nimbus");
+    if (typeof window !== "undefined") {
+      localStorage.setItem("erp-theme", nextTheme);
+    }
+  };
+
   useEffect(() => {
     const stored = (typeof window !== "undefined" &&
       localStorage.getItem("erp-theme")) as Theme | null;
-    if (stored === "nimbus" || stored === "dark" || stored === "light") setTheme(stored);
+    if (stored === "nimbus" || stored === "dark" || stored === "light") {
+      setTheme(stored);
+      return;
+    }
   }, []);
 
   useEffect(() => {
-    const root = document.documentElement;
-    root.classList.toggle("dark", theme === "dark");
-    root.classList.toggle("nimbus", theme === "nimbus");
-    localStorage.setItem("erp-theme", theme);
+    applyTheme(theme);
   }, [theme]);
 
   return (

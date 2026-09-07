@@ -6,17 +6,28 @@ import { customerFields } from "@/lib/module-field-definitions";
 export const Route = createFileRoute("/_authenticated/crm/customers/$id")({
   component: () => {
     const { id } = Route.useParams();
-    return id === "new" ? (
-      <CustomerCreateEditWindow
-        id="new"
-        fields={customerFields}
-        onOpenChange={(open) => {
-          if (!open) window.history.back();
-        }}
-        onSaved={(newId) => window.history.replaceState({}, "", `/crm/customers/${newId}`)}
-      />
-    ) : (
-      <Party360Page id={id} kind="customer" fields={customerFields} />
-    );
+    const params = new URLSearchParams(window.location.search);
+    const editOnly = params.get("edit") === "1" || params.get("edit") === "true";
+
+    if (id === "new" || editOnly) {
+      return (
+        <CustomerCreateEditWindow
+          id={id === "new" ? "new" : id}
+          fields={customerFields}
+          onOpenChange={(open) => {
+            if (!open) {
+              if (id === "new") window.history.back();
+              else window.history.pushState({}, "", `${window.location.pathname}`);
+            }
+          }}
+          onSaved={(newId) => {
+            if (id === "new") window.history.replaceState({}, "", `/crm/customers/${newId}`);
+            else window.history.replaceState({}, "", `${window.location.pathname}`);
+          }}
+        />
+      );
+    }
+
+    return <Party360Page id={id} kind="customer" fields={customerFields} />;
   },
 });

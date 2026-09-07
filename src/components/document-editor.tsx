@@ -832,6 +832,7 @@ export function DocumentEditor({
       toast.success("Saved");
       qc.invalidateQueries({ queryKey: [cfg.table] });
       qc.invalidateQueries({ queryKey: [cfg.lines] });
+      qc.invalidateQueries({ queryKey: ["dashboard", "sales"] });
       if (createAnother && (isOrderKind || kind === "quote")) {
         setHeader({
           number: "",
@@ -881,6 +882,7 @@ export function DocumentEditor({
     },
     onSuccess: (newId, rpc) => {
       qc.invalidateQueries();
+      qc.invalidateQueries({ queryKey: ["dashboard", "sales"] });
       if (rpc === "convert_quote_to_order") {
         toast.success("Converted to order");
         nav({ to: `/sales/orders/${newId}` as never });
@@ -925,6 +927,7 @@ export function DocumentEditor({
       setHeader((h) => ({ ...h, status: "Voided" }));
       toast.success(`${cfg.label} voided and reversed`);
       qc.invalidateQueries();
+      qc.invalidateQueries({ queryKey: ["dashboard", "sales"] });
     },
     onError: (e: Error) => toast.error(e.message ?? "Void failed"),
   });

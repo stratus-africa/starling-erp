@@ -182,13 +182,13 @@ export function CompanyBrandingCard({ data, onChange, tenantId, disabled }: Prop
                 <SelectValue placeholder="Select theme" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="nimbus">NimbusERP</SelectItem>
+                <SelectItem value="nimbus">Nimbus</SelectItem>
                 <SelectItem value="light">Light</SelectItem>
                 <SelectItem value="dark">Dark</SelectItem>
               </SelectContent>
             </Select>
             <p className="text-xs leading-5 text-muted-foreground">
-              NimbusERP uses light blue-gray surfaces, navy text, blue actions, and restrained
+              Nimbus uses light blue-gray surfaces, navy text, blue actions, and restrained
               semantic states for operational work.
             </p>
           </CardContent>
