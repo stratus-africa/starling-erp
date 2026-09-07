@@ -2,6 +2,7 @@ import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
+import { formatBaseCurrency } from "@/lib/currency";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
@@ -17,11 +18,9 @@ const db = supabase as any;
 
 function isoDate(d: Date) { return d.toISOString().slice(0, 10); }
 
-const money = (v: number | null | undefined) =>
+const money = (v: number | null | undefined, currency: string) =>
   v == null ? "—"
-  : (v < 0 ? "(" : "") +
-    Math.abs(v).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) +
-    (v < 0 ? ")" : "");
+  : (v < 0 ? "(" : "") + formatBaseCurrency(Math.abs(v), currency, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + (v < 0 ? ")" : "");
 
 const dateFmt = (v: string) =>
   new Date(v + "T00:00:00").toLocaleDateString(undefined, { day: "2-digit", month: "short", year: "numeric" });
@@ -125,6 +124,7 @@ function exportCsv(lines: TaxLine[], outputTotal: number, inputTotal: number, ne
 
 export function TaxReportPage() {
   const { tenant } = useAuth();
+  const currency = tenant?.currency ?? "KES";
 
   const now = new Date();
   const [preset,     setPreset]     = useState<Preset>("this_month");
@@ -305,7 +305,7 @@ export function TaxReportPage() {
                 <TrendingUp className="h-3.5 w-3.5 text-red-500" /> Output VAT
               </div>
               <p className="font-mono text-xl font-bold tabular-nums text-red-600 dark:text-red-400">
-                {money(outputTotal)}
+                {money(outputTotal, currency)}
               </p>
               <p className="text-xs text-muted-foreground">
                 {vatAccounts?.outputName ?? "2100 Output VAT"} · collected from customers
@@ -317,7 +317,7 @@ export function TaxReportPage() {
                 <TrendingDown className="h-3.5 w-3.5 text-blue-500" /> Input VAT
               </div>
               <p className="font-mono text-xl font-bold tabular-nums text-blue-600 dark:text-blue-400">
-                {money(inputTotal)}
+                {money(inputTotal, currency)}
               </p>
               <p className="text-xs text-muted-foreground">
                 {vatAccounts?.inputName ?? "1150 Input VAT"} · paid on purchases
@@ -339,7 +339,7 @@ export function TaxReportPage() {
                 : netVatPayable < 0 ? "text-emerald-700 dark:text-emerald-400"
                 : "text-muted-foreground"
               }`}>
-                {money(netVatPayable)}
+                {money(netVatPayable, currency)}
               </p>
               <p className="text-xs text-muted-foreground">
                 {netVatPayable > 0
@@ -366,14 +366,14 @@ export function TaxReportPage() {
           {allLines.length > 0 && (
             <div className="flex items-center gap-2 text-xs rounded-md border bg-muted/20 px-4 py-2.5">
               <span className="text-muted-foreground">Output VAT</span>
-              <span className="font-mono font-semibold">{money(outputTotal)}</span>
+              <span className="font-mono font-semibold">{money(outputTotal, currency)}</span>
               <span className="text-muted-foreground">−</span>
               <span className="text-muted-foreground">Input VAT</span>
-              <span className="font-mono font-semibold">{money(inputTotal)}</span>
+              <span className="font-mono font-semibold">{money(inputTotal, currency)}</span>
               <span className="text-muted-foreground">=</span>
               <span className="text-muted-foreground">Net VAT Payable</span>
               <span className={`font-mono font-bold ${netVatPayable > 0 ? "text-amber-700 dark:text-amber-400" : "text-emerald-700 dark:text-emerald-400"}`}>
-                {money(netVatPayable)}
+                {money(netVatPayable, currency)}
               </span>
             </div>
           )}
@@ -393,7 +393,7 @@ export function TaxReportPage() {
                 </span>
                 <span className="text-[10px] text-muted-foreground">({outputLines.length} entries)</span>
               </div>
-              <span className="font-mono text-sm font-semibold text-red-600 dark:text-red-400">{money(outputTotal)}</span>
+              <span className="font-mono text-sm font-semibold text-red-600 dark:text-red-400">{money(outputTotal, currency)}</span>
             </button>
 
             {showOutput && (
@@ -414,7 +414,7 @@ export function TaxReportPage() {
                 </span>
                 <span className="text-[10px] text-muted-foreground">({inputLines.length} entries)</span>
               </div>
-              <span className="font-mono text-sm font-semibold text-blue-600 dark:text-blue-400">{money(inputTotal)}</span>
+              <span className="font-mono text-sm font-semibold text-blue-600 dark:text-blue-400">{money(inputTotal, currency)}</span>
             </button>
 
             {showInput && (
@@ -462,15 +462,15 @@ function VatLinesTable({ lines, sourceLabels }: { lines: TaxLine[]; sourceLabels
                 </span>
               </td>
               <td className="px-3 py-2 text-right font-mono tabular-nums">
-                {l.debit > 0 ? money(l.debit) : <span className="text-muted-foreground/30">—</span>}
+                {l.debit > 0 ? money(l.debit, currency) : <span className="text-muted-foreground/30">—</span>}
               </td>
               <td className="px-3 py-2 text-right font-mono tabular-nums">
-                {l.credit > 0 ? money(l.credit) : <span className="text-muted-foreground/30">—</span>}
+                {l.credit > 0 ? money(l.credit, currency) : <span className="text-muted-foreground/30">—</span>}
               </td>
               <td className={`px-3 py-2 text-right font-mono tabular-nums font-medium ${
                 l.net < 0 ? "text-emerald-600 dark:text-emerald-400" : ""
               }`}>
-                {money(l.net)}
+                {money(l.net, currency)}
               </td>
             </tr>
           ))}
@@ -479,7 +479,7 @@ function VatLinesTable({ lines, sourceLabels }: { lines: TaxLine[]; sourceLabels
           <tr className="border-t bg-muted/30">
             <td colSpan={6} className="px-3 py-2 text-right text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Total</td>
             <td className="px-3 py-2 text-right font-mono font-bold tabular-nums">
-              {money(lines.reduce((s, l) => s + l.net, 0))}
+              {money(lines.reduce((s, l) => s + l.net, 0), currency)}
             </td>
           </tr>
         </tfoot>

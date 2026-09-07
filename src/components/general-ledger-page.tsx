@@ -2,6 +2,7 @@ import { useState, useMemo, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
+import { formatBaseCurrency } from "@/lib/currency";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -119,19 +120,13 @@ interface Filters {
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-const money = (v: number) =>
+const money = (v: number, currency: string) =>
   v === 0
     ? "—"
-    : Math.abs(v).toLocaleString("en-US", {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-      });
+    : formatBaseCurrency(Math.abs(v), currency, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-const balanceFmt = (v: number) =>
-  v.toLocaleString("en-US", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
+const balanceFmt = (v: number, currency: string) =>
+  formatBaseCurrency(v, currency, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 const dateFmt = (v: string) =>
   new Date(v).toLocaleDateString(undefined, {
@@ -449,14 +444,14 @@ function SummaryStrip({ rows }: { rows: LedgerRow[] }) {
         <TrendingUp className="h-3.5 w-3.5 text-blue-500" />
         <span className="text-muted-foreground">Total Debits</span>
         <span className="font-mono font-semibold tabular-nums">
-          {totalDebit.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          {formatBaseCurrency(totalDebit, currency, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
         </span>
       </div>
       <div className="flex items-center gap-1.5">
         <TrendingDown className="h-3.5 w-3.5 text-emerald-500" />
         <span className="text-muted-foreground">Total Credits</span>
         <span className="font-mono font-semibold tabular-nums">
-          {totalCredit.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          {formatBaseCurrency(totalCredit, currency, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
         </span>
       </div>
       <div className="flex items-center gap-1.5">
@@ -471,7 +466,7 @@ function SummaryStrip({ rows }: { rows: LedgerRow[] }) {
               : "text-muted-foreground"
           }`}
         >
-          {netBalance.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          {formatBaseCurrency(netBalance, currency, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
         </span>
       </div>
       <span className="ml-auto text-muted-foreground">
@@ -485,6 +480,7 @@ function SummaryStrip({ rows }: { rows: LedgerRow[] }) {
 
 export function GeneralLedgerPage() {
   const { tenant } = useAuth();
+  const currency = tenant?.currency ?? "KES";
 
   const [filters,     setFilters]     = useState<Filters>(emptyFilters);
   const [pendingFilters, setPending]  = useState<Filters>(emptyFilters);
@@ -1002,7 +998,7 @@ function renderRows(
         <td className="px-4 py-2 text-right whitespace-nowrap">
           {r.debit > 0 ? (
             <span className="font-mono text-xs tabular-nums font-medium text-blue-700 dark:text-blue-300">
-              {money(r.debit)}
+              {money(r.debit, currency)}
             </span>
           ) : (
             <span className="text-muted-foreground/30 text-xs">—</span>
@@ -1013,7 +1009,7 @@ function renderRows(
         <td className="px-4 py-2 text-right whitespace-nowrap">
           {r.credit > 0 ? (
             <span className="font-mono text-xs tabular-nums font-medium text-emerald-700 dark:text-emerald-300">
-              {money(r.credit)}
+              {money(r.credit, currency)}
             </span>
           ) : (
             <span className="text-muted-foreground/30 text-xs">—</span>
@@ -1031,7 +1027,7 @@ function renderRows(
                 : "text-emerald-700 dark:text-emerald-300"
             }`}
           >
-            {r.running_balance != null ? balanceFmt(Math.abs(balVal)) : "—"}
+            {r.running_balance != null ? balanceFmt(Math.abs(balVal), currency) : "—"}
             {r.running_balance != null && balVal !== 0 && (
               <span className="ml-1 text-[10px] font-normal opacity-60">
                 {balPos ? "Dr" : "Cr"}

@@ -21,6 +21,7 @@ import {
   Wallet2,
 } from "lucide-react";
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { formatBaseCurrency, formatCompactBaseCurrency } from "@/lib/currency";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -33,8 +34,6 @@ const fmtK = (v: number) => {
   if (abs >= 1_000) return `${sign}${(abs / 1_000).toFixed(0)}K`;
   return `${sign}${abs.toFixed(0)}`;
 };
-
-const fmtMoney = (v: number) => v.toLocaleString("en-KE", { minimumFractionDigits: 0, maximumFractionDigits: 0 });
 
 const dateFmt = (v: string) =>
   new Date(v + "T00:00:00").toLocaleDateString(undefined, { day: "2-digit", month: "short" });
@@ -75,7 +74,7 @@ const SOURCE_LABELS: Record<string, string> = {
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
-function KpiCard({ label, value, href, configKey }: { label: string; value: number; href: string; configKey: string }) {
+function KpiCard({ label, value, href, configKey, currency }: { label: string; value: number; href: string; configKey: string; currency: string }) {
   const cfg = KPI_CONFIG[configKey] ?? KPI_CONFIG.cash;
   const Icon = cfg.icon;
   const isProfit = configKey === "net_profit";
@@ -94,7 +93,7 @@ function KpiCard({ label, value, href, configKey }: { label: string; value: numb
           <Icon className={`h-3.5 w-3.5 ${cfg.color}`} />
         </div>
       </div>
-      <p className={`font-mono text-xl font-bold tabular-nums ${valueColor}`}>KES {fmtK(value)}</p>
+      <p className={`font-mono text-xl font-bold tabular-nums ${valueColor}`}>{formatCompactBaseCurrency(value, currency)}</p>
       <Link to={href as never} className="mt-2 inline-flex items-center gap-1 text-[11px] text-primary hover:underline">
         View details <ArrowRight className="h-3 w-3" />
       </Link>
@@ -106,6 +105,7 @@ function KpiCard({ label, value, href, configKey }: { label: string; value: numb
 
 export function AccountingDashboard() {
   const { tenant } = useAuth();
+  const currency = tenant?.currency ?? "KES";
   const tid = tenant?.id;
   const yrStart = `${new Date().getFullYear()}-01-01`;
   const today = new Date().toISOString().slice(0, 10);
@@ -426,7 +426,7 @@ export function AccountingDashboard() {
       <div className="space-y-2">
         <div className="flex justify-between text-xs font-semibold">
           <span>{label}</span>
-          <span className="font-mono">KES {fmtK(total)}</span>
+          <span className="font-mono">{formatCompactBaseCurrency(total, currency)}</span>
         </div>
         {total > 0 && (
           <div className="flex h-2.5 rounded-full overflow-hidden gap-px">
@@ -436,7 +436,7 @@ export function AccountingDashboard() {
                   <div
                     key={i}
                     style={{ width: `${(v / total) * 100}%`, background: aging_colors[i] }}
-                    title={`${aging_labels[i]}: KES ${fmtMoney(v)}`}
+                    title={`${aging_labels[i]}: ${formatBaseCurrency(v, currency)}`}
                   />
                 ),
             )}
@@ -449,7 +449,7 @@ export function AccountingDashboard() {
                 <span className="h-2 w-2 rounded-full shrink-0" style={{ background: aging_colors[i] }} />
                 {aging_labels[i]}
               </span>
-              <span className="font-mono tabular-nums">{v > 0 ? `KES ${fmtK(v)}` : "—"}</span>
+              <span className="font-mono tabular-nums">{v > 0 ? formatCompactBaseCurrency(v, currency) : "—"}</span>
             </div>
           ))}
         </div>
@@ -489,7 +489,7 @@ export function AccountingDashboard() {
       {/* KPIs */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7">
         {kpis.map((k) => (
-          <KpiCard key={k.configKey} {...k} />
+          <KpiCard key={k.configKey} {...k} currency={currency} />
         ))}
       </div>
 
@@ -552,7 +552,7 @@ export function AccountingDashboard() {
                   stroke="var(--muted-foreground)"
                   tickFormatter={fmtK}
                 />
-                <Tooltip {...tooltipStyle} formatter={(v: number) => [`KES ${fmtMoney(v)}`, "Revenue"]} />
+                <Tooltip {...tooltipStyle} formatter={(v: number) => [formatBaseCurrency(v, currency), "Revenue"]} />
                 <Bar dataKey="rev" fill="#22c55e" radius={[3, 3, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
@@ -578,7 +578,7 @@ export function AccountingDashboard() {
                 className={`flex justify-between text-sm ${row.bold ? "border-t pt-3 font-semibold" : ""}`}
               >
                 <span className="text-muted-foreground">{row.label}</span>
-                <span className={`font-mono tabular-nums ${row.color}`}>KES {fmtK(row.value)}</span>
+                <span className={`font-mono tabular-nums ${row.color}`}>{formatCompactBaseCurrency(row.value, currency)}</span>
               </div>
             ))}
           </div>
@@ -654,7 +654,7 @@ export function AccountingDashboard() {
                         {SOURCE_LABELS[j.source_ref_type ?? ""] ?? j.source_ref_type ?? "manual"}
                       </span>
                     </td>
-                    <td className="py-2 text-right font-mono tabular-nums font-medium">KES {fmtK(j.total_debit)}</td>
+                    <td className="py-2 text-right font-mono tabular-nums font-medium">{formatCompactBaseCurrency(j.total_debit, currency)}</td>
                   </tr>
                 ))}
               </tbody>

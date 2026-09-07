@@ -2,6 +2,7 @@ import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
+import { currencySymbol } from "@/lib/currency";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -134,21 +135,22 @@ const PRESET_LABELS: Record<Preset, string> = {
 const db = supabase as any;
 
 /** Format a monetary amount, parentheses for negative (cost convention). */
-function fmtAmt(v: number, parenthesesForNegative = false): string {
+function fmtAmt(v: number, currency: string, parenthesesForNegative = false): string {
   if (v === 0) return "—";
   const abs = Math.abs(v).toLocaleString("en-US", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   });
-  if (parenthesesForNegative && v < 0) return `(${abs})`;
-  return v < 0 ? `(${abs})` : abs;
+  const value = `${currencySymbol(currency)} ${abs}`;
+  if (parenthesesForNegative && v < 0) return `(${value})`;
+  return v < 0 ? `(${value})` : value;
 }
 
-function fmtTotal(v: number): string {
-  return Math.abs(v).toLocaleString("en-US", {
+function fmtTotal(v: number, currency: string): string {
+  return `${currencySymbol(currency)} ${Math.abs(v).toLocaleString("en-US", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
-  });
+  })}`;
 }
 
 function periodLabel(range: DateRange): string {
@@ -195,6 +197,7 @@ function exportCsv(sections: Section[], range: DateRange) {
 
 export function ProfitLossPage() {
   const { tenant } = useAuth();
+  const currency = tenant?.currency ?? "KES";
 
   const [preset,     setPreset]     = useState<Preset>("this_month");
   const [customFrom, setCustomFrom] = useState(isoDate(new Date(new Date().getFullYear(), new Date().getMonth(), 1)));
@@ -647,7 +650,7 @@ function ReportSection({
             {/* Amount */}
             <span className={`font-mono text-base font-bold tabular-nums ${totalColor}`}>
               {section.total < 0 ? "(" : ""}
-              {fmtTotal(section.total)}
+              {fmtTotal(section.total, currency)}
               {section.total < 0 ? ")" : ""}
             </span>
           </div>
@@ -686,7 +689,7 @@ function ReportSection({
         {collapsed && (
           <span className={`font-mono text-xs tabular-nums font-medium ${totalColor}`}>
             {section.total < 0 ? "(" : ""}
-            {fmtTotal(section.total)}
+            {fmtTotal(section.total, currency)}
             {section.total < 0 ? ")" : ""}
           </span>
         )}
@@ -722,10 +725,10 @@ function ReportSection({
                     }`}
                   >
                     {line.amount < 0
-                      ? `(${fmtTotal(Math.abs(line.amount))})`
+                      ? `(${fmtTotal(Math.abs(line.amount), currency)})`
                       : line.amount === 0
                       ? "—"
-                      : fmtTotal(line.amount)}
+                      : fmtTotal(line.amount, currency)}
                   </span>
                 </div>
               ))}
@@ -741,7 +744,7 @@ function ReportSection({
               </span>
               <span className={`font-mono text-sm font-semibold tabular-nums ${totalColor}`}>
                 {section.total < 0 ? "(" : ""}
-                {fmtTotal(section.total)}
+                {fmtTotal(section.total, currency)}
                 {section.total < 0 ? ")" : ""}
               </span>
             </div>

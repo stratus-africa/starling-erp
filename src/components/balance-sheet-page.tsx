@@ -2,6 +2,7 @@ import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
+import { formatBaseCurrency } from "@/lib/currency";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -73,14 +74,11 @@ const db = supabase as any;
 
 function isoDate(d: Date) { return d.toISOString().slice(0, 10); }
 
-const fmtMoney = (v: number): string =>
-  Math.abs(v).toLocaleString("en-US", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
+const fmtMoney = (v: number, currency: string): string =>
+  formatBaseCurrency(Math.abs(v), currency, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-const fmtSigned = (v: number): string =>
-  v < 0 ? `(${fmtMoney(v)})` : v === 0 ? "—" : fmtMoney(v);
+const fmtSigned = (v: number, currency: string): string =>
+  v < 0 ? `(${fmtMoney(v, currency)})` : v === 0 ? "—" : fmtMoney(v, currency);
 
 function longDate(iso: string): string {
   return new Date(iso + "T00:00:00").toLocaleDateString(undefined, {
@@ -277,6 +275,7 @@ function buildSections(
 
 export function BalanceSheetPage() {
   const { tenant } = useAuth();
+  const currency = tenant?.currency ?? "KES";
 
   const todayIso = isoDate(new Date());
   const yearStart = `${new Date().getFullYear()}-01-01`;
@@ -475,9 +474,9 @@ export function BalanceSheetPage() {
             <AlertCircle className="h-4 w-4 shrink-0" />
             <AlertDescription className="text-xs">
               <span className="font-semibold">Balance sheet is out of balance.</span>{" "}
-              Total Assets ({fmtMoney(totalAssets)}) ≠ Total Liabilities + Equity (
-              {fmtMoney(totalLE)}). Difference:{" "}
-              <span className="font-mono font-semibold">{fmtMoney(imbalance)}</span>.
+              Total Assets ({fmtMoney(totalAssets, currency)}) ≠ Total Liabilities + Equity (
+              {fmtMoney(totalLE, currency)}). Difference:{" "}
+              <span className="font-mono font-semibold">{fmtMoney(imbalance, currency)}</span>.
               Check for unposted entries or missing equity accounts.
             </AlertDescription>
           </Alert>
@@ -536,16 +535,16 @@ export function BalanceSheetPage() {
                     <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
                     <span>
                       <span className="font-semibold">Balanced.</span>{" "}
-                      Assets ({fmtMoney(totalAssets)}) = Liabilities ({fmtMoney(totalLiabilities)})
-                      + Equity ({fmtMoney(totalEquity)}).
+                      Assets ({fmtMoney(totalAssets, currency)}) = Liabilities ({fmtMoney(totalLiabilities, currency)})
+                      + Equity ({fmtMoney(totalEquity, currency)}).
                     </span>
                   </>
                 ) : (
                   <>
                     <AlertCircle className="h-3.5 w-3.5 shrink-0" />
                     <span>
-                      <span className="font-semibold">Out of balance by {fmtMoney(imbalance)}.</span>{" "}
-                      Assets ({fmtMoney(totalAssets)}) ≠ L + E ({fmtMoney(totalLE)}).
+                      <span className="font-semibold">Out of balance by {fmtMoney(imbalance, currency)}.</span>{" "}
+                      Assets ({fmtMoney(totalAssets, currency)}) ≠ L + E ({fmtMoney(totalLE, currency)}).
                     </span>
                   </>
                 )}
@@ -609,7 +608,7 @@ function KpiCard({
       </p>
       <p className={`font-mono font-bold tabular-nums ${large ? "text-xl" : "text-base"} ${colorCls[color]}`}>
         {value < 0 ? "(" : ""}
-        {fmtMoney(Math.abs(value))}
+        {fmtMoney(Math.abs(value), currency)}
         {value < 0 ? ")" : ""}
       </p>
     </div>
@@ -662,7 +661,7 @@ function BsSection({
               isGrandTotal ? "text-base" : "text-sm"
             }`}
           >
-            {fmtSigned(section.total)}
+            {fmtSigned(section.total, currency)}
           </span>
         </div>
         {/* Double underline only on grand total */}
@@ -708,7 +707,7 @@ function BsSection({
         </div>
         {collapsed && (
           <span className="font-mono text-xs tabular-nums font-medium text-muted-foreground">
-            {fmtSigned(section.total)}
+            {fmtSigned(section.total, currency)}
           </span>
         )}
       </button>
@@ -754,8 +753,8 @@ function BsSection({
                     {line.amount === 0
                       ? "—"
                       : line.amount < 0
-                      ? `(${fmtMoney(Math.abs(line.amount))})`
-                      : fmtMoney(line.amount)}
+                      ? `(${fmtMoney(Math.abs(line.amount), currency)})`
+                      : fmtMoney(line.amount, currency)}
                   </span>
                 </div>
               ))}
@@ -770,7 +769,7 @@ function BsSection({
                 {section.totalLabel}
               </span>
               <span className="font-mono text-sm font-semibold tabular-nums">
-                {fmtSigned(section.total)}
+                {fmtSigned(section.total, currency)}
               </span>
             </div>
           </div>

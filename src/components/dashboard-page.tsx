@@ -13,6 +13,7 @@ import { Link } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 import { useExecutiveDashboard } from "@/hooks/use-executive-dashboard";
 import { useAuth } from "@/hooks/use-auth";
+import { formatBaseCurrency } from "@/lib/currency";
 
 const revenue = [
   { m: "Jan", rev: 214, exp: 148 }, { m: "Feb", rev: 232, exp: 152 },
@@ -65,8 +66,7 @@ const tooltipStyle = {
 export function DashboardPage() {
   const { tenant } = useAuth();
   const { data } = useExecutiveDashboard();
-  const currency = tenant?.currency_symbol ?? tenant?.currency ?? "KES";
-  const money = (value: number) => `${currency} ${value.toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
+  const money = (value: number) => formatBaseCurrency(value, tenant?.currency);
 
   return (
     <div className="flex flex-col gap-4 p-4 md:p-6">
@@ -98,7 +98,7 @@ export function DashboardPage() {
           <div className="flex items-center justify-between mb-3">
             <div>
               <h3 className="text-sm font-semibold">Revenue vs Expenses</h3>
-              <p className="text-xs text-muted-foreground">Last 7 months · thousands (USD)</p>
+              <p className="text-xs text-muted-foreground">Last 7 months · thousands ({tenant?.currency ?? "KES"})</p>
             </div>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </div>
@@ -209,7 +209,7 @@ export function DashboardPage() {
         <Card className="p-4 border shadow-sm">
           <div className="mb-3">
             <h3 className="text-sm font-semibold">Cashflow Trend</h3>
-            <p className="text-xs text-muted-foreground">Net cash · thousands (USD)</p>
+            <p className="text-xs text-muted-foreground">Net cash · thousands ({tenant?.currency ?? "KES"})</p>
           </div>
           <div className="h-52">
             <ResponsiveContainer width="100%" height="100%">

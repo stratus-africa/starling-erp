@@ -2,6 +2,7 @@ import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
+import { formatBaseCurrency } from "@/lib/currency";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -81,13 +82,13 @@ const TYPE_BG: Record<string, string> = {
 // Helpers
 // ─────────────────────────────────────────────────────────────────────────────
 
-const fmt = (v: number) =>
+const fmt = (v: number, currency: string) =>
   v === 0
     ? "—"
-    : v.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    : formatBaseCurrency(v, currency, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-const fmtTotal = (v: number) =>
-  v.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const fmtTotal = (v: number, currency: string) =>
+  formatBaseCurrency(v, currency, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 const dateFmt = (iso: string) =>
   new Date(iso).toLocaleDateString(undefined, {
@@ -129,6 +130,7 @@ function exportCsv(lines: TrialBalanceLine[], asOf: string, totalDebit: number, 
 
 export function TrialBalancePage() {
   const { tenant } = useAuth();
+  const currency = tenant?.currency ?? "KES";
 
   // Default "as of" date = today
   const todayIso = new Date().toISOString().slice(0, 10);
@@ -428,10 +430,10 @@ export function TrialBalancePage() {
             <AlertCircle className="h-4 w-4 shrink-0" />
             <AlertDescription className="text-xs">
               <span className="font-semibold">Trial balance is out of balance.</span>{" "}
-              Total debits ({fmtTotal(totalDebit)}) ≠ total credits ({fmtTotal(totalCredit)}).
+              Total debits ({fmtTotal(totalDebit, currency)}) ≠ total credits ({fmtTotal(totalCredit, currency)}).
               Difference:{" "}
               <span className="font-mono font-semibold">
-                {fmtTotal(imbalance)}
+                {fmtTotal(imbalance, currency)}
               </span>
               . Review recent journal entries for unbalanced postings.
             </AlertDescription>
@@ -509,12 +511,12 @@ export function TrialBalancePage() {
                   <td />
                   <td className="px-6 pb-4 text-right">
                     <span className="font-mono text-sm font-bold tabular-nums">
-                      {fmtTotal(totalDebit)}
+                      {fmtTotal(totalDebit, currency)}
                     </span>
                   </td>
                   <td className="px-6 pb-4 text-right">
                     <span className="font-mono text-sm font-bold tabular-nums">
-                      {fmtTotal(totalCredit)}
+                      {fmtTotal(totalCredit, currency)}
                     </span>
                   </td>
                   <td className="px-4 pb-4">
@@ -526,7 +528,7 @@ export function TrialBalancePage() {
                     ) : (
                       <span className="inline-flex items-center gap-1 text-[11px] font-medium text-destructive">
                         <AlertCircle className="h-3.5 w-3.5" />
-                        Off by {fmtTotal(imbalance)}
+                        Off by {fmtTotal(imbalance, currency)}
                       </span>
                     )}
                   </td>
@@ -671,14 +673,14 @@ function TypeGroup({
         <td className="px-6 py-1.5 text-right">
           {groupDebit > 0 && (
             <span className="font-mono text-xs tabular-nums text-muted-foreground font-medium">
-              {fmtTotal(groupDebit)}
+              {fmtTotal(groupDebit, currency)}
             </span>
           )}
         </td>
         <td className="px-6 py-1.5 text-right">
           {groupCredit > 0 && (
             <span className="font-mono text-xs tabular-nums text-muted-foreground font-medium">
-              {fmtTotal(groupCredit)}
+              {fmtTotal(groupCredit, currency)}
             </span>
           )}
         </td>
