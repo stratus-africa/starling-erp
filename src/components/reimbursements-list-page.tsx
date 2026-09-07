@@ -1,0 +1,8 @@
+import { useQuery } from "@tanstack/react-query";
+import { db } from "@/lib/typed-db";
+import { Card } from "@/components/ui/card";
+
+export function ReimbursementsListPage() {
+  const { data: rows = [], isLoading } = useQuery({ queryKey: ["employee_reimbursements"], queryFn: async () => { const { data, error } = await db.from("employee_reimbursements").select("id,number,date,employee_id,currency,total,status,posted_at").is("deleted_at", null).order("date", { ascending: false }); if (error) throw error; return (data ?? []) as Record<string, any>[]; } });
+  return <div className="h-full overflow-auto bg-background p-6"><div className="mx-auto max-w-6xl space-y-5"><div><h1 className="text-xl font-semibold">Employee Reimbursements</h1><p className="text-sm text-muted-foreground">One payment can settle multiple posted expenses.</p></div><Card className="overflow-hidden"><table className="w-full text-sm"><thead className="bg-muted/50 text-left text-xs text-muted-foreground"><tr><th className="p-3">Number</th><th className="p-3">Date</th><th className="p-3">Employee</th><th className="p-3 text-right">Total</th><th className="p-3">Status</th></tr></thead><tbody>{isLoading ? <tr><td className="p-6 text-center" colSpan={5}>Loading...</td></tr> : rows.map((row) => <tr className="border-t" key={row.id}><td className="p-3 font-mono">{row.number ?? row.id.slice(0, 8)}</td><td className="p-3">{row.date}</td><td className="p-3">{row.employee_id}</td><td className="p-3 text-right font-mono">{row.currency} {Number(row.total ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</td><td className="p-3">{row.status}</td></tr>)}</tbody></table></Card></div></div>;
+}

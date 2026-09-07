@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { InvoicesListPage } from "@/components/invoices-list-page";
+import { SupplierBillListPage } from "@/components/supplier-bill-list-page";
 
 export const Route = createFileRoute("/_authenticated/purchasing/bills/")({
-  component: () => <InvoicesListPage kind="bill" />,
+  component: SupplierBillListPage,
 });

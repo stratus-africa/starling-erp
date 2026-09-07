@@ -180,7 +180,7 @@ function Activity({ rows }: { rows: Row[] }) {
 export function ExpensePage({ id }: { id: string }) {
   const nav = useNavigate();
   const qc = useQueryClient();
-  const { tenant, can } = useAuth();
+  const { tenant, user, can } = useAuth();
   const isNew = id === "new";
   const canWrite = can(["purchasing.create", "purchasing.update", "purchasing.post"]);
   const [editMode, setEditMode] = useState(isNew);
@@ -266,9 +266,31 @@ export function ExpensePage({ id }: { id: string }) {
         (key) => delete payload[key],
       );
       if (isNew) {
-        const { data, error } = await db.from("expenses").insert(payload).select("id").single();
+        const { data, error } = await db.rpc("create_expense", {
+          _date: values.date,
+          _amount: amount,
+          _tax_amount: taxAmount,
+          _total: total,
+          _currency: currency,
+          _category: values.category,
+          _account_id: values.account_id || null,
+          _employee_id: values.employee_id || user?.id || null,
+          _merchant: values.merchant || null,
+          _mode: values.mode || null,
+          _reference: values.reference || null,
+          _department: values.department || null,
+          _cost_center: values.cost_center || null,
+          _project: values.project || null,
+          _customer_job: values.customer_job || null,
+          _business_purpose: values.business_purpose || null,
+          _notes: values.notes || null,
+          _receipt_status: values.receipt_status || "Missing",
+          _receipt_required: Boolean(values.receipt_required),
+          _bank_account_id: values.bank_account_id || null,
+          _duplicate_override_reason: values.duplicate_override_reason || null,
+        });
         if (error) throw error;
-        return data.id;
+        return String(data);
       }
       const { error } = await db.from("expenses").update(payload).eq("id", id);
       if (error) throw error;
