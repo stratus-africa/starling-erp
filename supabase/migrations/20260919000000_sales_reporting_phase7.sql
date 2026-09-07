@@ -1,5 +1,7 @@
 -- Phase 7: database-aggregated Sales reporting.
 
+ALTER TABLE public.sales_orders ADD COLUMN IF NOT EXISTS promised_date date;
+
 CREATE OR REPLACE FUNCTION public.get_sales_by_customer(_date_from date, _date_to date, _customer_id uuid DEFAULT NULL, _salesperson_id uuid DEFAULT NULL, _currency text DEFAULT NULL, _limit integer DEFAULT 50, _offset integer DEFAULT 0)
 RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = public, pg_temp AS $$
 DECLARE v_tenant uuid := public.current_tenant_id(); v_currency text := NULLIF(upper(trim(_currency)), ''); v_rows jsonb;
@@ -59,7 +61,7 @@ RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=public,pg
 DECLARE v_tenant uuid:=public.current_tenant_id(); v_rows jsonb;
 BEGIN
  IF v_tenant IS NULL OR NOT public.has_permission('reports.read') THEN RAISE EXCEPTION 'Not authorized to view sales reports' USING ERRCODE='42501'; END IF;
- WITH facts AS (SELECT so.id,so.number,so.customer_id,c.name customer,so.date order_date,so.grand_total order_value,COALESCE(so.fulfillment_status,'Not Started') status,0::numeric fulfillment_percent,0::numeric invoice_percent,0::numeric payment_percent FROM public.sales_orders so LEFT JOIN public.customers c ON c.id=so.customer_id WHERE so.tenant_id=v_tenant AND so.deleted_at IS NULL AND so.date::date BETWEEN _date_from AND _date_to AND (_customer_id IS NULL OR so.customer_id=_customer_id) AND (NULLIF(upper(trim(_currency)),'') IS NULL OR upper(so.currency)=upper(trim(_currency)))) SELECT COALESCE(jsonb_agg(to_jsonb(f) ORDER BY order_date DESC),'[]'::jsonb) INTO v_rows FROM (SELECT * FROM facts LIMIT GREATEST(1,LEAST(_limit,500)) OFFSET GREATEST(0,_offset)) f;
+ WITH facts AS (SELECT so.id,so.number,so.customer_id,c.name customer,so.date order_date,so.promised_date,so.grand_total order_value,COALESCE(so.fulfillment_status,'Not Started') status,0::numeric fulfillment_percent,0::numeric invoice_percent,0::numeric payment_percent FROM public.sales_orders so LEFT JOIN public.customers c ON c.id=so.customer_id WHERE so.tenant_id=v_tenant AND so.deleted_at IS NULL AND so.date::date BETWEEN _date_from AND _date_to AND (_customer_id IS NULL OR so.customer_id=_customer_id) AND (NULLIF(upper(trim(_currency)),'') IS NULL OR upper(so.currency)=upper(trim(_currency)))) SELECT COALESCE(jsonb_agg(to_jsonb(f) ORDER BY order_date DESC),'[]'::jsonb) INTO v_rows FROM (SELECT * FROM facts LIMIT GREATEST(1,LEAST(_limit,500)) OFFSET GREATEST(0,_offset)) f;
  RETURN jsonb_build_object('rows',v_rows,'limit',_limit,'offset',_offset);
 END; $$;
 

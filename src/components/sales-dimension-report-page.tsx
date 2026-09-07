@@ -1,6 +1,8 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Download, Loader2, Printer, RefreshCw } from "lucide-react";
+import { Download, FileText, Loader2, Printer, RefreshCw } from "lucide-react";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 import { db } from "@/lib/typed-db";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
@@ -37,9 +39,14 @@ export function SalesDimensionReportPage({ kind }: { kind: ReportKind }) {
   const [filters, setFilters] = useState(initial);
   const [page, setPage] = useState(0);
   const [emailOpen] = useState(false);
+  useEffect(() => {
+    if (tenant?.currency && !filters.currency) {
+      setFilters((current) => ({ ...current, currency: tenant.currency }));
+    }
+  }, [filters.currency, tenant?.currency]);
   const query = useQuery({
     queryKey: ["sales", kind, filters, page],
-    enabled: !!tenant?.id,
+    enabled: !!tenant?.id && !!filters.currency,
     queryFn: async () => {
       const names: Record<ReportKind, string> = {
         customers: "get_sales_by_customer",
@@ -134,7 +141,7 @@ export function SalesDimensionReportPage({ kind }: { kind: ReportKind }) {
                 "Quotes",
                 "Quoted Value",
                 "Accepted Quotes",
-                "Conversion %",
+                "Conversion Rate",
                 "Orders",
                 "Order Value",
                 "Invoices",
@@ -147,6 +154,7 @@ export function SalesDimensionReportPage({ kind }: { kind: ReportKind }) {
                   "Order",
                   "Customer",
                   "Order Date",
+                  "Promised Date",
                   "Order Value",
                   "Fulfillment %",
                   "Invoice %",
@@ -159,8 +167,15 @@ export function SalesDimensionReportPage({ kind }: { kind: ReportKind }) {
     [kind],
   );
   const exportCsv = () => {
+    const csv = (value: unknown) => `"${String(value ?? "").replaceAll('"', '""')}"`;
     const blob = new Blob(
-      [columns.join(",") + "\n" + rows.map((row) => Object.values(row).join(",")).join("\n")],
+      [
+        columns.map(csv).join(",") +
+          "\n" +
+          rows
+            .map((row) => columns.map((column) => csv(valueForColumn(column, row))).join(","))
+            .join("\n"),
+      ],
       { type: "text/csv" },
     );
     const link = document.createElement("a");
@@ -168,6 +183,21 @@ export function SalesDimensionReportPage({ kind }: { kind: ReportKind }) {
     link.download = `${kind}.csv`;
     link.click();
     URL.revokeObjectURL(link.href);
+  };
+  const exportPdf = () => {
+    const pdf = new jsPDF({ orientation: columns.length > 8 ? "landscape" : "portrait" });
+    pdf.setFontSize(14);
+    pdf.text(titles[kind], 14, 16);
+    pdf.setFontSize(8);
+    pdf.text(`${filters.dateFrom} to ${filters.dateTo} - ${filters.currency}`, 14, 22);
+    autoTable(pdf, {
+      head: [columns],
+      body: rows.map((row) => columns.map((column) => String(valueForColumn(column, row) ?? "—"))),
+      startY: 27,
+      styles: { fontSize: 7 },
+      headStyles: { fillColor: [37, 99, 235] },
+    });
+    pdf.save(`${kind}.pdf`);
   };
   return (
     <div className="min-h-full bg-muted/20 p-4 md:p-6">
@@ -185,6 +215,10 @@ export function SalesDimensionReportPage({ kind }: { kind: ReportKind }) {
             <Button variant="outline" onClick={exportCsv}>
               <Download className="mr-2 h-4 w-4" />
               CSV
+            </Button>
+            <Button variant="outline" onClick={exportPdf}>
+              <FileText className="mr-2 h-4 w-4" />
+              PDF
             </Button>
             <Button variant="outline" onClick={() => query.refetch()}>
               <RefreshCw className={query.isFetching ? "h-4 w-4 animate-spin" : "h-4 w-4"} />
@@ -226,9 +260,9 @@ export function SalesDimensionReportPage({ kind }: { kind: ReportKind }) {
                         className="border-t"
                         key={String(row.id ?? row.customer_id ?? row.item_id ?? index)}
                       >
-                        {columns.map((column, cell) => (
+                        {columns.map((column) => (
                           <td className="p-3" key={column}>
-                            {cell === 0 ? 0 : String(Object.values(row)[cell] ?? "—")}
+                            {String(valueForColumn(column, row) ?? "—")}
                           </td>
                         ))}
                       </tr>
@@ -276,10 +310,12 @@ function Funnel({ data }: { data: Record<string, unknown> }) {
     ["Viewed", data.viewed],
     ["Accepted", data.accepted],
     ["Orders", data.orders],
+    ["Invoiced", data.invoiced],
+    ["Paid", data.paid],
   ];
   return (
     <Card className="p-5">
-      <div className="grid gap-3 sm:grid-cols-5">
+      <div className="grid gap-3 sm:grid-cols-4 lg:grid-cols-7">
         {items.map(([label, value]) => (
           <div className="rounded border p-4 text-center" key={String(label)}>
             <p className="text-xs text-muted-foreground">{String(label)}</p>
@@ -303,4 +339,41 @@ function Funnel({ data }: { data: Record<string, unknown> }) {
       </div>
     </Card>
   );
+}
+
+function valueForColumn(column: string, row: Record<string, string | number>) {
+  const keys: Record<string, string> = {
+    Customer: "name",
+    Product: "product",
+    Salesperson: "salesperson",
+    Orders: "orders",
+    Invoices: "invoices",
+    "Gross Sales": "gross_sales",
+    "Net Sales": "net_sales",
+    COGS: "cogs",
+    "Gross Profit": "gross_profit",
+    "Margin %": "margin_percent",
+    Paid: "paid",
+    Outstanding: "outstanding",
+    Overdue: "overdue",
+    "Units Sold": "units_sold",
+    Discounts: "discounts",
+    Quotes: "quotes",
+    "Quoted Value": "quoted_value",
+    "Accepted Quotes": "accepted_quotes",
+    "Conversion Rate": "conversion_rate",
+    "Order Value": "order_value",
+    Sales: "sales",
+    Order: "number",
+    "Order Date": "order_date",
+    "Promised Date": "promised_date",
+    "Fulfillment %": "fulfillment_percent",
+    "Invoice %": "invoice_percent",
+    "Payment %": "payment_percent",
+    Status: "status",
+    Group: "group_name",
+    Revenue: "revenue",
+  };
+  const key = keys[column];
+  return key ? row[key] : row[column.toLowerCase().replaceAll(" ", "_")];
 }
