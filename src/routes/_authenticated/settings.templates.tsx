@@ -31,6 +31,13 @@ const KINDS = [
 ] as const;
 
 const PRESETS = ["#1E293B", "#0F766E", "#B45309", "#7C3AED", "#BE123C", "#1D4ED8"];
+const STYLE_PROFILES: { value: DocumentTemplateStyle; title: string; description: string; kinds: string[]; accent: string }[] = [
+  { value: "modern", title: "Nimbus Modern", description: "Clean, friendly documents for quotes and sales orders.", kinds: ["quote", "order"], accent: "#0668FF" },
+  { value: "corporate", title: "Nimbus Corporate", description: "Formal, structured documents for invoices, purchase orders, and bills.", kinds: ["invoice", "po", "bill"], accent: "#0B2A63" },
+  { value: "compact", title: "Nimbus Compact", description: "Dense operational layouts for requisitions and customer statements.", kinds: ["requisition", "statement"], accent: "#0F766E" },
+];
+
+const profileKey = (tenantId: string, style: DocumentTemplateStyle) => `document-template-profile:${tenantId}:${style}`;
 
 function TemplatesPage() {
   const qc = useQueryClient();
@@ -38,6 +45,8 @@ function TemplatesPage() {
   const canWrite = can("settings.roles");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [draft, setDraft] = useState<any>(null);
+  const [selectedStyle, setSelectedStyle] = useState<DocumentTemplateStyle>("corporate");
+  const [styleProfiles, setStyleProfiles] = useState<Record<string, any>>({});
 
   const { data: templates = [], isLoading } = useQuery({
     queryKey: ["document_templates", "all", tenant?.id],
@@ -59,8 +68,20 @@ function TemplatesPage() {
   );
 
   useEffect(() => {
-    if (current) setDraft({ ...current });
-  }, [current?.id, current?.updated_at]);
+    if (current) {
+      setDraft({ ...current, template_style: current.template_style ?? "corporate" });
+      if (tenant?.id) {
+        const profiles = Object.fromEntries(STYLE_PROFILES.map((profile) => {
+          try {
+            return [profile.value, JSON.parse(localStorage.getItem(profileKey(tenant.id, profile.value)) ?? "null") ?? { ...current, template_style: profile.value, accent_color: profile.accent, applies_to: profile.kinds }];
+          } catch {
+            return [profile.value, { ...current, template_style: profile.value, accent_color: profile.accent, applies_to: profile.kinds }];
+          }
+        }));
+        setStyleProfiles(profiles);
+      }
+    }
+  }, [current?.id, current?.updated_at, tenant?.id]);
 
   const save = useMutation({
     mutationFn: async () => {
@@ -84,10 +105,11 @@ function TemplatesPage() {
           .update({ is_default: false })
           .neq("id", draft.id);
       }
-      const style = (draft.template_style as DocumentTemplateStyle | undefined) ?? getDocumentTemplate("invoice");
+      const style = (draft.template_style as DocumentTemplateStyle | undefined) ?? selectedStyle;
       for (const kind of (payload.applies_to ?? [])) {
         localStorage.setItem(`document-template-style:${tenant?.id}:${kind}`, style);
       }
+      localStorage.setItem(profileKey(tenant!.id, style), JSON.stringify({ ...draft, template_style: style }));
     },
     onSuccess: () => {
       toast.success("Template saved");
@@ -133,22 +155,31 @@ function TemplatesPage() {
     },
   });
 
+  const activeProfile = draft?.template_style === selectedStyle ? draft : styleProfiles[selectedStyle] ?? draft ?? {};
   const branding: PdfBranding = {
-    templateStyle: (draft?.template_style as DocumentTemplateStyle | undefined) ?? getDocumentTemplate("invoice"),
-    accentColor: draft?.accent_color ?? "#1E293B",
-    logoUrl: draft?.logo_url ?? null,
-    showLogo: draft?.show_logo ?? true,
-    companyAddress: draft?.company_address ?? null,
-    footerText: draft?.footer_text ?? null,
-    terms: draft?.terms ?? null,
+    templateStyle: selectedStyle,
+    accentColor: activeProfile.accent_color ?? "#1E293B",
+    logoUrl: activeProfile.logo_url ?? null,
+    showLogo: activeProfile.show_logo ?? true,
+    companyAddress: activeProfile.company_address ?? null,
+    footerText: activeProfile.footer_text ?? null,
+    terms: activeProfile.terms ?? null,
   };
 
-  const selectedStyle = (draft?.template_style as DocumentTemplateStyle | undefined) ?? getDocumentTemplate("invoice");
   const selectTemplateStyle = (style: DocumentTemplateStyle) => {
-    setDraft({ ...draft, template_style: style });
-    for (const kind of (draft?.applies_to ?? [])) {
+    setSelectedStyle(style);
+    const profile = styleProfiles[style] ?? { ...draft, template_style: style };
+    setDraft(profile);
+    setStyleProfiles((currentProfiles) => ({ ...currentProfiles, [style]: profile }));
+    for (const kind of (profile.applies_to ?? STYLE_PROFILES.find((item) => item.value === style)?.kinds ?? [])) {
       localStorage.setItem(`document-template-style:${tenant?.id}:${kind}`, style);
     }
+  };
+
+  const updateActiveProfile = (patch: Record<string, any>) => {
+    const next = { ...activeProfile, ...patch, template_style: selectedStyle };
+    setDraft(next);
+    setStyleProfiles((profiles) => ({ ...profiles, [selectedStyle]: next }));
   };
 
   const preview = () =>
@@ -222,13 +253,30 @@ function TemplatesPage() {
 
           {draft && (
             <div className="flex flex-col gap-4">
+              <div className="grid gap-3 md:grid-cols-3">
+                {STYLE_PROFILES.map((profile) => {
+                  const selected = selectedStyle === profile.value;
+                  return (
+                    <button key={profile.value} type="button" onClick={() => selectTemplateStyle(profile.value)} disabled={!canWrite} className="text-left">
+                      <Card className={`h-full p-4 transition-colors ${selected ? "border-primary ring-1 ring-primary/20" : "hover:border-primary/40"}`}>
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="h-3 w-3 rounded-full" style={{ backgroundColor: profile.accent }} />
+                          {selected && <Badge>Selected</Badge>}
+                        </div>
+                        <p className="mt-3 font-semibold">{profile.title}</p>
+                        <p className="mt-1 text-xs leading-5 text-muted-foreground">{profile.description}</p>
+                        <p className="mt-3 text-[11px] text-muted-foreground">{profile.kinds.map((kind) => KINDS.find((item) => item.key === kind)?.label).filter(Boolean).join(" · ")}</p>
+                      </Card>
+                    </button>
+                  );
+                })}
+              </div>
+
               <Card className="p-4 grid gap-4 md:grid-cols-2">
-                <div className="md:col-span-2 space-y-3">
+                <div className="md:col-span-2 flex items-center justify-between gap-3">
                   <div>
-                    <Label className="text-base">Select PDF Template</Label>
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      Choose the style used when matching documents are printed, downloaded, or emailed.
-                    </p>
+                    <Label className="text-base">Customize {STYLE_PROFILES.find((profile) => profile.value === selectedStyle)?.title}</Label>
+                    <p className="mt-1 text-xs text-muted-foreground">These settings apply only to the selected template style.</p>
                   </div>
                   <DocumentTemplateSelector value={selectedStyle} onChange={selectTemplateStyle} disabled={!canWrite} />
                 </div>
