@@ -4,6 +4,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { db } from "@/lib/typed-db";
 import { useAuth } from "@/hooks/use-auth";
 import { useDocumentEvents } from "@/lib/document-events";
+import { logDocumentEvent } from "@/lib/document-events";
+import { callRpc } from "@/lib/db-rpc";
 import { useDocumentBranding } from "@/hooks/use-document-branding";
 import { downloadDocumentPdf, type PdfDocInput } from "@/lib/document-pdf";
 import { DocumentEditor } from "@/components/document-editor";
@@ -24,7 +26,20 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { ArrowLeft, Download, Pencil, ShoppingCart, Trash2, Truck, Wallet } from "lucide-react";
+import {
+  ArrowLeft,
+  CalendarDays,
+  CheckCircle2,
+  Download,
+  ExternalLink,
+  FileText,
+  MoreHorizontal,
+  Pencil,
+  ShoppingCart,
+  Trash2,
+  Truck,
+  Wallet,
+} from "lucide-react";
 import { toast } from "sonner";
 
 type Row = Record<string, any>;
@@ -70,6 +85,31 @@ function Total({ label, value, bold = false }: { label: string; value: string; b
     </div>
   );
 }
+const ORDER_STAGES = [
+  "Draft",
+  "Confirmed",
+  "Processing",
+  "Partially Fulfilled",
+  "Fulfilled",
+  "Completed",
+];
+
+function PaymentBadge({ status }: { status: string }) {
+  return (
+    <Badge
+      variant="outline"
+      className={
+        status === "Paid"
+          ? "border-emerald-300 bg-emerald-50 text-emerald-700"
+          : status === "Partially Paid"
+            ? "border-amber-300 bg-amber-50 text-amber-700"
+            : ""
+      }
+    >
+      {status}
+    </Badge>
+  );
+}
 function OrderLines({
   lines,
   items,
@@ -85,6 +125,7 @@ function OrderLines({
   order: Row;
   onEdit: () => void;
 }) {
+  const totalQuantity = lines.reduce((sum, line) => sum + Number(line.quantity ?? 0), 0);
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
@@ -105,42 +146,80 @@ function OrderLines({
                 <th className="px-3 py-3 text-right">Ordered</th>
                 <th className="px-3 py-3 text-right">Fulfilled</th>
                 <th className="px-3 py-3 text-right">Remaining</th>
+                <th className="px-3 py-3 text-right">Unit Price</th>
+                <th className="px-3 py-3 text-right">Discount</th>
+                <th className="px-3 py-3 text-right">Tax</th>
                 <th className="px-3 py-3 text-right">Amount</th>
+                <th className="px-3 py-3" />
               </tr>
             </thead>
             <tbody>
-              {lines.map((line, index) => {
-                const item = items.find((candidate) => candidate.id === line.item_id);
-                const fulfilled = packageLines
-                  .filter((packageLine) => packageLine.item_id === line.item_id)
-                  .reduce((sum, packageLine) => sum + Number(packageLine.quantity ?? 0), 0);
-                return (
-                  <tr key={line.id} className="border-b">
-                    <td className="px-3 py-3">{index + 1}</td>
-                    <td className="px-3 py-3">
-                      <p className="font-medium">{item?.name ?? line.description ?? "Item"}</p>
-                      <p className="text-xs text-muted-foreground">{item?.sku ?? "No SKU"}</p>
-                    </td>
-                    <td className="px-3 py-3 text-muted-foreground">{line.description ?? "—"}</td>
-                    <td className="px-3 py-3 text-right">{line.quantity ?? 0}</td>
-                    <td className="px-3 py-3 text-right">{fulfilled}</td>
-                    <td className="px-3 py-3 text-right">
-                      {Math.max(0, Number(line.quantity ?? 0) - fulfilled)}
-                    </td>
-                    <td className="px-3 py-3 text-right font-mono">
-                      {money(line.line_total, currency)}
-                    </td>
-                  </tr>
-                );
-              })}
+              {lines.length === 0 ? (
+                <tr>
+                  <td colSpan={11} className="px-4 py-10 text-center text-sm text-muted-foreground">
+                    No products added yet.
+                  </td>
+                </tr>
+              ) : (
+                lines.map((line, index) => {
+                  const item = items.find((candidate) => candidate.id === line.item_id);
+                  const fulfilled = packageLines
+                    .filter((packageLine) => packageLine.item_id === line.item_id)
+                    .reduce((sum, packageLine) => sum + Number(packageLine.quantity ?? 0), 0);
+                  return (
+                    <tr key={line.id} className="border-b">
+                      <td className="px-3 py-3">{index + 1}</td>
+                      <td className="px-3 py-3">
+                        <p className="font-medium">{item?.name ?? line.description ?? "Item"}</p>
+                        <p className="text-xs text-muted-foreground">{item?.sku ?? "No SKU"}</p>
+                      </td>
+                      <td className="px-3 py-3 text-muted-foreground">{line.description ?? "—"}</td>
+                      <td className="px-3 py-3 text-right">{line.quantity ?? 0}</td>
+                      <td className="px-3 py-3 text-right">{fulfilled}</td>
+                      <td className="px-3 py-3 text-right">
+                        {Math.max(0, Number(line.quantity ?? 0) - fulfilled)}
+                      </td>
+                      <td className="px-3 py-3 text-right font-mono text-xs">
+                        {money(line.unit_price, currency)}
+                      </td>
+                      <td className="px-3 py-3 text-right">{Number(line.discount_pct ?? 0)}%</td>
+                      <td className="px-3 py-3 text-right">{Number(line.tax_pct ?? 0)}%</td>
+                      <td className="px-3 py-3 text-right font-mono">
+                        {money(line.line_total, currency)}
+                      </td>
+                      <td className="px-3 py-3 text-right">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7"
+                          onClick={onEdit}
+                          aria-label={`Edit ${item?.name ?? "line item"}`}
+                        >
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
             </tbody>
           </table>
         </div>
-        <div className="space-y-2 border-t p-4">
-          <Total label="Subtotal" value={money(order.subtotal, currency)} />
-          <Total label="Discount" value={money(order.discount_total, currency)} />
-          <Total label="Tax" value={money(order.tax_total, currency)} />
-          <Total label="Grand Total" value={money(order.grand_total, currency)} bold />
+        <div className="space-y-3 border-t p-4">
+          <div className="flex gap-6 text-xs text-muted-foreground">
+            <span>
+              Total Items <strong className="ml-1 text-foreground">{lines.length}</strong>
+            </span>
+            <span>
+              Total Quantity <strong className="ml-1 text-foreground">{totalQuantity}</strong>
+            </span>
+          </div>
+          <div className="space-y-2">
+            <Total label="Subtotal" value={money(order.subtotal, currency)} />
+            <Total label="Discount" value={money(order.discount_total, currency)} />
+            <Total label="Tax" value={money(order.tax_total, currency)} />
+            <Total label="Grand Total" value={money(order.grand_total, currency)} bold />
+          </div>
         </div>
       </CardContent>
     </Card>
@@ -279,6 +358,37 @@ export function SalesOrderViewPage({ id }: { id: string }) {
       nav({ to: "/sales/orders" as never });
     },
   });
+  const setStatus = useMutation({
+    mutationFn: async (status: string) => {
+      const { error } = await db.from("sales_orders").update({ status }).eq("id", id);
+      if (error) throw error;
+      if (tenant?.id)
+        await logDocumentEvent({
+          tenantId: tenant.id,
+          entityType: "order",
+          entityId: id,
+          status,
+          note: `Sales Order ${status.toLowerCase()}`,
+          actorId: null,
+          actorEmail: null,
+        });
+      return status;
+    },
+    onSuccess: (status) => {
+      toast.success(`Order ${status.toLowerCase()}`);
+      qc.invalidateQueries({ queryKey: ["sales_orders", id] });
+      qc.invalidateQueries({ queryKey: ["sales_orders", id, "view"] });
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+  const convertToInvoice = useMutation({
+    mutationFn: () => callRpc("convert_order_to_invoice", { _order_id: id }),
+    onSuccess: (invoiceId) => {
+      toast.success("Invoice created");
+      nav({ to: `/sales/invoices/${invoiceId}` as never });
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
   if (editing)
     return (
       <DocumentEditor
@@ -301,7 +411,27 @@ export function SalesOrderViewPage({ id }: { id: string }) {
   const progress = ordered ? Math.min(100, (fulfilled / ordered) * 100) : 0;
   const paid = invoices.reduce((sum, invoice) => sum + Number(invoice.amount_paid ?? 0), 0);
   const outstanding = Math.max(0, Number(order.grand_total ?? 0) - paid);
+  const paymentStatus =
+    outstanding <= 0.01 && Number(order.grand_total ?? 0) > 0
+      ? "Paid"
+      : paid > 0
+        ? "Partially Paid"
+        : "Unpaid";
+  const fulfillmentStatus =
+    fulfilled <= 0
+      ? "Not Started"
+      : fulfilled >= ordered && ordered > 0
+        ? "Fulfilled"
+        : "Partially Fulfilled";
+  const currentStatus = order.status ?? "Draft";
+  const currentStage = ORDER_STAGES.indexOf(currentStatus);
   const canDelete = can(["sales.delete", "admin"]);
+  const canWrite = can([
+    "sales.create",
+    "sales.update",
+    "accounting.journal.create",
+    "accounting.journal.update",
+  ]);
   const pdf: PdfDocInput = {
     title: "Sales Order",
     number: String(order.number ?? ""),
@@ -343,13 +473,59 @@ export function SalesOrderViewPage({ id }: { id: string }) {
                 <h1 className="text-2xl font-semibold">{order.number ?? "Sales Order"}</h1>
                 <Badge variant="secondary">{order.status ?? "Draft"}</Badge>
               </div>
-              <p className="mt-1 text-sm text-muted-foreground">
-                {customer?.name ?? "No customer"} · Order Date: {dateFmt(order.date)}
-              </p>
+              <div className="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-sm text-muted-foreground">
+                <span>
+                  <strong className="text-foreground">Customer</strong>{" "}
+                  {customer?.name ?? "No customer"}
+                </span>
+                <span>
+                  <strong className="text-foreground">Order Date</strong> {dateFmt(order.date)}
+                </span>
+                <span>
+                  <strong className="text-foreground">Salesperson</strong>{" "}
+                  {order.salesperson_name ?? order.salesperson ?? "Not assigned"}
+                </span>
+              </div>
             </div>
           </div>
-          <div className="flex gap-2">
-            {can(["sales.create", "sales.update"]) && (
+          <div className="flex flex-wrap gap-2 lg:justify-end">
+            {currentStatus === "Draft" && canWrite && (
+              <Button
+                size="sm"
+                onClick={() => setStatus.mutate("Confirmed")}
+                disabled={setStatus.isPending}
+              >
+                <CheckCircle2 className="mr-1.5 h-4 w-4" /> Confirm Order
+              </Button>
+            )}
+            {(currentStatus === "Confirmed" ||
+              currentStatus === "Processing" ||
+              currentStatus === "Partially Fulfilled") &&
+              canWrite && (
+                <Button size="sm" asChild>
+                  <a href={`/sales/packages/new?order=${id}`}>
+                    <Truck className="mr-1.5 h-4 w-4" />{" "}
+                    {currentStatus === "Partially Fulfilled"
+                      ? "Fulfill Remaining"
+                      : "Fulfill Order"}
+                  </a>
+                </Button>
+              )}
+            {(currentStatus === "Confirmed" ||
+              currentStatus === "Processing" ||
+              currentStatus === "Partially Fulfilled" ||
+              currentStatus === "Fulfilled") &&
+              canWrite && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => convertToInvoice.mutate()}
+                  disabled={convertToInvoice.isPending}
+                >
+                  <FileText className="mr-1.5 h-4 w-4" /> Create Invoice
+                </Button>
+              )}
+            {canWrite && (
               <Button variant="outline" size="sm" onClick={() => setEditing(true)}>
                 <Pencil className="mr-1.5 h-4 w-4" /> Edit
               </Button>
@@ -357,30 +533,54 @@ export function SalesOrderViewPage({ id }: { id: string }) {
             <Button variant="outline" size="sm" onClick={() => downloadDocumentPdf(pdf)}>
               <Download className="mr-1.5 h-4 w-4" /> PDF
             </Button>
-            <Button
-              variant="outline"
-              size="icon"
-              disabled={!canDelete}
-              onClick={() => setDeleteOpen(true)}
-              aria-label="Delete order"
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
+            {canDelete && (
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => setDeleteOpen(true)}
+                aria-label="Delete order"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            )}
           </div>
         </header>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-5">
           {[
             { label: "Order Total", value: money(order.grand_total, currency), icon: ShoppingCart },
-            { label: "Outstanding", value: money(outstanding, currency), icon: Wallet },
-            { label: "Fulfillment", value: `${Math.round(progress)}%`, icon: Truck },
-            { label: "Payments", value: money(paid, currency), icon: Wallet },
-            { label: "Order Date", value: dateFmt(order.date), icon: CalendarDays },
+            {
+              label: "Outstanding",
+              value: money(outstanding, currency),
+              sub: `${money(paid, currency)} paid`,
+              icon: Wallet,
+            },
+            {
+              label: "Fulfillment",
+              value: `${Math.round(progress)}%`,
+              sub: `${fulfilled} / ${ordered} units`,
+              icon: Truck,
+            },
+            {
+              label: "Payment Status",
+              value: paymentStatus,
+              sub: `${money(paid, currency)} received`,
+              icon: Wallet,
+            },
+            {
+              label: "Delivery",
+              value: dateFmt(order.expected_delivery_date ?? order.delivery_date),
+              sub: "Expected delivery",
+              icon: CalendarDays,
+            },
           ].map((kpi) => (
             <Card key={kpi.label} className="p-4">
               <div className="flex justify-between">
                 <div>
                   <p className="text-xs text-muted-foreground">{kpi.label}</p>
-                  <p className="mt-1 font-mono text-lg font-semibold">{kpi.value}</p>
+                  <p className="mt-1 truncate font-mono text-lg font-semibold">{kpi.value}</p>
+                  {kpi.sub && (
+                    <p className="mt-1 truncate text-xs text-muted-foreground">{kpi.sub}</p>
+                  )}
                 </div>
                 <kpi.icon className="h-4 w-4 text-primary" />
               </div>
@@ -401,7 +601,14 @@ export function SalesOrderViewPage({ id }: { id: string }) {
           <TabsContent value="customer" className="mt-4">
             <Card>
               <CardHeader>
-                <CardTitle className="text-sm">Customer</CardTitle>
+                <CardTitle className="flex items-center justify-between text-sm">
+                  <span>Customer</span>
+                  <Button variant="link" size="sm" className="h-auto px-0" asChild>
+                    <a href={`/crm/customers/${customer?.id}`}>
+                      <ExternalLink className="mr-1 h-3.5 w-3.5" /> View Customer
+                    </a>
+                  </Button>
+                </CardTitle>
               </CardHeader>
               <CardContent className="grid gap-4 sm:grid-cols-2">
                 <Info label="Name" value={customer?.name} />
@@ -414,7 +621,14 @@ export function SalesOrderViewPage({ id }: { id: string }) {
                   value={order.payment_terms ?? customer?.payment_terms}
                 />
                 <Info label="Currency" value={currency} />
+                <Info label="Billing Address" value={customer?.billing_address} />
                 <Info label="Shipping Address" value={customer?.shipping_address} />
+                <Info
+                  label="Credit Limit"
+                  value={
+                    customer?.credit_limit ? money(customer.credit_limit, currency) : "Not set"
+                  }
+                />
               </CardContent>
             </Card>
           </TabsContent>
@@ -449,11 +663,62 @@ export function SalesOrderViewPage({ id }: { id: string }) {
                 <CardTitle className="text-sm">Invoices</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-muted-foreground">
-                  {invoices.length
-                    ? `${invoices.length} invoice(s) linked to this order.`
-                    : "No invoices have been created for this order."}
-                </p>
+                {invoices.length ? (
+                  <div className="overflow-x-auto">
+                    <table className="w-full min-w-[680px] text-sm">
+                      <thead>
+                        <tr className="border-b text-left text-xs uppercase tracking-wide text-muted-foreground">
+                          <th className="px-3 py-2">Invoice</th>
+                          <th className="px-3 py-2">Date</th>
+                          <th className="px-3 py-2">Due</th>
+                          <th className="px-3 py-2 text-right">Amount</th>
+                          <th className="px-3 py-2 text-right">Paid</th>
+                          <th className="px-3 py-2 text-right">Balance</th>
+                          <th className="px-3 py-2">Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {invoices.map((invoice) => (
+                          <tr key={invoice.id} className="border-b last:border-0">
+                            <td className="px-3 py-3 font-medium">
+                              <a
+                                className="text-primary hover:underline"
+                                href={`/sales/invoices/${invoice.id}`}
+                              >
+                                {invoice.number ?? "Invoice"}
+                              </a>
+                            </td>
+                            <td className="px-3 py-3">{dateFmt(invoice.date)}</td>
+                            <td className="px-3 py-3">{dateFmt(invoice.due_date)}</td>
+                            <td className="px-3 py-3 text-right font-mono">
+                              {money(invoice.grand_total, currency)}
+                            </td>
+                            <td className="px-3 py-3 text-right font-mono">
+                              {money(invoice.amount_paid, currency)}
+                            </td>
+                            <td className="px-3 py-3 text-right font-mono">
+                              {money(
+                                Math.max(
+                                  0,
+                                  Number(invoice.grand_total ?? 0) -
+                                    Number(invoice.amount_paid ?? 0),
+                                ),
+                                currency,
+                              )}
+                            </td>
+                            <td className="px-3 py-3">
+                              <Badge variant="secondary">{invoice.status ?? "Draft"}</Badge>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    No invoices have been created for this order.
+                  </p>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
@@ -463,11 +728,43 @@ export function SalesOrderViewPage({ id }: { id: string }) {
                 <CardTitle className="text-sm">Payments</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-muted-foreground">
-                  {payments.length
-                    ? `${payments.length} payment(s) recorded.`
-                    : "No payments recorded."}
-                </p>
+                <div className="mb-4 grid gap-3 sm:grid-cols-3">
+                  <Info label="Order Total" value={money(order.grand_total, currency)} />
+                  <Info label="Paid" value={money(paid, currency)} />
+                  <Info label="Outstanding" value={money(outstanding, currency)} />
+                </div>
+                {payments.length ? (
+                  <div className="overflow-x-auto">
+                    <table className="w-full min-w-[560px] text-sm">
+                      <thead>
+                        <tr className="border-b text-left text-xs uppercase tracking-wide text-muted-foreground">
+                          <th className="px-3 py-2">Date</th>
+                          <th className="px-3 py-2">Method</th>
+                          <th className="px-3 py-2">Reference</th>
+                          <th className="px-3 py-2 text-right">Amount</th>
+                          <th className="px-3 py-2">Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {payments.map((payment) => (
+                          <tr key={payment.id} className="border-b last:border-0">
+                            <td className="px-3 py-3">{dateFmt(payment.payment_date)}</td>
+                            <td className="px-3 py-3">{payment.mode ?? payment.method ?? "—"}</td>
+                            <td className="px-3 py-3">{payment.reference ?? "—"}</td>
+                            <td className="px-3 py-3 text-right font-mono">
+                              {money(payment.amount, currency)}
+                            </td>
+                            <td className="px-3 py-3">
+                              <PaymentBadge status={payment.status ?? "Recorded"} />
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">No payments recorded.</p>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
@@ -521,48 +818,94 @@ export function SalesOrderViewPage({ id }: { id: string }) {
               </CardContent>
             </Card>
           </TabsContent>
-        </Tabs>
-        <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(280px,1fr)]">
-          <OrderLines
-            lines={lines}
-            items={items}
-            packageLines={packageLines}
-            currency={currency}
-            order={order}
-            onEdit={() => setEditing(true)}
-          />
-          <aside className="flex flex-col gap-4">
-            <SideCard title="Order Status & Fulfillment">
-              <p className="text-sm text-muted-foreground">
-                Current status: {order.status ?? "Draft"}
-              </p>
-              <div className="mt-4 h-2 rounded-full bg-muted">
-                <div className="h-2 rounded-full bg-primary" style={{ width: `${progress}%` }} />
-              </div>
-              <p className="mt-2 text-xs text-muted-foreground">
-                {fulfilled} / {ordered} units fulfilled
-              </p>
-            </SideCard>
-            <SideCard title="Activity">
-              {events.length ? (
-                events.slice(-5).map((event) => (
-                  <p key={event.id} className="border-b py-2 text-xs">
-                    {event.note ?? event.status}
-                    <br />
-                    <span className="text-muted-foreground">{dateTimeFmt(event.created_at)}</span>
+          <TabsContent value="overview" className="mt-4">
+            <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(280px,1fr)]">
+              <OrderLines
+                lines={lines}
+                items={items}
+                packageLines={packageLines}
+                currency={currency}
+                order={order}
+                onEdit={() => setEditing(true)}
+              />
+              <aside className="flex flex-col gap-4">
+                <SideCard title="Order Status & Fulfillment">
+                  <div className="space-y-2">
+                    {ORDER_STAGES.map((stage, index) => (
+                      <div
+                        key={stage}
+                        className={`flex items-center gap-2 text-xs ${stage === currentStatus ? "font-semibold text-foreground" : index < currentStage ? "text-muted-foreground" : "text-muted-foreground/60"}`}
+                      >
+                        <span
+                          className={`flex h-5 w-5 items-center justify-center rounded-full border ${stage === currentStatus ? "border-primary bg-primary text-primary-foreground" : index < currentStage ? "border-primary/40 bg-primary/10 text-primary" : "border-muted-foreground/30"}`}
+                        >
+                          {index < currentStage ? <CheckCircle2 className="h-3 w-3" /> : index + 1}
+                        </span>
+                        {stage}
+                        {stage === currentStatus && (
+                          <Badge variant="outline" className="ml-auto">
+                            Current
+                          </Badge>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                  <div className="mt-5 flex items-center justify-between text-sm">
+                    <span>Fulfillment</span>
+                    <strong>{Math.round(progress)}%</strong>
+                  </div>
+                  <div className="mt-2 h-2 rounded-full bg-muted">
+                    <div
+                      className="h-2 rounded-full bg-primary"
+                      style={{ width: `${progress}%` }}
+                    />
+                  </div>
+                  <div className="mt-3 grid grid-cols-3 gap-2 text-center text-xs">
+                    <div>
+                      <p className="text-muted-foreground">Ordered</p>
+                      <strong>{ordered}</strong>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Fulfilled</p>
+                      <strong>{fulfilled}</strong>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Remaining</p>
+                      <strong>{Math.max(0, ordered - fulfilled)}</strong>
+                    </div>
+                  </div>
+                  <div className="mt-4 border-t pt-3 text-xs text-muted-foreground">
+                    {currentStatus === "Draft"
+                      ? "Complete the order details before confirming."
+                      : fulfillmentStatus === "Fulfilled"
+                        ? "All ordered units have been fulfilled."
+                        : "Order is ready for fulfillment."}
+                  </div>
+                </SideCard>
+                <SideCard title="Activity">
+                  {events.length ? (
+                    events.slice(-5).map((event) => (
+                      <p key={event.id} className="border-b py-2 text-xs">
+                        {event.note ?? event.status}
+                        <br />
+                        <span className="text-muted-foreground">
+                          {dateTimeFmt(event.created_at)}
+                        </span>
+                      </p>
+                    ))
+                  ) : (
+                    <p className="text-sm text-muted-foreground">No activity yet.</p>
+                  )}
+                </SideCard>
+                <SideCard title="Notes">
+                  <p className="whitespace-pre-wrap text-sm text-muted-foreground">
+                    {order.notes || "No notes added."}
                   </p>
-                ))
-              ) : (
-                <p className="text-sm text-muted-foreground">No activity yet.</p>
-              )}
-            </SideCard>
-            <SideCard title="Notes">
-              <p className="whitespace-pre-wrap text-sm text-muted-foreground">
-                {order.notes || "No notes added."}
-              </p>
-            </SideCard>
-          </aside>
-        </div>
+                </SideCard>
+              </aside>
+            </div>
+          </TabsContent>
+        </Tabs>
       </div>
       <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
         <AlertDialogContent>

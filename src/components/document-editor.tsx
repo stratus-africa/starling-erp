@@ -20,7 +20,13 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   ArrowLeft,
   Loader2,
@@ -105,7 +111,16 @@ const CFG: Record<DocKind, CfgEntry> = {
     prefix: "SO",
     dateField: "date",
     extraDate: null,
-    statuses: ["Draft", "Confirmed", "Processing", "Packed", "Shipped", "Delivered", "Invoiced", "Cancelled"],
+    statuses: [
+      "Draft",
+      "Confirmed",
+      "Processing",
+      "Packed",
+      "Shipped",
+      "Delivered",
+      "Invoiced",
+      "Cancelled",
+    ],
     partyField: "customer_id",
     partyTable: "customers",
     partyLabel: "Customer",
@@ -166,7 +181,12 @@ const CFG: Record<DocKind, CfgEntry> = {
     partyTable: "customers",
     partyLabel: "Customer",
     timelineStages: ["Draft", "Confirmed", "Posted"],
-    linkFk: { field: "invoice_id", table: "invoices", label: "Against Invoice", labelKey: "number" },
+    linkFk: {
+      field: "invoice_id",
+      table: "invoices",
+      label: "Against Invoice",
+      labelKey: "number",
+    },
     listPath: "/sales/credit-notes",
     detailBase: "/sales/credit-notes",
   },
@@ -197,14 +217,25 @@ const TEMPLATE_KIND: Record<DocKind, DocTemplateKind> = {
   requisition: "order",
 };
 
-const money = (n: number) => (n || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const money = (n: number) =>
+  (n || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const ORDER_EDITOR_STEPS = [
+  "Customer",
+  "Order Details",
+  "Products",
+  "Pricing & Tax",
+  "Delivery",
+  "Review & Confirm",
+];
 
 const STATUS_SELECT_COLORS: Record<string, string> = {
-  Draft: "border-slate-300/60 bg-slate-100 text-slate-600 dark:border-slate-700/60 dark:bg-slate-800 dark:text-slate-300",
+  Draft:
+    "border-slate-300/60 bg-slate-100 text-slate-600 dark:border-slate-700/60 dark:bg-slate-800 dark:text-slate-300",
   Sent: "border-blue-400/50 bg-blue-50 text-blue-700 dark:border-blue-600/50 dark:bg-blue-950/50 dark:text-blue-300",
   Accepted:
     "border-emerald-400/50 bg-emerald-50 text-emerald-700 dark:border-emerald-600/50 dark:bg-emerald-950/50 dark:text-emerald-300",
-  Rejected: "border-red-400/50 bg-red-50 text-red-700 dark:border-red-600/50 dark:bg-red-950/50 dark:text-red-300",
+  Rejected:
+    "border-red-400/50 bg-red-50 text-red-700 dark:border-red-600/50 dark:bg-red-950/50 dark:text-red-300",
   Expired:
     "border-orange-400/50 bg-orange-50 text-orange-700 dark:border-orange-600/50 dark:bg-orange-950/50 dark:text-orange-300",
 };
@@ -261,7 +292,8 @@ export function DocumentEditor({
   const qc = useQueryClient();
   const nav = useNavigate();
   const { tenant, user, profile, can } = useAuth();
-  const permissionModule = kind === "po" || kind === "bill" || kind === "requisition" ? "purchasing" : "sales";
+  const permissionModule =
+    kind === "po" || kind === "bill" || kind === "requisition" ? "purchasing" : "sales";
   const canWriteBase = can([
     `${permissionModule}.create`,
     `${permissionModule}.update`,
@@ -287,19 +319,21 @@ export function DocumentEditor({
         : false;
   const canRecordPayment = can(["payments.create", "payments.post"]);
   const voidPermission =
-    kind === "invoice" || kind === "credit_note" ? "sales.void" : kind === "bill" ? "purchasing.void" : null;
+    kind === "invoice" || kind === "credit_note"
+      ? "sales.void"
+      : kind === "bill"
+        ? "purchasing.void"
+        : null;
   const [voidOpen, setVoidOpen] = useState(false);
   const isNew = id === "new";
   const [payOpen, setPayOpen] = useState(false);
   const [emailOpen, setEmailOpen] = useState(false);
   const [postOpen, setPostOpen] = useState(false);
+  const [orderStep, setOrderStep] = useState(0);
   const { branding } = useDocumentBranding(TEMPLATE_KIND[kind]);
   const { data: quoteStatusEvents = [] } = useDocumentEvents(kind, kind === "quote" ? id : null);
   const latestQuoteEventByStatus = useMemo(
-    () =>
-      new Map(
-        quoteStatusEvents.map((event) => [event.status, event] as const),
-      ),
+    () => new Map(quoteStatusEvents.map((event) => [event.status, event] as const)),
     [quoteStatusEvents],
   );
 
@@ -338,7 +372,9 @@ export function DocumentEditor({
     notes: "",
     status: cfg.statuses[0],
     // Requisition-specific defaults
-    ...(kind === "requisition" ? { requisition_type: "purchase", department: "", requested_by: "", from_warehouse_id: "" } : {}),
+    ...(kind === "requisition"
+      ? { requisition_type: "purchase", department: "", requested_by: "", from_warehouse_id: "" }
+      : {}),
   });
   // Requisition: Convert to PO dialog state
   const [convertPoOpen, setConvertPoOpen] = useState(false);
@@ -352,7 +388,9 @@ export function DocumentEditor({
     queryFn: async () => {
       const { data, error } = await db
         .from("customers")
-        .select("id,name,contact_person,email,phone,currency,billing_address,shipping_address,payment_terms")
+        .select(
+          "id,name,contact_person,email,phone,currency,billing_address,shipping_address,payment_terms",
+        )
         .eq("id", selectedCustomerId!)
         .maybeSingle();
       if (error) throw error;
@@ -412,20 +450,27 @@ export function DocumentEditor({
 
   const isOrderKind = kind === "order";
   const isInvoiceKind = kind === "invoice";
+  const orderStepReady = (step: number) => {
+    if (!isOrderKind) return true;
+    if (step === 0) return !!header.customer_id;
+    if (step === 2)
+      return lines.length > 0 && lines.every((line) => line.quantity > 0 && line.unit_price >= 0);
+    return true;
+  };
 
   const { data: eligibleQuotes = [] } = useEligibleQuotesForSalesOrder(
-    isNew && isOrderKind ? selectedCustomerId : null
+    isNew && isOrderKind ? selectedCustomerId : null,
   );
 
   const { data: eligibleOrders = [] } = useEligibleOrdersForInvoice(
-    isNew && isInvoiceKind ? selectedCustomerId : null
+    isNew && isInvoiceKind ? selectedCustomerId : null,
   );
 
   const hasOpenOrders = (eligibleOrders?.length ?? 0) > 0;
 
   const { data: fallbackQuotes = [] } = useEligibleQuotesForInvoice(
     isNew && isInvoiceKind ? selectedCustomerId : null,
-    hasOpenOrders
+    hasOpenOrders,
   );
 
   // Fetch linked source quote / order numbers if already linked
@@ -548,7 +593,9 @@ export function DocumentEditor({
     });
 
   const removeLine = (idx: number) =>
-    setLines((prev) => prev.filter((_, i) => i !== idx).map((l, i) => ({ ...l, line_no: i + 1, _dirty: true })));
+    setLines((prev) =>
+      prev.filter((_, i) => i !== idx).map((l, i) => ({ ...l, line_no: i + 1, _dirty: true })),
+    );
 
   const handleIncludeQuote = (quote: EligibleQuote) => {
     const newLines: Line[] = quote.lines.map((l, idx) => ({
@@ -570,7 +617,7 @@ export function DocumentEditor({
       currency: quote.currency || prev.currency,
       notes: prev.notes
         ? `${prev.notes}\nImported from Quote ${quote.number}`
-        : (quote.notes || `Imported from Quote ${quote.number}`),
+        : quote.notes || `Imported from Quote ${quote.number}`,
     }));
 
     setImportedSource({
@@ -616,7 +663,7 @@ export function DocumentEditor({
       currency: order.currency || prev.currency,
       notes: prev.notes
         ? `${prev.notes}\nImported from Sales Order ${order.number}`
-        : (order.notes || `Imported from Sales Order ${order.number}`),
+        : order.notes || `Imported from Sales Order ${order.number}`,
     }));
 
     setImportedSource({
@@ -703,26 +750,41 @@ export function DocumentEditor({
   };
 
   const save = useMutation({
-    mutationFn: async () => {
+    mutationFn: async ({
+      statusOverride,
+      createAnother,
+    }: { statusOverride?: string; createAnother?: boolean } = {}) => {
       if (!tenant?.id) throw new Error("No tenant");
-      if (!isNew && doc?.posted_at) throw new Error("Posted documents are locked. Use Void & Reverse instead.");
+      if (!isNew && doc?.posted_at)
+        throw new Error("Posted documents are locked. Use Void & Reverse instead.");
       if (cfg.partyRequired !== false && !header[cfg.partyField])
         throw new Error(`Please select a ${cfg.partyLabel.toLowerCase()}`);
 
       // Enforce remaining quantity cap on invoice creation from a sales order
-      if (kind === "invoice" && header.source_order_id && importedSource?.type === "order" && importedSource.maxQuantities) {
+      if (
+        kind === "invoice" &&
+        header.source_order_id &&
+        importedSource?.type === "order" &&
+        importedSource.maxQuantities
+      ) {
         for (const l of lines) {
           const key = l.item_id ? `item_${l.item_id}` : `desc_${l.description}`;
           const maxAllowed = importedSource.maxQuantities[key];
           if (maxAllowed !== undefined && l.quantity > maxAllowed) {
             throw new Error(
-              `Quantity for "${l.description || "item"}" (${l.quantity}) exceeds remaining un-invoiced quantity (${maxAllowed}) from Sales Order ${importedSource.number}.`
+              `Quantity for "${l.description || "item"}" (${l.quantity}) exceeds remaining un-invoiced quantity (${maxAllowed}) from Sales Order ${importedSource.number}.`,
             );
           }
         }
       }
 
-      const headerPayload: Row = { ...header, ...totals, amount: totals.grand_total, tenant_id: tenant.id };
+      const headerPayload: Row = {
+        ...header,
+        ...(statusOverride ? { status: statusOverride } : {}),
+        ...totals,
+        amount: totals.grand_total,
+        tenant_id: tenant.id,
+      };
       if (kind === "invoice" || kind === "bill") {
         headerPayload.balance_due = totals.grand_total - (header.amount_paid ?? 0);
         headerPayload.balance = headerPayload.balance_due;
@@ -747,7 +809,8 @@ export function DocumentEditor({
 
       let docId: string | null = isNew ? null : id;
       if (isNew) {
-        if (!headerPayload.number) headerPayload.number = `${cfg.prefix}-${Date.now().toString().slice(-8)}`;
+        if (!headerPayload.number)
+          headerPayload.number = `${cfg.prefix}-${Date.now().toString().slice(-8)}`;
         const data = await insertRow(cfg.table, headerPayload as TablesInsert<typeof cfg.table>);
         docId = data.id;
       } else {
@@ -771,12 +834,26 @@ export function DocumentEditor({
         const { error } = await db.from(cfg.lines).insert(linePayload as never);
         if (error) throw error;
       }
-      return docId;
+      return { docId, createAnother: Boolean(createAnother) };
     },
-    onSuccess: (docId) => {
+    onSuccess: ({ docId, createAnother }) => {
       toast.success("Saved");
       qc.invalidateQueries({ queryKey: [cfg.table] });
       qc.invalidateQueries({ queryKey: [cfg.lines] });
+      if (createAnother && isOrderKind) {
+        setHeader({
+          number: "",
+          customer_id: "",
+          date: new Date().toISOString().slice(0, 10),
+          currency: tenant?.currency ?? "KES",
+          notes: "",
+          status: "Draft",
+        });
+        setLines([]);
+        setImportedSource(null);
+        setOrderStep(0);
+        return;
+      }
       if (isNew && docId) {
         if (onSaved) onSaved(docId);
         else nav({ to: `${cfg.detailBase}/${docId}` as never });
@@ -869,13 +946,15 @@ export function DocumentEditor({
     if (isNew && isReq && !isStockReq && tenant?.currency && !header.currency) {
       setHeader((h) => ({ ...h, currency: tenant.currency }));
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isNew, isReq, isStockReq, tenant?.currency]);
 
   // B2: Approve stock requisition via RPC → creates Draft Stock Issues
   const approveStockReq = useMutation({
     mutationFn: async () => {
-      const { data, error } = await (supabase as any).rpc("approve_stock_requisition", { _req_id: id });
+      const { data, error } = await (supabase as any).rpc("approve_stock_requisition", {
+        _req_id: id,
+      });
       if (error) throw error;
       return (data ?? []) as string[];
     },
@@ -883,7 +962,7 @@ export function DocumentEditor({
       const count = adjIds.length;
       toast.success(
         `Stock requisition approved. ${count} Draft Stock Issue${count !== 1 ? "s" : ""} created.`,
-        { description: "Go to Inventory → Adjustments to review and Post them.", duration: 8000 }
+        { description: "Go to Inventory → Adjustments to review and Post them.", duration: 8000 },
       );
       setHeader((h) => ({ ...h, status: "Approved" }));
       qc.invalidateQueries();
@@ -922,7 +1001,11 @@ export function DocumentEditor({
     queryKey: [cfg.partyTable, "detail", partyId],
     enabled: !!partyId,
     queryFn: async () => {
-      const { data, error } = await db.from(cfg.partyTable).select("id,name,email").eq("id", partyId).maybeSingle();
+      const { data, error } = await db
+        .from(cfg.partyTable)
+        .select("id,name,email")
+        .eq("id", partyId)
+        .maybeSingle();
       if (error) throw error;
       return data as unknown as Record<string, string | number | null | undefined>;
     },
@@ -962,7 +1045,10 @@ export function DocumentEditor({
     queryKey: [cfg.linkFk?.table, "link-options", header[cfg.partyField]],
     enabled: !!cfg.linkFk,
     queryFn: async () => {
-      let q = db.from(cfg.linkFk!.table).select(`id, ${cfg.linkFk!.labelKey}`).is("deleted_at", null);
+      let q = db
+        .from(cfg.linkFk!.table)
+        .select(`id, ${cfg.linkFk!.labelKey}`)
+        .is("deleted_at", null);
       if (header[cfg.partyField]) q = q.eq(cfg.partyField, header[cfg.partyField]);
       const { data, error } = await q.order("created_at", { ascending: false }).limit(200);
       if (error) throw error;
@@ -979,7 +1065,9 @@ export function DocumentEditor({
     currency: String(header.currency ?? "USD"),
     meta: [
       { label: "Date", value: String(header[cfg.dateField] ?? "") },
-      ...(cfg.extraDate ? [{ label: cfg.extraDate.label, value: String(header[cfg.extraDate.field] ?? "") }] : []),
+      ...(cfg.extraDate
+        ? [{ label: cfg.extraDate.label, value: String(header[cfg.extraDate.field] ?? "") }]
+        : []),
       { label: "Status", value: String(header.status ?? "") },
     ],
     lines: lines.map((l) => ({
@@ -1028,7 +1116,10 @@ export function DocumentEditor({
                   {isNew ? `New ${cfg.label}` : header.number || cfg.label}
                 </h1>
                 {header.status && (
-                  <Badge variant="outline" className={kind === "quote" ? STATUS_SELECT_COLORS[header.status] : undefined}>
+                  <Badge
+                    variant="outline"
+                    className={kind === "quote" ? STATUS_SELECT_COLORS[header.status] : undefined}
+                  >
                     {header.status}
                   </Badge>
                 )}
@@ -1054,7 +1145,8 @@ export function DocumentEditor({
             )}
             {!isNew && (doc?.posted_at || kind === "credit_note") && (
               <Button variant="outline" size="sm" onClick={() => setPostOpen(true)}>
-                <Receipt className="h-4 w-4 mr-1.5" /> {kind === "credit_note" ? "Inventory movements" : "Post details"}
+                <Receipt className="h-4 w-4 mr-1.5" />{" "}
+                {kind === "credit_note" ? "Inventory movements" : "Post details"}
               </Button>
             )}
 
@@ -1090,7 +1182,9 @@ export function DocumentEditor({
                 variant="outline"
                 size="sm"
                 disabled={setReqStatus.isPending}
-                onClick={() => setReqStatus.mutate({ status: "Submitted", note: "Submitted for approval" })}
+                onClick={() =>
+                  setReqStatus.mutate({ status: "Submitted", note: "Submitted for approval" })
+                }
               >
                 <Send className="h-4 w-4 mr-1.5" /> Submit for Approval
               </Button>
@@ -1101,7 +1195,9 @@ export function DocumentEditor({
                   variant="outline"
                   size="sm"
                   disabled={setReqStatus.isPending || approveStockReq.isPending}
-                  onClick={() => setReqStatus.mutate({ status: "Rejected", note: "Rejected by approver" })}
+                  onClick={() =>
+                    setReqStatus.mutate({ status: "Rejected", note: "Rejected by approver" })
+                  }
                 >
                   Reject
                 </Button>
@@ -1178,6 +1274,67 @@ export function DocumentEditor({
                 <DollarSign className="h-4 w-4 mr-1.5" /> Record Payment
               </Button>
             )}
+            {isOrderKind && (
+              <>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setOrderStep((step) => Math.max(0, step - 1))}
+                  disabled={orderStep === 0}
+                >
+                  Back
+                </Button>
+                {orderStep < ORDER_EDITOR_STEPS.length - 1 ? (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      if (!orderStepReady(orderStep)) {
+                        toast.error(
+                          orderStep === 0
+                            ? "Select a customer first"
+                            : "Add at least one valid product line",
+                        );
+                        return;
+                      }
+                      setOrderStep((step) => step + 1);
+                    }}
+                  >
+                    Next
+                  </Button>
+                ) : (
+                  <>
+                    {isNew && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={!canWrite || save.isPending}
+                        onClick={() => save.mutate({ createAnother: true })}
+                      >
+                        Save &amp; Create Another
+                      </Button>
+                    )}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={!canWrite || save.isPending}
+                      onClick={() => save.mutate()}
+                    >
+                      Save Draft
+                    </Button>
+                    <Button
+                      size="sm"
+                      disabled={
+                        !canWrite || save.isPending || !orderStepReady(0) || !orderStepReady(2)
+                      }
+                      onClick={() => save.mutate({ statusOverride: "Confirmed" })}
+                    >
+                      Confirm Order
+                    </Button>
+                  </>
+                )}
+              </>
+            )}
             {canVoid && (
               <Button
                 variant="destructive"
@@ -1188,8 +1345,12 @@ export function DocumentEditor({
                 <Ban className="h-4 w-4 mr-1.5" /> Void & Reverse
               </Button>
             )}
-            {canWrite && (
-              <Button size="sm" disabled={save.isPending || !!doc?.posted_at} onClick={() => save.mutate()}>
+            {canWrite && !isOrderKind && (
+              <Button
+                size="sm"
+                disabled={save.isPending || !!doc?.posted_at}
+                onClick={() => save.mutate()}
+              >
                 {save.isPending ? (
                   <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
                 ) : (
@@ -1201,8 +1362,34 @@ export function DocumentEditor({
           </div>
         </div>
 
-        <Card className="grid grid-cols-1 gap-4 p-3 sm:p-4 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="grid gap-1.5">
+        {isOrderKind && (
+          <Card className="overflow-hidden p-0">
+            <div className="flex gap-2 overflow-x-auto border-b bg-muted/20 p-2 md:grid md:grid-cols-6">
+              {ORDER_EDITOR_STEPS.map((label, index) => (
+                <button
+                  key={label}
+                  type="button"
+                  onClick={() => index <= orderStep && setOrderStep(index)}
+                  className={`flex min-w-[145px] items-center gap-2 rounded-md px-3 py-2 text-left text-xs md:min-w-0 ${orderStep === index ? "bg-primary text-primary-foreground" : index < orderStep ? "text-foreground hover:bg-muted" : "text-muted-foreground"}`}
+                >
+                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border text-[10px]">
+                    {index < orderStep ? "✓" : index + 1}
+                  </span>
+                  <span>{label}</span>
+                </button>
+              ))}
+            </div>
+            <div className="border-b px-4 py-3 text-sm text-muted-foreground">
+              Step {orderStep + 1} of {ORDER_EDITOR_STEPS.length}:{" "}
+              <span className="font-medium text-foreground">{ORDER_EDITOR_STEPS[orderStep]}</span>
+            </div>
+          </Card>
+        )}
+
+        <Card
+          className={`grid grid-cols-1 gap-4 p-3 sm:p-4 sm:grid-cols-2 lg:grid-cols-4 ${isOrderKind && orderStep !== 0 && orderStep !== 1 ? "hidden" : ""}`}
+        >
+          <div className={`grid gap-1.5 ${isOrderKind && orderStep !== 1 ? "hidden" : ""}`}>
             <Label>Number</Label>
             <Input
               value={header.number ?? ""}
@@ -1213,7 +1400,7 @@ export function DocumentEditor({
           </div>
           {/* Requisitions do NOT show a supplier — that is selected at PO conversion time */}
           {!isReq && (
-            <div className="grid gap-1.5">
+            <div className={`grid gap-1.5 ${isOrderKind && orderStep !== 0 ? "hidden" : ""}`}>
               <Label>{cfg.partyLabel}</Label>
               <Select
                 value={header[cfg.partyField] ?? ""}
@@ -1240,7 +1427,11 @@ export function DocumentEditor({
               <Select
                 value={header.requisition_type ?? "purchase"}
                 onValueChange={(v) =>
-                  setHeader({ ...header, requisition_type: v, from_warehouse_id: v === "purchase" ? "" : header.from_warehouse_id })
+                  setHeader({
+                    ...header,
+                    requisition_type: v,
+                    from_warehouse_id: v === "purchase" ? "" : header.from_warehouse_id,
+                  })
                 }
                 disabled={!canWrite}
               >
@@ -1257,7 +1448,9 @@ export function DocumentEditor({
           {/* Warehouse selector — only for stock requisitions */}
           {isStockReq && (
             <div className="grid gap-1.5">
-              <Label>From Warehouse <span className="text-destructive">*</span></Label>
+              <Label>
+                From Warehouse <span className="text-destructive">*</span>
+              </Label>
               <Select
                 value={header.from_warehouse_id ?? ""}
                 onValueChange={(v) => setHeader({ ...header, from_warehouse_id: v })}
@@ -1269,14 +1462,15 @@ export function DocumentEditor({
                 <SelectContent>
                   {warehouses.map((w) => (
                     <SelectItem key={w.id} value={w.id}>
-                      {w.code ? `${w.code} — ` : ""}{w.name}
+                      {w.code ? `${w.code} — ` : ""}
+                      {w.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
           )}
-          <div className="grid gap-1.5">
+          <div className={`grid gap-1.5 ${isOrderKind && orderStep !== 1 ? "hidden" : ""}`}>
             <Label>Date</Label>
             <Input
               type="date"
@@ -1318,7 +1512,7 @@ export function DocumentEditor({
             </div>
           )}
           {!isStockReq && (
-            <div className="grid gap-1.5">
+            <div className={`grid gap-1.5 ${isOrderKind && orderStep !== 1 ? "hidden" : ""}`}>
               <Label>Currency</Label>
               <Select
                 value={header.currency ?? "USD"}
@@ -1338,7 +1532,7 @@ export function DocumentEditor({
               </Select>
             </div>
           )}
-          <div className="grid gap-1.5">
+          <div className={`grid gap-1.5 ${isOrderKind && orderStep !== 1 ? "hidden" : ""}`}>
             <Label>Status</Label>
             <Select
               value={header.status ?? cfg.statuses[0]}
@@ -1346,7 +1540,11 @@ export function DocumentEditor({
               disabled={!canWrite}
             >
               <SelectTrigger
-                className={kind === "quote" ? STATUS_SELECT_COLORS[header.status ?? cfg.statuses[0]] : undefined}
+                className={
+                  kind === "quote"
+                    ? STATUS_SELECT_COLORS[header.status ?? cfg.statuses[0]]
+                    : undefined
+                }
               >
                 <SelectValue />
               </SelectTrigger>
@@ -1359,11 +1557,17 @@ export function DocumentEditor({
                       <SelectItem
                         key={s}
                         value={s}
-                        className={kind === "quote" ? `my-1 border ${STATUS_SELECT_COLORS[s] ?? ""}` : undefined}
+                        className={
+                          kind === "quote"
+                            ? `my-1 border ${STATUS_SELECT_COLORS[s] ?? ""}`
+                            : undefined
+                        }
                       >
                         <span className="flex min-w-0 items-center gap-2">
                           {kind === "quote" && (
-                            <CheckCircle2 className={`h-3.5 w-3.5 shrink-0 ${event ? "opacity-100" : "opacity-30"}`} />
+                            <CheckCircle2
+                              className={`h-3.5 w-3.5 shrink-0 ${event ? "opacity-100" : "opacity-30"}`}
+                            />
                           )}
                           <span className="min-w-0">
                             <span className="block font-medium">{s}</span>
@@ -1403,7 +1607,9 @@ export function DocumentEditor({
               />
             </div>
           )}
-          <div className="grid gap-1.5 md:col-span-2">
+          <div
+            className={`grid gap-1.5 md:col-span-2 ${isOrderKind && orderStep !== 1 ? "hidden" : ""}`}
+          >
             <Label>Notes</Label>
             <Textarea
               rows={1}
@@ -1415,7 +1621,7 @@ export function DocumentEditor({
         </Card>
 
         {(kind === "quote" || kind === "order" || kind === "invoice") && selectedCustomer && (
-          <Card className="p-4">
+          <Card className={`p-4 ${isOrderKind && orderStep !== 0 ? "hidden" : ""}`}>
             <div className="flex items-center justify-between gap-3 border-b pb-3">
               <div>
                 <p className="text-sm font-semibold">Customer Details</p>
@@ -1423,7 +1629,9 @@ export function DocumentEditor({
                   Details are automatically loaded from the selected customer.
                 </p>
               </div>
-              <Badge variant="outline">{selectedCustomer.currency ?? header.currency ?? "USD"}</Badge>
+              <Badge variant="outline">
+                {selectedCustomer.currency ?? header.currency ?? "USD"}
+              </Badge>
             </div>
             <div className="grid grid-cols-1 gap-4 pt-4 md:grid-cols-2">
               <div className="space-y-2 text-sm">
@@ -1437,17 +1645,24 @@ export function DocumentEditor({
                 </div>
                 <div>
                   <span className="text-xs text-muted-foreground">Email / Phone</span>
-                  <div>{[selectedCustomer.email, selectedCustomer.phone].filter(Boolean).join(" · ") || "—"}</div>
+                  <div>
+                    {[selectedCustomer.email, selectedCustomer.phone].filter(Boolean).join(" · ") ||
+                      "—"}
+                  </div>
                 </div>
               </div>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div>
                   <span className="text-xs text-muted-foreground">Billing Address</span>
-                  <div className="mt-1 whitespace-pre-line text-sm">{selectedCustomer.billing_address || "—"}</div>
+                  <div className="mt-1 whitespace-pre-line text-sm">
+                    {selectedCustomer.billing_address || "—"}
+                  </div>
                 </div>
                 <div>
                   <span className="text-xs text-muted-foreground">Shipping Address</span>
-                  <div className="mt-1 whitespace-pre-line text-sm">{selectedCustomer.shipping_address || "—"}</div>
+                  <div className="mt-1 whitespace-pre-line text-sm">
+                    {selectedCustomer.shipping_address || "—"}
+                  </div>
                 </div>
               </div>
             </div>
@@ -1455,7 +1670,7 @@ export function DocumentEditor({
         )}
 
         {/* ── Source document suggestion banner (only when creating new sales orders / invoices) ── */}
-        {isNew && (kind === "order" || kind === "invoice") && (
+        {isNew && (kind === "order" || kind === "invoice") && (!isOrderKind || orderStep === 2) && (
           <SourceDocumentSuggestionBanner
             kind={kind as "order" | "invoice"}
             eligibleQuotes={kind === "order" ? eligibleQuotes : []}
@@ -1471,7 +1686,9 @@ export function DocumentEditor({
           />
         )}
 
-        <Card className="p-0 overflow-hidden">
+        <Card
+          className={`p-0 overflow-hidden ${isOrderKind && orderStep !== 2 && orderStep !== 3 ? "hidden" : ""}`}
+        >
           <div className="flex items-center justify-between px-4 py-2 border-b bg-muted/30">
             <div className="text-sm font-medium">Line items</div>
             {canWrite && (
@@ -1498,7 +1715,10 @@ export function DocumentEditor({
               <tbody>
                 {lines.length === 0 && (
                   <tr>
-                    <td colSpan={isStockReq ? 5 : 9} className="text-center text-sm text-muted-foreground py-10">
+                    <td
+                      colSpan={isStockReq ? 5 : 9}
+                      className="text-center text-sm text-muted-foreground py-10"
+                    >
                       No lines yet. {canWrite && "Click Add line to begin."}
                     </td>
                   </tr>
@@ -1514,7 +1734,9 @@ export function DocumentEditor({
                           const itemId = v === "__no_item__" ? null : v;
                           const it = items.find((i) => i.id === itemId);
                           const price =
-                            kind === "po" || kind === "bill" ? Number(it?.cost ?? 0) : Number(it?.price ?? 0);
+                            kind === "po" || kind === "bill"
+                              ? Number(it?.cost ?? 0)
+                              : Number(it?.price ?? 0);
                           updateLine(idx, {
                             item_id: itemId,
                             description: l.description || it?.name || "",
@@ -1524,7 +1746,9 @@ export function DocumentEditor({
                         disabled={!canWrite}
                       >
                         <SelectTrigger className="h-8">
-                          <SelectValue placeholder={isStockReq ? "Pick item… *" : "Pick item (optional)"} />
+                          <SelectValue
+                            placeholder={isStockReq ? "Pick item… *" : "Pick item (optional)"}
+                          />
                         </SelectTrigger>
                         <SelectContent>
                           {!isStockReq && (
@@ -1576,7 +1800,9 @@ export function DocumentEditor({
                           type="number"
                           step="any"
                           value={l.discount_pct}
-                          onChange={(e) => updateLine(idx, { discount_pct: Number(e.target.value) })}
+                          onChange={(e) =>
+                            updateLine(idx, { discount_pct: Number(e.target.value) })
+                          }
                           disabled={!canWrite}
                         />
                       </td>
@@ -1594,11 +1820,18 @@ export function DocumentEditor({
                       </td>
                     )}
                     {!isStockReq && (
-                      <td className="px-3 py-1.5 text-right font-mono tabular-nums">{money(computeLine(l))}</td>
+                      <td className="px-3 py-1.5 text-right font-mono tabular-nums">
+                        {money(computeLine(l))}
+                      </td>
                     )}
                     <td className="px-2 py-1.5">
                       {canWrite && (
-                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => removeLine(idx)}>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7"
+                          onClick={() => removeLine(idx)}
+                        >
                           <Trash2 className="h-3.5 w-3.5 text-destructive" />
                         </Button>
                       )}
@@ -1636,6 +1869,90 @@ export function DocumentEditor({
           )}
         </Card>
 
+        {isOrderKind && orderStep === 3 && (
+          <Card className="p-4">
+            <div className="mb-4">
+              <p className="text-sm font-semibold">Pricing & Tax</p>
+              <p className="text-xs text-muted-foreground">
+                Review the calculated values from the order lines.
+              </p>
+            </div>
+            <div className="ml-auto grid w-full max-w-sm gap-2 text-sm">
+              <Row label="Subtotal" v={totals.subtotal} />
+              <Row label="Discount" v={-totals.discount_total} />
+              <Row label="Tax" v={totals.tax_total} />
+              <div className="border-t pt-2">
+                <Row label="Grand Total" v={totals.grand_total} />
+              </div>
+            </div>
+          </Card>
+        )}
+        {isOrderKind && orderStep === 4 && (
+          <Card className="p-4">
+            <div className="mb-4">
+              <p className="text-sm font-semibold">Delivery</p>
+              <p className="text-xs text-muted-foreground">
+                Delivery-specific fields are shown when supported by the Sales Order schema.
+              </p>
+            </div>
+            <div className="grid gap-4 md:grid-cols-2">
+              <div>
+                <p className="text-xs text-muted-foreground">Shipping Address</p>
+                <p className="mt-1 whitespace-pre-line text-sm">
+                  {selectedCustomer?.shipping_address ||
+                    "No shipping address on the customer record."}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Billing Address</p>
+                <p className="mt-1 whitespace-pre-line text-sm">
+                  {selectedCustomer?.billing_address ||
+                    "No billing address on the customer record."}
+                </p>
+              </div>
+            </div>
+          </Card>
+        )}
+        {isOrderKind && orderStep === 5 && (
+          <Card className="p-4">
+            <div className="mb-4">
+              <p className="text-sm font-semibold">Review Sales Order</p>
+              <p className="text-xs text-muted-foreground">
+                Confirm the order details before saving.
+              </p>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <p className="text-xs text-muted-foreground">Customer</p>
+                <p className="font-medium">{selectedCustomer?.name || "Not selected"}</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Order Date</p>
+                <p className="font-medium">{header.date || "Not set"}</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Items</p>
+                <p className="font-medium">
+                  {lines.length} products ·{" "}
+                  {lines.reduce((sum, line) => sum + Number(line.quantity || 0), 0)} units
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Grand Total</p>
+                <p className="font-mono font-semibold">
+                  {header.currency ?? "USD"} {money(totals.grand_total)}
+                </p>
+              </div>
+              <div className="sm:col-span-2">
+                <p className="text-xs text-muted-foreground">Delivery Address</p>
+                <p className="whitespace-pre-line text-sm">
+                  {selectedCustomer?.shipping_address || "Not set"}
+                </p>
+              </div>
+            </div>
+          </Card>
+        )}
+
         {kind === "order" && !isNew && (
           <Card className="p-0 overflow-hidden">
             <div className="flex items-center justify-between px-4 py-2 border-b bg-muted/30">
@@ -1651,7 +1968,9 @@ export function DocumentEditor({
               )}
             </div>
             {packages.length === 0 ? (
-              <div className="text-center text-sm text-muted-foreground py-8">No packages for this order yet.</div>
+              <div className="text-center text-sm text-muted-foreground py-8">
+                No packages for this order yet.
+              </div>
             ) : (
               <table className="w-full text-sm">
                 <thead>
@@ -1700,7 +2019,9 @@ export function DocumentEditor({
               )}
             </div>
             {shipments.length === 0 ? (
-              <div className="text-center text-sm text-muted-foreground py-8">No shipments for this order yet.</div>
+              <div className="text-center text-sm text-muted-foreground py-8">
+                No shipments for this order yet.
+              </div>
             ) : (
               <table className="w-full text-sm">
                 <thead>
@@ -1766,12 +2087,18 @@ export function DocumentEditor({
           <AlertDialogHeader>
             <AlertDialogTitle>Change customer and clear imported items?</AlertDialogTitle>
             <AlertDialogDescription>
-              You have modified the line items imported from the source document. Changing the customer will clear all
-              current line items and unlink the source document. This action cannot be undone.
+              You have modified the line items imported from the source document. Changing the
+              customer will clear all current line items and unlink the source document. This action
+              cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => { setCustomerChangeModalOpen(false); setPendingCustomerId(null); }}>
+            <AlertDialogCancel
+              onClick={() => {
+                setCustomerChangeModalOpen(false);
+                setPendingCustomerId(null);
+              }}
+            >
               Keep current customer
             </AlertDialogCancel>
             <AlertDialogAction onClick={confirmCustomerChange}>
@@ -1799,14 +2126,19 @@ export function DocumentEditor({
           <AlertDialog open={voidOpen} onOpenChange={setVoidOpen}>
             <AlertDialogContent className="max-w-md">
               <AlertDialogHeader>
-                <AlertDialogTitle>Void and reverse this {cfg.label.toLowerCase()}?</AlertDialogTitle>
+                <AlertDialogTitle>
+                  Void and reverse this {cfg.label.toLowerCase()}?
+                </AlertDialogTitle>
                 <AlertDialogDescription asChild>
                   <div className="space-y-3 text-sm">
                     <p>
-                      The original posted document will remain unchanged for audit purposes. A balanced reversal journal{" "}
-                      <span className="font-mono font-semibold text-foreground">VOID-{header.number}</span> will be
-                      created with every debit and credit exactly swapped, and the original will be marked{" "}
-                      <span className="font-semibold text-destructive">VOIDED</span>.
+                      The original posted document will remain unchanged for audit purposes. A
+                      balanced reversal journal{" "}
+                      <span className="font-mono font-semibold text-foreground">
+                        VOID-{header.number}
+                      </span>{" "}
+                      will be created with every debit and credit exactly swapped, and the original
+                      will be marked <span className="font-semibold text-destructive">VOIDED</span>.
                     </p>
                     <ul className="space-y-1 text-xs text-muted-foreground list-disc list-inside">
                       <li>All journal lines are inverted — every DR becomes CR and vice versa</li>
