@@ -183,7 +183,7 @@ DECLARE
   v_count integer := 0;
   v_bill_ids uuid[] := ARRAY[]::uuid[];
 BEGIN
-  IF NOT (public.has_permission('payments.allocate') OR public.has_permission('payments.update')) THEN
+  IF NOT public.has_permission('payments.allocate') THEN
     RAISE EXCEPTION 'Not authorized: payments.allocate' USING ERRCODE = '42501';
   END IF;
   IF jsonb_typeof(_allocations) <> 'array' OR jsonb_array_length(_allocations) = 0 THEN RAISE EXCEPTION 'At least one allocation is required'; END IF;
@@ -224,7 +224,7 @@ $$;
 CREATE OR REPLACE FUNCTION public.unallocate_supplier_payment(_allocation_id uuid)
 RETURNS uuid LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, pg_temp AS $$
 BEGIN
-  IF NOT (public.has_permission('payments.allocate') OR public.has_permission('payments.update')) THEN RAISE EXCEPTION 'Not authorized: payments.allocate' USING ERRCODE = '42501'; END IF;
+  IF NOT public.has_permission('payments.allocate') THEN RAISE EXCEPTION 'Not authorized: payments.allocate' USING ERRCODE = '42501'; END IF;
   UPDATE public.supplier_payment_allocations SET deleted_at = now(), updated_at = now(), updated_by = auth.uid()
   WHERE id = _allocation_id AND tenant_id = public.current_tenant_id() AND deleted_at IS NULL;
   IF NOT FOUND THEN RAISE EXCEPTION 'Active supplier payment allocation not found'; END IF;
@@ -236,11 +236,11 @@ DROP POLICY IF EXISTS supplier_payment_allocations_write ON public.supplier_paym
 CREATE POLICY supplier_payment_allocations_write ON public.supplier_payment_allocations FOR ALL TO authenticated
   USING (
     tenant_id = public.current_tenant_id()
-    AND (public.has_permission('payments.allocate') OR public.has_permission('payments.update'))
+    AND public.has_permission('payments.allocate')
   )
   WITH CHECK (
     tenant_id = public.current_tenant_id()
-    AND (public.has_permission('payments.allocate') OR public.has_permission('payments.update'))
+    AND public.has_permission('payments.allocate')
   );
 
 CREATE OR REPLACE FUNCTION public.void_supplier_payment(_payment_id uuid, _reason text DEFAULT 'Supplier payment voided')
