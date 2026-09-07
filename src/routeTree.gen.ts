@@ -111,6 +111,7 @@ import { Route as AuthenticatedSalesQuotesIndexRouteImport } from './routes/_aut
 import { Route as AuthenticatedSalesPackagesIndexRouteImport } from './routes/_authenticated/sales.packages.index'
 import { Route as AuthenticatedSalesOrdersIndexRouteImport } from './routes/_authenticated/sales.orders.index'
 import { Route as AuthenticatedSalesInvoicesIndexRouteImport } from './routes/_authenticated/sales.invoices.index'
+import { Route as AuthenticatedSalesFulfillmentIndexRouteImport } from './routes/_authenticated/sales.fulfillment.index'
 import { Route as AuthenticatedSalesCreditNotesIndexRouteImport } from './routes/_authenticated/sales.credit-notes.index'
 import { Route as AuthenticatedPurchasingSuppliersIndexRouteImport } from './routes/_authenticated/purchasing.suppliers.index'
 import { Route as AuthenticatedPurchasingRequisitionsIndexRouteImport } from './routes/_authenticated/purchasing.requisitions.index'
@@ -132,6 +133,7 @@ import { Route as AuthenticatedSalesPaymentsIdRouteImport } from './routes/_auth
 import { Route as AuthenticatedSalesPackagesIdRouteImport } from './routes/_authenticated/sales.packages.$id'
 import { Route as AuthenticatedSalesOrdersIdRouteImport } from './routes/_authenticated/sales.orders.$id'
 import { Route as AuthenticatedSalesInvoicesIdRouteImport } from './routes/_authenticated/sales.invoices.$id'
+import { Route as AuthenticatedSalesFulfillmentIdRouteImport } from './routes/_authenticated/sales.fulfillment.$id'
 import { Route as AuthenticatedSalesCreditNotesIdRouteImport } from './routes/_authenticated/sales.credit-notes.$id'
 import { Route as AuthenticatedReportsSalesSalespeopleRouteImport } from './routes/_authenticated/reports.sales.salespeople'
 import { Route as AuthenticatedReportsSalesReceivablesRouteImport } from './routes/_authenticated/reports.sales.receivables'
@@ -746,6 +748,12 @@ const AuthenticatedSalesInvoicesIndexRoute =
     path: '/sales/invoices/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedSalesFulfillmentIndexRoute =
+  AuthenticatedSalesFulfillmentIndexRouteImport.update({
+    id: '/sales/fulfillment/',
+    path: '/sales/fulfillment/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedSalesCreditNotesIndexRoute =
   AuthenticatedSalesCreditNotesIndexRouteImport.update({
     id: '/sales/credit-notes/',
@@ -870,6 +878,12 @@ const AuthenticatedSalesInvoicesIdRoute =
   AuthenticatedSalesInvoicesIdRouteImport.update({
     id: '/sales/invoices/$id',
     path: '/sales/invoices/$id',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedSalesFulfillmentIdRoute =
+  AuthenticatedSalesFulfillmentIdRouteImport.update({
+    id: '/sales/fulfillment/$id',
+    path: '/sales/fulfillment/$id',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedSalesCreditNotesIdRoute =
@@ -1246,6 +1260,7 @@ export interface FileRoutesByFullPath {
   '/reports/sales/receivables': typeof AuthenticatedReportsSalesReceivablesRoute
   '/reports/sales/salespeople': typeof AuthenticatedReportsSalesSalespeopleRoute
   '/sales/credit-notes/$id': typeof AuthenticatedSalesCreditNotesIdRoute
+  '/sales/fulfillment/$id': typeof AuthenticatedSalesFulfillmentIdRoute
   '/sales/invoices/$id': typeof AuthenticatedSalesInvoicesIdRoute
   '/sales/orders/$id': typeof AuthenticatedSalesOrdersIdRoute
   '/sales/packages/$id': typeof AuthenticatedSalesPackagesIdRoute
@@ -1267,6 +1282,7 @@ export interface FileRoutesByFullPath {
   '/purchasing/requisitions/': typeof AuthenticatedPurchasingRequisitionsIndexRoute
   '/purchasing/suppliers/': typeof AuthenticatedPurchasingSuppliersIndexRoute
   '/sales/credit-notes/': typeof AuthenticatedSalesCreditNotesIndexRoute
+  '/sales/fulfillment/': typeof AuthenticatedSalesFulfillmentIndexRoute
   '/sales/invoices/': typeof AuthenticatedSalesInvoicesIndexRoute
   '/sales/orders/': typeof AuthenticatedSalesOrdersIndexRoute
   '/sales/packages/': typeof AuthenticatedSalesPackagesIndexRoute
@@ -1407,6 +1423,7 @@ export interface FileRoutesByTo {
   '/reports/sales/receivables': typeof AuthenticatedReportsSalesReceivablesRoute
   '/reports/sales/salespeople': typeof AuthenticatedReportsSalesSalespeopleRoute
   '/sales/credit-notes/$id': typeof AuthenticatedSalesCreditNotesIdRoute
+  '/sales/fulfillment/$id': typeof AuthenticatedSalesFulfillmentIdRoute
   '/sales/invoices/$id': typeof AuthenticatedSalesInvoicesIdRoute
   '/sales/orders/$id': typeof AuthenticatedSalesOrdersIdRoute
   '/sales/packages/$id': typeof AuthenticatedSalesPackagesIdRoute
@@ -1428,6 +1445,7 @@ export interface FileRoutesByTo {
   '/purchasing/requisitions': typeof AuthenticatedPurchasingRequisitionsIndexRoute
   '/purchasing/suppliers': typeof AuthenticatedPurchasingSuppliersIndexRoute
   '/sales/credit-notes': typeof AuthenticatedSalesCreditNotesIndexRoute
+  '/sales/fulfillment': typeof AuthenticatedSalesFulfillmentIndexRoute
   '/sales/invoices': typeof AuthenticatedSalesInvoicesIndexRoute
   '/sales/orders': typeof AuthenticatedSalesOrdersIndexRoute
   '/sales/packages': typeof AuthenticatedSalesPackagesIndexRoute
@@ -1573,6 +1591,7 @@ export interface FileRoutesById {
   '/_authenticated/reports/sales/receivables': typeof AuthenticatedReportsSalesReceivablesRoute
   '/_authenticated/reports/sales/salespeople': typeof AuthenticatedReportsSalesSalespeopleRoute
   '/_authenticated/sales/credit-notes/$id': typeof AuthenticatedSalesCreditNotesIdRoute
+  '/_authenticated/sales/fulfillment/$id': typeof AuthenticatedSalesFulfillmentIdRoute
   '/_authenticated/sales/invoices/$id': typeof AuthenticatedSalesInvoicesIdRoute
   '/_authenticated/sales/orders/$id': typeof AuthenticatedSalesOrdersIdRoute
   '/_authenticated/sales/packages/$id': typeof AuthenticatedSalesPackagesIdRoute
@@ -1594,6 +1613,7 @@ export interface FileRoutesById {
   '/_authenticated/purchasing/requisitions/': typeof AuthenticatedPurchasingRequisitionsIndexRoute
   '/_authenticated/purchasing/suppliers/': typeof AuthenticatedPurchasingSuppliersIndexRoute
   '/_authenticated/sales/credit-notes/': typeof AuthenticatedSalesCreditNotesIndexRoute
+  '/_authenticated/sales/fulfillment/': typeof AuthenticatedSalesFulfillmentIndexRoute
   '/_authenticated/sales/invoices/': typeof AuthenticatedSalesInvoicesIndexRoute
   '/_authenticated/sales/orders/': typeof AuthenticatedSalesOrdersIndexRoute
   '/_authenticated/sales/packages/': typeof AuthenticatedSalesPackagesIndexRoute
@@ -1738,6 +1758,7 @@ export interface FileRouteTypes {
     | '/reports/sales/receivables'
     | '/reports/sales/salespeople'
     | '/sales/credit-notes/$id'
+    | '/sales/fulfillment/$id'
     | '/sales/invoices/$id'
     | '/sales/orders/$id'
     | '/sales/packages/$id'
@@ -1759,6 +1780,7 @@ export interface FileRouteTypes {
     | '/purchasing/requisitions/'
     | '/purchasing/suppliers/'
     | '/sales/credit-notes/'
+    | '/sales/fulfillment/'
     | '/sales/invoices/'
     | '/sales/orders/'
     | '/sales/packages/'
@@ -1899,6 +1921,7 @@ export interface FileRouteTypes {
     | '/reports/sales/receivables'
     | '/reports/sales/salespeople'
     | '/sales/credit-notes/$id'
+    | '/sales/fulfillment/$id'
     | '/sales/invoices/$id'
     | '/sales/orders/$id'
     | '/sales/packages/$id'
@@ -1920,6 +1943,7 @@ export interface FileRouteTypes {
     | '/purchasing/requisitions'
     | '/purchasing/suppliers'
     | '/sales/credit-notes'
+    | '/sales/fulfillment'
     | '/sales/invoices'
     | '/sales/orders'
     | '/sales/packages'
@@ -2064,6 +2088,7 @@ export interface FileRouteTypes {
     | '/_authenticated/reports/sales/receivables'
     | '/_authenticated/reports/sales/salespeople'
     | '/_authenticated/sales/credit-notes/$id'
+    | '/_authenticated/sales/fulfillment/$id'
     | '/_authenticated/sales/invoices/$id'
     | '/_authenticated/sales/orders/$id'
     | '/_authenticated/sales/packages/$id'
@@ -2085,6 +2110,7 @@ export interface FileRouteTypes {
     | '/_authenticated/purchasing/requisitions/'
     | '/_authenticated/purchasing/suppliers/'
     | '/_authenticated/sales/credit-notes/'
+    | '/_authenticated/sales/fulfillment/'
     | '/_authenticated/sales/invoices/'
     | '/_authenticated/sales/orders/'
     | '/_authenticated/sales/packages/'
@@ -2818,6 +2844,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSalesInvoicesIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/sales/fulfillment/': {
+      id: '/_authenticated/sales/fulfillment/'
+      path: '/sales/fulfillment'
+      fullPath: '/sales/fulfillment/'
+      preLoaderRoute: typeof AuthenticatedSalesFulfillmentIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/sales/credit-notes/': {
       id: '/_authenticated/sales/credit-notes/'
       path: '/sales/credit-notes'
@@ -2963,6 +2996,13 @@ declare module '@tanstack/react-router' {
       path: '/sales/invoices/$id'
       fullPath: '/sales/invoices/$id'
       preLoaderRoute: typeof AuthenticatedSalesInvoicesIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/sales/fulfillment/$id': {
+      id: '/_authenticated/sales/fulfillment/$id'
+      path: '/sales/fulfillment/$id'
+      fullPath: '/sales/fulfillment/$id'
+      preLoaderRoute: typeof AuthenticatedSalesFulfillmentIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/sales/credit-notes/$id': {
@@ -3487,6 +3527,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedPurchasingRequisitionsIdRoute: typeof AuthenticatedPurchasingRequisitionsIdRoute
   AuthenticatedPurchasingSuppliersIdRoute: typeof AuthenticatedPurchasingSuppliersIdRoute
   AuthenticatedSalesCreditNotesIdRoute: typeof AuthenticatedSalesCreditNotesIdRoute
+  AuthenticatedSalesFulfillmentIdRoute: typeof AuthenticatedSalesFulfillmentIdRoute
   AuthenticatedSalesInvoicesIdRoute: typeof AuthenticatedSalesInvoicesIdRoute
   AuthenticatedSalesOrdersIdRoute: typeof AuthenticatedSalesOrdersIdRoute
   AuthenticatedSalesPackagesIdRoute: typeof AuthenticatedSalesPackagesIdRoute
@@ -3506,6 +3547,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedPurchasingRequisitionsIndexRoute: typeof AuthenticatedPurchasingRequisitionsIndexRoute
   AuthenticatedPurchasingSuppliersIndexRoute: typeof AuthenticatedPurchasingSuppliersIndexRoute
   AuthenticatedSalesCreditNotesIndexRoute: typeof AuthenticatedSalesCreditNotesIndexRoute
+  AuthenticatedSalesFulfillmentIndexRoute: typeof AuthenticatedSalesFulfillmentIndexRoute
   AuthenticatedSalesInvoicesIndexRoute: typeof AuthenticatedSalesInvoicesIndexRoute
   AuthenticatedSalesOrdersIndexRoute: typeof AuthenticatedSalesOrdersIndexRoute
   AuthenticatedSalesPackagesIndexRoute: typeof AuthenticatedSalesPackagesIndexRoute
@@ -3606,6 +3648,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedPurchasingSuppliersIdRoute:
     AuthenticatedPurchasingSuppliersIdRoute,
   AuthenticatedSalesCreditNotesIdRoute: AuthenticatedSalesCreditNotesIdRoute,
+  AuthenticatedSalesFulfillmentIdRoute: AuthenticatedSalesFulfillmentIdRoute,
   AuthenticatedSalesInvoicesIdRoute: AuthenticatedSalesInvoicesIdRoute,
   AuthenticatedSalesOrdersIdRoute: AuthenticatedSalesOrdersIdRoute,
   AuthenticatedSalesPackagesIdRoute: AuthenticatedSalesPackagesIdRoute,
@@ -3637,6 +3680,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
     AuthenticatedPurchasingSuppliersIndexRoute,
   AuthenticatedSalesCreditNotesIndexRoute:
     AuthenticatedSalesCreditNotesIndexRoute,
+  AuthenticatedSalesFulfillmentIndexRoute:
+    AuthenticatedSalesFulfillmentIndexRoute,
   AuthenticatedSalesInvoicesIndexRoute: AuthenticatedSalesInvoicesIndexRoute,
   AuthenticatedSalesOrdersIndexRoute: AuthenticatedSalesOrdersIndexRoute,
   AuthenticatedSalesPackagesIndexRoute: AuthenticatedSalesPackagesIndexRoute,
