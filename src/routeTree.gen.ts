@@ -1202,7 +1202,7 @@ export interface FileRoutesById {
   '/super-admin/monitoring/jobs': typeof SuperAdminMonitoringJobsRoute
   '/super-admin/platform/features': typeof SuperAdminPlatformFeaturesRoute
   '/super-admin/security/audit': typeof SuperAdminSecurityAuditRoute
-  '/super-admin/tenants/$id': typeof SuperAdminTenantsIdRoute
+  '/super-admin/tenants_/$id': typeof SuperAdminTenantsIdRoute
   '/_authenticated/accounting/': typeof AuthenticatedAccountingIndexRoute
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
   '/super-admin/billing/': typeof SuperAdminBillingIndexRoute
@@ -1224,7 +1224,7 @@ export interface FileRoutesById {
   '/_authenticated/sales/quotes/$id': typeof AuthenticatedSalesQuotesIdRoute
   '/_authenticated/sales/shipments/$id': typeof AuthenticatedSalesShipmentsIdRoute
   '/_authenticated/settings/warehouses/$id': typeof AuthenticatedSettingsWarehousesIdRoute
-  '/super-admin/tenants/$tenantId/users': typeof SuperAdminTenantsTenantIdUsersRoute
+  '/super-admin/tenants_/$tenantId/users': typeof SuperAdminTenantsTenantIdUsersRoute
   '/_authenticated/crm/customers/': typeof AuthenticatedCrmCustomersIndexRoute
   '/_authenticated/inventory/items/': typeof AuthenticatedInventoryItemsIndexRoute
   '/_authenticated/inventory/warehouses/': typeof AuthenticatedInventoryWarehousesIndexRoute
@@ -1585,7 +1585,7 @@ export interface FileRouteTypes {
     | '/super-admin/monitoring/jobs'
     | '/super-admin/platform/features'
     | '/super-admin/security/audit'
-    | '/super-admin/tenants/$id'
+    | '/super-admin/tenants_/$id'
     | '/_authenticated/accounting/'
     | '/_authenticated/settings/'
     | '/super-admin/billing/'
@@ -1607,7 +1607,7 @@ export interface FileRouteTypes {
     | '/_authenticated/sales/quotes/$id'
     | '/_authenticated/sales/shipments/$id'
     | '/_authenticated/settings/warehouses/$id'
-    | '/super-admin/tenants/$tenantId/users'
+    | '/super-admin/tenants_/$tenantId/users'
     | '/_authenticated/crm/customers/'
     | '/_authenticated/inventory/items/'
     | '/_authenticated/inventory/warehouses/'
@@ -1896,8 +1896,8 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAccountingIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/super-admin/tenants/$id': {
-      id: '/super-admin/tenants/$id'
+    '/super-admin/tenants_/$id': {
+      id: '/super-admin/tenants_/$id'
       path: '/tenants/$id'
       fullPath: '/super-admin/tenants/$id'
       preLoaderRoute: typeof SuperAdminTenantsIdRouteImport
@@ -2393,8 +2393,8 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCrmCustomersIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/super-admin/tenants/$tenantId/users': {
-      id: '/super-admin/tenants/$tenantId/users'
+    '/super-admin/tenants_/$tenantId/users': {
+      id: '/super-admin/tenants_/$tenantId/users'
       path: '/tenants/$tenantId/users'
       fullPath: '/super-admin/tenants/$tenantId/users'
       preLoaderRoute: typeof SuperAdminTenantsTenantIdUsersRouteImport

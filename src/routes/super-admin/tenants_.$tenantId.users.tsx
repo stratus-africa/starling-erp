@@ -114,7 +114,7 @@ import {
 
 // ─── Route Definition ─────────────────────────────────────────────────────────
 
-export const Route = createFileRoute("/super-admin/tenants/$tenantId/users")({
+export const Route = createFileRoute("/super-admin/tenants_/$tenantId/users")({
   component: () => (
     <PermissionGuard permission={PLATFORM_PERMISSIONS.tenantsView}>
       <TenantUserManagementPage />
