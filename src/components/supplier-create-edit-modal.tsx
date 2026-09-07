@@ -18,6 +18,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -154,6 +161,8 @@ export function SupplierCreateEditWindow({
     }
     if (values.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email))
       next.email = "Enter a valid email address";
+    if (values.website && !/^https?:\/\//i.test(String(values.website)))
+      next.website = "Enter a valid URL beginning with http:// or https://";
     if (
       values.credit_limit != null &&
       values.credit_limit !== "" &&
@@ -272,20 +281,21 @@ export function SupplierCreateEditWindow({
   if (!open) return null;
   return (
     <>
-      <section className="fixed inset-0 z-40 flex flex-col overflow-hidden bg-background" aria-label={isNew ? "Create Supplier" : "Edit Supplier"}>
-          <header className="shrink-0 border-b px-6 py-5">
-            <h1 className="flex items-center gap-3 text-lg font-semibold leading-none tracking-tight">
+      <Dialog open={open} onOpenChange={(nextOpen) => (nextOpen ? onOpenChange?.(true) : close())}>
+        <DialogContent className="flex max-h-[92vh] w-[calc(100%-1rem)] max-w-6xl flex-col gap-0 overflow-hidden p-0">
+          <DialogHeader className="shrink-0 border-b px-6 py-5">
+            <DialogTitle className="flex items-center gap-3">
               <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
                 <Building2 className="h-5 w-5" />
               </span>
               {isNew ? "Create Supplier" : "Edit Supplier"}
-            </h1>
-            <p className="pl-[52px] text-sm text-muted-foreground">
+            </DialogTitle>
+            <DialogDescription className="pl-[52px]">
               {isNew
                 ? "Add a new supplier account to your system"
                 : "Update supplier account information"}
-            </p>
-          </header>
+            </DialogDescription>
+          </DialogHeader>
           <div className="min-h-0 flex-1 overflow-y-auto">
             <div className="grid min-h-full lg:grid-cols-[190px_minmax(0,1fr)_230px]">
               <nav className="border-b bg-muted/20 p-4 lg:border-b-0 lg:border-r">
@@ -428,7 +438,8 @@ export function SupplierCreateEditWindow({
               )}
             </div>
           </footer>
-      </section>
+        </DialogContent>
+      </Dialog>
       <AlertDialog open={discardOpen} onOpenChange={setDiscardOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
