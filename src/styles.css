@@ -93,6 +93,35 @@
   --sidebar-ring: oklch(0.55 0.14 250);
 }
 
+/* NimbusERP is the light enterprise theme used by the Branding Assets selector. */
+.nimbus {
+  --background: oklch(0.985 0.005 240);
+  --foreground: oklch(0.22 0.06 255);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.22 0.06 255);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.22 0.06 255);
+  --primary: oklch(0.43 0.16 255);
+  --primary-foreground: oklch(0.99 0.005 240);
+  --secondary: oklch(0.955 0.018 238);
+  --secondary-foreground: oklch(0.28 0.08 258);
+  --muted: oklch(0.955 0.014 240);
+  --muted-foreground: oklch(0.5 0.03 250);
+  --accent: oklch(0.92 0.045 230);
+  --accent-foreground: oklch(0.2 0.06 255);
+  --border: oklch(0.89 0.025 240);
+  --input: oklch(0.88 0.025 240);
+  --ring: oklch(0.55 0.16 250);
+  --sidebar: oklch(0.985 0.006 240);
+  --sidebar-foreground: oklch(0.25 0.06 255);
+  --sidebar-primary: oklch(0.43 0.16 255);
+  --sidebar-primary-foreground: oklch(0.99 0.005 240);
+  --sidebar-accent: oklch(0.92 0.045 230);
+  --sidebar-accent-foreground: oklch(0.2 0.06 255);
+  --sidebar-border: oklch(0.89 0.025 240);
+  --sidebar-ring: oklch(0.55 0.16 250);
+}
+
 .dark {
   --background: oklch(0.16 0.035 258);
   --foreground: oklch(0.96 0.01 240);

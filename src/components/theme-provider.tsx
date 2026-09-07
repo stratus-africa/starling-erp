@@ -1,25 +1,33 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 
-type Theme = "light" | "dark";
-interface ThemeCtx { theme: Theme; toggle: () => void; setTheme: (t: Theme) => void }
+export type Theme = "nimbus" | "light" | "dark";
+interface ThemeCtx {
+  theme: Theme;
+  toggle: () => void;
+  setTheme: (t: Theme) => void;
+}
 const Ctx = createContext<ThemeCtx | null>(null);
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setTheme] = useState<Theme>("light");
 
   useEffect(() => {
-    const stored = (typeof window !== "undefined" && localStorage.getItem("erp-theme")) as Theme | null;
-    if (stored === "dark" || stored === "light") setTheme(stored);
+    const stored = (typeof window !== "undefined" &&
+      localStorage.getItem("erp-theme")) as Theme | null;
+    if (stored === "nimbus" || stored === "dark" || stored === "light") setTheme(stored);
   }, []);
 
   useEffect(() => {
     const root = document.documentElement;
     root.classList.toggle("dark", theme === "dark");
+    root.classList.toggle("nimbus", theme === "nimbus");
     localStorage.setItem("erp-theme", theme);
   }, [theme]);
 
   return (
-    <Ctx.Provider value={{ theme, setTheme, toggle: () => setTheme(theme === "dark" ? "light" : "dark") }}>
+    <Ctx.Provider
+      value={{ theme, setTheme, toggle: () => setTheme(theme === "dark" ? "light" : "dark") }}
+    >
       {children}
     </Ctx.Provider>
   );
