@@ -318,19 +318,30 @@ export function CustomerCreateEditWindow({
         className="relative flex w-full flex-col overflow-hidden rounded-xl border bg-background shadow-sm"
         aria-label={isNew ? "Create Customer" : "Edit Customer"}
       >
-        <header className="flex shrink-0 items-center justify-between border-b px-5 py-4 md:px-8">
+        <header className="flex shrink-0 items-center justify-between border-b px-5 py-4 md:px-6">
           <div>
-            <h1 className="flex items-center gap-3 text-lg font-semibold leading-none tracking-tight">
-              <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                <Building2 className="h-5 w-5" />
-              </span>
+            <h1 className="text-xl font-semibold leading-none tracking-tight">
               {isNew ? "Create Customer" : "Edit Customer"}
             </h1>
-            <p className="mt-2 pl-[52px] text-sm text-muted-foreground">
+            <p className="mt-2 text-sm text-muted-foreground">
               {isNew
-                ? "Add a new customer account to your system"
+                ? "Create a new customer in your system"
                 : "Update customer account information"}
             </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={close} disabled={save.isPending}>
+              Cancel
+            </Button>
+            <Button variant="secondary" onClick={() => save.mutate()} disabled={!canWrite || save.isPending}>
+              {save.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              <Save className="mr-2 h-4 w-4" />
+              Save Draft
+            </Button>
+            <Button onClick={() => save.mutate()} disabled={!canWrite || save.isPending}>
+              {save.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {isNew ? "Create Customer" : "Save Changes"}
+            </Button>
           </div>
         </header>
 
@@ -340,13 +351,13 @@ export function CustomerCreateEditWindow({
               <Loader2 className="h-4 w-4 animate-spin" /> Loading customer…
             </div>
           ) : (
-            <div className="min-h-[560px]">
-              <main className="min-w-0 p-5 md:p-7">
+            <div className="min-h-[560px] xl:grid xl:grid-cols-[minmax(0,1fr)_320px]">
+              <main className="min-w-0 px-5 py-5 md:px-6 md:py-6">
                 <Tabs
                   value={activeTab}
                   onValueChange={(value) => setActiveTab(value as typeof activeTab)}
                 >
-                  <TabsList className="mb-6 h-auto w-full justify-start overflow-x-auto bg-muted/50 p-1">
+                  <TabsList className="mb-6 h-auto w-full justify-start overflow-x-auto border bg-muted/30 p-1">
                     {CUSTOMER_TABS.map((tab) => (
                       <TabsTrigger
                         key={tab.value}
@@ -439,28 +450,6 @@ export function CustomerCreateEditWindow({
             </div>
           )}
         </div>
-
-        <footer className="flex shrink-0 flex-col-reverse gap-2 border-t bg-background px-5 py-3 md:flex-row md:items-center md:justify-between md:px-8">
-          <Button variant="ghost" onClick={close} disabled={save.isPending}>
-            Cancel
-          </Button>
-          <div className="flex flex-wrap justify-end gap-2">
-            {isNew && (
-              <Button
-                variant="outline"
-                onClick={() => save.mutate({ createAnother: true })}
-                disabled={!canWrite || save.isPending}
-              >
-                Save &amp; Create Another
-              </Button>
-            )}
-            <Button onClick={() => save.mutate()} disabled={!canWrite || save.isPending}>
-              {save.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              <Save className="mr-2 h-4 w-4" />
-              {isNew ? "Create Customer" : "Save Changes"}
-            </Button>
-          </div>
-        </footer>
       </section>
 
       <AlertDialog open={discardOpen} onOpenChange={setDiscardOpen}>

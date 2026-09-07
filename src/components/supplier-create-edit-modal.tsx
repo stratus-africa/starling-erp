@@ -291,29 +291,40 @@ export function SupplierCreateEditWindow({
         className="relative flex w-full flex-col overflow-hidden rounded-xl border bg-background shadow-sm"
         aria-label={isNew ? "Create Supplier" : "Edit Supplier"}
       >
-        <header className="flex shrink-0 items-center justify-between border-b px-5 py-4 md:px-8">
+        <header className="flex shrink-0 items-center justify-between border-b px-5 py-4 md:px-6">
           <div>
-            <h1 className="flex items-center gap-3 text-lg font-semibold leading-none tracking-tight">
-              <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                <Building2 className="h-5 w-5" />
-              </span>
+            <h1 className="text-xl font-semibold leading-none tracking-tight">
               {isNew ? "Create Supplier" : "Edit Supplier"}
             </h1>
-            <p className="mt-2 pl-[52px] text-sm text-muted-foreground">
+            <p className="mt-2 text-sm text-muted-foreground">
               {isNew
-                ? "Add a new supplier account to your system"
+                ? "Create a new supplier in your system"
                 : "Update supplier account information"}
             </p>
           </div>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={close}>
+              Cancel
+            </Button>
+            <Button variant="secondary" onClick={() => save.mutate()} disabled={!canWrite || save.isPending}>
+              {save.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              <Save className="mr-2 h-4 w-4" />
+              Save Draft
+            </Button>
+            <Button onClick={() => save.mutate()} disabled={!canWrite || save.isPending}>
+              {save.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {isNew ? "Create Supplier" : "Save Changes"}
+            </Button>
+          </div>
         </header>
         <div className="min-h-0 flex-1 overflow-y-auto">
-          <div className="min-h-full">
-            <main className="min-w-0 p-5 md:p-7">
+          <div className="min-h-full xl:grid xl:grid-cols-[minmax(0,1fr)_320px]">
+            <main className="min-w-0 px-5 py-5 md:px-6 md:py-6">
               <Tabs
                 value={activeTab}
                 onValueChange={(value) => setActiveTab(value as typeof activeTab)}
               >
-                <TabsList className="mb-6 h-auto w-full justify-start overflow-x-auto bg-muted/50 p-1">
+                <TabsList className="mb-6 h-auto w-full justify-start overflow-x-auto border bg-muted/30 p-1">
                   {SUPPLIER_TABS.map((tab) => (
                     <TabsTrigger
                       key={tab.value}
@@ -404,26 +415,6 @@ export function SupplierCreateEditWindow({
             </aside>
           </div>
         </div>
-        <footer className="flex shrink-0 flex-col-reverse gap-2 border-t bg-background px-5 py-3 md:flex-row md:items-center md:justify-between md:px-6">
-          <Button variant="ghost" onClick={close}>
-            Cancel
-          </Button>
-          <div className="flex gap-2">
-            {isNew && (
-              <Button
-                variant="outline"
-                onClick={() => save.mutate({ createAnother: true })}
-                disabled={!canWrite || save.isPending}
-              >
-                Save & Create Another
-              </Button>
-            )}
-            <Button onClick={() => save.mutate()} disabled={!canWrite || save.isPending}>
-              {save.isPending && <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />}
-              {isNew ? "Create Supplier" : "Save Changes"}
-            </Button>
-          </div>
-        </footer>
       </section>
       <AlertDialog open={discardOpen} onOpenChange={setDiscardOpen}>
         <AlertDialogContent>
