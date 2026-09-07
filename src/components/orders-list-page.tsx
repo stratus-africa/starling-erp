@@ -293,41 +293,24 @@ export function OrdersListPage({ kind }: OrdersListPageProps) {
                 <th className="w-9 px-3 py-2.5 text-left">
                   <Checkbox checked={allOnPageSelected} onCheckedChange={toggleAll} aria-label="Select all" />
                 </th>
-                <th className="px-3 py-2.5 text-left whitespace-nowrap">Date</th>
                 <th className="px-3 py-2.5 text-left whitespace-nowrap">{numberPrefix} Number</th>
-                <th className="px-3 py-2.5 text-left whitespace-nowrap">Reference#</th>
+                <th className="px-3 py-2.5 text-left whitespace-nowrap">Date</th>
                 <th className="px-3 py-2.5 text-left">{isSales ? "Customer Name" : "Supplier Name"}</th>
-                <th className="px-3 py-2.5 text-left whitespace-nowrap">Order Status</th>
-                {isSales ? (
-                  <>
-                    <th className="px-3 py-2.5 text-center whitespace-nowrap">Invoiced</th>
-                    <th className="px-3 py-2.5 text-center whitespace-nowrap">Payment</th>
-                    <th className="px-3 py-2.5 text-center whitespace-nowrap">Packed</th>
-                    <th className="px-3 py-2.5 text-center whitespace-nowrap">Shipped</th>
-                  </>
-                ) : (
-                  <>
-                    <th className="px-3 py-2.5 text-center whitespace-nowrap">Billed</th>
-                    <th className="px-3 py-2.5 text-center whitespace-nowrap">Expected</th>
-                  </>
-                )}
-                <th className="px-3 py-2.5 text-right whitespace-nowrap">Amount</th>
-                <th className="px-3 py-2.5 text-left whitespace-nowrap">
-                  {isSales ? "Delivery Method" : ""}
-                </th>
+                <th className="px-3 py-2.5 text-right whitespace-nowrap">Total Amount</th>
+                <th className="px-3 py-2.5 text-left whitespace-nowrap">Status</th>
               </tr>
             </thead>
             <tbody>
               {isLoading && (
                 <tr>
-                  <td colSpan={isSales ? 12 : 10} className="py-16 text-center text-muted-foreground">
+                  <td colSpan={5} className="py-16 text-center text-muted-foreground">
                     <Loader2 className="mx-auto h-5 w-5 animate-spin" />
                   </td>
                 </tr>
               )}
               {!isLoading && rows.length === 0 && (
                 <tr>
-                  <td colSpan={isSales ? 12 : 10} className="py-16 text-center text-xs text-muted-foreground">
+                  <td colSpan={5} className="py-16 text-center text-xs text-muted-foreground">
                     No {isSales ? "sales orders" : "purchase orders"} found.
                   </td>
                 </tr>
@@ -364,11 +347,6 @@ export function OrdersListPage({ kind }: OrdersListPageProps) {
                       />
                     </td>
 
-                    {/* Date */}
-                    <td className="px-3 py-2.5 text-xs text-muted-foreground whitespace-nowrap">
-                      {fmt(row.date)}
-                    </td>
-
                     {/* Order number */}
                     <td className="px-3 py-2.5 whitespace-nowrap">
                       <span className="font-mono text-xs font-semibold text-primary">
@@ -376,12 +354,8 @@ export function OrdersListPage({ kind }: OrdersListPageProps) {
                       </span>
                     </td>
 
-                    {/* Reference (quote number for SO, notes for PO) */}
-                    <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground whitespace-nowrap">
-                      {row.source_quote_id
-                        ? <span className="text-primary">{row.source_quote_number ?? row.source_quote_id.slice(0, 8)}</span>
-                        : (row.notes ?? "")}
-                    </td>
+                    {/* Date */}
+                    <td className="px-3 py-2.5 text-xs text-muted-foreground whitespace-nowrap">{fmt(row.date)}</td>
 
                     {/* Party name */}
                     <td className="px-3 py-2.5 text-sm max-w-[180px]">
@@ -390,69 +364,13 @@ export function OrdersListPage({ kind }: OrdersListPageProps) {
                       </span>
                     </td>
 
-                    {/* Status */}
-                    <td className="px-3 py-2.5 whitespace-nowrap">
-                      <span className={`text-xs font-semibold uppercase tracking-wide ${STATUS_COLORS[row.status ?? ""] ?? "text-muted-foreground"}`}>
-                        {row.status ?? "—"}
-                      </span>
-                    </td>
-
-                    {/* Sales-only dot columns */}
-                    {isSales ? (
-                      <>
-                        <td className="px-3 py-2.5 text-center">
-                          <StatusDot
-                            filled={isInvoiced}
-                            color="blue"
-                            tooltip={isInvoiced ? "Invoice created" : "Not yet invoiced"}
-                          />
-                        </td>
-                        <td className="px-3 py-2.5 text-center">
-                          <StatusDot
-                            filled={hasPaid || isInvoiced}
-                            color={paymentColor}
-                            tooltip={hasPaid ? "Payment received" : isInvoiced ? "Invoice sent, awaiting payment" : "No payment yet"}
-                          />
-                        </td>
-                        <td className="px-3 py-2.5 text-center">
-                          <StatusDot
-                            filled={hasPacked}
-                            color="blue"
-                            tooltip={hasPacked ? "Package created" : "Not packed"}
-                          />
-                        </td>
-                        <td className="px-3 py-2.5 text-center">
-                          <StatusDot
-                            filled={hasShipped}
-                            color="blue"
-                            tooltip={hasShipped ? "Shipment created" : "Not shipped"}
-                          />
-                        </td>
-                      </>
-                    ) : (
-                      <>
-                        <td className="px-3 py-2.5 text-center">
-                          <StatusDot
-                            filled={isBilled}
-                            color="blue"
-                            tooltip={isBilled ? "Bill created" : "Not yet billed"}
-                          />
-                        </td>
-                        <td className="px-3 py-2.5 text-xs text-muted-foreground whitespace-nowrap text-center">
-                          {fmt(row.expected_date)}
-                        </td>
-                      </>
-                    )}
-
                     {/* Amount */}
                     <td className="px-3 py-2.5 text-right font-mono text-xs tabular-nums whitespace-nowrap">
                       {money(row.grand_total ?? row.amount, row.currency)}
                     </td>
 
-                    {/* Delivery method — last word of notes or blank */}
-                    <td className="px-3 py-2.5 text-xs text-muted-foreground">
-                      {isSales ? (row.notes ?? "") : ""}
-                    </td>
+                    {/* Status */}
+                    <td className="px-3 py-2.5 whitespace-nowrap"><span className={`text-xs font-semibold uppercase tracking-wide ${STATUS_COLORS[row.status ?? ""] ?? "text-muted-foreground"}`}>{row.status ?? "—"}</span></td>
                   </tr>
                 );
               })}

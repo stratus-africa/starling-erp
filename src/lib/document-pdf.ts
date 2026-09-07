@@ -17,6 +17,7 @@ export interface PdfLine {
 }
 
 export interface PdfBranding {
+  templateStyle?: DocumentTemplateStyle | null;
   accentColor?: string | null;
   logoUrl?: string | null;
   showLogo?: boolean;
@@ -67,7 +68,10 @@ export function buildDocumentPdf(input: PdfDocInput): jsPDF {
   const doc = new jsPDF({ unit: "pt", format: "a4" });
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
-  const style = getDocumentTemplate(input.documentType ?? documentTypeFromTitle(input.title), input.templateStyle);
+  const style = getDocumentTemplate(
+    input.documentType ?? documentTypeFromTitle(input.title),
+    input.templateStyle ?? brand.templateStyle,
+  );
   const margin = style === "compact" ? 32 : style === "corporate" ? 38 : 44;
   const brand = input.branding ?? {};
   const accent = hexToRgb(brand.accentColor ?? (style === "modern" ? "#0668FF" : "#0B2A63"));

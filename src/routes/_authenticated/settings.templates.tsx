@@ -14,11 +14,17 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, Palette, Plus, Save, Star, Trash2, Printer } from "lucide-react";
 import { downloadDocumentPdf, type PdfBranding } from "@/lib/document-pdf";
+import { DocumentTemplateSelector } from "@/components/documents/template-selector";
+import { getDocumentTemplate, type DocumentTemplateStyle } from "@/lib/document-template-types";
 
 const KINDS = [
   { key: "quote", label: "Quotes" },
   { key: "order", label: "Sales Orders" },
   { key: "invoice", label: "Invoices" },
+  { key: "po", label: "Purchase Orders" },
+  { key: "requisition", label: "Requisitions" },
+  { key: "bill", label: "Bills" },
+  { key: "statement", label: "Customer Statements" },
   { key: "package", label: "Packages" },
   { key: "credit_note", label: "Credit Notes" },
   { key: "shipment", label: "Shipments" },
@@ -78,6 +84,10 @@ function TemplatesPage() {
           .update({ is_default: false })
           .neq("id", draft.id);
       }
+      const style = (draft.template_style as DocumentTemplateStyle | undefined) ?? getDocumentTemplate("invoice");
+      for (const kind of (payload.applies_to ?? [])) {
+        localStorage.setItem(`document-template-style:${tenant?.id}:${kind}`, style);
+      }
     },
     onSuccess: () => {
       toast.success("Template saved");
@@ -124,12 +134,21 @@ function TemplatesPage() {
   });
 
   const branding: PdfBranding = {
+    templateStyle: (draft?.template_style as DocumentTemplateStyle | undefined) ?? getDocumentTemplate("invoice"),
     accentColor: draft?.accent_color ?? "#1E293B",
     logoUrl: draft?.logo_url ?? null,
     showLogo: draft?.show_logo ?? true,
     companyAddress: draft?.company_address ?? null,
     footerText: draft?.footer_text ?? null,
     terms: draft?.terms ?? null,
+  };
+
+  const selectedStyle = (draft?.template_style as DocumentTemplateStyle | undefined) ?? getDocumentTemplate("invoice");
+  const selectTemplateStyle = (style: DocumentTemplateStyle) => {
+    setDraft({ ...draft, template_style: style });
+    for (const kind of (draft?.applies_to ?? [])) {
+      localStorage.setItem(`document-template-style:${tenant?.id}:${kind}`, style);
+    }
   };
 
   const preview = () =>
@@ -151,6 +170,7 @@ function TemplatesPage() {
       totals: { subtotal: 2500, discount: 0, tax: 400, grandTotal: 2900 },
       notes: "Thank you for your business.",
       branding,
+      templateStyle: selectedStyle,
     } as any);
 
   const toggleKind = (k: string) => {
@@ -203,6 +223,15 @@ function TemplatesPage() {
           {draft && (
             <div className="flex flex-col gap-4">
               <Card className="p-4 grid gap-4 md:grid-cols-2">
+                <div className="md:col-span-2 space-y-3">
+                  <div>
+                    <Label className="text-base">Select PDF Template</Label>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Choose the style used when matching documents are printed, downloaded, or emailed.
+                    </p>
+                  </div>
+                  <DocumentTemplateSelector value={selectedStyle} onChange={selectTemplateStyle} disabled={!canWrite} />
+                </div>
                 <div className="grid gap-1.5">
                   <Label>Template name</Label>
                   <Input
