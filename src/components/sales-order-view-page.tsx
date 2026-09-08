@@ -1015,6 +1015,16 @@ export function SalesOrderViewPage({ id }: { id: string }) {
                 onEdit={() => setEditing(true)}
               />
               <aside className="flex flex-col gap-4">
+                <SideCard title="Packages">
+                  <div className="mb-3 flex items-center justify-between">
+                    <span className="text-xs text-muted-foreground">{packages.length} package{packages.length === 1 ? "" : "s"}</span>
+                    {canWrite && <Button size="sm" variant="outline" asChild><a href={`/sales/packages/new?order=${id}`}>Create Package</a></Button>}
+                  </div>
+                  {packages.length === 0 ? <p className="text-sm text-muted-foreground">No packages yet.</p> : <div className="space-y-2">{packages.map((pkg) => {
+                    const packageQty = packageLines.filter((line) => line.document_id === pkg.id).reduce((sum, line) => sum + Number(line.quantity ?? 0), 0);
+                    return <div key={pkg.id} className="flex items-center justify-between gap-2 border-b pb-2 last:border-0"><a className="font-mono text-sm text-primary hover:underline" href={`/sales/packages/${pkg.id}`}>{pkg.number ?? "Package"}</a><span className="text-xs text-muted-foreground">{packageQty} units · {pkg.status ?? "Draft"}</span></div>;
+                  })}</div>}
+                </SideCard>
                 <SalesDocumentLineage
                   nodes={[
                     {

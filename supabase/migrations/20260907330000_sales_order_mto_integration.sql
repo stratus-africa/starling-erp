@@ -3,6 +3,10 @@
 -- reservations, BOM, and production-order tables.
 
 ALTER TABLE public.production_orders
+  ADD COLUMN IF NOT EXISTS manufacturing_type text NOT NULL DEFAULT 'MTO',
+  ADD COLUMN IF NOT EXISTS product_id uuid REFERENCES public.items(id) ON DELETE SET NULL,
+  ADD COLUMN IF NOT EXISTS source_type text NOT NULL DEFAULT 'manual_manufacturing',
+  ADD COLUMN IF NOT EXISTS source_id uuid,
   ADD COLUMN IF NOT EXISTS customer_id uuid REFERENCES public.customers(id) ON DELETE SET NULL;
 
 CREATE SEQUENCE IF NOT EXISTS public.manufacturing_order_number_seq START 1;

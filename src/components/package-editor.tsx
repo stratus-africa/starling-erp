@@ -121,6 +121,11 @@ export function PackageEditor({ id }: { id: string }) {
     tracking: "",
     status: "Draft",
     notes: "",
+    length: 0,
+    width: 0,
+    height: 0,
+    packing_status: "Draft",
+    shipment_status: "Not Shipped",
   });
   const [lines, setLines] = useState<Line[]>([]);
 
@@ -147,7 +152,7 @@ export function PackageEditor({ id }: { id: string }) {
     enabled: isNew && !!sourceOrderId,
     queryFn: async () => {
       const { data, error } = await db.from("sales_order_lines")
-        .select("line_no,item_id,description,quantity")
+        .select("id,line_no,item_id,description,quantity")
         .eq("document_id", sourceOrderId!)
         .is("deleted_at", null)
         .order("line_no");
@@ -207,15 +212,26 @@ export function PackageEditor({ id }: { id: string }) {
 
       let docId: string | null = isNew ? null : id;
       if (isNew) {
-        if (!payload.number) payload.number = `PKG-${Date.now().toString().slice(-8)}`;
-        const data = await insertRow("packages", editablePayload);
-        docId = data.id;
+        if (!payload.sales_order_id) throw new Error("Please select a Sales Order");
+        if (!payload.warehouse_id) throw new Error("Please select a warehouse");
+        const { data, error } = await (db as any).rpc("create_package_from_sales_order", {
+          _sales_order_id: payload.sales_order_id,
+          _warehouse_id: payload.warehouse_id,
+          _lines: lines.map((line, index) => ({ sales_order_line_id: sourceLines?.find((source) => source.item_id === line.item_id)?.id, line_no: index + 1, quantity: Number(line.quantity) || 0 })),
+          _weight: payload.weight,
+          _length: payload.length,
+          _width: payload.width,
+          _height: payload.height,
+          _notes: payload.notes,
+        });
+        if (error) throw error;
+        docId = data as string;
       } else {
         await updateRow("packages", id, editablePayload);
       }
 
-      await updateRow("package_lines", docId!, { deleted_at: new Date().toISOString() });
-      if (lines.length) {
+      if (!isNew) await updateRow("package_lines", docId!, { deleted_at: new Date().toISOString() });
+      if (lines.length && !isNew) {
         const { error } = await db.from("package_lines").insert(
           lines.map(
             (l, i): PackageLineInsert => ({
@@ -264,6 +280,15 @@ export function PackageEditor({ id }: { id: string }) {
       setPostOpen(true);
     },
     onError: (e: Error) => toast.error(e.message ?? "Confirm failed"),
+  });
+
+  const transition = useMutation({
+    mutationFn: async (status: string) => {
+      const { error } = await (db as any).rpc("transition_package", { _package_id: id, _new_status: status });
+      if (error) throw error;
+    },
+    onSuccess: () => { toast.success("Package status updated"); qc.invalidateQueries(); },
+    onError: (e: Error) => toast.error(e.message ?? "Unable to update package"),
   });
 
   const buildPdf = (): PdfDocInput => ({
@@ -339,6 +364,9 @@ export function PackageEditor({ id }: { id: string }) {
               <Receipt className="h-4 w-4 mr-1.5" /> Post details
             </Button>
           )}
+          {!isNew && canWrite && header.status === "Draft" && <Button size="sm" onClick={() => transition.mutate("Packed")} disabled={transition.isPending}>Pack</Button>}
+          {!isNew && canWrite && ["Packed", "Ready to Ship"].includes(header.status) && <Button size="sm" onClick={() => transition.mutate("Shipped")} disabled={transition.isPending}>Ship</Button>}
+          {!isNew && canWrite && header.status === "Shipped" && <Button size="sm" onClick={() => transition.mutate("Delivered")} disabled={transition.isPending}>Mark Delivered</Button>}
           {canWrite && !isNew && !posted && (
             <Button
               variant="default"

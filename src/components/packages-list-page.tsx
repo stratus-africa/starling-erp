@@ -51,6 +51,8 @@ const STATUS_COLORS: Record<string, string> = {
   Cancelled: "text-destructive",
 };
 
+const KPI_STATUSES = ["Draft", "Packed", "Shipped", "Delivered"] as const;
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const fmt = (v: string | null | undefined) =>
@@ -155,9 +157,24 @@ export function PackagesListPage() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [draggedId, setDraggedId] = useState<string | null>(null);
 
+  const { data: kpis = {} } = useQuery({
+    queryKey: ["packages", "kpis"],
+    queryFn: async () => {
+      const entries = await Promise.all(KPI_STATUSES.map(async (status) => {
+        const { count, error } = await db.from("packages").select("id", { count: "exact", head: true }).is("deleted_at", null).eq("status", status);
+        if (error) throw error;
+        return [status, count ?? 0] as const;
+      }));
+      const total = await db.from("packages").select("id", { count: "exact", head: true }).is("deleted_at", null);
+      if (total.error) throw total.error;
+      return Object.fromEntries([["Total", total.count ?? 0], ...entries]);
+    },
+    staleTime: 15_000,
+  });
+
   const updateStatus = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
-      const { error } = await db.from("packages").update({ status, updated_at: new Date().toISOString() }).eq("id", id).is("deleted_at", null);
+      const { error } = await (db as any).rpc("transition_package", { _package_id: id, _new_status: status });
       if (error) throw error;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["packages"] }),
@@ -202,7 +219,7 @@ export function PackagesListPage() {
         q = q.limit(500) as any;
       }
 
-      if (search.trim()) q = (q as any).ilike("number", `%${search.trim()}%`);
+      if (search.trim()) q = (q as any).or(`number.ilike.%${search.trim()}%,tracking.ilike.%${search.trim()}%,carrier.ilike.%${search.trim()}%`);
       if (statusFilter !== "all") q = (q as any).eq("status", statusFilter);
 
       const { data, error, count } = await q;
@@ -322,10 +339,7 @@ export function PackagesListPage() {
 
       {/* ── Header ── */}
       <div className="flex shrink-0 items-center justify-between gap-3 border-b px-6 py-3">
-        <h1 className="text-base font-semibold tracking-tight flex items-center gap-1">
-          All Packages
-          <span className="ml-1 text-muted-foreground text-sm font-normal">▾</span>
-        </h1>
+        <div><h1 className="text-xl font-semibold tracking-tight">Packages</h1><p className="text-xs text-muted-foreground">Manage packing, shipment and delivery of Sales Order items.</p></div>
         <div className="flex items-center gap-2">
           <div className="relative">
             <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
@@ -388,6 +402,10 @@ export function PackagesListPage() {
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
+      </div>
+
+      <div className="grid shrink-0 grid-cols-2 gap-3 border-b px-6 py-3 sm:grid-cols-4 lg:grid-cols-5">
+        {[['Total Packages', kpis.Total], ['Ready to Pack', kpis.Draft], ['Ready to Ship', kpis.Packed], ['Shipped', kpis.Shipped], ['Delivered', kpis.Delivered]].map(([label, value]) => <div key={String(label)} className="rounded-md border bg-muted/20 p-3"><div className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{String(label)}</div><div className="mt-1 font-mono text-xl font-semibold">{Number(value ?? 0).toLocaleString()}</div></div>)}
       </div>
 
       {/* ── Content ── */}

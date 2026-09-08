@@ -3096,13 +3096,20 @@ export type Database = {
           customer_id: string | null
           date: string | null
           deleted_at: string | null
+          delivered_at: string | null
+          delivery_notes: string | null
+          expected_delivery_date: string | null
+          height: number | null
           id: string
+          length: number | null
           notes: string | null
           number: string | null
+          packing_status: string
           posted_at: string | null
           reversal_id: string | null
           sales_order_id: string | null
           status: string | null
+          shipment_status: string
           tenant_id: string
           tracking: string | null
           updated_at: string
@@ -3110,6 +3117,7 @@ export type Database = {
           voided_by: string | null
           warehouse_id: string | null
           weight: number | null
+          width: number | null
         }
         Insert: {
           carrier?: string | null
@@ -3118,13 +3126,20 @@ export type Database = {
           customer_id?: string | null
           date?: string | null
           deleted_at?: string | null
+          delivered_at?: string | null
+          delivery_notes?: string | null
+          expected_delivery_date?: string | null
+          height?: number | null
           id?: string
+          length?: number | null
           notes?: string | null
           number?: string | null
+          packing_status?: string
           posted_at?: string | null
           reversal_id?: string | null
           sales_order_id?: string | null
           status?: string | null
+          shipment_status?: string
           tenant_id: string
           tracking?: string | null
           updated_at?: string
@@ -3132,6 +3147,7 @@ export type Database = {
           voided_by?: string | null
           warehouse_id?: string | null
           weight?: number | null
+          width?: number | null
         }
         Update: {
           carrier?: string | null
@@ -3140,13 +3156,20 @@ export type Database = {
           customer_id?: string | null
           date?: string | null
           deleted_at?: string | null
+          delivered_at?: string | null
+          delivery_notes?: string | null
+          expected_delivery_date?: string | null
+          height?: number | null
           id?: string
+          length?: number | null
           notes?: string | null
           number?: string | null
+          packing_status?: string
           posted_at?: string | null
           reversal_id?: string | null
           sales_order_id?: string | null
           status?: string | null
+          shipment_status?: string
           tenant_id?: string
           tracking?: string | null
           updated_at?: string
@@ -3154,6 +3177,7 @@ export type Database = {
           voided_by?: string | null
           warehouse_id?: string | null
           weight?: number | null
+          width?: number | null
         }
         Relationships: [
           {
