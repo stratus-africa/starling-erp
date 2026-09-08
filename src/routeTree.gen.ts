@@ -78,6 +78,7 @@ import { Route as AuthenticatedReportsExpensesRouteImport } from './routes/_auth
 import { Route as AuthenticatedPurchasingPaymentsRouteImport } from './routes/_authenticated/purchasing.payments'
 import { Route as AuthenticatedPurchasingCreditsRouteImport } from './routes/_authenticated/purchasing.credits'
 import { Route as AuthenticatedManufacturingRunsRouteImport } from './routes/_authenticated/manufacturing.runs'
+import { Route as AuthenticatedManufacturingPlanningRouteImport } from './routes/_authenticated/manufacturing.planning'
 import { Route as AuthenticatedInventoryTransfersRouteImport } from './routes/_authenticated/inventory.transfers'
 import { Route as AuthenticatedInventorySerialsRouteImport } from './routes/_authenticated/inventory.serials'
 import { Route as AuthenticatedInventoryLotsRouteImport } from './routes/_authenticated/inventory.lots'
@@ -154,6 +155,7 @@ import { Route as AuthenticatedReportsPurchasesOrdersRouteImport } from './route
 import { Route as AuthenticatedReportsPurchasesMatchingRouteImport } from './routes/_authenticated/reports.purchases.matching'
 import { Route as AuthenticatedReportsPurchasesCommitmentsRouteImport } from './routes/_authenticated/reports.purchases.commitments'
 import { Route as AuthenticatedReportsPurchasesCollectionsRouteImport } from './routes/_authenticated/reports.purchases.collections'
+import { Route as AuthenticatedReportsManufacturingReportRouteImport } from './routes/_authenticated/reports.manufacturing.$report'
 import { Route as AuthenticatedReportsExpensesReimbursementsRouteImport } from './routes/_authenticated/reports.expenses.reimbursements'
 import { Route as AuthenticatedReportsExpensesEmployeesRouteImport } from './routes/_authenticated/reports.expenses.employees'
 import { Route as AuthenticatedReportsExpensesDepartmentsRouteImport } from './routes/_authenticated/reports.expenses.departments'
@@ -549,6 +551,12 @@ const AuthenticatedManufacturingRunsRoute =
   AuthenticatedManufacturingRunsRouteImport.update({
     id: '/manufacturing/runs',
     path: '/manufacturing/runs',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedManufacturingPlanningRoute =
+  AuthenticatedManufacturingPlanningRouteImport.update({
+    id: '/manufacturing/planning',
+    path: '/manufacturing/planning',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedInventoryTransfersRoute =
@@ -1006,6 +1014,12 @@ const AuthenticatedReportsPurchasesCollectionsRoute =
     path: '/collections',
     getParentRoute: () => AuthenticatedReportsPurchasesRoute,
   } as any)
+const AuthenticatedReportsManufacturingReportRoute =
+  AuthenticatedReportsManufacturingReportRouteImport.update({
+    id: '/$report',
+    path: '/$report',
+    getParentRoute: () => AuthenticatedReportsManufacturingRoute,
+  } as any)
 const AuthenticatedReportsExpensesReimbursementsRoute =
   AuthenticatedReportsExpensesReimbursementsRouteImport.update({
     id: '/reimbursements',
@@ -1187,13 +1201,14 @@ export interface FileRoutesByFullPath {
   '/inventory/lots': typeof AuthenticatedInventoryLotsRoute
   '/inventory/serials': typeof AuthenticatedInventorySerialsRoute
   '/inventory/transfers': typeof AuthenticatedInventoryTransfersRoute
+  '/manufacturing/planning': typeof AuthenticatedManufacturingPlanningRoute
   '/manufacturing/runs': typeof AuthenticatedManufacturingRunsRoute
   '/purchasing/credits': typeof AuthenticatedPurchasingCreditsRoute
   '/purchasing/payments': typeof AuthenticatedPurchasingPaymentsRoute
   '/reports/expenses': typeof AuthenticatedReportsExpensesRouteWithChildren
   '/reports/financial': typeof AuthenticatedReportsFinancialRoute
   '/reports/inventory': typeof AuthenticatedReportsInventoryRoute
-  '/reports/manufacturing': typeof AuthenticatedReportsManufacturingRoute
+  '/reports/manufacturing': typeof AuthenticatedReportsManufacturingRouteWithChildren
   '/reports/purchases': typeof AuthenticatedReportsPurchasesRouteWithChildren
   '/reports/sales': typeof AuthenticatedReportsSalesRouteWithChildren
   '/sales/payments': typeof AuthenticatedSalesPaymentsRouteWithChildren
@@ -1240,6 +1255,7 @@ export interface FileRoutesByFullPath {
   '/reports/expenses/departments': typeof AuthenticatedReportsExpensesDepartmentsRoute
   '/reports/expenses/employees': typeof AuthenticatedReportsExpensesEmployeesRoute
   '/reports/expenses/reimbursements': typeof AuthenticatedReportsExpensesReimbursementsRoute
+  '/reports/manufacturing/$report': typeof AuthenticatedReportsManufacturingReportRoute
   '/reports/purchases/collections': typeof AuthenticatedReportsPurchasesCollectionsRoute
   '/reports/purchases/commitments': typeof AuthenticatedReportsPurchasesCommitmentsRoute
   '/reports/purchases/matching': typeof AuthenticatedReportsPurchasesMatchingRoute
@@ -1351,13 +1367,14 @@ export interface FileRoutesByTo {
   '/inventory/lots': typeof AuthenticatedInventoryLotsRoute
   '/inventory/serials': typeof AuthenticatedInventorySerialsRoute
   '/inventory/transfers': typeof AuthenticatedInventoryTransfersRoute
+  '/manufacturing/planning': typeof AuthenticatedManufacturingPlanningRoute
   '/manufacturing/runs': typeof AuthenticatedManufacturingRunsRoute
   '/purchasing/credits': typeof AuthenticatedPurchasingCreditsRoute
   '/purchasing/payments': typeof AuthenticatedPurchasingPaymentsRoute
   '/reports/expenses': typeof AuthenticatedReportsExpensesRouteWithChildren
   '/reports/financial': typeof AuthenticatedReportsFinancialRoute
   '/reports/inventory': typeof AuthenticatedReportsInventoryRoute
-  '/reports/manufacturing': typeof AuthenticatedReportsManufacturingRoute
+  '/reports/manufacturing': typeof AuthenticatedReportsManufacturingRouteWithChildren
   '/reports/purchases': typeof AuthenticatedReportsPurchasesRouteWithChildren
   '/reports/sales': typeof AuthenticatedReportsSalesRouteWithChildren
   '/sales/payments': typeof AuthenticatedSalesPaymentsRouteWithChildren
@@ -1403,6 +1420,7 @@ export interface FileRoutesByTo {
   '/reports/expenses/departments': typeof AuthenticatedReportsExpensesDepartmentsRoute
   '/reports/expenses/employees': typeof AuthenticatedReportsExpensesEmployeesRoute
   '/reports/expenses/reimbursements': typeof AuthenticatedReportsExpensesReimbursementsRoute
+  '/reports/manufacturing/$report': typeof AuthenticatedReportsManufacturingReportRoute
   '/reports/purchases/collections': typeof AuthenticatedReportsPurchasesCollectionsRoute
   '/reports/purchases/commitments': typeof AuthenticatedReportsPurchasesCommitmentsRoute
   '/reports/purchases/matching': typeof AuthenticatedReportsPurchasesMatchingRoute
@@ -1518,13 +1536,14 @@ export interface FileRoutesById {
   '/_authenticated/inventory/lots': typeof AuthenticatedInventoryLotsRoute
   '/_authenticated/inventory/serials': typeof AuthenticatedInventorySerialsRoute
   '/_authenticated/inventory/transfers': typeof AuthenticatedInventoryTransfersRoute
+  '/_authenticated/manufacturing/planning': typeof AuthenticatedManufacturingPlanningRoute
   '/_authenticated/manufacturing/runs': typeof AuthenticatedManufacturingRunsRoute
   '/_authenticated/purchasing/credits': typeof AuthenticatedPurchasingCreditsRoute
   '/_authenticated/purchasing/payments': typeof AuthenticatedPurchasingPaymentsRoute
   '/_authenticated/reports/expenses': typeof AuthenticatedReportsExpensesRouteWithChildren
   '/_authenticated/reports/financial': typeof AuthenticatedReportsFinancialRoute
   '/_authenticated/reports/inventory': typeof AuthenticatedReportsInventoryRoute
-  '/_authenticated/reports/manufacturing': typeof AuthenticatedReportsManufacturingRoute
+  '/_authenticated/reports/manufacturing': typeof AuthenticatedReportsManufacturingRouteWithChildren
   '/_authenticated/reports/purchases': typeof AuthenticatedReportsPurchasesRouteWithChildren
   '/_authenticated/reports/sales': typeof AuthenticatedReportsSalesRouteWithChildren
   '/_authenticated/sales/payments': typeof AuthenticatedSalesPaymentsRouteWithChildren
@@ -1571,6 +1590,7 @@ export interface FileRoutesById {
   '/_authenticated/reports/expenses/departments': typeof AuthenticatedReportsExpensesDepartmentsRoute
   '/_authenticated/reports/expenses/employees': typeof AuthenticatedReportsExpensesEmployeesRoute
   '/_authenticated/reports/expenses/reimbursements': typeof AuthenticatedReportsExpensesReimbursementsRoute
+  '/_authenticated/reports/manufacturing/$report': typeof AuthenticatedReportsManufacturingReportRoute
   '/_authenticated/reports/purchases/collections': typeof AuthenticatedReportsPurchasesCollectionsRoute
   '/_authenticated/reports/purchases/commitments': typeof AuthenticatedReportsPurchasesCommitmentsRoute
   '/_authenticated/reports/purchases/matching': typeof AuthenticatedReportsPurchasesMatchingRoute
@@ -1685,6 +1705,7 @@ export interface FileRouteTypes {
     | '/inventory/lots'
     | '/inventory/serials'
     | '/inventory/transfers'
+    | '/manufacturing/planning'
     | '/manufacturing/runs'
     | '/purchasing/credits'
     | '/purchasing/payments'
@@ -1738,6 +1759,7 @@ export interface FileRouteTypes {
     | '/reports/expenses/departments'
     | '/reports/expenses/employees'
     | '/reports/expenses/reimbursements'
+    | '/reports/manufacturing/$report'
     | '/reports/purchases/collections'
     | '/reports/purchases/commitments'
     | '/reports/purchases/matching'
@@ -1849,6 +1871,7 @@ export interface FileRouteTypes {
     | '/inventory/lots'
     | '/inventory/serials'
     | '/inventory/transfers'
+    | '/manufacturing/planning'
     | '/manufacturing/runs'
     | '/purchasing/credits'
     | '/purchasing/payments'
@@ -1901,6 +1924,7 @@ export interface FileRouteTypes {
     | '/reports/expenses/departments'
     | '/reports/expenses/employees'
     | '/reports/expenses/reimbursements'
+    | '/reports/manufacturing/$report'
     | '/reports/purchases/collections'
     | '/reports/purchases/commitments'
     | '/reports/purchases/matching'
@@ -2015,6 +2039,7 @@ export interface FileRouteTypes {
     | '/_authenticated/inventory/lots'
     | '/_authenticated/inventory/serials'
     | '/_authenticated/inventory/transfers'
+    | '/_authenticated/manufacturing/planning'
     | '/_authenticated/manufacturing/runs'
     | '/_authenticated/purchasing/credits'
     | '/_authenticated/purchasing/payments'
@@ -2068,6 +2093,7 @@ export interface FileRouteTypes {
     | '/_authenticated/reports/expenses/departments'
     | '/_authenticated/reports/expenses/employees'
     | '/_authenticated/reports/expenses/reimbursements'
+    | '/_authenticated/reports/manufacturing/$report'
     | '/_authenticated/reports/purchases/collections'
     | '/_authenticated/reports/purchases/commitments'
     | '/_authenticated/reports/purchases/matching'
@@ -2613,6 +2639,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedManufacturingRunsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/manufacturing/planning': {
+      id: '/_authenticated/manufacturing/planning'
+      path: '/manufacturing/planning'
+      fullPath: '/manufacturing/planning'
+      preLoaderRoute: typeof AuthenticatedManufacturingPlanningRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/inventory/transfers': {
       id: '/_authenticated/inventory/transfers'
       path: '/inventory/transfers'
@@ -3145,6 +3178,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedReportsPurchasesCollectionsRouteImport
       parentRoute: typeof AuthenticatedReportsPurchasesRoute
     }
+    '/_authenticated/reports/manufacturing/$report': {
+      id: '/_authenticated/reports/manufacturing/$report'
+      path: '/$report'
+      fullPath: '/reports/manufacturing/$report'
+      preLoaderRoute: typeof AuthenticatedReportsManufacturingReportRouteImport
+      parentRoute: typeof AuthenticatedReportsManufacturingRoute
+    }
     '/_authenticated/reports/expenses/reimbursements': {
       id: '/_authenticated/reports/expenses/reimbursements'
       path: '/reimbursements'
@@ -3332,6 +3372,21 @@ const AuthenticatedReportsExpensesRouteWithChildren =
     AuthenticatedReportsExpensesRouteChildren,
   )
 
+interface AuthenticatedReportsManufacturingRouteChildren {
+  AuthenticatedReportsManufacturingReportRoute: typeof AuthenticatedReportsManufacturingReportRoute
+}
+
+const AuthenticatedReportsManufacturingRouteChildren: AuthenticatedReportsManufacturingRouteChildren =
+  {
+    AuthenticatedReportsManufacturingReportRoute:
+      AuthenticatedReportsManufacturingReportRoute,
+  }
+
+const AuthenticatedReportsManufacturingRouteWithChildren =
+  AuthenticatedReportsManufacturingRoute._addFileChildren(
+    AuthenticatedReportsManufacturingRouteChildren,
+  )
+
 interface AuthenticatedReportsPurchasesSupplierStatementsRouteChildren {
   AuthenticatedReportsPurchasesSupplierStatementsSupplierIdRoute: typeof AuthenticatedReportsPurchasesSupplierStatementsSupplierIdRoute
 }
@@ -3487,13 +3542,14 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedInventoryLotsRoute: typeof AuthenticatedInventoryLotsRoute
   AuthenticatedInventorySerialsRoute: typeof AuthenticatedInventorySerialsRoute
   AuthenticatedInventoryTransfersRoute: typeof AuthenticatedInventoryTransfersRoute
+  AuthenticatedManufacturingPlanningRoute: typeof AuthenticatedManufacturingPlanningRoute
   AuthenticatedManufacturingRunsRoute: typeof AuthenticatedManufacturingRunsRoute
   AuthenticatedPurchasingCreditsRoute: typeof AuthenticatedPurchasingCreditsRoute
   AuthenticatedPurchasingPaymentsRoute: typeof AuthenticatedPurchasingPaymentsRoute
   AuthenticatedReportsExpensesRoute: typeof AuthenticatedReportsExpensesRouteWithChildren
   AuthenticatedReportsFinancialRoute: typeof AuthenticatedReportsFinancialRoute
   AuthenticatedReportsInventoryRoute: typeof AuthenticatedReportsInventoryRoute
-  AuthenticatedReportsManufacturingRoute: typeof AuthenticatedReportsManufacturingRoute
+  AuthenticatedReportsManufacturingRoute: typeof AuthenticatedReportsManufacturingRouteWithChildren
   AuthenticatedReportsPurchasesRoute: typeof AuthenticatedReportsPurchasesRouteWithChildren
   AuthenticatedReportsSalesRoute: typeof AuthenticatedReportsSalesRouteWithChildren
   AuthenticatedSalesPaymentsRoute: typeof AuthenticatedSalesPaymentsRouteWithChildren
@@ -3596,6 +3652,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedInventoryLotsRoute: AuthenticatedInventoryLotsRoute,
   AuthenticatedInventorySerialsRoute: AuthenticatedInventorySerialsRoute,
   AuthenticatedInventoryTransfersRoute: AuthenticatedInventoryTransfersRoute,
+  AuthenticatedManufacturingPlanningRoute:
+    AuthenticatedManufacturingPlanningRoute,
   AuthenticatedManufacturingRunsRoute: AuthenticatedManufacturingRunsRoute,
   AuthenticatedPurchasingCreditsRoute: AuthenticatedPurchasingCreditsRoute,
   AuthenticatedPurchasingPaymentsRoute: AuthenticatedPurchasingPaymentsRoute,
@@ -3604,7 +3662,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedReportsFinancialRoute: AuthenticatedReportsFinancialRoute,
   AuthenticatedReportsInventoryRoute: AuthenticatedReportsInventoryRoute,
   AuthenticatedReportsManufacturingRoute:
-    AuthenticatedReportsManufacturingRoute,
+    AuthenticatedReportsManufacturingRouteWithChildren,
   AuthenticatedReportsPurchasesRoute:
     AuthenticatedReportsPurchasesRouteWithChildren,
   AuthenticatedReportsSalesRoute: AuthenticatedReportsSalesRouteWithChildren,

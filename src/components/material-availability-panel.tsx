@@ -31,7 +31,7 @@ import { Card } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
-import { AlertTriangle, CheckCircle2, Loader2, Lock, Package, RefreshCw, Send, Unlock } from "lucide-react";
+import { AlertCircle, AlertTriangle, CheckCircle2, Circle, Loader2, Lock, Package, RefreshCw, Send, Unlock } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -314,14 +314,15 @@ export function MaterialAvailabilityPanel({
                   <TableHead className="text-right text-xs">Required</TableHead>
                   <TableHead className="text-right text-xs">On Hand</TableHead>
                   <TableHead className="text-right text-xs">
-                    <span title="Reserved by other orders">Reserved (others)</span>
+                    <span title="Reserved by other documents">Reserved</span>
                   </TableHead>
                   <TableHead className="text-right text-xs">
                     <span title="Reserved specifically for this order">This Order</span>
                   </TableHead>
-                  <TableHead className="text-right text-xs">Available</TableHead>
+                  <TableHead className="text-right text-xs">Available to Manufacturing</TableHead>
                   <TableHead className="text-xs min-w-[120px]">Coverage</TableHead>
                   <TableHead className="text-right text-xs">Shortage</TableHead>
+                  <TableHead className="text-xs">Status</TableHead>
                   <TableHead className="text-xs w-14">UoM</TableHead>
                 </TableRow>
               </TableHeader>
@@ -329,6 +330,8 @@ export function MaterialAvailabilityPanel({
                 {rows.map((row) => {
                   const short = Number(row.shortage) > 0;
                   const thisOrderReserved = Number(row.reserved_this_order ?? 0);
+                  const coveredByReservation = thisOrderReserved >= Number(row.required_qty);
+                  const materialStatus = short ? "Short" : coveredByReservation ? "Available" : "Pending";
                   return (
                     <TableRow key={row.item_id} className={short ? "bg-destructive/3" : ""}>
                       {/* Component */}
@@ -397,6 +400,28 @@ export function MaterialAvailabilityPanel({
                         ) : (
                           <span className="text-success">0</span>
                         )}
+                      </TableCell>
+
+                      {/* Status */}
+                      <TableCell>
+                        <span
+                          className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${
+                            materialStatus === "Available"
+                              ? "bg-success/10 text-success"
+                              : materialStatus === "Short"
+                                ? "bg-destructive/10 text-destructive"
+                                : "bg-muted text-muted-foreground"
+                          }`}
+                        >
+                          {materialStatus === "Available" ? (
+                            <CheckCircle2 className="h-3 w-3" />
+                          ) : materialStatus === "Short" ? (
+                            <AlertCircle className="h-3 w-3" />
+                          ) : (
+                            <Circle className="h-3 w-3" />
+                          )}
+                          {materialStatus}
+                        </span>
                       </TableCell>
 
                       {/* UoM */}

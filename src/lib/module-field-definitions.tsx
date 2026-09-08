@@ -1014,6 +1014,7 @@ export const productionOrderFields: FieldDef[] = [
       "Material Reserved",
       "Released",
       "In Progress",
+      "Partially Completed",
       "Paused",
       "Quality Check",
       "Completed",

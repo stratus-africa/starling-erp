@@ -88,6 +88,7 @@ const WORKFLOW_STEPS = [
   "Material Reserved",
   "Released",
   "In Progress",
+  "Partially Completed",
   "Quality Check",
   "Completed",
   "Closed",
@@ -101,6 +102,7 @@ const STATUS_COLORS: Record<string, string> = {
   "Material Reserved": "bg-violet-500/15 text-violet-700 dark:text-violet-400",
   Released: "bg-amber-500/15 text-amber-700 dark:text-amber-400",
   "In Progress": "bg-info/15 text-info",
+  "Partially Completed": "bg-warning/15 text-warning",
   Paused: "bg-yellow-500/15 text-yellow-700 dark:text-yellow-400",
   "Quality Check": "bg-orange-500/15 text-orange-700 dark:text-orange-400",
   Completed: "bg-success/15 text-success",
@@ -270,7 +272,7 @@ function ProductionEntriesTable({ orderId }: { orderId: string }) {
         .from("production_entries")
         .select(
           `
-          id, entry_number, entry_date, qty_produced, qty_scrap,
+          id, entry_number, entry_date, qty_produced, qty_scrap, qty_waste, qty_rework,
           lot_number, unit_cost, total_cost, status, notes,
           voided_at, void_reason,
           operator:operator_id (full_name, email),
@@ -307,6 +309,12 @@ function ProductionEntriesTable({ orderId }: { orderId: string }) {
   const totalScrap = entries
     .filter((e) => e.status !== "Voided")
     .reduce((s: number, e: any) => s + Number(e.qty_scrap), 0);
+  const totalWaste = entries
+    .filter((e) => e.status !== "Voided")
+    .reduce((s: number, e: any) => s + Number(e.qty_waste ?? 0), 0);
+  const totalRework = entries
+    .filter((e) => e.status !== "Voided")
+    .reduce((s: number, e: any) => s + Number(e.qty_rework ?? 0), 0);
   const totalCost = entries
     .filter((e) => e.status !== "Voided")
     .reduce((s: number, e: any) => s + Number(e.total_cost), 0);
@@ -322,6 +330,8 @@ function ProductionEntriesTable({ orderId }: { orderId: string }) {
             <TableHead className="text-xs">Warehouse</TableHead>
             <TableHead className="text-right text-xs">Produced</TableHead>
             <TableHead className="text-right text-xs">Scrap</TableHead>
+            <TableHead className="text-right text-xs">Waste</TableHead>
+            <TableHead className="text-right text-xs">Rework</TableHead>
             <TableHead className="text-xs">Lot</TableHead>
             <TableHead className="text-right text-xs">Unit Cost</TableHead>
             <TableHead className="text-right text-xs">Total Cost</TableHead>
@@ -346,6 +356,8 @@ function ProductionEntriesTable({ orderId }: { orderId: string }) {
                   <span className="text-muted-foreground">—</span>
                 )}
               </TableCell>
+              <TableCell className="text-right font-mono tabular-nums text-sm">{Number(e.qty_waste ?? 0) > 0 ? fmtQty(e.qty_waste) : "—"}</TableCell>
+              <TableCell className="text-right font-mono tabular-nums text-sm">{Number(e.qty_rework ?? 0) > 0 ? fmtQty(e.qty_rework) : "—"}</TableCell>
               <TableCell className="font-mono text-xs">
                 {e.lot_number ?? <span className="text-muted-foreground">—</span>}
               </TableCell>
@@ -382,7 +394,8 @@ function ProductionEntriesTable({ orderId }: { orderId: string }) {
               <TableCell className="text-right font-mono tabular-nums text-sm text-destructive">
                 {totalScrap > 0 ? fmtQty(totalScrap) : "—"}
               </TableCell>
-              <TableCell colSpan={2} />
+              <TableCell className="text-right font-mono tabular-nums text-sm">{totalWaste > 0 ? fmtQty(totalWaste) : "—"}</TableCell>
+              <TableCell className="text-right font-mono tabular-nums text-sm">{totalRework > 0 ? fmtQty(totalRework) : "—"}</TableCell>
               <TableCell className="text-right font-mono tabular-nums text-xs">
                 {totalCost.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </TableCell>
@@ -408,6 +421,8 @@ interface RecordRunDialogProps {
 function RecordRunDialog({ open, onOpenChange, order, product, onSuccess }: RecordRunDialogProps) {
   const [qty, setQty] = useState("");
   const [scrap, setScrap] = useState("0");
+  const [waste, setWaste] = useState("0");
+  const [rework, setRework] = useState("0");
   const [lotNo, setLotNo] = useState("");
   const [notes, setNotes] = useState("");
 
@@ -417,12 +432,16 @@ function RecordRunDialog({ open, onOpenChange, order, product, onSuccess }: Reco
     mutationFn: async () => {
       const qtyNum = parseFloat(qty);
       const scrapNum = parseFloat(scrap) || 0;
+      const wasteNum = parseFloat(waste) || 0;
+      const reworkNum = parseFloat(rework) || 0;
       if (isNaN(qtyNum) || qtyNum <= 0) throw new Error("Quantity must be greater than zero");
 
       const { data, error } = await (db as any).rpc("record_production_run", {
         _order_id: order.id,
         _qty_produced: qtyNum,
         _qty_scrap: scrapNum,
+        _qty_waste: wasteNum,
+        _qty_rework: reworkNum,
         _lot_number: lotNo.trim() || null,
         _notes: notes.trim() || null,
       });
@@ -433,6 +452,8 @@ function RecordRunDialog({ open, onOpenChange, order, product, onSuccess }: Reco
       toast.success("Production run recorded.");
       setQty("");
       setScrap("0");
+      setWaste("0");
+      setRework("0");
       setLotNo("");
       setNotes("");
       onOpenChange(false);
@@ -475,6 +496,14 @@ function RecordRunDialog({ open, onOpenChange, order, product, onSuccess }: Reco
                 className="font-mono"
                 autoFocus
               />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="run-waste">Waste Qty</Label>
+              <Input id="run-waste" type="number" step="any" min="0" placeholder="0" value={waste} onChange={(e) => setWaste(e.target.value)} className="font-mono" />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="run-rework">Rework Qty</Label>
+              <Input id="run-rework" type="number" step="any" min="0" placeholder="0" value={rework} onChange={(e) => setRework(e.target.value)} className="font-mono" />
             </div>
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="run-scrap">Scrap Qty</Label>
@@ -702,6 +731,16 @@ function ProductionOrderDetailPage() {
     },
   });
 
+  const { data: sourceSalesOrder } = useQuery({
+    queryKey: ["sales_orders", "source", order?.source_id],
+    enabled: order?.source_type === "sales_order" && !!order?.source_id,
+    queryFn: async () => {
+      const { data, error } = await db.from("sales_orders").select("id, number").eq("id", order!.source_id!).maybeSingle();
+      if (error) throw error;
+      return data as { id: string; number: string } | null;
+    },
+  });
+
   const { data: configRows = [] } = useQuery({
     queryKey: ["inventory_config", "allow_production_shortage"],
     enabled: !!tenant?.id,
@@ -732,6 +771,16 @@ function ProductionOrderDetailPage() {
     },
   });
   const hasReservations = existingReservations.length > 0;
+
+  const { data: costing } = useQuery({
+    queryKey: ["production_order_costing", id],
+    enabled: !!id,
+    queryFn: async () => {
+      const { data, error } = await (db as any).rpc("get_production_order_costing", { _order_id: id });
+      if (error) throw error;
+      return data as any;
+    },
+  });
 
   // ── Shared invalidation ───────────────────────────────────────────────
   const invalidateAll = () => {
@@ -874,7 +923,7 @@ function ProductionOrderDetailPage() {
 
   const status = order.status ?? "Draft";
   const isTerminal = ["Completed", "Closed", "Cancelled"].includes(status);
-  const isActive = ["In Progress", "Paused"].includes(status);
+  const isActive = ["In Progress", "Partially Completed", "Paused"].includes(status);
   const canRecord = canWrite && isActive;
   const qty = Number(order.quantity ?? 0);
   const produced = Number(order.qty_produced ?? 0);
@@ -917,7 +966,7 @@ function ProductionOrderDetailPage() {
             )}
 
             {/* Pause */}
-            {status === "In Progress" && (
+            {["In Progress", "Partially Completed"].includes(status) && (
               <Button
                 size="sm"
                 variant="outline"
@@ -1166,7 +1215,15 @@ function ProductionOrderDetailPage() {
             />
             <FieldRow
               label="Source"
-              value={order.source_type ? `${order.source_type}${order.source_id ? ` · ${order.source_id}` : ""}` : "—"}
+              value={
+                order.source_type === "sales_order" && order.source_id ? (
+                  <Link to="/sales/orders/$id" params={{ id: order.source_id }} className="text-primary hover:underline">
+                    {sourceSalesOrder?.number ?? "Sales Order"}
+                  </Link>
+                ) : order.source_type ? (
+                  `${order.source_type}${order.source_id ? ` · ${order.source_id}` : ""}`
+                ) : "—"
+              }
             />
           </div>
 
@@ -1315,6 +1372,29 @@ function ProductionOrderDetailPage() {
           <ProductionEntriesTable orderId={id} />
         </div>
       )}
+
+      <Card>
+        <CardHeader className="pb-2 pt-4 px-4">
+          <CardTitle className="text-sm flex items-center gap-2"><Package className="h-4 w-4 text-muted-foreground" /> Manufacturing Costing</CardTitle>
+        </CardHeader>
+        <CardContent className="px-4 pb-4">
+          {costing ? (() => {
+            const components = [
+              ["Material", costing.material],
+              ["Labour", costing.labour],
+              ["Machine", costing.machine],
+              ["Overhead", costing.overhead],
+            ] as const;
+            const planned = components.reduce((sum, [, value]) => sum + Number(value?.planned ?? 0), 0);
+            const actual = components.reduce((sum, [, value]) => sum + Number(value?.actual ?? 0), 0);
+            const units = Number(costing.units_received ?? order.qty_produced ?? 0);
+            return <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">{components.map(([label, value]) => <div key={label} className="rounded-md border bg-muted/20 p-3"><p className="text-xs text-muted-foreground">{label}</p><p className="font-mono text-sm font-semibold">{Number(value?.actual ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p><p className="text-[11px] text-muted-foreground">Planned {Number(value?.planned ?? 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}</p></div>)}</div>
+              <div className="grid grid-cols-2 gap-3 border-t pt-3 sm:grid-cols-4"><FieldRow label="Planned Cost" value={planned.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} /><FieldRow label="Actual Cost" value={actual.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} /><FieldRow label="Variance" value={(actual - planned).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} /><FieldRow label="Cost / Unit" value={units > 0 ? (actual / units).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "—"} /></div>
+            </div>;
+          })() : <p className="text-sm text-muted-foreground">Costing data is not available yet.</p>}
+        </CardContent>
+      </Card>
 
       {/* ── Material Availability ─────────────────────────────────────────── */}
       {showAvail && (

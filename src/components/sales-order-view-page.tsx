@@ -11,6 +11,7 @@ import { DocumentEditor } from "@/components/document-editor";
 import { FulfillmentTimeline } from "@/components/fulfillment-timeline";
 import { AttachmentsPanel } from "@/components/attachments-panel";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
@@ -20,6 +21,7 @@ import { SalesFinancialSummary } from "@/components/sales-financial-summary";
 import { CreditLimitWarning } from "@/components/credit-limit-warning";
 import { CreateInvoiceFromOrderDialog } from "@/components/create-invoice-from-order-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -43,6 +45,7 @@ import {
   Trash2,
   Truck,
   Wallet,
+  Factory,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -87,6 +90,111 @@ function Total({ label, value, bold = false }: { label: string; value: string; b
       <span className={bold ? "font-semibold" : "text-sm text-muted-foreground"}>{label}</span>
       <span className={`font-mono ${bold ? "font-bold" : "text-sm"}`}>{value}</span>
     </div>
+  );
+}
+
+type ManufacturingRequirement = {
+  sales_order_line_id: string;
+  item_id: string;
+  item_name: string;
+  sku: string | null;
+  uom: string | null;
+  ordered_qty: number;
+  fulfilled_qty: number;
+  available_qty: number;
+  in_production_qty: number;
+  manufacturing_required: number;
+  active_bom_id: string | null;
+  active_bom_version: string | null;
+};
+
+function ManufacturingRequirementDialog({
+  open,
+  onOpenChange,
+  orderId,
+  onCreated,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  orderId: string;
+  onCreated: () => void;
+}) {
+  const [selected, setSelected] = useState<Record<string, boolean>>({});
+  const qc = useQueryClient();
+  const { data: requirements = [], isLoading } = useQuery({
+    queryKey: ["sales_order_mto_requirements", orderId],
+    enabled: open,
+    queryFn: async () => {
+      const { data, error } = await (db as any).rpc("get_sales_order_manufacturing_requirements", {
+        _sales_order_id: orderId,
+      });
+      if (error) throw error;
+      return (data ?? []) as ManufacturingRequirement[];
+    },
+  });
+  const createMto = useMutation({
+    mutationFn: async () => {
+      const lines = requirements
+        .filter((line) => selected[line.sales_order_line_id] && Number(line.manufacturing_required) > 0)
+        .map((line) => ({
+          sales_order_line_id: line.sales_order_line_id,
+          quantity: Number(line.manufacturing_required),
+        }));
+      if (lines.length === 0) throw new Error("Select at least one line requiring manufacturing");
+      const { data, error } = await (db as any).rpc("create_sales_order_mto_orders", {
+        _sales_order_id: orderId,
+        _lines: lines,
+      });
+      if (error) throw error;
+      return data ?? [];
+    },
+    onSuccess: (created) => {
+      toast.success(`${created.length} Manufacturing Order${created.length === 1 ? "" : "s"} created.`);
+      setSelected({});
+      qc.invalidateQueries({ queryKey: ["sales_order_mto_requirements", orderId] });
+      onCreated();
+      onOpenChange(false);
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-3xl">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2"><Factory className="h-5 w-5" /> Manufacturing Required</DialogTitle>
+          <DialogDescription>Select order lines and create one MTO Manufacturing Order per selected line.</DialogDescription>
+        </DialogHeader>
+        <div className="overflow-x-auto rounded-md border">
+          <table className="w-full text-sm">
+            <thead className="bg-muted/30 text-xs text-muted-foreground">
+              <tr><th className="w-10 p-3" /><th className="p-3 text-left">Product</th><th className="p-3 text-right">Ordered</th><th className="p-3 text-right">Available</th><th className="p-3 text-right">In Production</th><th className="p-3 text-right">Required</th><th className="p-3 text-left">BOM</th></tr>
+            </thead>
+            <tbody>
+              {isLoading ? <tr><td colSpan={7} className="p-6 text-center text-muted-foreground">Checking inventory and manufacturing...</td></tr> : requirements.map((line) => {
+                const required = Number(line.manufacturing_required);
+                const disabled = required <= 0 || !line.active_bom_id;
+                return (
+                  <tr key={line.sales_order_line_id} className="border-t">
+                    <td className="p-3"><Checkbox checked={!!selected[line.sales_order_line_id]} disabled={disabled} onCheckedChange={(checked) => setSelected((current) => ({ ...current, [line.sales_order_line_id]: checked === true }))} /></td>
+                    <td className="p-3"><div className="font-medium">{line.item_name}</div><div className="font-mono text-xs text-muted-foreground">{line.sku ?? "No SKU"}</div></td>
+                    <td className="p-3 text-right font-mono">{line.ordered_qty}</td>
+                    <td className="p-3 text-right font-mono">{line.available_qty}</td>
+                    <td className="p-3 text-right font-mono">{line.in_production_qty}</td>
+                    <td className={`p-3 text-right font-mono font-semibold ${required > 0 ? "text-warning" : "text-success"}`}>{required}</td>
+                    <td className="p-3 text-xs">{line.active_bom_id ? `Active ${line.active_bom_version ?? ""}` : <span className="text-destructive">No active BOM</span>}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+          <Button onClick={() => createMto.mutate()} disabled={createMto.isPending || isLoading}><Factory className="mr-1.5 h-4 w-4" />Create Manufacturing Orders</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 const ORDER_STAGES = [
@@ -239,6 +347,7 @@ export function SalesOrderViewPage({ id }: { id: string }) {
   const [tab, setTab] = useState("overview");
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [invoiceDialogOpen, setInvoiceDialogOpen] = useState(false);
+  const [mtoDialogOpen, setMtoDialogOpen] = useState(false);
   const { data: order, isLoading } = useQuery({
     queryKey: ["sales_orders", id, "view"],
     queryFn: async () => {
@@ -343,6 +452,20 @@ export function SalesOrderViewPage({ id }: { id: string }) {
       const { data, error } = await db.rpc("get_sales_order_financial_summary", { _order_id: id });
       if (error) throw error;
       return (data?.[0] ?? data) as Row;
+    },
+  });
+  const { data: manufacturingOrders = [] } = useQuery({
+    queryKey: ["production_orders", "sales_order", id],
+    queryFn: async () => {
+      const { data, error } = await db
+        .from("production_orders")
+        .select("id, number, quantity, qty_produced, status, product_id, source_id, source_type")
+        .eq("source_type", "sales_order")
+        .eq("source_id", id)
+        .is("deleted_at", null)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as Row[];
     },
   });
   const { data: events = [] } = useDocumentEvents("order", id);
@@ -520,6 +643,11 @@ export function SalesOrderViewPage({ id }: { id: string }) {
                   </a>
                 </Button>
               )}
+            {canWrite && can("manufacturing.create") && ["Confirmed", "Processing", "Partially Fulfilled"].includes(currentStatus) && (
+              <Button size="sm" variant="outline" onClick={() => setMtoDialogOpen(true)}>
+                <Factory className="mr-1.5 h-4 w-4" /> Manufacturing Required
+              </Button>
+            )}
             {(currentStatus === "Confirmed" ||
               currentStatus === "Processing" ||
               currentStatus === "Partially Fulfilled" ||
@@ -691,6 +819,29 @@ export function SalesOrderViewPage({ id }: { id: string }) {
               </CardContent>
             </Card>
             <FulfillmentTimeline orderId={id} />
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle className="text-sm">Manufacturing Orders</CardTitle>
+                {can("manufacturing.create") && <Button size="sm" variant="outline" onClick={() => setMtoDialogOpen(true)}>
+                  <Factory className="mr-1.5 h-4 w-4" /> Create MTO
+                </Button>}
+              </CardHeader>
+              <CardContent>
+                {manufacturingOrders.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No manufacturing orders linked to this Sales Order.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {manufacturingOrders.map((mo) => (
+                      <div key={mo.id} className="flex items-center justify-between gap-3 border-b py-2 last:border-0">
+                        <a className="font-mono text-sm text-primary hover:underline" href={`/manufacturing/orders/${mo.id}`}>{mo.number}</a>
+                        <span className="text-sm">{mo.qty_produced ?? 0} / {mo.quantity} produced</span>
+                        <Badge variant="secondary">{mo.status}</Badge>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </TabsContent>
           <TabsContent value="invoices" className="mt-4">
             <Card>
@@ -963,6 +1114,14 @@ export function SalesOrderViewPage({ id }: { id: string }) {
             </div>
           </TabsContent>
         </Tabs>
+        <ManufacturingRequirementDialog
+          open={mtoDialogOpen}
+          onOpenChange={setMtoDialogOpen}
+          orderId={id}
+          onCreated={() => {
+            qc.invalidateQueries({ queryKey: ["production_orders", "sales_order", id] });
+          }}
+        />
       </div>
       <CreateInvoiceFromOrderDialog
         open={invoiceDialogOpen}

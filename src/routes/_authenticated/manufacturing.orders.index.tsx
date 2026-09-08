@@ -33,6 +33,7 @@ export const Route = createFileRoute("/_authenticated/manufacturing/orders/")({
             "Material Reserved",
             "Released",
             "In Progress",
+            "Partially Completed",
             "Quality Check",
             "Completed",
             "Closed",

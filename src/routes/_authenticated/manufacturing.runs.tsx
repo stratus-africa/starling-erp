@@ -78,6 +78,7 @@ const STATUS_COLORS: Record<string, string> = {
   "Material Reserved": "bg-violet-500/15 text-violet-700 dark:text-violet-400",
   Released: "bg-amber-500/15 text-amber-700 dark:text-amber-400",
   "In Progress": "bg-info/15 text-info",
+  "Partially Completed": "bg-warning/15 text-warning",
   Paused: "bg-yellow-500/15 text-yellow-700 dark:text-yellow-400",
   "Quality Check": "bg-orange-500/15 text-orange-700 dark:text-orange-400",
   Completed: "bg-success/15 text-success",
@@ -92,6 +93,7 @@ const ACTIVE_STATUSES = [
   "Material Reserved",
   "Released",
   "In Progress",
+  "Partially Completed",
   "Paused",
   "Quality Check",
 ];
@@ -124,6 +126,8 @@ function InlineRunDialog({
 }) {
   const [qty, setQty] = useState("");
   const [scrap, setScrap] = useState("0");
+  const [waste, setWaste] = useState("0");
+  const [rework, setRework] = useState("0");
   const [lot, setLot] = useState("");
   const [notes, setNotes] = useState("");
   const remaining = Number(order?.qty_remaining ?? order?.quantity ?? 0);
@@ -136,6 +140,8 @@ function InlineRunDialog({
         _order_id: order.id,
         _qty_produced: qtyNum,
         _qty_scrap: parseFloat(scrap) || 0,
+        _qty_waste: parseFloat(waste) || 0,
+        _qty_rework: parseFloat(rework) || 0,
         _lot_number: lot.trim() || null,
         _notes: notes.trim() || null,
       });
@@ -146,6 +152,8 @@ function InlineRunDialog({
       toast.success(`Run recorded for ${order.number}.`);
       setQty("");
       setScrap("0");
+      setWaste("0");
+      setRework("0");
       setLot("");
       setNotes("");
       onOpenChange(false);
@@ -197,6 +205,10 @@ function InlineRunDialog({
                 onChange={(e) => setScrap(e.target.value)}
               />
             </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div><Label htmlFor={`rw-${order.id}`}>Waste</Label><Input id={`rw-${order.id}`} type="number" step="any" min="0" className="mt-1 font-mono" value={waste} onChange={(e) => setWaste(e.target.value)} /></div>
+            <div><Label htmlFor={`rr-${order.id}`}>Rework</Label><Input id={`rr-${order.id}`} type="number" step="any" min="0" className="mt-1 font-mono" value={rework} onChange={(e) => setRework(e.target.value)} /></div>
           </div>
           <div>
             <Label htmlFor={`rl-${order.id}`}>Lot Number</Label>
@@ -398,7 +410,7 @@ function RunRow({ order, allowShortage, canWrite }: { order: any; allowShortage:
     postMutation.isPending ||
     cancelMutation.isPending;
 
-  const isActive = ["In Progress", "Paused"].includes(status);
+  const isActive = ["In Progress", "Partially Completed", "Paused"].includes(status);
 
   return (
     <>
@@ -587,7 +599,7 @@ function RunRow({ order, allowShortage, canWrite }: { order: any; allowShortage:
               )}
 
               {/* Pause */}
-              {status === "In Progress" && (
+              {["In Progress", "Partially Completed"].includes(status) && (
                 <Button
                   size="sm"
                   variant="ghost"

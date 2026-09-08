@@ -4227,6 +4227,8 @@ export type Database = {
           production_order_id: string
           qty_produced: number
           qty_scrap: number
+          qty_waste: number
+          qty_rework: number
           status: string
           tenant_id: string
           total_cost: number
@@ -4252,6 +4254,8 @@ export type Database = {
           production_order_id: string
           qty_produced: number
           qty_scrap?: number
+          qty_waste?: number
+          qty_rework?: number
           status?: string
           tenant_id: string
           total_cost?: number
@@ -4277,6 +4281,8 @@ export type Database = {
           production_order_id?: string
           qty_produced?: number
           qty_scrap?: number
+          qty_waste?: number
+          qty_rework?: number
           status?: string
           tenant_id?: string
           total_cost?: number
@@ -4357,6 +4363,7 @@ export type Database = {
           confirmed_by: string | null
           created_at: string
           created_by: string | null
+          customer_id: string | null
           date: string
           deleted_at: string | null
           id: string
@@ -4410,6 +4417,7 @@ export type Database = {
           confirmed_by?: string | null
           created_at?: string
           created_by?: string | null
+          customer_id?: string | null
           date?: string
           deleted_at?: string | null
           id?: string
@@ -4463,6 +4471,7 @@ export type Database = {
           confirmed_by?: string | null
           created_at?: string
           created_by?: string | null
+          customer_id?: string | null
           date?: string
           deleted_at?: string | null
           id?: string

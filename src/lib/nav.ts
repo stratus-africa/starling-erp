@@ -149,6 +149,12 @@ export const navGroups: NavGroup[] = [
         feature: "manufacturing",
       },
       {
+        title: "Production Planning",
+        url: "/manufacturing/planning",
+        icon: ClipboardList,
+        feature: "manufacturing",
+      },
+      {
         title: "Production Orders",
         url: "/manufacturing/orders/",
         icon: Cog,
