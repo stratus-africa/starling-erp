@@ -10,12 +10,33 @@ function PurchaseOrderDetailPage() {
   const nav = useNavigate();
   return (
     <div className="flex h-full flex-col overflow-hidden">
-      <DocViewPanel
-        kind="po"
-        id={id}
-        onClose={() => nav({ to: "/purchasing/orders" as any })}
-        onSaved={(newId) => nav({ to: "/purchasing/orders/$id" as any, params: { id: newId } as any })}
-      />
+      {id === "new" ? (
+        <DocViewPanel
+          kind="po"
+          id={id}
+          onClose={() => nav({ to: "/purchasing/orders" as any })}
+          onSaved={(newId) => nav({ to: "/purchasing/orders/$id" as any, params: { id: newId } as any })}
+        />
+      ) : (
+        <DocumentViewWindow
+          kind="po"
+          title="Purchase Orders"
+          description="Manage supplier orders through approval, delivery, and billing."
+          table="purchase_orders"
+          fields={[]}
+          searchColumn="number"
+          detailId={id}
+          renderDetail={() => (
+            <DocViewPanel
+              kind="po"
+              id={id}
+              embedded
+              onClose={() => nav({ to: "/purchasing/orders" as any })}
+              onSaved={(newId) => nav({ to: "/purchasing/orders/$id" as any, params: { id: newId } as any })}
+            />
+          )}
+        />
+      )}
     </div>
   );
 }

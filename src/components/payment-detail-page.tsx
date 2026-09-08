@@ -4,10 +4,20 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { db } from "@/lib/typed-db";
 import { toast } from "sonner";
-import { ArrowLeft, FileText, Loader2, Printer, Wallet } from "lucide-react";
+import { ArrowLeft, FileText, Loader2, Printer, Trash2, Wallet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { AttachmentsPanel } from "@/components/attachments-panel";
 import { AccountingAuditTrail } from "@/components/accounting-audit-trail";
 import { BusinessEventTimeline } from "@/components/business-event-timeline";
@@ -49,6 +59,7 @@ export function PaymentDetailPage({ id }: { id: string }) {
   const { can } = useAuth();
   const queryClient = useQueryClient();
   const [allocationOpen, setAllocationOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
   const { unallocate } = usePaymentAllocations();
   const { data: payment, isLoading } = useQuery({
     queryKey: ["payments_received", id],
@@ -130,6 +141,21 @@ export function PaymentDetailPage({ id }: { id: string }) {
     },
     onError: (error: Error) => toast.error(error.message || "Void failed"),
   });
+  const deletePayment = useMutation({
+    mutationFn: async () => {
+      const { error } = await db
+        .from("payments_received")
+        .update({ deleted_at: new Date().toISOString() })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Payment deleted");
+      queryClient.invalidateQueries({ queryKey: ["payments_received"] });
+      window.location.assign("/sales/payments");
+    },
+    onError: (error: Error) => toast.error(error.message || "Delete failed"),
+  });
 
   if (isLoading)
     return (
@@ -186,6 +212,12 @@ export function PaymentDetailPage({ id }: { id: string }) {
                 disabled={voidPayment.isPending}
               >
                 Void Payment
+              </Button>
+            )}
+            {!payment.voided_at && can("payments.delete") && (
+              <Button variant="outline" size="sm" onClick={() => setDeleteOpen(true)}>
+                <Trash2 className="mr-2 h-4 w-4" />
+                Delete Payment
               </Button>
             )}
           </div>
@@ -296,6 +328,26 @@ export function PaymentDetailPage({ id }: { id: string }) {
           paymentAmount={Number(payment.amount ?? 0)}
           allocatedAmount={allocatedAmount}
         />
+        <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete payment?</AlertDialogTitle>
+              <AlertDialogDescription>
+                A payment reconciled in the bank must be unreconciled before it can be deleted.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                className="bg-destructive text-destructive-foreground"
+                onClick={() => deletePayment.mutate()}
+                disabled={deletePayment.isPending}
+              >
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </div>
   );

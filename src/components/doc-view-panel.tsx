@@ -322,6 +322,7 @@ function getInvoicePaymentState(doc: Record<string, any>) {
 
 function InvoiceOverviewView({ id }: { id: string }) {
   const { tenant, can } = useAuth();
+  const nav = useNavigate();
   const qc = useQueryClient();
   const [tab, setTab] = useState<"overview" | "payments" | "documents" | "activity">("overview");
   const [editing, setEditing] = useState(false);
@@ -484,6 +485,21 @@ function InvoiceOverviewView({ id }: { id: string }) {
   ]);
   const canRecordPayment = can(["payments.create", "payments.post"]);
   const canDelete = can(["sales.delete", "admin"]);
+  const deleteMutation = useMutation({
+    mutationFn: async () => {
+      const { error } = await db
+        .from("invoices")
+        .update({ deleted_at: new Date().toISOString() })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Invoice deleted");
+      qc.invalidateQueries({ queryKey: ["invoices"] });
+      nav({ to: "/sales/invoices" as never });
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
 
   if (isLoading)
     return (
@@ -1135,9 +1151,10 @@ function InvoiceOverviewView({ id }: { id: string }) {
               <AlertDialogAction
                 className="bg-destructive text-destructive-foreground"
                 onClick={() => {
-                  qc.invalidateQueries({ queryKey: ["invoices"] });
                   setDeleteOpen(false);
+                  deleteMutation.mutate();
                 }}
+                disabled={deleteMutation.isPending}
               >
                 Delete
               </AlertDialogAction>

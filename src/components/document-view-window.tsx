@@ -55,7 +55,7 @@ export function DocumentViewWindow({
 }) {
   const nav = useNavigate();
   const { can } = useAuth();
-  const permissionModule = kind === "bill" ? "purchasing" : "sales";
+  const permissionModule = kind === "bill" || kind === "po" ? "purchasing" : "sales";
   const canWrite = can([`${permissionModule}.create`, `${permissionModule}.update`]);
   const canVoid =
     kind === "invoice" || kind === "credit_note" ? can("sales.void") : kind === "bill" ? can("purchasing.void") : false;
@@ -76,18 +76,24 @@ export function DocumentViewWindow({
   });
   const rows = data?.rows ?? [];
   const total = data?.count ?? 0;
-  const customerIds = useMemo(() => Array.from(new Set(rows.map((r: any) => r.customer_id).filter(Boolean))), [rows]);
-  const { data: customers = [] } = useQuery({
-    queryKey: ["customers", "document-list-names", customerIds],
-    enabled: customerIds.length > 0,
+  const isPurchasingDocument = kind === "po" || kind === "bill";
+  const partyIds = useMemo(
+    () => Array.from(new Set(rows.map((r: any) => r[isPurchasingDocument ? "supplier_id" : "customer_id"]).filter(Boolean))),
+    [isPurchasingDocument, rows],
+  );
+  const partyTable = isPurchasingDocument ? "suppliers" : "customers";
+  const { data: parties = [] } = useQuery({
+    queryKey: [partyTable, "document-list-names", partyIds],
+    enabled: partyIds.length > 0,
     queryFn: async () => {
-      const { data, error } = await supabase.from("customers").select("id,name").in("id", customerIds);
+      const { data, error } = await supabase.from(partyTable).select("id,name").in("id", partyIds);
       if (error) throw error;
       return (data ?? []) as any[];
     },
     staleTime: 30_000,
   });
-  const customerNames = useMemo(() => Object.fromEntries(customers.map((c: any) => [c.id, c.name])), [customers]);
+  const partyNames = useMemo(() => Object.fromEntries(parties.map((party: any) => [party.id, party.name])), [parties]);
+  const customerNames = partyNames;
 
   useEffect(() => {
     if (detailId) setSelectedId(detailId);
@@ -182,7 +188,7 @@ export function DocumentViewWindow({
                     </span>
                   </div>
                   <div className="mt-1 truncate text-xs text-muted-foreground">
-                    {row.customer_name || customerNames[row.customer_id] || row.customer_id || "No customer"}
+                    {row.customer_name || partyNames[row[isPurchasingDocument ? "supplier_id" : "customer_id"]] || row[isPurchasingDocument ? "supplier_id" : "customer_id"] || (isPurchasingDocument ? "No supplier" : "No customer")}
                   </div>
                   <div className="mt-1 flex items-center justify-between text-[11px] text-muted-foreground">
                     <span>
