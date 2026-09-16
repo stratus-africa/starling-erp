@@ -145,12 +145,16 @@ BEGIN
 END;
 $$;
 
+COMMENT ON FUNCTION public.post_manual_journal(uuid)
+IS 'Authoritative manual journal posting path. Enforces tenant scope, open accounting periods, active manual-posting accounts, and balanced journal lines.';
+
 REVOKE EXECUTE ON FUNCTION public.post_manual_journal(uuid) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.post_manual_journal(uuid) TO authenticated;
 
 -- Keep direct status changes unavailable to non-owners while allowing the
 -- RPC above to perform the audited transition under SECURITY DEFINER.
 DROP POLICY IF EXISTS "Period managers can modify accounting periods" ON public.accounting_periods;
+DROP POLICY IF EXISTS "Firm owners can modify accounting periods" ON public.accounting_periods;
 CREATE POLICY "Firm owners can modify accounting periods"
   ON public.accounting_periods FOR ALL TO authenticated
   USING (

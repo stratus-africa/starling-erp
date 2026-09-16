@@ -76,6 +76,7 @@ CREATE POLICY "Period managers can modify accounting periods"
 GRANT SELECT, INSERT, UPDATE ON public.accounting_periods TO authenticated;
 GRANT ALL ON public.accounting_periods TO service_role;
 
+DROP TRIGGER IF EXISTS trg_accounting_periods_updated ON public.accounting_periods;
 CREATE TRIGGER trg_accounting_periods_updated
   BEFORE UPDATE ON public.accounting_periods
   FOR EACH ROW EXECUTE FUNCTION public.update_updated_at();
@@ -223,6 +224,9 @@ BEGIN
   RETURN j_id;
 END;
 $$;
+
+COMMENT ON FUNCTION public._emit_journal(uuid, date, text, text, uuid, jsonb)
+IS 'Authoritative accounting journal writer. Validates the open period and balance before inserting one immutable journal entry and its lines.';
 
 REVOKE EXECUTE ON FUNCTION public._emit_journal(uuid,date,text,text,uuid,jsonb) FROM PUBLIC;
 

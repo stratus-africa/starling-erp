@@ -36,6 +36,8 @@ WHERE n.nspname = 'public'
     OR pg_get_expr(pol.polwithcheck, pol.polrelid) ILIKE '%has_role%'
     OR pg_get_expr(pol.polqual, pol.polrelid) ILIKE '%app_role%'
     OR pg_get_expr(pol.polwithcheck, pol.polrelid) ILIKE '%app_role%'
+    OR pg_get_expr(pol.polqual, pol.polrelid) ILIKE '%user_roles%'
+    OR pg_get_expr(pol.polwithcheck, pol.polrelid) ILIKE '%user_roles%'
   );
 
 DO $$
@@ -50,21 +52,24 @@ DROP FUNCTION IF EXISTS public.admin_set_user_roles(uuid, public.app_role[]);
 DROP FUNCTION IF EXISTS public.tenant_write_ok(public.app_role[]);
 DROP FUNCTION IF EXISTS public.has_role(uuid, public.app_role);
 ALTER TABLE public.user_roles ALTER COLUMN role TYPE text USING role::text;
-DROP TYPE public.app_role;
-
-CREATE TYPE public.app_role AS ENUM (
-  'super_admin',
-  'tenant_admin',
-  'sales',
-  'purchasing',
-  'inventory',
-  'accounting',
-  'manufacturing',
-  'viewer',
-  'accountant',
-  'finance_clerk',
-  'auditor'
-);
+DO $$
+BEGIN
+  IF to_regtype('public.app_role') IS NULL THEN
+    CREATE TYPE public.app_role AS ENUM (
+      'super_admin',
+      'tenant_admin',
+      'sales',
+      'purchasing',
+      'inventory',
+      'accounting',
+      'manufacturing',
+      'viewer',
+      'accountant',
+      'finance_clerk',
+      'auditor'
+    );
+  END IF;
+END $$;
 
 ALTER TABLE public.user_roles
   ALTER COLUMN role TYPE public.app_role USING role::public.app_role;
