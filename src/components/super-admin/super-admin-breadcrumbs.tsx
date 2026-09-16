@@ -24,7 +24,7 @@ const ROUTE_LABELS: Record<string, string> = {
   "/super-admin/jobs": "Background Jobs",
   "/super-admin/api": "API",
   "/super-admin/usage": "Usage",
-  "/super-admin/admins": "Platform Admins",
+  "/super-admin/admin": "Platform Admins",
   "/super-admin/roles": "Roles & Permissions",
   "/super-admin/sessions": "Sessions",
   "/super-admin/security-events": "Security Events",

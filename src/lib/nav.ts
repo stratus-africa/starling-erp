@@ -202,16 +202,16 @@ export const adminNavGroups: NavGroup[] = [
   {
     label: "Platform",
     items: [
-      { title: "Tenants", url: "/admin/tenants", icon: Building2 },
-      { title: "Subscription Plans", url: "/admin/plans", icon: CreditCard },
-      { title: "Platform Users", url: "/admin/users", icon: Users },
+      { title: "Tenants", url: "/super-admin/tenants", icon: Building2 },
+      { title: "Subscription Plans", url: "/super-admin/billing/plans", icon: CreditCard },
+      { title: "Platform Users", url: "/super-admin/users", icon: Users },
     ],
   },
   {
     label: "Operations",
     items: [
-      { title: "Audit Logs", url: "/admin/audit", icon: ShieldCheck },
-      { title: "System Settings", url: "/admin/settings", icon: Settings2 },
+      { title: "Audit Logs", url: "/super-admin/security/audit", icon: ShieldCheck },
+      { title: "System Settings", url: "/super-admin/settings", icon: Settings2 },
     ],
   },
 ];

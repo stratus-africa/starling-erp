@@ -192,7 +192,7 @@ const NAV: NavGroup[] = [
       },
       {
         title: "Platform Admins",
-        url: "/super-admin/admins",
+        url: "/super-admin/admin",
         icon: ShieldCheck,
         permission: PLATFORM_PERMISSIONS.adminsView,
       },
