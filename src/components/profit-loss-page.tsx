@@ -441,17 +441,20 @@ export function ProfitLossPage() {
                 label="Revenue"
                 value={displayedSections.find((s) => s.key === "revenue")?.total ?? 0}
                 color="emerald"
+                currency={currency}
               />
               <KpiCard
                 label="Gross Profit"
                 value={grossProfit}
                 color={grossProfit >= 0 ? "emerald" : "red"}
+                currency={currency}
               />
               <KpiCard
                 label="Net Profit"
                 value={netProfit}
                 color={netProfit >= 0 ? "emerald" : "red"}
                 large
+                currency={currency}
               />
             </div>
 
@@ -463,6 +466,7 @@ export function ProfitLossPage() {
                   section={section}
                   collapsed={collapsed.has(section.key)}
                   onToggle={() => toggleSection(section.key)}
+                  currency={currency}
                 />
               ))}
             </div>
