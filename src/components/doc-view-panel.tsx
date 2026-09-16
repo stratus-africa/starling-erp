@@ -324,7 +324,9 @@ function InvoiceOverviewView({ id }: { id: string }) {
   const { tenant, can } = useAuth();
   const nav = useNavigate();
   const qc = useQueryClient();
-  const [tab, setTab] = useState<"overview" | "payments" | "documents" | "activity">("overview");
+  const [tab, setTab] = useState<
+    "overview" | "payments" | "documents" | "lineage" | "notes" | "activity"
+  >("overview");
   const [editing, setEditing] = useState(false);
   const [payOpen, setPayOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -415,27 +417,6 @@ function InvoiceOverviewView({ id }: { id: string }) {
       return (data ?? null) as Record<string, any> | null;
     },
   });
-  const { data: sourceOrderInvoicing } = useQuery({
-    queryKey: ["sales_orders", invoice?.source_order_id, "invoicing-status"],
-    enabled: !!invoice?.source_order_id,
-    queryFn: async () => {
-      const { data, error } = await db.rpc("get_sales_order_invoicing_status", {
-        _order_id: invoice?.source_order_id,
-      });
-      if (error) throw error;
-      return data as {
-        lines: Array<{
-          order_line_id: string;
-          item_name?: string;
-          description?: string;
-          ordered_quantity: number;
-          already_invoiced_quantity: number;
-          remaining_quantity: number;
-        }>;
-      } | null;
-    },
-  });
-
   const { data: payments = [] } = useQuery({
     queryKey: ["payments_received", "invoice-allocations", id],
     enabled: !!invoice?.id,
@@ -547,6 +528,8 @@ function InvoiceOverviewView({ id }: { id: string }) {
     { key: "overview", label: "Overview" },
     { key: "payments", label: "Payments" },
     { key: "documents", label: "Documents" },
+    { key: "lineage", label: "Lineage" },
+    { key: "notes", label: "Notes" },
     { key: "activity", label: "Activity" },
   ] as const;
 
@@ -836,227 +819,19 @@ function InvoiceOverviewView({ id }: { id: string }) {
                   }}
                   onAction={() => (paymentState.label === "Overdue" ? undefined : setPayOpen(true))}
                 />
-                <SalesDocumentLineage
-                  nodes={
-                    [
-                      sourceOrder && {
-                        type: "Sales Order",
-                        number: sourceOrder.number,
-                        status: "Related",
-                        href: `/sales/orders/${sourceOrder.id}`,
-                      },
-                      {
-                        type: "Invoice",
-                        number: invoice.number,
-                        status: paymentState.label,
-                        amount: invoiceTotal,
-                        currency,
-                        date: invoice.date,
-                        href: `/sales/invoices/${id}`,
-                      },
-                      ...payments.slice(0, 3).map((payment) => ({
-                        type: "Payment",
-                        number: payment.number,
-                        status: payment.posted_at ? "Posted" : "Draft",
-                        amount: payment.amount,
-                        currency: payment.currency ?? currency,
-                        date: payment.date ?? payment.payment_date,
-                        href: `/sales/payments/${payment.id}`,
-                      })),
-                    ].filter(Boolean) as never[]
-                  }
-                />
-                <PaymentProgress
-                  total={invoiceTotal}
-                  paid={paid}
-                  outstanding={outstanding}
-                  currency={currency}
-                />
                 <AgingBadge dueDate={invoice.due_date} balance={outstanding} />
-                <Card>
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-sm">Payment Status</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <span
-                        className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-semibold ${paymentState.tone}`}
-                      >
-                        {paymentState.label}
-                      </span>
-                      <span className="font-mono text-xs text-muted-foreground">
-                        {Math.round(progress)}% paid
-                      </span>
-                    </div>
-                    <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
-                      <div
-                        className="h-full rounded-full bg-emerald-500"
-                        style={{ width: `${Math.max(0, Math.min(100, progress))}%` }}
-                      />
-                    </div>
-                    <div className="space-y-2 text-sm">
-                      <TotalRow
-                        label="Invoice Total"
-                        value={`${currency} ${totals.total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
-                      />
-                      <TotalRow
-                        label="Amount Paid"
-                        value={`${currency} ${paid.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
-                      />
-                      <TotalRow
-                        label="Outstanding"
-                        value={`${currency} ${outstanding.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
-                      />
-                    </div>
-                    <div className="space-y-2 border-t pt-3 text-xs text-muted-foreground">
-                      {payments.length ? (
-                        payments.map((payment) => (
-                          <div
-                            key={payment.id}
-                            className="flex items-start justify-between gap-2 border-b pb-2 last:border-0 last:pb-0"
-                          >
-                            <div>
-                              <div className="font-medium text-foreground">
-                                {payment.mode ?? "Payment"}
-                              </div>
-                              <div>{fmtDate(payment.payment_date)}</div>
-                            </div>
-                            <div className="font-mono text-foreground">
-                              {currency}{" "}
-                              {Number(payment.amount ?? 0).toLocaleString(undefined, {
-                                minimumFractionDigits: 2,
-                                maximumFractionDigits: 2,
-                              })}
-                            </div>
-                          </div>
-                        ))
-                      ) : (
-                        <div className="space-y-2">
-                          <p>No payments recorded.</p>
-                          {canRecordPayment && outstanding > 0 && (
-                            <Button
-                              variant="secondary"
-                              size="sm"
-                              className="w-full"
-                              onClick={() => setPayOpen(true)}
-                            >
-                              Record Payment
-                            </Button>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-                <RelatedDocuments
-                  documents={payments.map((payment) => ({
-                    type: "Payment",
-                    number: payment.number,
-                    status: payment.posted_at ? "Posted" : "Draft",
-                    amount: payment.amount,
-                    currency: payment.currency ?? currency,
-                    href: `/sales/payments/${payment.id}`,
-                  }))}
-                />
-                {sourceOrder && sourceOrderInvoicing && (
-                  <Card>
-                    <CardHeader className="pb-3">
-                      <CardTitle className="text-sm">Source Order Quantities</CardTitle>
-                    </CardHeader>
-                    <CardContent className="p-0">
-                      <div className="overflow-x-auto">
-                        <table className="w-full min-w-[520px] text-sm">
-                          <thead className="bg-muted/40 text-xs uppercase text-muted-foreground">
-                            <tr>
-                              <th className="px-4 py-2 text-left">Product</th>
-                              <th className="px-4 py-2 text-right">Ordered</th>
-                              <th className="px-4 py-2 text-right">Invoiced</th>
-                              <th className="px-4 py-2 text-right">Remaining</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {sourceOrderInvoicing.lines.map((line) => (
-                              <tr key={line.order_line_id} className="border-t">
-                                <td className="px-4 py-2">
-                                  {line.item_name ?? line.description ?? "Item"}
-                                </td>
-                                <td className="px-4 py-2 text-right">{line.ordered_quantity}</td>
-                                <td className="px-4 py-2 text-right">
-                                  {line.already_invoiced_quantity}
-                                </td>
-                                <td className="px-4 py-2 text-right">{line.remaining_quantity}</td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
-
-                <Card>
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-sm">Activity</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    {events.length ? (
-                      events
-                        .slice(-5)
-                        .reverse()
-                        .map((event) => (
-                          <div
-                            key={event.id}
-                            className="flex gap-2 border-b pb-2 last:border-0 last:pb-0"
-                          >
-                            <div className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full bg-primary" />
-                            <div>
-                              <p className="text-sm font-medium">{event.note ?? event.status}</p>
-                              <p className="text-[11px] text-muted-foreground">
-                                {fmtDate(event.created_at)} · {event.actor_email ?? "System"}
-                              </p>
-                            </div>
-                          </div>
-                        ))
-                    ) : (
-                      <p className="text-sm text-muted-foreground">No activity yet.</p>
-                    )}
-                    <Button
-                      variant="link"
-                      size="sm"
-                      className="h-auto px-0"
-                      onClick={() => setTab("activity")}
-                    >
-                      View All
-                    </Button>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between pb-3">
-                    <CardTitle className="text-sm">Notes</CardTitle>
-                    {canWrite && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7"
-                        onClick={() => setEditing(true)}
-                      >
-                        <Pencil className="h-3.5 w-3.5" />
-                      </Button>
-                    )}
-                  </CardHeader>
-                  <CardContent>
-                    <p className="whitespace-pre-wrap text-sm text-muted-foreground">
-                      {invoice.notes || "No notes added."}
-                    </p>
-                  </CardContent>
-                </Card>
               </aside>
             </div>
           )}
 
           {tab === "payments" && (
-            <div className="p-4">
+            <div className="space-y-4 p-4">
+              <PaymentProgress
+                total={invoiceTotal}
+                paid={paid}
+                outstanding={outstanding}
+                currency={currency}
+              />
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between pb-3">
                   <CardTitle className="text-sm">Payments</CardTitle>
@@ -1070,8 +845,30 @@ function InvoiceOverviewView({ id }: { id: string }) {
                   {payments.length ? (
                     <div className="overflow-x-auto">
                       <table className="w-full text-sm">
-                        <thead>...</thead>
-                        <tbody>...</tbody>
+                        <thead>
+                          <tr className="border-b text-left text-muted-foreground">
+                            <th className="px-3 py-2 font-medium">Date</th>
+                            <th className="px-3 py-2 font-medium">Reference</th>
+                            <th className="px-3 py-2 font-medium">Method</th>
+                            <th className="px-3 py-2 text-right font-medium">Amount</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {payments.map((payment) => (
+                            <tr key={payment.id} className="border-b last:border-0">
+                              <td className="px-3 py-2">{fmtDate(payment.payment_date ?? payment.date)}</td>
+                              <td className="px-3 py-2">{payment.number ?? "—"}</td>
+                              <td className="px-3 py-2">{payment.mode ?? "Payment"}</td>
+                              <td className="px-3 py-2 text-right font-mono">
+                                {currency}{" "}
+                                {Number(payment.amount ?? 0).toLocaleString(undefined, {
+                                  minimumFractionDigits: 2,
+                                  maximumFractionDigits: 2,
+                                })}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
                       </table>
                     </div>
                   ) : (
@@ -1085,13 +882,83 @@ function InvoiceOverviewView({ id }: { id: string }) {
           )}
 
           {tab === "documents" && (
-            <div className="p-4">
+            <div className="space-y-4 p-4">
+              <RelatedDocuments
+                documents={payments.map((payment) => ({
+                  type: "Payment",
+                  number: payment.number,
+                  status: payment.posted_at ? "Posted" : "Draft",
+                  amount: payment.amount,
+                  currency: payment.currency ?? currency,
+                  href: `/sales/payments/${payment.id}`,
+                }))}
+              />
               <Card>
                 <CardHeader>
                   <CardTitle className="text-sm">Documents</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <AttachmentsPanel entityType="invoice" entityId={id} />
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {tab === "lineage" && (
+            <div className="p-4">
+              <SalesDocumentLineage
+                nodes={
+                  [
+                    sourceOrder && {
+                      type: "Sales Order",
+                      number: sourceOrder.number,
+                      status: "Related",
+                      href: `/sales/orders/${sourceOrder.id}`,
+                    },
+                    {
+                      type: "Invoice",
+                      number: invoice.number,
+                      status: paymentState.label,
+                      amount: invoiceTotal,
+                      currency,
+                      date: invoice.date,
+                      href: `/sales/invoices/${id}`,
+                    },
+                    ...payments.slice(0, 3).map((payment) => ({
+                      type: "Payment",
+                      number: payment.number,
+                      status: payment.posted_at ? "Posted" : "Draft",
+                      amount: payment.amount,
+                      currency: payment.currency ?? currency,
+                      date: payment.date ?? payment.payment_date,
+                      href: `/sales/payments/${payment.id}`,
+                    })),
+                  ].filter(Boolean) as never[]
+                }
+              />
+            </div>
+          )}
+
+          {tab === "notes" && (
+            <div className="p-4">
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between pb-3">
+                  <CardTitle className="text-sm">Notes</CardTitle>
+                  {canWrite && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7"
+                      onClick={() => setEditing(true)}
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                    </Button>
+                  )}
+                </CardHeader>
+                <CardContent>
+                  <p className="whitespace-pre-wrap text-sm text-muted-foreground">
+                    {invoice.notes || "No notes added."}
+                  </p>
                 </CardContent>
               </Card>
             </div>
