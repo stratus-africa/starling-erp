@@ -47,6 +47,7 @@ export function PaymentAllocationDialog({
 }: PaymentAllocationDialogProps) {
   const { allocate } = usePaymentAllocations();
   const [values, setValues] = useState<Record<string, string>>({});
+  const [search, setSearch] = useState("");
   const remaining = Math.max(0, paymentAmount - allocatedAmount);
 
   const { data: invoices = [], isLoading } = useQuery({
@@ -82,6 +83,15 @@ export function PaymentAllocationDialog({
     (sum: number, row: { amount: number }) => sum + row.amount,
     0,
   );
+  const visibleInvoices = useMemo(() => {
+    const term = search.trim().toLowerCase();
+    if (!term) return invoices;
+    return invoices.filter((invoice) =>
+      [invoice.number, invoice.date, invoice.due_date, invoice.status].some((value) =>
+        String(value ?? "").toLowerCase().includes(term),
+      ),
+    );
+  }, [invoices, search]);
   const stillUnallocated = Math.max(0, remaining - selectedTotal);
 
   const submit = () => {
@@ -124,7 +134,9 @@ export function PaymentAllocationDialog({
               No eligible outstanding invoices.
             </p>
           ) : (
-            <div className="max-h-[45vh] overflow-auto rounded-md border">
+            <div className="grid gap-2">
+              <Input placeholder="Search invoice number, date, or status" value={search} onChange={(event) => setSearch(event.target.value)} />
+              <div className="max-h-[45vh] overflow-auto rounded-md border">
               <table className="w-full text-sm">
                 <thead className="bg-muted/50 text-left text-xs text-muted-foreground">
                   <tr>
@@ -137,7 +149,7 @@ export function PaymentAllocationDialog({
                   </tr>
                 </thead>
                 <tbody>
-                  {invoices.map((invoice) => (
+                  {visibleInvoices.map((invoice) => (
                     <tr className="border-t" key={invoice.id}>
                       <td className="p-2 font-mono text-xs">{invoice.number ?? "—"}</td>
                       <td className="p-2 text-xs">{invoice.date ?? "—"}</td>
@@ -168,6 +180,7 @@ export function PaymentAllocationDialog({
                   ))}
                 </tbody>
               </table>
+              </div>
             </div>
           )}
         </div>

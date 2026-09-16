@@ -12,6 +12,7 @@ export function SupplierPaymentAllocationDialog({ open, onOpenChange, paymentId,
   open: boolean; onOpenChange: (open: boolean) => void; paymentId: string; supplierId: string; currency: string; paymentAmount: number; allocatedAmount: number;
 }) {
   const [values, setValues] = useState<Record<string, string>>({});
+  const [search, setSearch] = useState("");
   const { allocate } = useSupplierPaymentAllocations(paymentId);
   const remaining = Math.max(0, paymentAmount - allocatedAmount);
   const { data: bills = [], isLoading } = useQuery({
@@ -31,6 +32,15 @@ export function SupplierPaymentAllocationDialog({ open, onOpenChange, paymentId,
   });
   const selected = useMemo(() => bills.map((bill) => ({ bill_id: bill.id, amount: Math.round(Number(values[bill.id] ?? 0) * 100) / 100 })).filter((row) => row.amount > 0), [bills, values]);
   const selectedTotal = selected.reduce((sum, row) => sum + row.amount, 0);
+  const visibleBills = useMemo(() => {
+    const term = search.trim().toLowerCase();
+    if (!term) return bills;
+    return bills.filter((bill) =>
+      [bill.number, bill.date, bill.due_date, bill.status].some((value) =>
+        String(value ?? "").toLowerCase().includes(term),
+      ),
+    );
+  }, [bills, search]);
   const submit = () => {
     if (!selected.length) return toast.error("Enter at least one allocation amount");
     if (selectedTotal > remaining) return toast.error("Allocations exceed the payment remaining balance");
@@ -38,7 +48,7 @@ export function SupplierPaymentAllocationDialog({ open, onOpenChange, paymentId,
   };
   return <Dialog open={open} onOpenChange={onOpenChange}><DialogContent className="max-w-4xl"><DialogHeader><DialogTitle className="flex items-center gap-2"><Plus className="h-4 w-4" />Allocate Supplier Payment</DialogTitle></DialogHeader>
     <div className="grid grid-cols-3 gap-3 rounded-md border bg-muted/30 p-3 text-sm"><Metric label="Payment Amount" value={paymentAmount} currency={currency} /><Metric label="Allocated" value={allocatedAmount} currency={currency} /><Metric label="Remaining" value={remaining} currency={currency} /></div>
-    {isLoading ? <Loader2 className="mx-auto h-5 w-5 animate-spin" /> : bills.length === 0 ? <p className="py-6 text-center text-sm text-muted-foreground">No eligible supplier bills.</p> : <div className="max-h-[50vh] overflow-auto rounded-md border"><table className="w-full text-sm"><thead className="bg-muted/50 text-left text-xs text-muted-foreground"><tr><th className="p-2">Bill Number</th><th className="p-2">Bill Date</th><th className="p-2">Due Date</th><th className="p-2 text-right">Bill Total</th><th className="p-2 text-right">Already Paid</th><th className="p-2 text-right">Outstanding</th><th className="p-2 text-right">Amount to Allocate</th></tr></thead><tbody>{bills.map((bill) => <tr className="border-t" key={bill.id}><td className="p-2 font-mono text-xs">{bill.number ?? "—"}</td><td className="p-2 text-xs">{bill.date ?? "—"}</td><td className="p-2 text-xs">{bill.due_date ?? "—"}</td><td className="p-2 text-right font-mono text-xs">{formatMoney(bill.summary?.bill_total, currency)}</td><td className="p-2 text-right font-mono text-xs">{formatMoney(bill.summary?.amount_paid, currency)}</td><td className="p-2 text-right font-mono text-xs">{formatMoney(bill.summary?.outstanding, currency)}</td><td className="p-2 text-right"><Input className="ml-auto h-8 w-28 text-right" type="number" min="0" step="0.01" max={Math.min(Number(bill.summary?.outstanding ?? 0), remaining)} value={values[bill.id] ?? ""} onChange={(event) => setValues((current) => ({ ...current, [bill.id]: event.target.value }))} /></td></tr>)}</tbody></table></div>}
+    {isLoading ? <Loader2 className="mx-auto h-5 w-5 animate-spin" /> : bills.length === 0 ? <p className="py-6 text-center text-sm text-muted-foreground">No eligible supplier bills.</p> : <div className="grid gap-2"><Input placeholder="Search bill number, date, or status" value={search} onChange={(event) => setSearch(event.target.value)} /><div className="max-h-[50vh] overflow-auto rounded-md border"><table className="w-full text-sm"><thead className="bg-muted/50 text-left text-xs text-muted-foreground"><tr><th className="p-2">Bill Number</th><th className="p-2">Bill Date</th><th className="p-2">Due Date</th><th className="p-2 text-right">Bill Total</th><th className="p-2 text-right">Already Paid</th><th className="p-2 text-right">Outstanding</th><th className="p-2 text-right">Amount to Allocate</th></tr></thead><tbody>{visibleBills.map((bill) => <tr className="border-t" key={bill.id}><td className="p-2 font-mono text-xs">{bill.number ?? "—"}</td><td className="p-2 text-xs">{bill.date ?? "—"}</td><td className="p-2 text-xs">{bill.due_date ?? "—"}</td><td className="p-2 text-right font-mono text-xs">{formatMoney(bill.summary?.bill_total, currency)}</td><td className="p-2 text-right font-mono text-xs">{formatMoney(bill.summary?.amount_paid, currency)}</td><td className="p-2 text-right font-mono text-xs">{formatMoney(bill.summary?.outstanding, currency)}</td><td className="p-2 text-right"><Input className="ml-auto h-8 w-28 text-right" type="number" min="0" step="0.01" max={Math.min(Number(bill.summary?.outstanding ?? 0), remaining)} value={values[bill.id] ?? ""} onChange={(event) => setValues((current) => ({ ...current, [bill.id]: event.target.value }))} /></td></tr>)}</tbody></table></div></div>}
     <DialogFooter><Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button><Button onClick={submit} disabled={allocate.isPending || !selected.length}>{allocate.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Allocate</Button></DialogFooter>
   </DialogContent></Dialog>;
 }

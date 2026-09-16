@@ -437,17 +437,21 @@ function InvoiceOverviewView({ id }: { id: string }) {
   });
 
   const { data: payments = [] } = useQuery({
-    queryKey: ["payments_received", id],
+    queryKey: ["payments_received", "invoice-allocations", id],
     enabled: !!invoice?.id,
     queryFn: async () => {
       const { data, error } = await db
-        .from("payments_received")
-        .select("*")
+        .from("payment_allocations")
+        .select("amount,allocation_date,payments_received(*)")
         .eq("invoice_id", id)
         .is("deleted_at", null)
-        .order("payment_date", { ascending: false });
+        .order("allocation_date", { ascending: false });
       if (error) throw error;
-      return (data ?? []) as Record<string, any>[];
+      return (data ?? []).map((row: any) => ({
+        ...row.payments_received,
+        allocated_amount: row.amount,
+        payment_date: row.allocation_date ?? row.payments_received?.date,
+      })) as Record<string, any>[];
     },
   });
   const { data: paymentSummary } = useQuery({
