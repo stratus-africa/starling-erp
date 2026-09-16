@@ -1182,7 +1182,7 @@ export function DocumentEditor({
                     </Link>
                   </Button>
                 )}
-                {canWrite && kind === "quote" && !isNew && (
+                {canWrite && kind === "quote" && !isNew && header.status === "Accepted" && !header.converted_order_id && (
                   <Button
                     variant="outline"
                     size="sm"
