@@ -175,10 +175,10 @@ function ConfirmDialog({ period, targetStatus, notes, onNotesChange, saving, onC
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export function AccountingPeriodsPage() {
-  const { can, tenant } = useAuth();
+  const { hasRole, tenant } = useAuth();
   const qc = useQueryClient();
 
-  const canManage = can(["accounting.periods.manage", "accounting.post"]);
+  const canManage = hasRole(["tenant_admin", "super_admin"]);
 
   // Display a rolling 2-year window centred on the current year
   const today = new Date();

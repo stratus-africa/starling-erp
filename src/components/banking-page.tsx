@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
@@ -124,7 +124,7 @@ function BankAccountSheet({ open, account, glAccounts, saving, onClose, onSave }
   const [glAccountId, setGlAccountId] = useState("");
   const [notes, setNotes] = useState("");
 
-  useMemo(() => {
+  useEffect(() => {
     if (!open) return;
     setName(account?.name ?? "");
     setBank(account?.bank ?? "");
@@ -349,7 +349,7 @@ function TxnSheet({ open, account, accounts, glAccounts, onClose, onSave, saving
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export function BankingPage() {
-  const { can, tenant } = useAuth();
+  const { can, tenant, user } = useAuth();
   const qc = useQueryClient();
 
   const canWrite = can(["banking.create", "banking.update"]);
@@ -438,7 +438,7 @@ export function BankingPage() {
       if (!tenant?.id) throw new Error("No tenant selected");
       const query = accountEditor
         ? db.from("bank_accounts").update(values).eq("id", accountEditor.id).eq("tenant_id", tenant.id)
-        : db.from("bank_accounts").insert({ ...values, tenant_id: tenant.id, created_by: tenant.id, balance: values.opening_balance ?? 0 });
+        : db.from("bank_accounts").insert({ ...values, tenant_id: tenant.id, created_by: user?.id ?? null, balance: values.opening_balance ?? 0 });
       const { error } = await query;
       if (error) throw error;
     },
@@ -587,7 +587,7 @@ export function BankingPage() {
                   </p>
                 </div>
                 {canWrite && (
-                  <div className="flex items-center gap-2"><Button variant="outline" size="sm" className="h-8" onClick={() => setAccountEditor(selectedAccount)}><MoreHorizontal className="mr-1.5 h-3.5 w-3.5" /> Edit account</Button><Button size="sm" className="h-8" onClick={() => setTxnSheetOpen(true)}><Plus className="mr-1.5 h-3.5 w-3.5" /> New Transaction</Button></div>
+                  <div className="flex items-center gap-2"><Button variant="outline" size="sm" className="h-8" onClick={() => setAccountEditor(selectedAccount)}><MoreHorizontal className="mr-1.5 h-3.5 w-3.5" /> Edit account</Button>{selectedAccount.status !== "Inactive" && <Button variant="outline" size="sm" className="h-8 text-destructive" onClick={() => { if (window.confirm("Deactivate this bank account?")) deactivateMutation.mutate(selectedAccount); }}>Deactivate</Button>}<Button size="sm" className="h-8" onClick={() => setTxnSheetOpen(true)} disabled={selectedAccount.status === "Inactive"}><Plus className="mr-1.5 h-3.5 w-3.5" /> New Transaction</Button></div>
                 )}
               </div>
             </div>
