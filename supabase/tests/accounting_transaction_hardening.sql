@@ -9,10 +9,26 @@ SET search_path = public, extensions;
 BEGIN;
 SELECT plan(16);
 
-SELECT ok(has_function('public', 'post_invoice', ARRAY['uuid']), 'invoice posting wrapper exists');
-SELECT ok(has_function('public', 'post_manual_journal', ARRAY['uuid']), 'manual journal posting wrapper exists');
-SELECT ok(has_function('public', 'void_manual_journal', ARRAY['uuid', 'text']), 'manual journal reversal exists');
-SELECT ok(has_function('public', 'assert_accounting_period_mutable', ARRAY[]::text[]), 'period mutation guard exists');
+SELECT ok(EXISTS (
+  SELECT 1 FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+  WHERE n.nspname = 'public' AND p.proname = 'post_invoice'
+    AND pg_get_function_identity_arguments(p.oid) = 'uuid'
+), 'invoice posting wrapper exists');
+SELECT ok(EXISTS (
+  SELECT 1 FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+  WHERE n.nspname = 'public' AND p.proname = 'post_manual_journal'
+    AND pg_get_function_identity_arguments(p.oid) = 'uuid'
+), 'manual journal posting wrapper exists');
+SELECT ok(EXISTS (
+  SELECT 1 FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+  WHERE n.nspname = 'public' AND p.proname = 'void_manual_journal'
+    AND pg_get_function_identity_arguments(p.oid) = 'uuid, text'
+), 'manual journal reversal exists');
+SELECT ok(EXISTS (
+  SELECT 1 FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+  WHERE n.nspname = 'public' AND p.proname = 'assert_accounting_period_mutable'
+    AND pg_get_function_identity_arguments(p.oid) = ''
+), 'period mutation guard exists');
 SELECT ok(
   EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'invoices' AND column_name = 'posted_by'),
   'invoices record posted_by'
