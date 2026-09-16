@@ -1344,7 +1344,7 @@ export function DocumentEditor({
                   <Button
                     size="sm"
                     disabled={save.isPending || !!doc?.posted_at}
-                    onClick={() => save.mutate()}
+                    onClick={() => save.mutate({})}
                   >
                     {save.isPending ? (
                       <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
@@ -2092,7 +2092,7 @@ export function DocumentEditor({
                 variant="outline"
                 size="sm"
                 disabled={!canWrite || save.isPending}
-                onClick={() => save.mutate()}
+                onClick={() => save.mutate({})}
               >
                 {isNew ? "Save Draft" : "Save Changes"}
               </Button>

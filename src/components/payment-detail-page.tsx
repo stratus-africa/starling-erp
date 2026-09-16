@@ -81,7 +81,7 @@ export function PaymentDetailPage({ id }: { id: string }) {
       const { data, error } = await db
         .from("customers")
         .select("id,name,currency")
-        .eq("id", payment.customer_id)
+        .eq("id", payment!.customer_id)
         .single();
       if (error) throw error;
       return data as CustomerRow;

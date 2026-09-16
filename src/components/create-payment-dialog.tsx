@@ -353,7 +353,7 @@ export function CreatePaymentDialog({ open, onOpenChange, kind }: CreatePaymentD
               <div className="grid gap-2">
                 <div className="flex items-center justify-between">
                   <Label>
-                    Optional {docLabel} shortlist
+                    Apply to outstanding {docLabel.toLowerCase()}s (one payment can settle several)
                     {loadingDocs && (
                       <Loader2 className="ml-2 inline h-3 w-3 animate-spin text-muted-foreground" />
                     )}
@@ -481,7 +481,7 @@ export function CreatePaymentDialog({ open, onOpenChange, kind }: CreatePaymentD
               </span>
             ) : (
               <span className="text-xs text-muted-foreground">
-                Invoice allocation is available after posting
+                Select {docLabel.toLowerCase()}s above to settle several with this one payment
               </span>
             )}
             <div className="flex gap-2">
