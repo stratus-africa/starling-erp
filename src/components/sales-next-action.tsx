@@ -29,8 +29,10 @@ function getSalesNextAction(state: SalesActionState): NextAction | null {
       return { message: "Order is ready for fulfillment.", label: "Fulfill Order" };
     if (
       state.invoiceStatus !== "Fully Invoiced" &&
+      ["Partially Fulfilled", "Fulfilled"].includes(state.fulfillmentStatus ?? "") &&
       (state.status === "Confirmed" ||
         state.status === "Processing" ||
+        state.fulfillmentStatus === "Partially Fulfilled" ||
         state.fulfillmentStatus === "Fulfilled")
     )
       return { message: `${amount} remains uninvoiced.`, label: "Create Invoice" };

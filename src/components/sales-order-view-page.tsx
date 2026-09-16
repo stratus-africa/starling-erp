@@ -21,7 +21,14 @@ import { SalesFinancialSummary } from "@/components/sales-financial-summary";
 import { CreditLimitWarning } from "@/components/credit-limit-warning";
 import { CreateInvoiceFromOrderDialog } from "@/components/create-invoice-from-order-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -49,10 +56,10 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
-type Row = Record<string, any>;
-const money = (value: any, currency: string) =>
+type Row = Record<string, unknown>;
+const money = (value: number | string | null | undefined, currency: string) =>
   `${currency} ${Number(value ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-const dateFmt = (value: any) =>
+const dateFmt = (value: string | Date | null | undefined) =>
   value
     ? new Date(value).toLocaleDateString(undefined, {
         day: "2-digit",
@@ -60,7 +67,7 @@ const dateFmt = (value: any) =>
         year: "numeric",
       })
     : "—";
-const dateTimeFmt = (value: any) =>
+const dateTimeFmt = (value: string | Date | null | undefined) =>
   value
     ? new Date(value).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })
     : "—";
@@ -125,7 +132,14 @@ function ManufacturingRequirementDialog({
     queryKey: ["sales_order_mto_requirements", orderId],
     enabled: open,
     queryFn: async () => {
-      const { data, error } = await (db as any).rpc("get_sales_order_manufacturing_requirements", {
+      const { data, error } = await (
+        db as typeof db & {
+          rpc: (
+            name: string,
+            args: Record<string, unknown>,
+          ) => Promise<{ data: ManufacturingRequirement[] | null; error?: Error | null }>;
+        }
+      ).rpc("get_sales_order_manufacturing_requirements", {
         _sales_order_id: orderId,
       });
       if (error) throw error;
@@ -135,13 +149,22 @@ function ManufacturingRequirementDialog({
   const createMto = useMutation({
     mutationFn: async () => {
       const lines = requirements
-        .filter((line) => selected[line.sales_order_line_id] && Number(line.manufacturing_required) > 0)
+        .filter(
+          (line) => selected[line.sales_order_line_id] && Number(line.manufacturing_required) > 0,
+        )
         .map((line) => ({
           sales_order_line_id: line.sales_order_line_id,
           quantity: Number(line.manufacturing_required),
         }));
       if (lines.length === 0) throw new Error("Select at least one line requiring manufacturing");
-      const { data, error } = await (db as any).rpc("create_sales_order_mto_orders", {
+      const { data, error } = await (
+        db as typeof db & {
+          rpc: (
+            name: string,
+            args: Record<string, unknown>,
+          ) => Promise<{ data: unknown[] | null; error?: Error | null }>;
+        }
+      ).rpc("create_sales_order_mto_orders", {
         _sales_order_id: orderId,
         _lines: lines,
       });
@@ -149,7 +172,9 @@ function ManufacturingRequirementDialog({
       return data ?? [];
     },
     onSuccess: (created) => {
-      toast.success(`${created.length} Manufacturing Order${created.length === 1 ? "" : "s"} created.`);
+      toast.success(
+        `${created.length} Manufacturing Order${created.length === 1 ? "" : "s"} created.`,
+      );
       setSelected({});
       qc.invalidateQueries({ queryKey: ["sales_order_mto_requirements", orderId] });
       onCreated();
@@ -162,36 +187,87 @@ function ManufacturingRequirementDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2"><Factory className="h-5 w-5" /> Manufacturing Required</DialogTitle>
-          <DialogDescription>Select order lines and create one MTO Manufacturing Order per selected line.</DialogDescription>
+          <DialogTitle className="flex items-center gap-2">
+            <Factory className="h-5 w-5" /> Manufacturing Required
+          </DialogTitle>
+          <DialogDescription>
+            Select order lines and create one MTO Manufacturing Order per selected line.
+          </DialogDescription>
         </DialogHeader>
         <div className="overflow-x-auto rounded-md border">
           <table className="w-full text-sm">
             <thead className="bg-muted/30 text-xs text-muted-foreground">
-              <tr><th className="w-10 p-3" /><th className="p-3 text-left">Product</th><th className="p-3 text-right">Ordered</th><th className="p-3 text-right">Available</th><th className="p-3 text-right">In Production</th><th className="p-3 text-right">Required</th><th className="p-3 text-left">BOM</th></tr>
+              <tr>
+                <th className="w-10 p-3" />
+                <th className="p-3 text-left">Product</th>
+                <th className="p-3 text-right">Ordered</th>
+                <th className="p-3 text-right">Available</th>
+                <th className="p-3 text-right">In Production</th>
+                <th className="p-3 text-right">Required</th>
+                <th className="p-3 text-left">BOM</th>
+              </tr>
             </thead>
             <tbody>
-              {isLoading ? <tr><td colSpan={7} className="p-6 text-center text-muted-foreground">Checking inventory and manufacturing...</td></tr> : requirements.map((line) => {
-                const required = Number(line.manufacturing_required);
-                const disabled = required <= 0 || !line.active_bom_id;
-                return (
-                  <tr key={line.sales_order_line_id} className="border-t">
-                    <td className="p-3"><Checkbox checked={!!selected[line.sales_order_line_id]} disabled={disabled} onCheckedChange={(checked) => setSelected((current) => ({ ...current, [line.sales_order_line_id]: checked === true }))} /></td>
-                    <td className="p-3"><div className="font-medium">{line.item_name}</div><div className="font-mono text-xs text-muted-foreground">{line.sku ?? "No SKU"}</div></td>
-                    <td className="p-3 text-right font-mono">{line.ordered_qty}</td>
-                    <td className="p-3 text-right font-mono">{line.available_qty}</td>
-                    <td className="p-3 text-right font-mono">{line.in_production_qty}</td>
-                    <td className={`p-3 text-right font-mono font-semibold ${required > 0 ? "text-warning" : "text-success"}`}>{required}</td>
-                    <td className="p-3 text-xs">{line.active_bom_id ? `Active ${line.active_bom_version ?? ""}` : <span className="text-destructive">No active BOM</span>}</td>
-                  </tr>
-                );
-              })}
+              {isLoading ? (
+                <tr>
+                  <td colSpan={7} className="p-6 text-center text-muted-foreground">
+                    Checking inventory and manufacturing...
+                  </td>
+                </tr>
+              ) : (
+                requirements.map((line) => {
+                  const required = Number(line.manufacturing_required);
+                  const disabled = required <= 0 || !line.active_bom_id;
+                  return (
+                    <tr key={line.sales_order_line_id} className="border-t">
+                      <td className="p-3">
+                        <Checkbox
+                          checked={!!selected[line.sales_order_line_id]}
+                          disabled={disabled}
+                          onCheckedChange={(checked) =>
+                            setSelected((current) => ({
+                              ...current,
+                              [line.sales_order_line_id]: checked === true,
+                            }))
+                          }
+                        />
+                      </td>
+                      <td className="p-3">
+                        <div className="font-medium">{line.item_name}</div>
+                        <div className="font-mono text-xs text-muted-foreground">
+                          {line.sku ?? "No SKU"}
+                        </div>
+                      </td>
+                      <td className="p-3 text-right font-mono">{line.ordered_qty}</td>
+                      <td className="p-3 text-right font-mono">{line.available_qty}</td>
+                      <td className="p-3 text-right font-mono">{line.in_production_qty}</td>
+                      <td
+                        className={`p-3 text-right font-mono font-semibold ${required > 0 ? "text-warning" : "text-success"}`}
+                      >
+                        {required}
+                      </td>
+                      <td className="p-3 text-xs">
+                        {line.active_bom_id ? (
+                          `Active ${line.active_bom_version ?? ""}`
+                        ) : (
+                          <span className="text-destructive">No active BOM</span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
             </tbody>
           </table>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button onClick={() => createMto.mutate()} disabled={createMto.isPending || isLoading}><Factory className="mr-1.5 h-4 w-4" />Create Manufacturing Orders</Button>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Cancel
+          </Button>
+          <Button onClick={() => createMto.mutate()} disabled={createMto.isPending || isLoading}>
+            <Factory className="mr-1.5 h-4 w-4" />
+            Create Manufacturing Orders
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -454,6 +530,23 @@ export function SalesOrderViewPage({ id }: { id: string }) {
       return (data?.[0] ?? data) as Row;
     },
   });
+  const { data: manufacturingRequirements = [] } = useQuery({
+    queryKey: ["sales_order_mto_requirements", id],
+    queryFn: async () => {
+      const { data, error } = await (
+        db as typeof db & {
+          rpc: (
+            name: string,
+            args: Record<string, unknown>,
+          ) => Promise<{ data: Row[] | null; error?: Error | null }>;
+        }
+      ).rpc("get_sales_order_manufacturing_requirements", {
+        _sales_order_id: id,
+      });
+      if (error) throw error;
+      return (data ?? []) as Row[];
+    },
+  });
   const { data: manufacturingOrders = [] } = useQuery({
     queryKey: ["production_orders", "sales_order", id],
     queryFn: async () => {
@@ -563,6 +656,14 @@ export function SalesOrderViewPage({ id }: { id: string }) {
     "accounting.journal.create",
     "accounting.journal.update",
   ]);
+  const hasInventoryShortage = manufacturingRequirements.some(
+    (line) => Number(line.manufacturing_required ?? 0) > 0,
+  );
+  const fulfillOrderDisabled =
+    !canWrite ||
+    !["Confirmed", "Processing", "Partially Fulfilled"].includes(currentStatus) ||
+    hasInventoryShortage;
+  const createInvoiceDisabled = !canWrite || fulfilled <= 0;
   const pdf: PdfDocInput = {
     title: "Sales Order",
     number: String(order.number ?? ""),
@@ -634,8 +735,22 @@ export function SalesOrderViewPage({ id }: { id: string }) {
               currentStatus === "Processing" ||
               currentStatus === "Partially Fulfilled") &&
               canWrite && (
-                <Button size="sm" asChild>
-                  <a href={`/sales/packages/new?order=${id}`}>
+                <Button
+                  size="sm"
+                  asChild
+                  disabled={fulfillOrderDisabled}
+                  title={
+                    hasInventoryShortage
+                      ? "Inventory shortfall detected. Create manufacturing orders before fulfilling this sales order."
+                      : undefined
+                  }
+                  className={
+                    hasInventoryShortage
+                      ? "border-amber-500 bg-amber-50 text-amber-900 hover:bg-amber-100 disabled:opacity-100"
+                      : ""
+                  }
+                >
+                  <a href={hasInventoryShortage ? undefined : `/sales/packages/new?order=${id}`}>
                     <Truck className="mr-1.5 h-4 w-4" />{" "}
                     {currentStatus === "Partially Fulfilled"
                       ? "Fulfill Remaining"
@@ -643,17 +758,44 @@ export function SalesOrderViewPage({ id }: { id: string }) {
                   </a>
                 </Button>
               )}
-            {canWrite && can("manufacturing.create") && ["Confirmed", "Processing", "Partially Fulfilled"].includes(currentStatus) && (
-              <Button size="sm" variant="outline" onClick={() => setMtoDialogOpen(true)}>
-                <Factory className="mr-1.5 h-4 w-4" /> Manufacturing Required
-              </Button>
-            )}
+            {canWrite &&
+              can("manufacturing.create") &&
+              ["Confirmed", "Processing", "Partially Fulfilled"].includes(currentStatus) && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setMtoDialogOpen(true)}
+                  disabled={!hasInventoryShortage}
+                  className={
+                    hasInventoryShortage
+                      ? "border-amber-500 bg-amber-50 text-amber-900 hover:bg-amber-100 disabled:opacity-100"
+                      : "opacity-60"
+                  }
+                  title={
+                    hasInventoryShortage
+                      ? "Manufacturing is required to cover the shortfall for this order."
+                      : "Inventory is sufficient; no manufacturing is required."
+                  }
+                >
+                  <Factory className="mr-1.5 h-4 w-4" /> Manufacturing Required
+                </Button>
+              )}
             {(currentStatus === "Confirmed" ||
               currentStatus === "Processing" ||
               currentStatus === "Partially Fulfilled" ||
               currentStatus === "Fulfilled") &&
               canWrite && (
-                <Button size="sm" variant="outline" onClick={() => setInvoiceDialogOpen(true)}>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setInvoiceDialogOpen(true)}
+                  disabled={createInvoiceDisabled}
+                  title={
+                    fulfilled <= 0
+                      ? "Invoice only after the order has been fulfilled or partially fulfilled."
+                      : undefined
+                  }
+                >
                   <FileText className="mr-1.5 h-4 w-4" /> Create Invoice
                 </Button>
               )}
@@ -758,7 +900,9 @@ export function SalesOrderViewPage({ id }: { id: string }) {
             <TabsTrigger value="invoices">Invoices</TabsTrigger>
             <TabsTrigger value="payments">Payments</TabsTrigger>
             <TabsTrigger value="documents">Documents</TabsTrigger>
-            <TabsTrigger value="activity">Activity</TabsTrigger>
+            <TabsTrigger value="packages">Packages</TabsTrigger>
+            <TabsTrigger value="lineage">Document Lineage</TabsTrigger>
+            <TabsTrigger value="status">Order Status & Fulfillment</TabsTrigger>
             <TabsTrigger value="audit">Audit Trail</TabsTrigger>
           </TabsList>
           <TabsContent value="customer" className="mt-4">
@@ -822,19 +966,33 @@ export function SalesOrderViewPage({ id }: { id: string }) {
             <Card>
               <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle className="text-sm">Manufacturing Orders</CardTitle>
-                {can("manufacturing.create") && <Button size="sm" variant="outline" onClick={() => setMtoDialogOpen(true)}>
-                  <Factory className="mr-1.5 h-4 w-4" /> Create MTO
-                </Button>}
+                {can("manufacturing.create") && (
+                  <Button size="sm" variant="outline" onClick={() => setMtoDialogOpen(true)}>
+                    <Factory className="mr-1.5 h-4 w-4" /> Create MTO
+                  </Button>
+                )}
               </CardHeader>
               <CardContent>
                 {manufacturingOrders.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">No manufacturing orders linked to this Sales Order.</p>
+                  <p className="text-sm text-muted-foreground">
+                    No manufacturing orders linked to this Sales Order.
+                  </p>
                 ) : (
                   <div className="space-y-2">
                     {manufacturingOrders.map((mo) => (
-                      <div key={mo.id} className="flex items-center justify-between gap-3 border-b py-2 last:border-0">
-                        <a className="font-mono text-sm text-primary hover:underline" href={`/manufacturing/orders/${mo.id}`}>{mo.number}</a>
-                        <span className="text-sm">{mo.qty_produced ?? 0} / {mo.quantity} produced</span>
+                      <div
+                        key={mo.id}
+                        className="flex items-center justify-between gap-3 border-b py-2 last:border-0"
+                      >
+                        <a
+                          className="font-mono text-sm text-primary hover:underline"
+                          href={`/manufacturing/orders/${mo.id}`}
+                        >
+                          {mo.number}
+                        </a>
+                        <span className="text-sm">
+                          {mo.qty_produced ?? 0} / {mo.quantity} produced
+                        </span>
                         <Badge variant="secondary">{mo.status}</Badge>
                       </div>
                     ))}
@@ -964,25 +1122,130 @@ export function SalesOrderViewPage({ id }: { id: string }) {
               </CardContent>
             </Card>
           </TabsContent>
-          <TabsContent value="activity" className="mt-4">
+          <TabsContent value="packages" className="mt-4">
             <Card>
               <CardHeader>
-                <CardTitle className="text-sm">Activity</CardTitle>
+                <CardTitle className="text-sm">Packages</CardTitle>
               </CardHeader>
               <CardContent>
-                {events.length ? (
-                  events.map((event) => (
-                    <p key={event.id} className="border-b py-3 text-sm">
-                      {event.note ?? event.status}
-                      <br />
-                      <span className="text-xs text-muted-foreground">
-                        {dateTimeFmt(event.created_at)}
-                      </span>
-                    </p>
-                  ))
+                <div className="mb-3 flex items-center justify-between">
+                  <span className="text-xs text-muted-foreground">
+                    {packages.length} package{packages.length === 1 ? "" : "s"}
+                  </span>
+                  {canWrite && (
+                    <Button size="sm" variant="outline" asChild>
+                      <a href={`/sales/packages/new?order=${id}`}>Create Package</a>
+                    </Button>
+                  )}
+                </div>
+                {packages.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No packages yet.</p>
                 ) : (
-                  <p className="text-sm text-muted-foreground">No activity yet.</p>
+                  <div className="space-y-2">
+                    {packages.map((pkg) => {
+                      const packageQty = packageLines
+                        .filter((line) => line.document_id === pkg.id)
+                        .reduce((sum, line) => sum + Number(line.quantity ?? 0), 0);
+                      return (
+                        <div
+                          key={pkg.id}
+                          className="flex items-center justify-between gap-2 border-b pb-2 last:border-0"
+                        >
+                          <a
+                            className="font-mono text-sm text-primary hover:underline"
+                            href={`/sales/packages/${pkg.id}`}
+                          >
+                            {pkg.number ?? "Package"}
+                          </a>
+                          <span className="text-xs text-muted-foreground">
+                            {packageQty} units · {pkg.status ?? "Draft"}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
                 )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+          <TabsContent value="lineage" className="mt-4">
+            <SalesDocumentLineage
+              nodes={[
+                {
+                  type: "Sales Order",
+                  number: order.number,
+                  status: currentStatus,
+                  amount: order.grand_total,
+                  currency,
+                  date: order.date,
+                  href: `/sales/orders/${id}`,
+                },
+                ...invoices.slice(0, 3).map((invoice) => ({
+                  type: "Invoice",
+                  number: invoice.number,
+                  status: invoice.status,
+                  amount: invoice.grand_total,
+                  currency: invoice.currency ?? currency,
+                  date: invoice.date,
+                  href: `/sales/invoices/${invoice.id}`,
+                })),
+              ]}
+            />
+          </TabsContent>
+          <TabsContent value="status" className="mt-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm">Order Status & Fulfillment</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {ORDER_STAGES.map((stage, index) => (
+                    <div
+                      key={stage}
+                      className={`flex items-center gap-2 text-xs ${stage === currentStatus ? "font-semibold text-foreground" : index < currentStage ? "text-muted-foreground" : "text-muted-foreground/60"}`}
+                    >
+                      <span
+                        className={`flex h-5 w-5 items-center justify-center rounded-full border ${stage === currentStatus ? "border-primary bg-primary text-primary-foreground" : index < currentStage ? "border-primary/40 bg-primary/10 text-primary" : "border-muted-foreground/30"}`}
+                      >
+                        {index < currentStage ? <CheckCircle2 className="h-3 w-3" /> : index + 1}
+                      </span>
+                      {stage}
+                      {stage === currentStatus && (
+                        <Badge variant="outline" className="ml-auto">
+                          Current
+                        </Badge>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-5 flex items-center justify-between text-sm">
+                  <span>Fulfillment</span>
+                  <strong>{Math.round(progress)}%</strong>
+                </div>
+                <div className="mt-2 h-2 rounded-full bg-muted">
+                  <div className="h-2 rounded-full bg-primary" style={{ width: `${progress}%` }} />
+                </div>
+                <div className="mt-3 grid grid-cols-3 gap-2 text-center text-xs">
+                  <div>
+                    <p className="text-muted-foreground">Ordered</p>
+                    <strong>{ordered}</strong>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">Fulfilled</p>
+                    <strong>{fulfilled}</strong>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">Remaining</p>
+                    <strong>{Math.max(0, ordered - fulfilled)}</strong>
+                  </div>
+                </div>
+                <div className="mt-4 border-t pt-3 text-xs text-muted-foreground">
+                  {currentStatus === "Draft"
+                    ? "Complete the order details before confirming."
+                    : fulfillmentStatus === "Fulfilled"
+                      ? "All ordered units have been fulfilled."
+                      : "Order is ready for fulfillment."}
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
@@ -1015,106 +1278,6 @@ export function SalesOrderViewPage({ id }: { id: string }) {
                 onEdit={() => setEditing(true)}
               />
               <aside className="flex flex-col gap-4">
-                <SideCard title="Packages">
-                  <div className="mb-3 flex items-center justify-between">
-                    <span className="text-xs text-muted-foreground">{packages.length} package{packages.length === 1 ? "" : "s"}</span>
-                    {canWrite && <Button size="sm" variant="outline" asChild><a href={`/sales/packages/new?order=${id}`}>Create Package</a></Button>}
-                  </div>
-                  {packages.length === 0 ? <p className="text-sm text-muted-foreground">No packages yet.</p> : <div className="space-y-2">{packages.map((pkg) => {
-                    const packageQty = packageLines.filter((line) => line.document_id === pkg.id).reduce((sum, line) => sum + Number(line.quantity ?? 0), 0);
-                    return <div key={pkg.id} className="flex items-center justify-between gap-2 border-b pb-2 last:border-0"><a className="font-mono text-sm text-primary hover:underline" href={`/sales/packages/${pkg.id}`}>{pkg.number ?? "Package"}</a><span className="text-xs text-muted-foreground">{packageQty} units · {pkg.status ?? "Draft"}</span></div>;
-                  })}</div>}
-                </SideCard>
-                <SalesDocumentLineage
-                  nodes={[
-                    {
-                      type: "Sales Order",
-                      number: order.number,
-                      status: currentStatus,
-                      amount: order.grand_total,
-                      currency,
-                      date: order.date,
-                      href: `/sales/orders/${id}`,
-                    },
-                    ...invoices.slice(0, 3).map((invoice) => ({
-                      type: "Invoice",
-                      number: invoice.number,
-                      status: invoice.status,
-                      amount: invoice.grand_total,
-                      currency: invoice.currency ?? currency,
-                      date: invoice.date,
-                      href: `/sales/invoices/${invoice.id}`,
-                    })),
-                  ]}
-                />
-                <SideCard title="Order Status & Fulfillment">
-                  <div className="space-y-2">
-                    {ORDER_STAGES.map((stage, index) => (
-                      <div
-                        key={stage}
-                        className={`flex items-center gap-2 text-xs ${stage === currentStatus ? "font-semibold text-foreground" : index < currentStage ? "text-muted-foreground" : "text-muted-foreground/60"}`}
-                      >
-                        <span
-                          className={`flex h-5 w-5 items-center justify-center rounded-full border ${stage === currentStatus ? "border-primary bg-primary text-primary-foreground" : index < currentStage ? "border-primary/40 bg-primary/10 text-primary" : "border-muted-foreground/30"}`}
-                        >
-                          {index < currentStage ? <CheckCircle2 className="h-3 w-3" /> : index + 1}
-                        </span>
-                        {stage}
-                        {stage === currentStatus && (
-                          <Badge variant="outline" className="ml-auto">
-                            Current
-                          </Badge>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                  <div className="mt-5 flex items-center justify-between text-sm">
-                    <span>Fulfillment</span>
-                    <strong>{Math.round(progress)}%</strong>
-                  </div>
-                  <div className="mt-2 h-2 rounded-full bg-muted">
-                    <div
-                      className="h-2 rounded-full bg-primary"
-                      style={{ width: `${progress}%` }}
-                    />
-                  </div>
-                  <div className="mt-3 grid grid-cols-3 gap-2 text-center text-xs">
-                    <div>
-                      <p className="text-muted-foreground">Ordered</p>
-                      <strong>{ordered}</strong>
-                    </div>
-                    <div>
-                      <p className="text-muted-foreground">Fulfilled</p>
-                      <strong>{fulfilled}</strong>
-                    </div>
-                    <div>
-                      <p className="text-muted-foreground">Remaining</p>
-                      <strong>{Math.max(0, ordered - fulfilled)}</strong>
-                    </div>
-                  </div>
-                  <div className="mt-4 border-t pt-3 text-xs text-muted-foreground">
-                    {currentStatus === "Draft"
-                      ? "Complete the order details before confirming."
-                      : fulfillmentStatus === "Fulfilled"
-                        ? "All ordered units have been fulfilled."
-                        : "Order is ready for fulfillment."}
-                  </div>
-                </SideCard>
-                <SideCard title="Activity">
-                  {events.length ? (
-                    events.slice(-5).map((event) => (
-                      <p key={event.id} className="border-b py-2 text-xs">
-                        {event.note ?? event.status}
-                        <br />
-                        <span className="text-muted-foreground">
-                          {dateTimeFmt(event.created_at)}
-                        </span>
-                      </p>
-                    ))
-                  ) : (
-                    <p className="text-sm text-muted-foreground">No activity yet.</p>
-                  )}
-                </SideCard>
                 <SideCard title="Notes">
                   <p className="whitespace-pre-wrap text-sm text-muted-foreground">
                     {order.notes || "No notes added."}
