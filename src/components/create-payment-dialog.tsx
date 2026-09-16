@@ -175,8 +175,13 @@ export function CreatePaymentDialog({ open, onOpenChange, kind }: CreatePaymentD
       if (!tenant?.id) throw new Error("No workspace");
       if (!partyId) throw new Error(`Please select a ${partyLabel.toLowerCase()}`);
 
-      const totalAmt = Math.round((isReceived ? parseFloat(amount) : totalApplied) * 100) / 100;
+      const typedAmount = parseFloat(amount);
+      const effectiveAmount =
+        isNaN(typedAmount) || typedAmount <= 0 ? totalApplied : typedAmount;
+      const totalAmt = Math.round(effectiveAmount * 100) / 100;
       if (totalAmt <= 0) throw new Error("Total payment amount must be greater than zero");
+      if (totalApplied > totalAmt + 0.005)
+        throw new Error("Allocations exceed the payment amount");
 
       if (isReceived) {
         const allocations = selectedDocs
@@ -324,8 +329,13 @@ export function CreatePaymentDialog({ open, onOpenChange, kind }: CreatePaymentD
                 min="0.01"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
-                placeholder="Enter amount"
+                placeholder={
+                  totalApplied > 0 ? totalApplied.toFixed(2) : "Enter amount"
+                }
               />
+              <p className="text-xs text-muted-foreground">
+                Leave blank to use the total of the amounts applied below.
+              </p>
             </div>
 
             {/* ── Reference ── */}
