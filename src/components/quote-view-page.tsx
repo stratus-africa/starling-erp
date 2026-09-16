@@ -285,7 +285,7 @@ export function QuoteViewPage({ id }: { id: string }) {
       const { data, error } = await db
         .from("customers")
         .select("*")
-        .eq("id", quote.customer_id)
+        .eq("id", quote!.customer_id)
         .maybeSingle();
       if (error) throw error;
       return data as Row | null;
@@ -298,7 +298,7 @@ export function QuoteViewPage({ id }: { id: string }) {
       const { data, error } = await db
         .from("sales_orders")
         .select("id,number,status,date,grand_total,currency")
-        .eq("id", quote.converted_order_id)
+        .eq("id", quote!.converted_order_id)
         .maybeSingle();
       if (error) throw error;
       return data as Row | null;
@@ -311,7 +311,7 @@ export function QuoteViewPage({ id }: { id: string }) {
       const { data } = await db
         .from("profiles")
         .select("full_name,email")
-        .eq("id", quote.created_by)
+        .eq("id", quote!.created_by)
         .maybeSingle();
       return data as Row | null;
     },

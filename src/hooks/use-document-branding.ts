@@ -2,9 +2,13 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import type { PdfBranding } from "@/lib/document-pdf";
-import { getDocumentTemplate, type DocumentTemplateStyle } from "@/lib/document-template-types";
+import { getDocumentTemplate, type DocumentTemplateStyle, type DocumentTemplateType } from "@/lib/document-template-types";
 
 export type DocTemplateKind = "quote" | "order" | "invoice" | "package" | "credit_note" | "shipment";
+
+function toDocumentTemplateType(kind: DocTemplateKind): DocumentTemplateType {
+  return kind === "credit_note" ? "invoice" : (kind as DocumentTemplateType);
+}
 
 /** Returns the tenant's default PDF template mapped to branding options for the PDF builder. */
 export function useDocumentBranding(kind: DocTemplateKind) {
@@ -31,7 +35,7 @@ export function useDocumentBranding(kind: DocTemplateKind) {
   });
 
   const branding: PdfBranding = {
-    templateStyle: storedStyle ?? getDocumentTemplate(kind),
+    templateStyle: storedStyle ?? getDocumentTemplate(toDocumentTemplateType(kind)),
     accentColor: data?.accent_color ?? "#1E293B",
     logoUrl: data?.logo_url ?? null,
     showLogo: data?.show_logo ?? true,

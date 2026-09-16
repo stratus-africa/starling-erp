@@ -31,7 +31,7 @@ export interface RoleDashboardData {
     deliveriesThisWeek: number;
     lowStock: number;
     trend: { x: string; a: number; b: number }[];
-    suppliers: { primary: string; secondary: string; status: string; tone: "success" | "warning" | "destructive" }[];
+    suppliers: { primary: string; secondary: string; status: string; tone: "success" | "warning" | "destructive" | "info" }[];
   };
   production: {
     salesOrders: number;

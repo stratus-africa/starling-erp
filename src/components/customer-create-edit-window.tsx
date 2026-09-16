@@ -441,12 +441,12 @@ export function CustomerCreateEditWindow({
             Cancel
           </Button>
           <div className="flex flex-wrap justify-end gap-2">
-            <Button variant="outline" onClick={() => save.mutate()} disabled={!canWrite || save.isPending}>
+            <Button variant="outline" onClick={() => save.mutate({})} disabled={!canWrite || save.isPending}>
               {save.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               <Save className="mr-2 h-4 w-4" />
               Save Draft
             </Button>
-            <Button onClick={() => save.mutate()} disabled={!canWrite || save.isPending}>
+            <Button onClick={() => save.mutate({})} disabled={!canWrite || save.isPending}>
               {save.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {isNew ? "Create Customer" : "Save Changes"}
             </Button>

@@ -32,7 +32,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import { useNavigate } from "@tanstack/react-router";
-import { SupplierPaymentDialog } from "@/components/supplier-payment-dialog";
+import { CreatePaymentDialog } from "@/components/create-payment-dialog";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -285,7 +285,11 @@ export function PaymentsListPage({ kind }: { kind: PaymentKind }) {
           <span className="text-muted-foreground text-sm font-normal">▾</span>
         </h1>
         <div className="flex items-center gap-2">
-          {!isReceived && canCreate && <Button size="sm" className="h-8" onClick={() => setCreateOpen(true)}>New Payment</Button>}
+          {canCreate && (
+            <Button size="sm" className="h-8" onClick={() => setCreateOpen(true)}>
+              {isReceived ? "Receive Payment" : "Make Payment"}
+            </Button>
+          )}
           <div className="relative">
             <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
             <Input
@@ -581,7 +585,7 @@ export function PaymentsListPage({ kind }: { kind: PaymentKind }) {
           </Button>
         </div>
       </div>
-      {!isReceived && <SupplierPaymentDialog open={createOpen} onOpenChange={setCreateOpen} />}
+      <CreatePaymentDialog open={createOpen} onOpenChange={setCreateOpen} kind={kind} />
     </div>
   );
 }

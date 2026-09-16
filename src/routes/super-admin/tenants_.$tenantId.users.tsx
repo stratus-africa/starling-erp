@@ -171,7 +171,7 @@ interface UserActivityRecord {
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export function TenantUserManagementPage() {
-  const { tenantId } = useParams({ from: "/super-admin/tenants/$tenantId/users" });
+  const { tenantId } = useParams({ from: "/super-admin/tenants_/$tenantId/users" });
   const queryClient = useQueryClient();
   const { canPlatform } = usePlatformAuth();
 
