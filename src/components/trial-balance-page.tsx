@@ -485,10 +485,11 @@ export function TrialBalancePage() {
                           rows={rows}
                           groupDebit={groupDebit}
                           groupCredit={groupCredit}
+                          currency={currency}
                         />
                       );
                     })
-                  : displayed.map((row) => <AccountRow key={row.account_id} row={row} />)
+                  : displayed.map((row) => <AccountRow key={row.account_id} row={row} currency={currency} />)
                 }
               </tbody>
 
@@ -566,7 +567,7 @@ export function TrialBalancePage() {
 // Sub-components
 // ─────────────────────────────────────────────────────────────────────────────
 
-function AccountRow({ row, indent = false }: { row: TrialBalanceLine; indent?: boolean }) {
+function AccountRow({ row, indent = false, currency }: { row: TrialBalanceLine; indent?: boolean; currency: string }) {
   const isContra =
     (row.normal_balance === "Debit"   && row.tb_credit > 0) ||
     (row.normal_balance === "Credit"  && row.tb_debit  > 0);
@@ -601,7 +602,7 @@ function AccountRow({ row, indent = false }: { row: TrialBalanceLine; indent?: b
       <td className="px-6 py-2 text-right whitespace-nowrap">
         {row.tb_debit > 0 ? (
           <span className="font-mono text-xs tabular-nums font-medium">
-            {fmt(row.tb_debit)}
+            {fmt(row.tb_debit, currency)}
           </span>
         ) : (
           <span className="text-muted-foreground/25 text-xs select-none">—</span>
@@ -612,7 +613,7 @@ function AccountRow({ row, indent = false }: { row: TrialBalanceLine; indent?: b
       <td className="px-6 py-2 text-right whitespace-nowrap">
         {row.tb_credit > 0 ? (
           <span className="font-mono text-xs tabular-nums font-medium">
-            {fmt(row.tb_credit)}
+            {fmt(row.tb_credit, currency)}
           </span>
         ) : (
           <span className="text-muted-foreground/25 text-xs select-none">—</span>
@@ -634,11 +635,13 @@ function TypeGroup({
   rows,
   groupDebit,
   groupCredit,
+  currency,
 }: {
   type: string;
   rows: TrialBalanceLine[];
   groupDebit: number;
   groupCredit: number;
+  currency: string;
 }) {
   const [collapsed, setCollapsed] = useState(false);
 
@@ -689,7 +692,7 @@ function TypeGroup({
 
       {/* Account rows */}
       {!collapsed &&
-        rows.map((row) => <AccountRow key={row.account_id} row={row} indent />)}
+        rows.map((row) => <AccountRow key={row.account_id} row={row} indent currency={currency} />)}
 
       {/* Group subtotal underline */}
       {!collapsed && (

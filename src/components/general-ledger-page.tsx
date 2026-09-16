@@ -433,7 +433,7 @@ function exportToCsv(rows: LedgerRow[]) {
 
 // ─── Summary stats strip ──────────────────────────────────────────────────────
 
-function SummaryStrip({ rows }: { rows: LedgerRow[] }) {
+function SummaryStrip({ rows, currency }: { rows: LedgerRow[]; currency: string }) {
   const totalDebit  = rows.reduce((s, r) => s + r.debit,  0);
   const totalCredit = rows.reduce((s, r) => s + r.credit, 0);
   const netBalance  = totalDebit - totalCredit;
@@ -833,7 +833,7 @@ export function GeneralLedgerPage() {
       )}
 
       {/* ── Summary strip (all rows, not just current page) ── */}
-      {allRows.length > 0 && <SummaryStrip rows={allRows} />}
+      {allRows.length > 0 && <SummaryStrip rows={allRows} currency={currency} />}
 
       {/* ── Ledger table ── */}
       <div className="min-h-0 flex-1 overflow-auto">
@@ -871,7 +871,7 @@ export function GeneralLedgerPage() {
             </thead>
             <tbody>
               {/* Account group headers for multi-account view */}
-              {renderRows(rows, isSingleAccount, profileMap, SOURCE_LABELS)}
+              {renderRows(rows, isSingleAccount, profileMap, SOURCE_LABELS, currency)}
             </tbody>
           </table>
         )}
@@ -921,6 +921,7 @@ function renderRows(
   isSingleAccount: boolean,
   profileMap: Map<string, { email: string; full_name: string | null }>,
   sourceLabels: Record<string, string>,
+  currency: string,
 ) {
   const elements: React.ReactNode[] = [];
   let lastAccountId: string | null = null;

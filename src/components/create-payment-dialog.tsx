@@ -175,8 +175,13 @@ export function CreatePaymentDialog({ open, onOpenChange, kind }: CreatePaymentD
       if (!tenant?.id) throw new Error("No workspace");
       if (!partyId) throw new Error(`Please select a ${partyLabel.toLowerCase()}`);
 
-      const totalAmt = Math.round((isReceived ? parseFloat(amount) : totalApplied) * 100) / 100;
+      const typedAmount = parseFloat(amount);
+      const effectiveAmount =
+        isNaN(typedAmount) || typedAmount <= 0 ? totalApplied : typedAmount;
+      const totalAmt = Math.round(effectiveAmount * 100) / 100;
       if (totalAmt <= 0) throw new Error("Total payment amount must be greater than zero");
+      if (totalApplied > totalAmt + 0.005)
+        throw new Error("Allocations exceed the payment amount");
 
       if (isReceived) {
         const allocations = selectedDocs
@@ -324,8 +329,13 @@ export function CreatePaymentDialog({ open, onOpenChange, kind }: CreatePaymentD
                 min="0.01"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
-                placeholder="Enter amount"
+                placeholder={
+                  totalApplied > 0 ? totalApplied.toFixed(2) : "Enter amount"
+                }
               />
+              <p className="text-xs text-muted-foreground">
+                Leave blank to use the total of the amounts applied below.
+              </p>
             </div>
 
             {/* ── Reference ── */}
@@ -343,7 +353,7 @@ export function CreatePaymentDialog({ open, onOpenChange, kind }: CreatePaymentD
               <div className="grid gap-2">
                 <div className="flex items-center justify-between">
                   <Label>
-                    Optional {docLabel} shortlist
+                    Apply to outstanding {docLabel.toLowerCase()}s (one payment can settle several)
                     {loadingDocs && (
                       <Loader2 className="ml-2 inline h-3 w-3 animate-spin text-muted-foreground" />
                     )}
@@ -471,7 +481,7 @@ export function CreatePaymentDialog({ open, onOpenChange, kind }: CreatePaymentD
               </span>
             ) : (
               <span className="text-xs text-muted-foreground">
-                Invoice allocation is available after posting
+                Select {docLabel.toLowerCase()}s above to settle several with this one payment
               </span>
             )}
             <div className="flex gap-2">

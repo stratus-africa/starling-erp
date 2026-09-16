@@ -463,6 +463,7 @@ export function ProfitLossPage() {
                   section={section}
                   collapsed={collapsed.has(section.key)}
                   onToggle={() => toggleSection(section.key)}
+                  currency={currency}
                 />
               ))}
             </div>
@@ -627,10 +628,12 @@ function ReportSection({
   section,
   collapsed,
   onToggle,
+  currency,
 }: {
   section: Section;
   collapsed: boolean;
   onToggle: () => void;
+  currency: string;
 }) {
   const isPositive = section.total >= 0;
   const isGood     = section.positiveIsGood ? isPositive : !isPositive;

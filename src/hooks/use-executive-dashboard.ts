@@ -39,9 +39,9 @@ export function useExecutiveDashboard() {
         db.from("invoices").select("date,grand_total,balance_due,customer_id,due_date,status").is("deleted_at", null),
         db.from("sales_orders").select("id,date,status").is("deleted_at", null),
         db.from("customers").select("id,name").is("deleted_at", null).eq("status", "Active"),
-        db.from("inventory_item_stock").select("item_id,on_hand").eq("tenant_id", tenant.id),
+        db.from("inventory_item_stock").select("item_id,on_hand").eq("tenant_id", tenant?.id),
         db.from("items").select("id,cost").is("deleted_at", null),
-        db.from("inventory_warehouse_stock").select("warehouse_id,on_hand").eq("tenant_id", tenant.id),
+        db.from("inventory_warehouse_stock").select("warehouse_id,on_hand").eq("tenant_id", tenant?.id),
         db.from("expenses").select("date,total,amount,status").is("deleted_at", null),
         db.from("purchase_requisitions").select("id,status").is("deleted_at", null),
       ]);

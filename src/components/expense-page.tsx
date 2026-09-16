@@ -263,7 +263,7 @@ export function ExpensePage({ id }: { id: string }) {
         notes: values.notes || null,
       };
       ["id", "created_at", "updated_at", "deleted_at", "posted_at", "voided_at"].forEach(
-        (key) => delete payload[key],
+        (key) => delete (payload as Record<string, any>)[key],
       );
       if (isNew) {
         const { data, error } = await db.rpc("create_expense", {

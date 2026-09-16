@@ -147,7 +147,7 @@ export function ReportsListingPage({ config }: { config: ReportsListingConfig })
           .in("journal_id", entryIds)
           .in("account_id", ids);
         if (lineError) throw lineError;
-        const map = new Map(rows.map((row: any) => [row.id, row]));
+        const map = new Map(rows.map((row: any) => [row.id, row])) as Map<string, Record<string, any>>;
         let revenue = 0;
         let expenses = 0;
         let output = 0;

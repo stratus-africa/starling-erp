@@ -511,13 +511,14 @@ export function BalanceSheetPage() {
 
             {/* ── KPI cards ── */}
             <div className="grid grid-cols-3 gap-3 mb-8 print:hidden">
-              <KpiCard label="Total Assets"      value={totalAssets}      color="blue" />
-              <KpiCard label="Total Liabilities" value={totalLiabilities} color="red"  />
+              <KpiCard label="Total Assets"      value={totalAssets}      color="blue" currency={currency} />
+              <KpiCard label="Total Liabilities" value={totalLiabilities} color="red"  currency={currency} />
               <KpiCard
                 label="Total Equity"
                 value={totalEquity}
                 color={totalEquity >= 0 ? "emerald" : "red"}
                 large
+                currency={currency}
               />
             </div>
 
@@ -559,6 +560,7 @@ export function BalanceSheetPage() {
                   section={section}
                   collapsed={collapsed.has(section.key)}
                   onToggle={() => toggle(section.key)}
+                  currency={currency}
                 />
               ))}
             </div>
@@ -584,11 +586,13 @@ function KpiCard({
   value,
   color,
   large = false,
+  currency,
 }: {
   label: string;
   value: number;
   color: "blue" | "red" | "emerald";
   large?: boolean;
+  currency: string;
 }) {
   const colorCls: Record<string, string> = {
     blue:    "text-blue-600 dark:text-blue-400",
@@ -635,10 +639,12 @@ function BsSection({
   section,
   collapsed,
   onToggle,
+  currency,
 }: {
   section: BsSection;
   collapsed: boolean;
   onToggle: () => void;
+  currency: string;
 }) {
   // ── Grand total rows (Total Assets / Total Equity / Total L+E) ────────────
   if (section.isSubtotal) {

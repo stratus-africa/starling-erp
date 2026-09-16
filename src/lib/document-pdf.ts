@@ -68,12 +68,12 @@ export function buildDocumentPdf(input: PdfDocInput): jsPDF {
   const doc = new jsPDF({ unit: "pt", format: "a4" });
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
+  const brand = input.branding ?? {};
   const style = getDocumentTemplate(
     input.documentType ?? documentTypeFromTitle(input.title),
     input.templateStyle ?? brand.templateStyle,
   );
   const margin = style === "compact" ? 32 : style === "corporate" ? 38 : 44;
-  const brand = input.branding ?? {};
   const accent = hexToRgb(brand.accentColor ?? (style === "modern" ? "#0668FF" : "#0B2A63"));
   const navy: [number, number, number] = [11, 42, 99];
   const border: [number, number, number] = [220, 230, 242];

@@ -1,5 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { DocViewPanel } from "@/components/doc-view-panel";
+import { DocumentViewWindow } from "@/components/document-view-window";
 
 export const Route = createFileRoute("/_authenticated/purchasing/orders/$id")({
   component: PurchaseOrderDetailPage,
