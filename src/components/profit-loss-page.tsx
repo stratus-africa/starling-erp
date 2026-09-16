@@ -441,20 +441,17 @@ export function ProfitLossPage() {
                 label="Revenue"
                 value={displayedSections.find((s) => s.key === "revenue")?.total ?? 0}
                 color="emerald"
-                currency={currency}
               />
               <KpiCard
                 label="Gross Profit"
                 value={grossProfit}
                 color={grossProfit >= 0 ? "emerald" : "red"}
-                currency={currency}
               />
               <KpiCard
                 label="Net Profit"
                 value={netProfit}
                 color={netProfit >= 0 ? "emerald" : "red"}
                 large
-                currency={currency}
               />
             </div>
 
@@ -631,10 +628,12 @@ function ReportSection({
   section,
   collapsed,
   onToggle,
+  currency,
 }: {
   section: Section;
   collapsed: boolean;
   onToggle: () => void;
+  currency: string;
 }) {
   const isPositive = section.total >= 0;
   const isGood     = section.positiveIsGood ? isPositive : !isPositive;

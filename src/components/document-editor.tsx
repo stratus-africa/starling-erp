@@ -1175,14 +1175,14 @@ export function DocumentEditor({
                   </Button>
                 )}
 
-                {canWrite && kind === "order" && !isNew && (
+                {canWrite && (kind as DocKind) === "order" && !isNew && (
                   <Button variant="outline" size="sm" asChild>
                     <Link to={"/sales/packages/new" as never} search={{ order: id } as never}>
                       <PackageIcon className="h-4 w-4 mr-1.5" /> New Package
                     </Link>
                   </Button>
                 )}
-                {canWrite && kind === "quote" && !isNew && header.status === "Accepted" && !header.converted_order_id && (
+                {canWrite && (kind as DocKind) === "quote" && !isNew && header.status === "Accepted" && !header.converted_order_id && (
                   <Button
                     variant="outline"
                     size="sm"
@@ -1192,7 +1192,7 @@ export function DocumentEditor({
                     <Send className="h-4 w-4 mr-1.5" /> Convert to Order
                   </Button>
                 )}
-                {canWrite && kind === "order" && !isNew && (
+                {canWrite && (kind as DocKind) === "order" && !isNew && (
                   <Button
                     variant="outline"
                     size="sm"
@@ -1340,7 +1340,7 @@ export function DocumentEditor({
                     <Ban className="h-4 w-4 mr-1.5" /> Void & Reverse
                   </Button>
                 )}
-                {canWrite && !isOrderKind && kind !== "quote" && (
+                {canWrite && !isOrderKind && (kind as DocKind) !== "quote" && (
                   <Button
                     size="sm"
                     disabled={save.isPending || !!doc?.posted_at}

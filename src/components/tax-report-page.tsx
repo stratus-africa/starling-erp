@@ -397,7 +397,7 @@ export function TaxReportPage() {
             </button>
 
             {showOutput && (
-              <VatLinesTable lines={outputLines} sourceLabels={SOURCE_LABELS} />
+              <VatLinesTable lines={outputLines} sourceLabels={SOURCE_LABELS} currency={currency} />
             )}
           </div>
 
@@ -418,7 +418,7 @@ export function TaxReportPage() {
             </button>
 
             {showInput && (
-              <VatLinesTable lines={inputLines} sourceLabels={SOURCE_LABELS} />
+              <VatLinesTable lines={inputLines} sourceLabels={SOURCE_LABELS} currency={currency} />
             )}
           </div>
         </div>
@@ -427,7 +427,7 @@ export function TaxReportPage() {
   );
 }
 
-function VatLinesTable({ lines, sourceLabels }: { lines: TaxLine[]; sourceLabels: Record<string,string> }) {
+function VatLinesTable({ lines, sourceLabels, currency }: { lines: TaxLine[]; sourceLabels: Record<string,string>; currency: string }) {
   if (!lines.length) {
     return <p className="px-8 py-4 text-xs text-muted-foreground italic">No transactions in this period.</p>;
   }
