@@ -487,10 +487,7 @@ function InvoiceOverviewView({ id }: { id: string }) {
   const canDelete = can(["sales.delete", "admin"]);
   const deleteMutation = useMutation({
     mutationFn: async () => {
-      const { error } = await db
-        .from("invoices")
-        .update({ deleted_at: new Date().toISOString() })
-        .eq("id", id);
+      const { error } = await db.rpc("delete_invoice", { _invoice_id: id });
       if (error) throw error;
     },
     onSuccess: () => {
