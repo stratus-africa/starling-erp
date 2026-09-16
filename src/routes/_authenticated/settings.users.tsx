@@ -8,8 +8,9 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Users, ShieldAlert, Loader2 } from "lucide-react";
+import { Users, ShieldAlert, Loader2, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 
 const ALL_ROLES: AppRole[] = [
@@ -28,6 +29,9 @@ function UsersPage() {
   const isSuper = roles.includes("super_admin");
   const qc = useQueryClient();
   const [pending, setPending] = useState<Record<string, AppRole[]>>({});
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteRole, setInviteRole] = useState<AppRole>("viewer");
+  const [inviteLink, setInviteLink] = useState<string | null>(null);
 
   const { data: users = [], isLoading } = useQuery({
     queryKey: ["tenant", tenant?.id, "users"],
@@ -63,6 +67,24 @@ function UsersPage() {
     onError: (e: any) => toast.error(e.message ?? "Save failed"),
   });
 
+  const invite = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await db.rpc("create_tenant_invitation", {
+        _email: inviteEmail,
+        _role: inviteRole,
+        _expires_in_hours: 72,
+      });
+      if (error) throw error;
+      return data?.[0] as { invitation_token: string; expires_at: string };
+    },
+    onSuccess: (result) => {
+      setInviteLink(`${window.location.origin}/auth?invitation=${result.invitation_token}`);
+      setInviteEmail("");
+      toast.success("Invitation created");
+    },
+    onError: (e: any) => toast.error(e.message ?? "Invitation failed"),
+  });
+
   const rowsWithPending = useMemo(
     () => users.map((u: any) => ({ ...u, effective: pending[u.id] ?? u.roles })),
     [users, pending],
@@ -95,6 +117,38 @@ function UsersPage() {
           <span className="font-mono text-xs">has_role()</span>.
         </p>
       </div>
+
+      <Card className="p-4">
+        <div className="flex items-center gap-2 mb-3">
+          <UserPlus className="h-4 w-4" />
+          <h2 className="font-medium">Invite a team member</h2>
+        </div>
+        <div className="flex flex-col gap-2 md:flex-row">
+          <Input
+            type="email"
+            placeholder="employee@company.com"
+            value={inviteEmail}
+            onChange={(e) => setInviteEmail(e.target.value)}
+            className="md:flex-1"
+          />
+          <select
+            value={inviteRole}
+            onChange={(e) => setInviteRole(e.target.value as AppRole)}
+            className="h-10 rounded-md border bg-background px-3 text-sm"
+          >
+            {ALL_ROLES.map((role) => <option key={role} value={role}>{role.replace("_", " ")}</option>)}
+          </select>
+          <Button disabled={!inviteEmail || invite.isPending} onClick={() => invite.mutate()}>
+            {invite.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UserPlus className="mr-2 h-4 w-4" />}
+            Create invitation
+          </Button>
+        </div>
+        {inviteLink && (
+          <p className="mt-3 break-all text-xs text-muted-foreground">
+            Share this invitation link with the invited user: {inviteLink}
+          </p>
+        )}
+      </Card>
 
       <Card className="p-0 overflow-hidden">
         <Table>

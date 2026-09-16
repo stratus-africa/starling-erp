@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate, Navigate } from "@tanstack/react-router";
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/typed-db";
 import { lovable } from "@/integrations/lovable";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -26,8 +27,26 @@ function AuthPage() {
   const { session, loading } = useAuth();
   const navigate = useNavigate();
   const [busy, setBusy] = useState(false);
+  const [acceptingInvite, setAcceptingInvite] = useState(false);
+  const invitationToken = new URLSearchParams(window.location.search).get("invitation");
+
+  useEffect(() => {
+    if (!session?.user || !invitationToken) return;
+    setAcceptingInvite(true);
+    db.rpc("accept_tenant_invitation", { _token: invitationToken })
+      .then(({ error }: { error: Error | null }) => {
+        if (error) {
+          toast.error(error.message);
+          return;
+        }
+        toast.success("Invitation accepted");
+        navigate({ to: "/", replace: true });
+      })
+      .finally(() => setAcceptingInvite(false));
+  }, [invitationToken, navigate, session?.user]);
 
   if (loading) return <div className="flex min-h-screen items-center justify-center"><Loader2 className="animate-spin" /></div>;
+  if (session && acceptingInvite) return <div className="flex min-h-screen items-center justify-center"><Loader2 className="animate-spin" /></div>;
   if (session) return <Navigate to="/" />;
 
   const signIn = async (e: FormEvent<HTMLFormElement>) => {
@@ -51,7 +70,11 @@ function AuthPage() {
       password: String(fd.get("password")),
       options: {
         emailRedirectTo: window.location.origin,
-        data: { full_name: String(fd.get("name")), company: String(fd.get("company")) },
+        data: {
+          full_name: String(fd.get("name")),
+          company: String(fd.get("company")),
+          ...(invitationToken ? { invitation_token: invitationToken } : {}),
+        },
       },
     });
     setBusy(false);
