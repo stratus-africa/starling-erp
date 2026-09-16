@@ -66,6 +66,15 @@ interface BankTransaction {
 
 interface GlAccount { id: string; code: string | null; name: string; }
 
+interface BankAccountSheetProps {
+  open: boolean;
+  account: BankAccount | null;
+  glAccounts: GlAccount[];
+  saving: boolean;
+  onClose: () => void;
+  onSave: (values: Record<string, unknown>) => Promise<void>;
+}
+
 const TXN_TYPES = ["Deposit","Withdrawal","Fee","Transfer","Receipt","Payment"] as const;
 type TxnType = typeof TXN_TYPES[number];
 
@@ -102,6 +111,64 @@ function StatusBadge({ status }: { status: string }) {
       {status === "Voided" && <AlertCircle  className="h-3 w-3" />}
       {status}
     </span>
+  );
+}
+
+function BankAccountSheet({ open, account, glAccounts, saving, onClose, onSave }: BankAccountSheetProps) {
+  const [name, setName] = useState("");
+  const [bank, setBank] = useState("");
+  const [accountNumber, setAccountNumber] = useState("");
+  const [currency, setCurrency] = useState("USD");
+  const [openingBalance, setOpeningBalance] = useState("0");
+  const [openingDate, setOpeningDate] = useState("");
+  const [glAccountId, setGlAccountId] = useState("");
+  const [notes, setNotes] = useState("");
+
+  useMemo(() => {
+    if (!open) return;
+    setName(account?.name ?? "");
+    setBank(account?.bank ?? "");
+    setAccountNumber(account?.account_number ?? "");
+    setCurrency(account?.currency ?? "USD");
+    setOpeningBalance(String(account?.opening_balance ?? 0));
+    setOpeningDate(account?.opening_date ?? "");
+    setGlAccountId(account?.gl_account_id ?? "");
+    setNotes(account?.notes ?? "");
+  }, [open, account]);
+
+  const submit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!name.trim()) { toast.error("Account name is required"); return; }
+    await onSave({
+      name: name.trim(), bank: bank.trim() || null,
+      account_number: accountNumber.trim() || null, currency,
+      opening_balance: Number(openingBalance) || 0,
+      opening_date: openingDate || null, gl_account_id: glAccountId || null,
+      notes: notes.trim() || null, status: account?.status ?? "Active",
+    });
+  };
+
+  return (
+    <Sheet open={open} onOpenChange={(value) => !value && onClose()}>
+      <SheetContent side="right" className="w-full sm:max-w-md">
+        <SheetHeader>
+          <SheetTitle>{account ? "Edit bank account" : "New bank account"}</SheetTitle>
+          <SheetDescription>Account type: Bank. Link it to the chart of accounts below.</SheetDescription>
+        </SheetHeader>
+        <form onSubmit={submit} className="space-y-4 overflow-y-auto px-1 py-4">
+          <div className="space-y-1.5"><Label>Name</Label><Input value={name} onChange={(e) => setName(e.target.value)} required /></div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5"><Label>Bank</Label><Input value={bank} onChange={(e) => setBank(e.target.value)} /></div>
+            <div className="space-y-1.5"><Label>Currency</Label><Select value={currency} onValueChange={setCurrency}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{CURRENCIES.map((value) => <SelectItem key={value} value={value}>{value}</SelectItem>)}</SelectContent></Select></div>
+          </div>
+          <div className="space-y-1.5"><Label>Account number</Label><Input value={accountNumber} onChange={(e) => setAccountNumber(e.target.value)} /></div>
+          <div className="space-y-1.5"><Label>Chart of accounts link</Label><Select value={glAccountId || "none"} onValueChange={(value) => setGlAccountId(value === "none" ? "" : value)}><SelectTrigger><SelectValue placeholder="Select GL account" /></SelectTrigger><SelectContent><SelectItem value="none">No linked account</SelectItem>{glAccounts.map((gl) => <SelectItem key={gl.id} value={gl.id}>{gl.code} - {gl.name}</SelectItem>)}</SelectContent></Select></div>
+          {!account && <div className="grid grid-cols-2 gap-3"><div className="space-y-1.5"><Label>Opening balance</Label><Input type="number" step="0.01" value={openingBalance} onChange={(e) => setOpeningBalance(e.target.value)} /></div><div className="space-y-1.5"><Label>Opening date</Label><Input type="date" value={openingDate} onChange={(e) => setOpeningDate(e.target.value)} /></div></div>}
+          <div className="space-y-1.5"><Label>Notes</Label><Textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} /></div>
+          <div className="flex justify-end gap-2"><Button type="button" variant="outline" onClick={onClose}>Cancel</Button><Button type="submit" disabled={saving}>{saving && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}Save</Button></div>
+        </form>
+      </SheetContent>
+    </Sheet>
   );
 }
 
@@ -296,6 +363,7 @@ export function BankingPage() {
   const [page,              setPage]               = useState(1);
   const [postingId,         setPostingId]          = useState<string | null>(null);
   const [voidingTxn,        setVoidingTxn]         = useState<BankTransaction | null>(null);
+  const [accountEditor,     setAccountEditor]      = useState<BankAccount | null | undefined>(undefined);
 
   // ── Accounts ──────────────────────────────────────────────────────────────
   const { data: accounts = [], isLoading: acctLoading } = useQuery<BankAccount[]>({
@@ -365,6 +433,28 @@ export function BankingPage() {
     qc.invalidateQueries({ queryKey: ["bank_accounts", "list"] });
   };
 
+  const accountMutation = useMutation({
+    mutationFn: async (values: Record<string, unknown>) => {
+      if (!tenant?.id) throw new Error("No tenant selected");
+      const query = accountEditor
+        ? db.from("bank_accounts").update(values).eq("id", accountEditor.id).eq("tenant_id", tenant.id)
+        : db.from("bank_accounts").insert({ ...values, tenant_id: tenant.id, created_by: tenant.id, balance: values.opening_balance ?? 0 });
+      const { error } = await query;
+      if (error) throw error;
+    },
+    onSuccess: () => { toast.success(accountEditor ? "Bank account updated" : "Bank account created"); setAccountEditor(undefined); invalidate(); },
+    onError: (e: Error) => toast.error(e.message ?? "Bank account save failed"),
+  });
+
+  const deactivateMutation = useMutation({
+    mutationFn: async (account: BankAccount) => {
+      const { error } = await db.from("bank_accounts").update({ status: "Inactive" }).eq("id", account.id).eq("tenant_id", tenant?.id);
+      if (error) throw error;
+    },
+    onSuccess: () => { toast.success("Bank account deactivated"); invalidate(); },
+    onError: (e: Error) => toast.error(e.message ?? "Deactivation failed"),
+  });
+
   const createMutation = useMutation({
     mutationFn: async (values: Partial<BankTransaction>) => {
       if (!tenant?.id || !selectedAccount) throw new Error("No account");
@@ -423,6 +513,7 @@ export function BankingPage() {
             <Landmark className="h-4 w-4 text-muted-foreground" />
             <span className="text-sm font-semibold">Bank Accounts</span>
           </div>
+          {canWrite && <Button variant="ghost" size="sm" className="h-7 w-7 p-0" title="New bank account" onClick={() => setAccountEditor(null)}><Plus className="h-4 w-4" /></Button>}
         </div>
 
         <div className="flex-1 overflow-y-auto py-2">
@@ -450,6 +541,7 @@ export function BankingPage() {
                   {acct.bank} {acct.account_number ? `· ${acct.account_number}` : ""}
                 </span>
                 <span className="text-[10px] text-muted-foreground/60 font-mono">{acct.currency ?? "USD"}</span>
+                {acct.status === "Inactive" && <Badge variant="outline" className="w-fit text-[10px]">Inactive</Badge>}
               </button>
             );
           })}
@@ -495,9 +587,7 @@ export function BankingPage() {
                   </p>
                 </div>
                 {canWrite && (
-                  <Button size="sm" className="h-8" onClick={() => setTxnSheetOpen(true)}>
-                    <Plus className="mr-1.5 h-3.5 w-3.5" /> New Transaction
-                  </Button>
+                  <div className="flex items-center gap-2"><Button variant="outline" size="sm" className="h-8" onClick={() => setAccountEditor(selectedAccount)}><MoreHorizontal className="mr-1.5 h-3.5 w-3.5" /> Edit account</Button><Button size="sm" className="h-8" onClick={() => setTxnSheetOpen(true)}><Plus className="mr-1.5 h-3.5 w-3.5" /> New Transaction</Button></div>
                 )}
               </div>
             </div>
@@ -649,6 +739,8 @@ export function BankingPage() {
           saving={createMutation.isPending}
         />
       )}
+
+      <BankAccountSheet open={accountEditor !== undefined} account={accountEditor ?? null} glAccounts={glAccounts} saving={accountMutation.isPending} onClose={() => setAccountEditor(undefined)} onSave={(values) => accountMutation.mutateAsync(values)} />
 
       {/* Void confirm */}
       <AlertDialog open={!!voidingTxn} onOpenChange={(o) => !o && setVoidingTxn(null)}>
