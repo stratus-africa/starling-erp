@@ -56,7 +56,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
-type Row = Record<string, unknown>;
+type Row = Record<string, any>;
 const money = (value: number | string | null | undefined, currency: string) =>
   `${currency} ${Number(value ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 const dateFmt = (value: string | Date | null | undefined) =>

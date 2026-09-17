@@ -1,0 +1,13 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1789625959619,
+      "tag": "0000_supplier_credit_notes_write_policies",
+      "breakpoints": true
+    }
+  ]
+}
