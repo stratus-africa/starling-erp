@@ -10042,6 +10042,15 @@ export type Database = {
         }
         Returns: string
       }
+      void_posted_document_base: {
+        Args: {
+          _entity_id: string
+          _entity_type: string
+          _permission: string
+          _reason?: string
+        }
+        Returns: string
+      }
       void_supplier_payment: {
         Args: { _payment_id: string; _reason?: string }
         Returns: string
