@@ -324,9 +324,9 @@ function InvoiceOverviewView({ id }: { id: string }) {
   const { tenant, can } = useAuth();
   const nav = useNavigate();
   const qc = useQueryClient();
-  const [tab, setTab] = useState<
-    "overview" | "payments" | "documents" | "lineage" | "notes" | "activity"
-  >("overview");
+  const [tab, setTab] = useState<"overview" | "payments" | "documents" | "lineage" | "notes">(
+    "overview",
+  );
   const [editing, setEditing] = useState(false);
   const [payOpen, setPayOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -530,7 +530,6 @@ function InvoiceOverviewView({ id }: { id: string }) {
     { key: "documents", label: "Documents" },
     { key: "lineage", label: "Lineage" },
     { key: "notes", label: "Notes" },
-    { key: "activity", label: "Activity" },
   ] as const;
 
   const headerTitle = invoice.number ?? "Invoice";
@@ -964,31 +963,6 @@ function InvoiceOverviewView({ id }: { id: string }) {
             </div>
           )}
 
-          {tab === "activity" && (
-            <div className="p-4">
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between pb-3">
-                  <CardTitle className="text-sm">Activity</CardTitle>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-7 px-2"
-                    onClick={() => setTab("overview")}
-                  >
-                    Back
-                  </Button>
-                </CardHeader>
-                <CardContent>
-                  <DocumentTimeline
-                    entityType="invoice"
-                    entityId={id}
-                    stages={["Draft", "Sent", "Posted", "Paid", "Overdue", "Cancelled"]}
-                    currentStage={invoice.status ?? "Draft"}
-                  />
-                </CardContent>
-              </Card>
-            </div>
-          )}
         </div>
       </div>
 

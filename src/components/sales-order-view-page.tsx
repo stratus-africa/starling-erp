@@ -903,6 +903,7 @@ export function SalesOrderViewPage({ id }: { id: string }) {
             <TabsTrigger value="packages">Packages</TabsTrigger>
             <TabsTrigger value="lineage">Document Lineage</TabsTrigger>
             <TabsTrigger value="status">Order Status & Fulfillment</TabsTrigger>
+            <TabsTrigger value="notes">Notes</TabsTrigger>
             <TabsTrigger value="audit">Audit Trail</TabsTrigger>
           </TabsList>
           <TabsContent value="customer" className="mt-4">
@@ -1249,6 +1250,18 @@ export function SalesOrderViewPage({ id }: { id: string }) {
               </CardContent>
             </Card>
           </TabsContent>
+          <TabsContent value="notes" className="mt-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm">Notes</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="whitespace-pre-wrap text-sm text-muted-foreground">
+                  {order.notes || "No notes added."}
+                </p>
+              </CardContent>
+            </Card>
+          </TabsContent>
           <TabsContent value="audit" className="mt-4">
             <Card>
               <CardHeader>
@@ -1277,13 +1290,6 @@ export function SalesOrderViewPage({ id }: { id: string }) {
                 order={order}
                 onEdit={() => setEditing(true)}
               />
-              <aside className="flex flex-col gap-4">
-                <SideCard title="Notes">
-                  <p className="whitespace-pre-wrap text-sm text-muted-foreground">
-                    {order.notes || "No notes added."}
-                  </p>
-                </SideCard>
-              </aside>
             </div>
           </TabsContent>
         </Tabs>
