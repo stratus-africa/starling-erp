@@ -1075,6 +1075,22 @@ export const creditNoteFields: FieldDef[] = [
   { key: "notes", label: "Notes", type: "textarea", hideInTable: true },
 ];
 
+export const supplierCreditNoteFields: FieldDef[] = [
+  { key: "number", label: "Credit #", render: mono },
+  { key: "date", label: "Date", type: "date", render: dateFmt },
+  { key: "supplier_id", label: "Supplier", type: "fk", fkTable: "suppliers", required: true },
+  { key: "currency", label: "Currency", defaultValue: "KES", hideInTable: true },
+  { key: "total", label: "Amount", type: "number", className: "text-right", render: moneyRight, required: true },
+  {
+    key: "status",
+    label: "Status",
+    type: "select",
+    options: ["Draft", "Posted", "Applied", "Void"],
+    defaultValue: "Draft",
+  },
+  { key: "notes", label: "Notes", type: "textarea", hideInTable: true },
+];
+
 export const shipmentFields: FieldDef[] = [
   { key: "number", label: "Shipment #", render: mono },
   { key: "ship_date", label: "Ship Date", type: "date", render: dateFmt },
