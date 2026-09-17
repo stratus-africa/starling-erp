@@ -71,11 +71,11 @@ import {
 import { SourceDocumentSuggestionBanner } from "@/components/sales/source-document-suggestion-banner";
 import { AttachmentsPanel } from "@/components/attachments-panel";
 
-export type DocKind = "quote" | "order" | "invoice" | "po" | "bill" | "credit_note" | "requisition";
+export type DocKind = "quote" | "order" | "invoice" | "po" | "bill" | "credit_note" | "supplier_credit" | "requisition";
 
 type CfgEntry = {
   table: TableName;
-  lines: TableName;
+  lines: TableName | null;
   label: string;
   prefix: string;
   dateField: string;
@@ -192,6 +192,20 @@ const CFG: Record<DocKind, CfgEntry> = {
     listPath: "/sales/credit-notes",
     detailBase: "/sales/credit-notes",
   },
+  supplier_credit: {
+    table: "supplier_credit_notes",
+    lines: null,
+    label: "Supplier Credit",
+    prefix: "SCN",
+    dateField: "date",
+    extraDate: null,
+    statuses: ["Draft", "Posted", "Voided", "Cancelled"],
+    partyField: "supplier_id",
+    partyTable: "suppliers",
+    partyLabel: "Supplier",
+    listPath: "/purchasing/credits",
+    detailBase: "/purchasing/credits",
+  },
   requisition: {
     table: "purchase_requisitions",
     lines: "purchase_requisition_lines",
@@ -216,6 +230,7 @@ const TEMPLATE_KIND: Record<DocKind, DocTemplateKind> = {
   po: "order",
   bill: "invoice",
   credit_note: "credit_note",
+  supplier_credit: "supplier_credit",
   requisition: "order",
 };
 
@@ -282,12 +297,15 @@ export function DocumentEditor({
   onClose?: () => void;
 }) {
   const cfg = CFG[kind];
+  const hasLines = Boolean(cfg.lines);
   const isReq = kind === "requisition";
   const qc = useQueryClient();
   const nav = useNavigate();
   const { tenant, user, profile, can } = useAuth();
   const permissionModule =
-    kind === "po" || kind === "bill" || kind === "requisition" ? "purchasing" : "sales";
+    kind === "po" || kind === "bill" || kind === "requisition" || kind === "supplier_credit"
+      ? "purchasing"
+      : "sales";
   const canWriteBase = can([
     `${permissionModule}.create`,
     `${permissionModule}.update`,
@@ -340,8 +358,9 @@ export function DocumentEditor({
 
   const { data: linesData } = useQuery({
     queryKey: [cfg.lines, id],
-    enabled: !isNew,
+    enabled: !isNew && hasLines,
     queryFn: async () => {
+      if (!cfg.lines) return [] as Row[];
       const { data, error } = await db
         .from(cfg.lines)
         .select("*")
@@ -393,7 +412,9 @@ export function DocumentEditor({
 
   // Supplier autofill for purchasing docs
   const selectedSupplierId =
-    kind === "po" || kind === "bill" || kind === "requisition" ? header.supplier_id || null : null;
+    kind === "po" || kind === "bill" || kind === "requisition" || kind === "supplier_credit"
+      ? header.supplier_id || null
+      : null;
   const { data: selectedSupplier } = useQuery({
     queryKey: ["suppliers", "document-prefill", selectedSupplierId],
     enabled: !!selectedSupplierId,
@@ -810,27 +831,29 @@ export function DocumentEditor({
         await updateRow(cfg.table, id, headerPayload as TablesUpdate<typeof cfg.table>);
       }
 
-      const { error: deleteLinesError } = await db
-        .from(cfg.lines)
-        .update({ deleted_at: new Date().toISOString() })
-        .eq("document_id", docId!)
-        .is("deleted_at", null);
-      if (deleteLinesError) throw deleteLinesError;
-      if (lines.length) {
-        const linePayload = lines.map((l, i) => ({
-          tenant_id: tenant.id,
-          document_id: docId,
-          line_no: i + 1,
-          item_id: l.item_id || null,
-          description: l.description,
-          quantity: l.quantity,
-          unit_price: l.unit_price,
-          discount_pct: l.discount_pct || 0,
-          tax_pct: l.tax_pct || 0,
-          line_total: computeLine(l),
-        }));
-        const { error } = await db.from(cfg.lines).insert(linePayload as never);
-        if (error) throw error;
+      if (hasLines) {
+        const { error: deleteLinesError } = await db
+          .from(cfg.lines!)
+          .update({ deleted_at: new Date().toISOString() })
+          .eq("document_id", docId!)
+          .is("deleted_at", null);
+        if (deleteLinesError) throw deleteLinesError;
+        if (lines.length) {
+          const linePayload = lines.map((l, i) => ({
+            tenant_id: tenant.id,
+            document_id: docId,
+            line_no: i + 1,
+            item_id: l.item_id || null,
+            description: l.description,
+            quantity: l.quantity,
+            unit_price: l.unit_price,
+            discount_pct: l.discount_pct || 0,
+            tax_pct: l.tax_pct || 0,
+            line_total: computeLine(l),
+          }));
+          const { error } = await db.from(cfg.lines!).insert(linePayload as never);
+          if (error) throw error;
+        }
       }
       return { docId, createAnother: Boolean(createAnother) };
     },

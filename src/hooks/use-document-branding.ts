@@ -4,10 +4,10 @@ import { useAuth } from "@/hooks/use-auth";
 import type { PdfBranding } from "@/lib/document-pdf";
 import { getDocumentTemplate, type DocumentTemplateStyle, type DocumentTemplateType } from "@/lib/document-template-types";
 
-export type DocTemplateKind = "quote" | "order" | "invoice" | "package" | "credit_note" | "shipment";
+export type DocTemplateKind = "quote" | "order" | "invoice" | "package" | "credit_note" | "supplier_credit" | "shipment";
 
 function toDocumentTemplateType(kind: DocTemplateKind): DocumentTemplateType {
-  return kind === "credit_note" ? "invoice" : (kind as DocumentTemplateType);
+  return kind === "credit_note" || kind === "supplier_credit" ? "invoice" : (kind as DocumentTemplateType);
 }
 
 /** Returns the tenant's default PDF template mapped to branding options for the PDF builder. */

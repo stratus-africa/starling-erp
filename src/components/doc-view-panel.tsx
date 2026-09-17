@@ -85,7 +85,7 @@ const DOC_CONFIG: Record<
   DocKind,
   {
     table: TableName;
-    lines: TableName;
+    lines: TableName | null;
     label: string;
     tabLabel: string;
     partyField: "customer_id" | "supplier_id";
@@ -175,6 +175,22 @@ const DOC_CONFIG: Record<
     templateKind: "credit_note",
     deletePermission: "sales.delete",
     statuses: ["Draft", "Issued", "Applied", "Void"],
+  },
+  supplier_credit: {
+    table: "supplier_credit_notes",
+    lines: null,
+    label: "Supplier Credit",
+    tabLabel: "Supplier Credit Details",
+    partyField: "supplier_id",
+    partyTable: "suppliers",
+    partyLabel: "Supplier",
+    listPath: "/purchasing/credits",
+    dateField: "date",
+    extraDate: null,
+    prefix: "SCN",
+    templateKind: "supplier_credit",
+    deletePermission: "purchasing.delete",
+    statuses: ["Draft", "Posted", "Voided", "Cancelled"],
   },
   requisition: {
     table: "purchase_requisitions",
@@ -1025,6 +1041,7 @@ function InvoiceOverviewView({ id }: { id: string }) {
 
 function DetailsView({ kind, id }: { kind: DocKind; id: string }) {
   const cfg = DOC_CONFIG[kind];
+  const hasLines = Boolean(cfg.lines);
   const { tenant } = useAuth();
   const isReq = kind === "requisition";
 
@@ -1038,7 +1055,9 @@ function DetailsView({ kind, id }: { kind: DocKind; id: string }) {
 
   const { data: lines = [], isLoading: loadingLines } = useQuery({
     queryKey: [cfg.lines, id, "view"],
+    enabled: hasLines,
     queryFn: async () => {
+      if (!cfg.lines) return [] as Record<string, any>[];
       const { data } = await db
         .from(cfg.lines)
         .select("*")
@@ -1127,12 +1146,48 @@ function DetailsView({ kind, id }: { kind: DocKind; id: string }) {
     return <InvoiceOverviewView id={id} />;
   }
 
+  const statusColor = STATUS_COLORS[doc.status] ?? "bg-slate-100 text-slate-600 border-slate-300";
+
+  if (kind === "supplier_credit") {
+    const currency = doc.currency ?? "USD";
+    const total = Number(doc.total ?? doc.grand_total ?? doc.amount ?? 0);
+    return (
+      <div className="p-6 space-y-6 max-w-4xl">
+        <div>
+          <div className="flex items-center gap-3 mb-1">
+            <h2 className="text-2xl font-bold tracking-tight">{doc.number ?? "—"}</h2>
+            {doc.status && (
+              <span className={`rounded border px-2.5 py-0.5 text-xs font-semibold ${statusColor}`}>
+                {doc.status}
+              </span>
+            )}
+          </div>
+          <p className="text-sm text-muted-foreground">Total: {money(total, currency)}</p>
+        </div>
+
+        <div className="grid grid-cols-2 gap-x-8 gap-y-3 rounded-lg border bg-muted/20 px-5 py-4">
+          <MetaRow label="Supplier Credit Number" value={doc.number} />
+          <MetaRow label="Credit Date" value={fmtDate(doc[cfg.dateField])} />
+          <MetaRow label="Supplier" value={party?.name ?? "—"} />
+          <MetaRow label="Currency" value={currency} />
+          <MetaRow label="Created" value={fmtDate(doc.created_at)} />
+          {doc.notes && <MetaRow label="Notes" value={String(doc.notes)} />}
+        </div>
+
+        <div className="flex justify-end">
+          <div className="w-full max-w-xs space-y-2 rounded-lg border bg-muted/20 px-5 py-4">
+            <TotalsRow label="Credit Amount" value={money(total, currency)} bold />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   const currency = doc.currency ?? "USD";
   const subtotal = Number(doc.subtotal ?? 0);
   const discountTotal = Number(doc.discount_total ?? 0);
   const taxTotal = Number(doc.tax_total ?? 0);
   const grandTotal = Number(doc.grand_total ?? doc.amount ?? 0);
-  const statusColor = STATUS_COLORS[doc.status] ?? "bg-slate-100 text-slate-600 border-slate-300";
 
   return (
     <div className="p-6 space-y-6 max-w-4xl">
@@ -1564,10 +1619,12 @@ export function DocViewPanel({ kind, id, embedded = false, onClose, onSaved }: D
   });
 
   // Fetch lines for PDF download
+  const hasLines = Boolean(cfg.lines);
   const { data: lines = [] } = useQuery({
     queryKey: [cfg.lines, id, "view"],
-    enabled: !isNew,
+    enabled: !isNew && hasLines,
     queryFn: async () => {
+      if (!cfg.lines) return [] as Record<string, any>[];
       const { data } = await db
         .from(cfg.lines)
         .select("*")
@@ -1601,10 +1658,12 @@ export function DocViewPanel({ kind, id, embedded = false, onClose, onSaved }: D
         .update({ deleted_at: new Date().toISOString() })
         .eq("id", id);
       if (error) throw error;
-      await supabase
-        .from(cfg.lines as any)
-        .update({ deleted_at: new Date().toISOString() })
-        .eq("document_id", id);
+      if (cfg.lines) {
+        await supabase
+          .from(cfg.lines as any)
+          .update({ deleted_at: new Date().toISOString() })
+          .eq("document_id", id);
+      }
     },
     onSuccess: () => {
       toast.success(`${cfg.label} deleted`);
@@ -1630,14 +1689,14 @@ export function DocViewPanel({ kind, id, embedded = false, onClose, onSaved }: D
         : []),
       { label: "Status", value: String(doc?.status ?? "") },
     ],
-    lines: lines.map((l) => ({
+    lines: hasLines ? lines.map((l) => ({
       description: l.description || "",
       quantity: Number(l.quantity ?? 0),
       unit_price: Number(l.unit_price ?? 0),
       discount_pct: Number(l.discount_pct ?? 0),
       tax_pct: Number(l.tax_pct ?? 0),
       line_total: Number(l.line_total ?? 0),
-    })),
+    })) : [],
     totals: {
       subtotal: Number(doc?.subtotal ?? 0),
       discount_total: Number(doc?.discount_total ?? 0),

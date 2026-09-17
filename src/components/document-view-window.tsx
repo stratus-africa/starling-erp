@@ -55,7 +55,7 @@ export function DocumentViewWindow({
 }) {
   const nav = useNavigate();
   const { can } = useAuth();
-  const permissionModule = kind === "bill" || kind === "po" ? "purchasing" : "sales";
+  const permissionModule = kind === "bill" || kind === "po" || kind === "supplier_credit" ? "purchasing" : "sales";
   const canWrite = can([`${permissionModule}.create`, `${permissionModule}.update`]);
   const canVoid =
     kind === "invoice" || kind === "credit_note" ? can("sales.void") : kind === "bill" ? can("purchasing.void") : false;
@@ -76,7 +76,7 @@ export function DocumentViewWindow({
   });
   const rows = data?.rows ?? [];
   const total = data?.count ?? 0;
-  const isPurchasingDocument = kind === "po" || kind === "bill";
+  const isPurchasingDocument = kind === "po" || kind === "bill" || kind === "supplier_credit";
   const partyIds = useMemo(
     () => Array.from(new Set(rows.map((r: any) => r[isPurchasingDocument ? "supplier_id" : "customer_id"]).filter(Boolean))),
     [isPurchasingDocument, rows],
@@ -184,11 +184,11 @@ export function DocumentViewWindow({
                   <div className="flex items-center justify-between gap-2">
                     <span className="truncate text-sm font-medium">{row.number || "Untitled"}</span>
                     <span className="shrink-0 font-mono text-xs">
-                      {money(row.grand_total ?? row.amount, row.currency)}
+                      {money(row.grand_total ?? row.amount ?? row.total, row.currency)}
                     </span>
                   </div>
                   <div className="mt-1 truncate text-xs text-muted-foreground">
-                    {row.customer_name || partyNames[row[isPurchasingDocument ? "supplier_id" : "customer_id"]] || row[isPurchasingDocument ? "supplier_id" : "customer_id"] || (isPurchasingDocument ? "No supplier" : "No customer")}
+                    {(kind === "supplier_credit" ? row.supplier_name : row.customer_name) || partyNames[row[isPurchasingDocument ? "supplier_id" : "customer_id"]] || row[isPurchasingDocument ? "supplier_id" : "customer_id"] || (isPurchasingDocument ? "No supplier" : "No customer")}
                   </div>
                   <div className="mt-1 flex items-center justify-between text-[11px] text-muted-foreground">
                     <span>
@@ -255,7 +255,7 @@ export function DocumentViewWindow({
                   </Select>
                 ))}
               </div>
-              {isLoading ? <div className="flex justify-center p-10"><Loader2 className="h-4 w-4 animate-spin text-muted-foreground" /></div> : rows.length === 0 ? <div className="rounded-lg border border-dashed p-10 text-center text-sm text-muted-foreground">No documents found.</div> : <div className="overflow-x-auto rounded-lg border bg-background"><table className="w-full text-sm"><thead><tr className="border-b bg-muted/40 text-xs uppercase tracking-wide text-muted-foreground"><th className="px-4 py-3 text-left">{kind === "order" ? "Sales Order Number" : kind === "invoice" ? "Invoice Number" : "Quote Number"}</th>{kind === "order" && <th className="px-4 py-3 text-left">Date</th>}<th className="px-4 py-3 text-left">Customer Name</th><th className="px-4 py-3 text-right">{kind === "order" ? "Total Amount" : kind === "invoice" ? "Invoice Total" : "Quote Total"}</th><th className="px-4 py-3 text-left">Status</th></tr></thead><tbody>{rows.map((row: any) => <tr key={row.id} role="button" tabIndex={0} onClick={() => nav({ to: `${window.location.pathname.replace(/\/$/, "")}/${row.id}` as never })} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") nav({ to: `${window.location.pathname.replace(/\/$/, "")}/${row.id}` as never }); }} className="cursor-pointer border-b transition-colors hover:bg-muted/40"><td className="px-4 py-3 font-mono text-xs font-semibold text-primary">{row.number || "Untitled"}</td>{kind === "order" && <td className="px-4 py-3 text-xs text-muted-foreground">{row.date ? new Date(row.date).toLocaleDateString() : "—"}</td>}<td className="px-4 py-3">{row.customer_name || customerNames[row.customer_id] || row.customer_id || "No customer"}</td><td className="px-4 py-3 text-right font-mono tabular-nums">{money(row.grand_total ?? row.amount, row.currency)}</td><td className="px-4 py-3"><Badge variant="outline" className={`border-0 text-[10px] ${statusVariant[row.status] ?? "text-muted-foreground"}`}>{row.status ?? "Draft"}</Badge></td></tr>)}</tbody></table></div>}
+              {isLoading ? <div className="flex justify-center p-10"><Loader2 className="h-4 w-4 animate-spin text-muted-foreground" /></div> : rows.length === 0 ? <div className="rounded-lg border border-dashed p-10 text-center text-sm text-muted-foreground">No documents found.</div> : <div className="overflow-x-auto rounded-lg border bg-background"><table className="w-full text-sm"><thead><tr className="border-b bg-muted/40 text-xs uppercase tracking-wide text-muted-foreground"><th className="px-4 py-3 text-left">{kind === "order" ? "Sales Order Number" : kind === "invoice" ? "Invoice Number" : kind === "supplier_credit" ? "Supplier Credit Number" : "Quote Number"}</th>{kind === "order" && <th className="px-4 py-3 text-left">Date</th>}<th className="px-4 py-3 text-left">{kind === "supplier_credit" ? "Supplier Name" : "Customer Name"}</th><th className="px-4 py-3 text-right">{kind === "order" ? "Total Amount" : kind === "invoice" ? "Invoice Total" : kind === "supplier_credit" ? "Credit Amount" : "Quote Total"}</th><th className="px-4 py-3 text-left">Status</th></tr></thead><tbody>{rows.map((row: any) => <tr key={row.id} role="button" tabIndex={0} onClick={() => nav({ to: `${window.location.pathname.replace(/\/$/, "")}/${row.id}` as never })} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") nav({ to: `${window.location.pathname.replace(/\/$/, "")}/${row.id}` as never }); }} className="cursor-pointer border-b transition-colors hover:bg-muted/40"><td className="px-4 py-3 font-mono text-xs font-semibold text-primary">{row.number || "Untitled"}</td>{kind === "order" && <td className="px-4 py-3 text-xs text-muted-foreground">{row.date ? new Date(row.date).toLocaleDateString() : "—"}</td>}<td className="px-4 py-3">{kind === "supplier_credit" ? row.supplier_name || partyNames[row.supplier_id] || row.supplier_id || "No supplier" : row.customer_name || customerNames[row.customer_id] || row.customer_id || "No customer"}</td><td className="px-4 py-3 text-right font-mono tabular-nums">{money(row.grand_total ?? row.amount ?? row.total, row.currency)}</td><td className="px-4 py-3"><Badge variant="outline" className={`border-0 text-[10px] ${statusVariant[row.status] ?? "text-muted-foreground"}`}>{row.status ?? "Draft"}</Badge></td></tr>)}</tbody></table></div>}
               <div className="mt-3 flex items-center justify-between text-[11px] text-muted-foreground"><span>Page {page} · {total}</span><div className="flex gap-1"><Button variant="outline" size="sm" className="h-7 px-2" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>‹</Button><Button variant="outline" size="sm" className="h-7 px-2" disabled={page * pageSize >= total} onClick={() => setPage((p) => p + 1)}>›</Button></div></div>
             </div>
           ) : creating ? (
