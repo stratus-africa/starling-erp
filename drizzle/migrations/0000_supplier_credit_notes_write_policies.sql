@@ -1,0 +1,4 @@
+CREATE POLICY supplier_credit_notes_insert ON public.supplier_credit_notes FOR INSERT TO authenticated WITH CHECK ((tenant_id = current_tenant_id()) AND has_permission('purchasing.create'::text));
+CREATE POLICY supplier_credit_notes_update ON public.supplier_credit_notes FOR UPDATE TO authenticated USING ((tenant_id = current_tenant_id()) AND has_permission('purchasing.update'::text)) WITH CHECK (tenant_id = current_tenant_id());
+CREATE POLICY supplier_credit_notes_delete ON public.supplier_credit_notes FOR DELETE TO authenticated USING ((tenant_id = current_tenant_id()) AND has_permission('purchasing.delete'::text));
+GRANT INSERT, UPDATE, DELETE ON public.supplier_credit_notes TO authenticated;
