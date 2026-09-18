@@ -133,6 +133,7 @@ export function DataModulePage(props: DataModulePageProps) {
     defaultOrder = "created_at",
     rowHref,
     createHref,
+    headerActions,
     postAction,
     voidAction,
     filterFields = [],
@@ -257,6 +258,7 @@ export function DataModulePage(props: DataModulePageProps) {
           <Button variant="outline" size="sm">
             <Download className="h-4 w-4 mr-1.5" /> Export
           </Button>
+          {headerActions}
           {canWrite &&
             (createHref ? (
               <Button asChild size="sm">
