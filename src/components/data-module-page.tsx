@@ -84,6 +84,7 @@ interface DataModulePageProps {
   defaultOrder?: string;
   rowHref?: (row: any) => string;
   createHref?: string;
+  headerActions?: ReactNode;
   filterFields?: { key: string; label: string; options: string[]; type?: "select" | "date" }[];
   postAction?: {
     rpc: string;
