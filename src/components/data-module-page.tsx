@@ -84,6 +84,7 @@ interface DataModulePageProps {
   defaultOrder?: string;
   rowHref?: (row: any) => string;
   createHref?: string;
+  headerActions?: ReactNode;
   filterFields?: { key: string; label: string; options: string[]; type?: "select" | "date" }[];
   postAction?: {
     rpc: string;
@@ -132,6 +133,7 @@ export function DataModulePage(props: DataModulePageProps) {
     defaultOrder = "created_at",
     rowHref,
     createHref,
+    headerActions,
     postAction,
     voidAction,
     filterFields = [],
@@ -256,6 +258,7 @@ export function DataModulePage(props: DataModulePageProps) {
           <Button variant="outline" size="sm">
             <Download className="h-4 w-4 mr-1.5" /> Export
           </Button>
+          {headerActions}
           {canWrite &&
             (createHref ? (
               <Button asChild size="sm">
