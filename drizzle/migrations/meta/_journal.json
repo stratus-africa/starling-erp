@@ -8,6 +8,13 @@
       "when": 1789625959619,
       "tag": "0000_supplier_credit_notes_write_policies",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1789745728650,
+      "tag": "0001_views_security_invoker",
+      "breakpoints": true
     }
   ]
 }
