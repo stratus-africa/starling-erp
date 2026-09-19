@@ -3595,6 +3595,7 @@ export type Database = {
           id: string
           item_id: string | null
           line_no: number
+          location_id: string | null
           quantity: number
           tenant_id: string
           updated_at: string
@@ -3607,6 +3608,7 @@ export type Database = {
           id?: string
           item_id?: string | null
           line_no?: number
+          location_id?: string | null
           quantity?: number
           tenant_id: string
           updated_at?: string
@@ -3619,6 +3621,7 @@ export type Database = {
           id?: string
           item_id?: string | null
           line_no?: number
+          location_id?: string | null
           quantity?: number
           tenant_id?: string
           updated_at?: string
@@ -3643,6 +3646,13 @@ export type Database = {
             columns: ["item_id"]
             isOneToOne: false
             referencedRelation: "items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "package_lines_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "warehouse_locations"
             referencedColumns: ["id"]
           },
           {

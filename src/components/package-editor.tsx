@@ -54,14 +54,21 @@ interface Line {
   description: string;
   quantity: number;
   sales_order_line_id: string | null;
+  location_id: string | null;
 }
 
-const rpcClient = db as typeof db & {
+const NO_LOCATION = "__none__";
+
+
+interface RpcClient {
   rpc: <T>(
     fn: string,
     args: Record<string, unknown>,
   ) => Promise<{ data: T | null; error: { message?: string } | null }>;
-};
+}
+
+const rpcClient: RpcClient = db as RpcClient;
+
 
 export function PackageEditor({ id }: { id: string }) {
   const qc = useQueryClient();
@@ -172,21 +179,55 @@ export function PackageEditor({ id }: { id: string }) {
   });
   const [lines, setLines] = useState<Line[]>([]);
 
+  const shipFromWarehouse = (header.warehouse_id as string) || null;
+
+  // Stock available per bin/location for the selected ship-from warehouse
+  const { data: binStock = [] } = useQuery({
+    queryKey: ["inventory_location_stock", "for-package", shipFromWarehouse],
+    enabled: !!shipFromWarehouse,
+    queryFn: async () => {
+      const { data, error } = await db
+        .from("inventory_location_stock")
+        .select("item_id,location_id,location_code,zone_name,on_hand")
+        .eq("warehouse_id", shipFromWarehouse!)
+        .order("location_code");
+      if (error) throw error;
+      return (data ?? []) as Row[];
+    },
+  });
+
+  const binsForItem = (itemId: string | null) =>
+    itemId ? binStock.filter((b) => b.item_id === itemId && Number(b.on_hand || 0) > 0) : [];
+  const binLabel = (locationId: string | null) => {
+    const bin = binStock.find((b) => b.location_id === locationId);
+    if (!bin) return "Any bin";
+    return `${bin.location_code}${bin.zone_name ? ` · ${bin.zone_name}` : ""}`;
+  };
+  const binOnHand = (itemId: string | null, locationId: string | null) =>
+    Number(
+      binStock.find((b) => b.item_id === itemId && b.location_id === locationId)?.on_hand ?? 0,
+    );
+
+
   useEffect(() => {
     if (doc) setHeader(doc);
   }, [doc]);
   useEffect(() => {
     if (linesData)
       setLines(
-        linesData.map((l) => ({
-          line_no: l.line_no,
-          item_id: l.item_id,
-          description: l.description ?? "",
-          quantity: Number(l.quantity),
-          sales_order_line_id: null,
-        })),
+        linesData.map(
+          (l): Line => ({
+            line_no: l.line_no,
+            item_id: l.item_id,
+            description: l.description ?? "",
+            quantity: Number(l.quantity),
+            sales_order_line_id: null,
+            location_id: (l.location_id as string | null) ?? null,
+          }),
+        ),
       );
   }, [linesData]);
+
 
   const sourceOrderId = header.sales_order_id || null;
 
@@ -236,7 +277,12 @@ export function PackageEditor({ id }: { id: string }) {
     },
   });
 
-  const packagePickerItems = getPackagePickerItems(items, orderLines, sourceOrderId);
+  const packagePickerItems = getPackagePickerItems(
+    items as Array<{ id: string; name?: string; sku?: string }>,
+    orderLines,
+    sourceOrderId,
+  );
+
   const orderLineFor = (itemId: string | null) => orderLines.find((o) => o.item_id === itemId);
   const remainingQty = (itemId: string | null, excludeIdx?: number) => {
     if (!itemId) return 0;
@@ -262,19 +308,45 @@ export function PackageEditor({ id }: { id: string }) {
       prev.length
         ? prev
         : orderLines
-            .map((l) => ({
-              item_id: (l.item_id as string) ?? null,
-              description: (l.description as string) ?? "",
-              quantity: Number(l.quantity || 0) - (packedElsewhere[l.item_id as string] ?? 0),
-              sales_order_line_id: l.id as string,
-            }))
+            .map(
+              (l): Line => ({
+                line_no: 0,
+                item_id: (l.item_id as string) ?? null,
+                description: (l.description as string) ?? "",
+                quantity: Number(l.quantity || 0) - (packedElsewhere[l.item_id as string] ?? 0),
+                sales_order_line_id: l.id as string,
+                location_id: null,
+              }),
+            )
             .filter((l) => l.quantity > 0)
-            .map((l, i) => ({ ...l, line_no: i + 1 })),
+            .map((l, i): Line => ({ ...l, line_no: i + 1 })),
     );
   }, [isNew, orderLines, packedElsewhere]);
 
+  // Default each line to the fullest bin holding that item, once bin stock is known
+  useEffect(() => {
+    if (!binStock.length) return;
+    setLines((prev) => {
+      let changed = false;
+      const next = prev.map((l) => {
+        if (l.location_id) return l;
+        const best = binsForItem(l.item_id).sort(
+          (a, b) => Number(b.on_hand || 0) - Number(a.on_hand || 0),
+        )[0];
+        if (!best) return l;
+        changed = true;
+        return { ...l, location_id: best.location_id as string };
+      });
+      return changed ? next : prev;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [binStock]);
+
   const addLine = () => {
     const open = orderLines.find((o) => remainingQty(o.item_id) > 0);
+    const bestBin = binsForItem((open?.item_id as string) ?? null).sort(
+      (a, b) => Number(b.on_hand || 0) - Number(a.on_hand || 0),
+    )[0];
     setLines((p) => [
       ...p,
       {
@@ -283,9 +355,11 @@ export function PackageEditor({ id }: { id: string }) {
         description: (open?.description as string) ?? "",
         quantity: open ? remainingQty(open.item_id) : 1,
         sales_order_line_id: (open?.id as string) ?? null,
+        location_id: (bestBin?.location_id as string) ?? null,
       },
     ]);
   };
+
   const updateLine = (idx: number, patch: Partial<Line>) =>
     setLines((p) => p.map((l, i) => (i === idx ? { ...l, ...patch } : l)));
   const removeLine = (idx: number) =>
@@ -328,6 +402,21 @@ export function PackageEditor({ id }: { id: string }) {
           `Packed quantity for ${name} is more than the sales order still has outstanding`,
         );
       }
+      const shortBin = lines.findIndex(
+        (l) =>
+          l.location_id &&
+          binOnHand(l.item_id, l.location_id) <
+            lines
+              .filter((x) => x.item_id === l.item_id && x.location_id === l.location_id)
+              .reduce((s, x) => s + (Number(x.quantity) || 0), 0),
+      );
+      if (shortBin >= 0) {
+        throw new Error(
+          `${binLabel(lines[shortBin]!.location_id)} does not hold enough stock for ${
+            lines[shortBin]!.description || "this item"
+          }`,
+        );
+      }
 
       let docId: string | null = isNew ? null : id;
       if (isNew) {
@@ -340,7 +429,9 @@ export function PackageEditor({ id }: { id: string }) {
             sales_order_line_id: line.sales_order_line_id ?? orderLineFor(line.item_id)?.id,
             line_no: index + 1,
             quantity: Number(line.quantity) || 0,
+            location_id: line.location_id,
           })),
+
           _weight: payload.weight,
           _length: payload.length,
           _width: payload.width,
@@ -368,7 +459,9 @@ export function PackageEditor({ id }: { id: string }) {
             item_id: l.item_id || null,
             description: l.description,
             quantity: Number(l.quantity) || 0,
+            location_id: l.location_id || null,
           })),
+
         );
         if (error) throw error;
       }
@@ -713,7 +806,8 @@ export function PackageEditor({ id }: { id: string }) {
               <tr className="border-b bg-muted/10 text-xs uppercase tracking-wide text-muted-foreground">
                 <th className="text-left px-3 py-2 w-8">#</th>
                 <th className="text-left px-3 py-2 min-w-[220px]">Item</th>
-                <th className="text-left px-3 py-2 min-w-[240px]">Description</th>
+                <th className="text-left px-3 py-2 min-w-[200px]">Pick from bin</th>
+                <th className="text-left px-3 py-2 min-w-[200px]">Description</th>
                 <th className="text-right px-3 py-2 w-24">Qty</th>
                 <th className="w-10" />
               </tr>
@@ -721,11 +815,12 @@ export function PackageEditor({ id }: { id: string }) {
             <tbody>
               {lines.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="text-center text-sm text-muted-foreground py-10">
+                  <td colSpan={6} className="text-center text-sm text-muted-foreground py-10">
                     No items packed yet. {editable && "Click Add line to begin."}
                   </td>
                 </tr>
               )}
+
               {lines.map((l, idx) => (
                 <tr key={idx} className="border-b hover:bg-muted/20">
                   <td className="px-3 py-1.5 text-muted-foreground">{idx + 1}</td>
@@ -754,6 +849,36 @@ export function PackageEditor({ id }: { id: string }) {
                       </SelectContent>
                     </Select>
                   </td>
+                  <td className="px-2 py-1.5">
+                    <Select
+                      value={l.location_id ?? NO_LOCATION}
+                      onValueChange={(v) =>
+                        updateLine(idx, { location_id: v === NO_LOCATION ? null : v })
+                      }
+                      disabled={!editable || !shipFromWarehouse}
+                    >
+                      <SelectTrigger className="h-8">
+                        <SelectValue
+                          placeholder={shipFromWarehouse ? "Any bin" : "Pick a warehouse first"}
+                        />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value={NO_LOCATION}>Any bin</SelectItem>
+                        {binsForItem(l.item_id).map((b) => (
+                          <SelectItem key={b.location_id} value={b.location_id}>
+                            {b.location_code}
+                            {b.zone_name ? ` · ${b.zone_name}` : ""} — {Number(b.on_hand)} on hand
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {l.location_id && (
+                      <p className="mt-0.5 text-[10px] text-muted-foreground">
+                        {binOnHand(l.item_id, l.location_id)} available in this bin
+                      </p>
+                    )}
+                  </td>
+
                   <td className="px-2 py-1.5">
                     <Input
                       className="h-8"
