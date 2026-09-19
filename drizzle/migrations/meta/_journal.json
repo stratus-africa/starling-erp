@@ -57,6 +57,13 @@
       "when": 1789835862281,
       "tag": "0007_auto_number_invoices",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1789836161933,
+      "tag": "0008_emit_journal_allow_line_insert",
+      "breakpoints": true
     }
   ]
 }
