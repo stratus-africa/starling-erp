@@ -67,8 +67,18 @@ export function RecordPaymentDialog({
 
       if (kind === "receive") {
         const allocationAmount = Math.min(amt, Math.max(0, balanceDue));
+        let customerId = partyId ? String(partyId) : null;
+        if (!customerId) {
+          const { data: inv } = await (supabase as any)
+            .from("invoices")
+            .select("customer_id")
+            .eq("id", docId)
+            .maybeSingle();
+          customerId = inv?.customer_id ?? null;
+        }
+        if (!customerId) throw new Error("This invoice has no customer set");
         const { data, error } = await (supabase as any).rpc("create_and_post_customer_payment", {
-          _customer_id: partyId,
+          _customer_id: customerId,
           _amount: amt,
           _date: date,
           _payment_method: mode,
