@@ -71,6 +71,13 @@
       "when": 1789836291405,
       "tag": "0009_payments_received_status",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1789836349621,
+      "tag": "0010_auto_number_payments",
+      "breakpoints": true
     }
   ]
 }
