@@ -186,15 +186,19 @@ export function PackageEditor({ id }: { id: string }) {
   useEffect(() => {
     if (linesData)
       setLines(
-        linesData.map((l) => ({
-          line_no: l.line_no,
-          item_id: l.item_id,
-          description: l.description ?? "",
-          quantity: Number(l.quantity),
-          sales_order_line_id: null,
-        })),
+        linesData.map(
+          (l): Line => ({
+            line_no: l.line_no,
+            item_id: l.item_id,
+            description: l.description ?? "",
+            quantity: Number(l.quantity),
+            sales_order_line_id: null,
+            location_id: (l.location_id as string | null) ?? null,
+          }),
+        ),
       );
   }, [linesData]);
+
 
   const sourceOrderId = header.sales_order_id || null;
 
