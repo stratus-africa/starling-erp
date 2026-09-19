@@ -1892,7 +1892,13 @@ export function DocViewPanel({ kind, id, embedded = false, onClose, onSaved }: D
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start">
               {cfg.converts.map((c) => (
-                <DropdownMenuItem key={c.action}>{c.label}</DropdownMenuItem>
+                <DropdownMenuItem
+                  key={c.action}
+                  disabled={convertMutation.isPending}
+                  onClick={() => convertMutation.mutate(c.action)}
+                >
+                  {c.label}
+                </DropdownMenuItem>
               ))}
             </DropdownMenuContent>
           </DropdownMenu>
