@@ -806,7 +806,8 @@ export function PackageEditor({ id }: { id: string }) {
               <tr className="border-b bg-muted/10 text-xs uppercase tracking-wide text-muted-foreground">
                 <th className="text-left px-3 py-2 w-8">#</th>
                 <th className="text-left px-3 py-2 min-w-[220px]">Item</th>
-                <th className="text-left px-3 py-2 min-w-[240px]">Description</th>
+                <th className="text-left px-3 py-2 min-w-[200px]">Pick from bin</th>
+                <th className="text-left px-3 py-2 min-w-[200px]">Description</th>
                 <th className="text-right px-3 py-2 w-24">Qty</th>
                 <th className="w-10" />
               </tr>
@@ -814,11 +815,12 @@ export function PackageEditor({ id }: { id: string }) {
             <tbody>
               {lines.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="text-center text-sm text-muted-foreground py-10">
+                  <td colSpan={6} className="text-center text-sm text-muted-foreground py-10">
                     No items packed yet. {editable && "Click Add line to begin."}
                   </td>
                 </tr>
               )}
+
               {lines.map((l, idx) => (
                 <tr key={idx} className="border-b hover:bg-muted/20">
                   <td className="px-3 py-1.5 text-muted-foreground">{idx + 1}</td>
