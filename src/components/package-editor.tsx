@@ -459,7 +459,9 @@ export function PackageEditor({ id }: { id: string }) {
             item_id: l.item_id || null,
             description: l.description,
             quantity: Number(l.quantity) || 0,
+            location_id: l.location_id || null,
           })),
+
         );
         if (error) throw error;
       }
