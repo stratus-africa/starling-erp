@@ -133,9 +133,9 @@ function Matrix({
 }
 
 function WorkspacePermissionsContent() {
-  const { hasPermission } = usePlatformAuth();
+  const { canPlatform } = usePlatformAuth();
   const queryClient = useQueryClient();
-  const canEdit = hasPermission(PLATFORM_PERMISSIONS.tenantsUpdate);
+  const canEdit = canPlatform(PLATFORM_PERMISSIONS.tenantsUpdate);
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<string | null>(null);
 
