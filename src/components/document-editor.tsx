@@ -821,6 +821,11 @@ export function DocumentEditor({
       delete headerPayload.updated_at;
       delete headerPayload.search_vec;
 
+      // Empty date/text inputs must be null, not "" (Postgres rejects "" for date/uuid)
+      for (const key of Object.keys(headerPayload)) {
+        if (headerPayload[key] === "") headerPayload[key] = null;
+      }
+
       let docId: string | null = isNew ? null : id;
       if (isNew) {
         if (!headerPayload.number)

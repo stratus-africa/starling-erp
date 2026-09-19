@@ -1096,9 +1096,13 @@ function DetailsView({ kind, id }: { kind: DocKind; id: string }) {
     queryKey: [cfg.partyTable, "detail-view", doc?.[cfg.partyField]],
     enabled: !isReq && !!doc?.[cfg.partyField],
     queryFn: async () => {
+      const columns =
+        cfg.partyTable === "customers"
+          ? "id,name,email,phone,billing_address,shipping_address"
+          : "id,name,email,phone";
       const { data } = await db
         .from(cfg.partyTable)
-        .select("id,name,email,phone,billing_address,shipping_address")
+        .select(columns)
         .eq("id", doc![cfg.partyField])
         .maybeSingle();
       return data as Record<string, any> | null;
@@ -1634,7 +1638,7 @@ export function DocViewPanel({ kind, id, embedded = false, onClose, onSaved }: D
     queryFn: async () => {
       const { data } = await db
         .from(cfg.table)
-        .select("number,status,posted_at,grand_total,amount,currency,notes")
+        .select("*")
         .eq("id", id)
         .maybeSingle();
       return data as Record<string, any> | null;
@@ -1670,6 +1674,20 @@ export function DocViewPanel({ kind, id, embedded = false, onClose, onSaved }: D
         .maybeSingle();
       return data as Record<string, any> | null;
     },
+  });
+
+  const canPost = can([`${permModule}.post`, "accounting.post"]);
+  const postMutation = useMutation({
+    mutationFn: async () => {
+      const { error } = await db.rpc("post_bill", { _bill_id: id });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Bill posted");
+      qc.invalidateQueries({ queryKey: [cfg.table] });
+      qc.invalidateQueries({ queryKey: [cfg.table, id] });
+    },
+    onError: (error: Error) => toast.error(error.message),
   });
 
   const deleteMutation = useMutation({
@@ -1794,6 +1812,19 @@ export function DocViewPanel({ kind, id, embedded = false, onClose, onSaved }: D
               Record Payment
             </Button>
           )}
+
+        {kind === "bill" && canPost && !doc?.posted_at && (
+          <Button
+            variant="default"
+            size="sm"
+            className="h-8 gap-1.5"
+            disabled={postMutation.isPending}
+            onClick={() => postMutation.mutate()}
+          >
+            <Send className="h-3.5 w-3.5" />
+            Post Bill
+          </Button>
+        )}
 
         {/* Mails */}
         <DropdownMenu>
