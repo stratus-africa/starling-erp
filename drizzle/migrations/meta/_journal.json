@@ -50,6 +50,34 @@
       "when": 1789835554561,
       "tag": "0006_package_post_updates_order_fulfillment",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1789835862281,
+      "tag": "0007_auto_number_invoices",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1789836161933,
+      "tag": "0008_emit_journal_allow_line_insert",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1789836291405,
+      "tag": "0009_payments_received_status",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1789836349621,
+      "tag": "0010_auto_number_payments",
+      "breakpoints": true
     }
   ]
 }

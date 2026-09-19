@@ -4075,6 +4075,7 @@ export type Database = {
           reversal_reference: string | null
           reversed_at: string | null
           reversed_by: string | null
+          status: string
           tenant_id: string
           updated_at: string
           voided_at: string | null
@@ -4100,6 +4101,7 @@ export type Database = {
           reversal_reference?: string | null
           reversed_at?: string | null
           reversed_by?: string | null
+          status?: string
           tenant_id: string
           updated_at?: string
           voided_at?: string | null
@@ -4125,6 +4127,7 @@ export type Database = {
           reversal_reference?: string | null
           reversed_at?: string | null
           reversed_by?: string | null
+          status?: string
           tenant_id?: string
           updated_at?: string
           voided_at?: string | null
