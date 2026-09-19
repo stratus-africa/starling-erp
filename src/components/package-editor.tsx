@@ -54,7 +54,11 @@ interface Line {
   description: string;
   quantity: number;
   sales_order_line_id: string | null;
+  location_id: string | null;
 }
+
+const NO_LOCATION = "__none__";
+
 
 interface RpcClient {
   rpc: <T>(
@@ -155,6 +159,7 @@ export function PackageEditor({ id }: { id: string }) {
     },
     staleTime: 30_000,
   });
+
 
   const [header, setHeader] = useState<Row>({
     number: "",
