@@ -402,6 +402,21 @@ export function PackageEditor({ id }: { id: string }) {
           `Packed quantity for ${name} is more than the sales order still has outstanding`,
         );
       }
+      const shortBin = lines.findIndex(
+        (l) =>
+          l.location_id &&
+          binOnHand(l.item_id, l.location_id) <
+            lines
+              .filter((x) => x.item_id === l.item_id && x.location_id === l.location_id)
+              .reduce((s, x) => s + (Number(x.quantity) || 0), 0),
+      );
+      if (shortBin >= 0) {
+        throw new Error(
+          `${binLabel(lines[shortBin]!.location_id)} does not hold enough stock for ${
+            lines[shortBin]!.description || "this item"
+          }`,
+        );
+      }
 
       let docId: string | null = isNew ? null : id;
       if (isNew) {
@@ -414,7 +429,9 @@ export function PackageEditor({ id }: { id: string }) {
             sales_order_line_id: line.sales_order_line_id ?? orderLineFor(line.item_id)?.id,
             line_no: index + 1,
             quantity: Number(line.quantity) || 0,
+            location_id: line.location_id,
           })),
+
           _weight: payload.weight,
           _length: payload.length,
           _width: payload.width,
