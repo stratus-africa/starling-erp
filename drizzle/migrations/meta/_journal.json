@@ -15,6 +15,13 @@
       "when": 1789745728650,
       "tag": "0001_views_security_invoker",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1789803998083,
+      "tag": "0002_restrict_function_execute_to_authenticated",
+      "breakpoints": true
     }
   ]
 }
