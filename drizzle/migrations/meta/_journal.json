@@ -43,6 +43,13 @@
       "when": 1789835473205,
       "tag": "0005_fix_validate_posting_target_found",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1789835554561,
+      "tag": "0006_package_post_updates_order_fulfillment",
+      "breakpoints": true
     }
   ]
 }
