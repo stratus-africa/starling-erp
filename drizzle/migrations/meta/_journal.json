@@ -22,6 +22,13 @@
       "when": 1789803998083,
       "tag": "0002_restrict_function_execute_to_authenticated",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1789804132756,
+      "tag": "0003_fix_remaining_function_search_paths",
+      "breakpoints": true
     }
   ]
 }
