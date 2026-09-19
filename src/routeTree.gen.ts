@@ -27,6 +27,7 @@ import { Route as SuperAdminSecurityEventsRouteImport } from './routes/super-adm
 import { Route as SuperAdminSecurityRouteImport } from './routes/super-admin/security'
 import { Route as SuperAdminRolesRouteImport } from './routes/super-admin/roles'
 import { Route as SuperAdminPlansRouteImport } from './routes/super-admin/plans'
+import { Route as SuperAdminPermissionsRouteImport } from './routes/super-admin/permissions'
 import { Route as SuperAdminPaymentsRouteImport } from './routes/super-admin/payments'
 import { Route as SuperAdminJobsRouteImport } from './routes/super-admin/jobs'
 import { Route as SuperAdminInvoicesRouteImport } from './routes/super-admin/invoices'
@@ -79,6 +80,8 @@ import { Route as AuthenticatedPurchasingPaymentsRouteImport } from './routes/_a
 import { Route as AuthenticatedPurchasingCreditsRouteImport } from './routes/_authenticated/purchasing.credits'
 import { Route as AuthenticatedManufacturingRunsRouteImport } from './routes/_authenticated/manufacturing.runs'
 import { Route as AuthenticatedManufacturingPlanningRouteImport } from './routes/_authenticated/manufacturing.planning'
+import { Route as AuthenticatedInventoryStockAuditRouteImport } from './routes/_authenticated/inventory_.stock-audit'
+import { Route as AuthenticatedInventoryBinUsageRouteImport } from './routes/_authenticated/inventory_.bin-usage'
 import { Route as AuthenticatedInventoryTransfersRouteImport } from './routes/_authenticated/inventory.transfers'
 import { Route as AuthenticatedInventorySerialsRouteImport } from './routes/_authenticated/inventory.serials'
 import { Route as AuthenticatedInventoryLotsRouteImport } from './routes/_authenticated/inventory.lots'
@@ -266,6 +269,11 @@ const SuperAdminRolesRoute = SuperAdminRolesRouteImport.update({
 const SuperAdminPlansRoute = SuperAdminPlansRouteImport.update({
   id: '/plans',
   path: '/plans',
+  getParentRoute: () => SuperAdminRouteRoute,
+} as any)
+const SuperAdminPermissionsRoute = SuperAdminPermissionsRouteImport.update({
+  id: '/permissions',
+  path: '/permissions',
   getParentRoute: () => SuperAdminRouteRoute,
 } as any)
 const SuperAdminPaymentsRoute = SuperAdminPaymentsRouteImport.update({
@@ -558,6 +566,18 @@ const AuthenticatedManufacturingPlanningRoute =
   AuthenticatedManufacturingPlanningRouteImport.update({
     id: '/manufacturing/planning',
     path: '/manufacturing/planning',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedInventoryStockAuditRoute =
+  AuthenticatedInventoryStockAuditRouteImport.update({
+    id: '/inventory_/stock-audit',
+    path: '/inventory/stock-audit',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedInventoryBinUsageRoute =
+  AuthenticatedInventoryBinUsageRouteImport.update({
+    id: '/inventory_/bin-usage',
+    path: '/inventory/bin-usage',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedInventoryTransfersRoute =
@@ -1168,6 +1188,7 @@ export interface FileRoutesByFullPath {
   '/super-admin/invoices': typeof SuperAdminInvoicesRoute
   '/super-admin/jobs': typeof SuperAdminJobsRoute
   '/super-admin/payments': typeof SuperAdminPaymentsRoute
+  '/super-admin/permissions': typeof SuperAdminPermissionsRoute
   '/super-admin/plans': typeof SuperAdminPlansRoute
   '/super-admin/roles': typeof SuperAdminRolesRoute
   '/super-admin/security': typeof SuperAdminSecurityRouteWithChildren
@@ -1208,6 +1229,8 @@ export interface FileRoutesByFullPath {
   '/inventory/lots': typeof AuthenticatedInventoryLotsRoute
   '/inventory/serials': typeof AuthenticatedInventorySerialsRoute
   '/inventory/transfers': typeof AuthenticatedInventoryTransfersRoute
+  '/inventory/bin-usage': typeof AuthenticatedInventoryBinUsageRoute
+  '/inventory/stock-audit': typeof AuthenticatedInventoryStockAuditRoute
   '/manufacturing/planning': typeof AuthenticatedManufacturingPlanningRoute
   '/manufacturing/runs': typeof AuthenticatedManufacturingRunsRoute
   '/purchasing/credits': typeof AuthenticatedPurchasingCreditsRouteWithChildren
@@ -1335,6 +1358,7 @@ export interface FileRoutesByTo {
   '/super-admin/invoices': typeof SuperAdminInvoicesRoute
   '/super-admin/jobs': typeof SuperAdminJobsRoute
   '/super-admin/payments': typeof SuperAdminPaymentsRoute
+  '/super-admin/permissions': typeof SuperAdminPermissionsRoute
   '/super-admin/plans': typeof SuperAdminPlansRoute
   '/super-admin/roles': typeof SuperAdminRolesRoute
   '/super-admin/security': typeof SuperAdminSecurityRouteWithChildren
@@ -1375,6 +1399,8 @@ export interface FileRoutesByTo {
   '/inventory/lots': typeof AuthenticatedInventoryLotsRoute
   '/inventory/serials': typeof AuthenticatedInventorySerialsRoute
   '/inventory/transfers': typeof AuthenticatedInventoryTransfersRoute
+  '/inventory/bin-usage': typeof AuthenticatedInventoryBinUsageRoute
+  '/inventory/stock-audit': typeof AuthenticatedInventoryStockAuditRoute
   '/manufacturing/planning': typeof AuthenticatedManufacturingPlanningRoute
   '/manufacturing/runs': typeof AuthenticatedManufacturingRunsRoute
   '/purchasing/credits': typeof AuthenticatedPurchasingCreditsRouteWithChildren
@@ -1504,6 +1530,7 @@ export interface FileRoutesById {
   '/super-admin/invoices': typeof SuperAdminInvoicesRoute
   '/super-admin/jobs': typeof SuperAdminJobsRoute
   '/super-admin/payments': typeof SuperAdminPaymentsRoute
+  '/super-admin/permissions': typeof SuperAdminPermissionsRoute
   '/super-admin/plans': typeof SuperAdminPlansRoute
   '/super-admin/roles': typeof SuperAdminRolesRoute
   '/super-admin/security': typeof SuperAdminSecurityRouteWithChildren
@@ -1545,6 +1572,8 @@ export interface FileRoutesById {
   '/_authenticated/inventory/lots': typeof AuthenticatedInventoryLotsRoute
   '/_authenticated/inventory/serials': typeof AuthenticatedInventorySerialsRoute
   '/_authenticated/inventory/transfers': typeof AuthenticatedInventoryTransfersRoute
+  '/_authenticated/inventory_/bin-usage': typeof AuthenticatedInventoryBinUsageRoute
+  '/_authenticated/inventory_/stock-audit': typeof AuthenticatedInventoryStockAuditRoute
   '/_authenticated/manufacturing/planning': typeof AuthenticatedManufacturingPlanningRoute
   '/_authenticated/manufacturing/runs': typeof AuthenticatedManufacturingRunsRoute
   '/_authenticated/purchasing/credits': typeof AuthenticatedPurchasingCreditsRouteWithChildren
@@ -1675,6 +1704,7 @@ export interface FileRouteTypes {
     | '/super-admin/invoices'
     | '/super-admin/jobs'
     | '/super-admin/payments'
+    | '/super-admin/permissions'
     | '/super-admin/plans'
     | '/super-admin/roles'
     | '/super-admin/security'
@@ -1715,6 +1745,8 @@ export interface FileRouteTypes {
     | '/inventory/lots'
     | '/inventory/serials'
     | '/inventory/transfers'
+    | '/inventory/bin-usage'
+    | '/inventory/stock-audit'
     | '/manufacturing/planning'
     | '/manufacturing/runs'
     | '/purchasing/credits'
@@ -1842,6 +1874,7 @@ export interface FileRouteTypes {
     | '/super-admin/invoices'
     | '/super-admin/jobs'
     | '/super-admin/payments'
+    | '/super-admin/permissions'
     | '/super-admin/plans'
     | '/super-admin/roles'
     | '/super-admin/security'
@@ -1882,6 +1915,8 @@ export interface FileRouteTypes {
     | '/inventory/lots'
     | '/inventory/serials'
     | '/inventory/transfers'
+    | '/inventory/bin-usage'
+    | '/inventory/stock-audit'
     | '/manufacturing/planning'
     | '/manufacturing/runs'
     | '/purchasing/credits'
@@ -2010,6 +2045,7 @@ export interface FileRouteTypes {
     | '/super-admin/invoices'
     | '/super-admin/jobs'
     | '/super-admin/payments'
+    | '/super-admin/permissions'
     | '/super-admin/plans'
     | '/super-admin/roles'
     | '/super-admin/security'
@@ -2051,6 +2087,8 @@ export interface FileRouteTypes {
     | '/_authenticated/inventory/lots'
     | '/_authenticated/inventory/serials'
     | '/_authenticated/inventory/transfers'
+    | '/_authenticated/inventory_/bin-usage'
+    | '/_authenticated/inventory_/stock-audit'
     | '/_authenticated/manufacturing/planning'
     | '/_authenticated/manufacturing/runs'
     | '/_authenticated/purchasing/credits'
@@ -2293,6 +2331,13 @@ declare module '@tanstack/react-router' {
       path: '/plans'
       fullPath: '/super-admin/plans'
       preLoaderRoute: typeof SuperAdminPlansRouteImport
+      parentRoute: typeof SuperAdminRouteRoute
+    }
+    '/super-admin/permissions': {
+      id: '/super-admin/permissions'
+      path: '/permissions'
+      fullPath: '/super-admin/permissions'
+      preLoaderRoute: typeof SuperAdminPermissionsRouteImport
       parentRoute: typeof SuperAdminRouteRoute
     }
     '/super-admin/payments': {
@@ -2657,6 +2702,20 @@ declare module '@tanstack/react-router' {
       path: '/manufacturing/planning'
       fullPath: '/manufacturing/planning'
       preLoaderRoute: typeof AuthenticatedManufacturingPlanningRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/inventory_/stock-audit': {
+      id: '/_authenticated/inventory_/stock-audit'
+      path: '/inventory/stock-audit'
+      fullPath: '/inventory/stock-audit'
+      preLoaderRoute: typeof AuthenticatedInventoryStockAuditRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/inventory_/bin-usage': {
+      id: '/_authenticated/inventory_/bin-usage'
+      path: '/inventory/bin-usage'
+      fullPath: '/inventory/bin-usage'
+      preLoaderRoute: typeof AuthenticatedInventoryBinUsageRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/inventory/transfers': {
@@ -3577,6 +3636,8 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedInventoryLotsRoute: typeof AuthenticatedInventoryLotsRoute
   AuthenticatedInventorySerialsRoute: typeof AuthenticatedInventorySerialsRoute
   AuthenticatedInventoryTransfersRoute: typeof AuthenticatedInventoryTransfersRoute
+  AuthenticatedInventoryBinUsageRoute: typeof AuthenticatedInventoryBinUsageRoute
+  AuthenticatedInventoryStockAuditRoute: typeof AuthenticatedInventoryStockAuditRoute
   AuthenticatedManufacturingPlanningRoute: typeof AuthenticatedManufacturingPlanningRoute
   AuthenticatedManufacturingRunsRoute: typeof AuthenticatedManufacturingRunsRoute
   AuthenticatedPurchasingCreditsRoute: typeof AuthenticatedPurchasingCreditsRouteWithChildren
@@ -3687,6 +3748,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedInventoryLotsRoute: AuthenticatedInventoryLotsRoute,
   AuthenticatedInventorySerialsRoute: AuthenticatedInventorySerialsRoute,
   AuthenticatedInventoryTransfersRoute: AuthenticatedInventoryTransfersRoute,
+  AuthenticatedInventoryBinUsageRoute: AuthenticatedInventoryBinUsageRoute,
+  AuthenticatedInventoryStockAuditRoute: AuthenticatedInventoryStockAuditRoute,
   AuthenticatedManufacturingPlanningRoute:
     AuthenticatedManufacturingPlanningRoute,
   AuthenticatedManufacturingRunsRoute: AuthenticatedManufacturingRunsRoute,
@@ -3810,6 +3873,7 @@ interface SuperAdminRouteRouteChildren {
   SuperAdminInvoicesRoute: typeof SuperAdminInvoicesRoute
   SuperAdminJobsRoute: typeof SuperAdminJobsRoute
   SuperAdminPaymentsRoute: typeof SuperAdminPaymentsRoute
+  SuperAdminPermissionsRoute: typeof SuperAdminPermissionsRoute
   SuperAdminPlansRoute: typeof SuperAdminPlansRoute
   SuperAdminRolesRoute: typeof SuperAdminRolesRoute
   SuperAdminSecurityRoute: typeof SuperAdminSecurityRouteWithChildren
@@ -3846,6 +3910,7 @@ const SuperAdminRouteRouteChildren: SuperAdminRouteRouteChildren = {
   SuperAdminInvoicesRoute: SuperAdminInvoicesRoute,
   SuperAdminJobsRoute: SuperAdminJobsRoute,
   SuperAdminPaymentsRoute: SuperAdminPaymentsRoute,
+  SuperAdminPermissionsRoute: SuperAdminPermissionsRoute,
   SuperAdminPlansRoute: SuperAdminPlansRoute,
   SuperAdminRolesRoute: SuperAdminRolesRoute,
   SuperAdminSecurityRoute: SuperAdminSecurityRouteWithChildren,

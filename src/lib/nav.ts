@@ -1,4 +1,6 @@
 import {
+  ClipboardCheck,
+  QrCode,
   LayoutDashboard,
   Building2,
   Users,
@@ -131,6 +133,8 @@ export const navGroups: NavGroup[] = [
       { title: "Lots & Batches", url: "/inventory/lots", icon: FlaskConical },
       { title: "Serial Numbers", url: "/inventory/serials", icon: Fingerprint },
       { title: "Inventory Ledger", url: "/inventory/ledger", icon: BookOpen },
+      { title: "Stock Audit Report", url: "/inventory/stock-audit", icon: ClipboardCheck },
+      { title: "Bin Usage Log", url: "/inventory/bin-usage", icon: QrCode },
     ],
   },
   {

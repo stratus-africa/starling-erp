@@ -8363,6 +8363,7 @@ export type Database = {
           user_agent: string
         }[]
       }
+      admin_list_tenant_permission_matrices: { Args: never; Returns: Json }
       admin_list_tenant_subscriptions: {
         Args: {
           _limit?: number
@@ -8480,6 +8481,15 @@ export type Database = {
       admin_set_tenant_plan: {
         Args: { _notes?: string; _plan_id: string; _tenant_id: string }
         Returns: string
+      }
+      admin_set_tenant_role_permission_override: {
+        Args: {
+          _enabled: boolean
+          _permission_code: string
+          _role: string
+          _tenant_id: string
+        }
+        Returns: undefined
       }
       admin_set_tenant_status: {
         Args: { _new_status: string; _reason?: string; _tenant_id: string }
