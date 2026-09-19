@@ -29,6 +29,7 @@ interface Line {
   item_id: string | null;
   description: string;
   quantity: number;
+  sales_order_line_id: string | null;
 }
 
 export function PackageEditor({ id }: { id: string }) {
@@ -140,18 +141,20 @@ export function PackageEditor({ id }: { id: string }) {
           item_id: l.item_id,
           description: l.description ?? "",
           quantity: Number(l.quantity),
+          sales_order_line_id: null,
         })),
       );
   }, [linesData]);
 
   const sourceOrderId = header.sales_order_id || null;
 
-  // Prefill customer + lines from the originating sales order for a brand-new package
-  const { data: sourceLines } = useQuery({
+  // The originating sales order defines what may be packed (new and edit mode)
+  const { data: orderLines = [] } = useQuery({
     queryKey: ["sales_order_lines", "for-package", sourceOrderId],
-    enabled: isNew && !!sourceOrderId,
+    enabled: !!sourceOrderId,
     queryFn: async () => {
-      const { data, error } = await db.from("sales_order_lines")
+      const { data, error } = await db
+        .from("sales_order_lines")
         .select("id,line_no,item_id,description,quantity")
         .eq("document_id", sourceOrderId!)
         .is("deleted_at", null)
@@ -161,27 +164,84 @@ export function PackageEditor({ id }: { id: string }) {
     },
   });
 
+  // Quantities already packed on the order's other (non-cancelled) packages
+  const { data: packedElsewhere = {} } = useQuery({
+    queryKey: ["package_lines", "packed-for-order", sourceOrderId, id],
+    enabled: !!sourceOrderId,
+    queryFn: async (): Promise<Record<string, number>> => {
+      const { data: pkgs, error: pkgErr } = await db
+        .from("packages")
+        .select("id,status")
+        .eq("sales_order_id", sourceOrderId!)
+        .is("deleted_at", null);
+      if (pkgErr) throw pkgErr;
+      const ids = ((pkgs ?? []) as Row[])
+        .filter((p) => p.status !== "Cancelled" && p.id !== id)
+        .map((p) => p.id as string);
+      if (!ids.length) return {};
+      const { data, error } = await db
+        .from("package_lines")
+        .select("item_id,quantity")
+        .in("document_id", ids)
+        .is("deleted_at", null);
+      if (error) throw error;
+      const acc: Record<string, number> = {};
+      for (const l of (data ?? []) as Row[]) {
+        if (!l.item_id) continue;
+        acc[l.item_id as string] = (acc[l.item_id as string] ?? 0) + Number(l.quantity || 0);
+      }
+      return acc;
+    },
+  });
+
+  const orderLineFor = (itemId: string | null) => orderLines.find((o) => o.item_id === itemId);
+  const remainingQty = (itemId: string | null, excludeIdx?: number) => {
+    if (!itemId) return 0;
+    const ordered = Number(orderLineFor(itemId)?.quantity ?? 0);
+    const packedHere = lines.reduce(
+      (s, l, i) => (i === excludeIdx || l.item_id !== itemId ? s : s + (Number(l.quantity) || 0)),
+      0,
+    );
+    return ordered - (packedElsewhere[itemId] ?? 0) - packedHere;
+  };
+
   useEffect(() => {
     if (!isNew || !sourceOrderId) return;
     const so = orders.find((o) => o.id === sourceOrderId);
     if (so?.customer_id) setHeader((h) => (h.customer_id ? h : { ...h, customer_id: so.customer_id }));
   }, [isNew, sourceOrderId, orders]);
 
+  // Seed a new package with whatever is still outstanding on the order
   useEffect(() => {
-    if (!isNew || !sourceLines?.length) return;
+    if (!isNew || !orderLines.length) return;
     setLines((prev) =>
       prev.length
         ? prev
-        : sourceLines.map((l, i) => ({
-            line_no: i + 1,
-            item_id: l.item_id,
-            description: l.description ?? "",
-            quantity: Number(l.quantity),
-          })),
+        : orderLines
+            .map((l) => ({
+              item_id: (l.item_id as string) ?? null,
+              description: (l.description as string) ?? "",
+              quantity: Number(l.quantity || 0) - (packedElsewhere[l.item_id as string] ?? 0),
+              sales_order_line_id: l.id as string,
+            }))
+            .filter((l) => l.quantity > 0)
+            .map((l, i) => ({ ...l, line_no: i + 1 })),
     );
-  }, [isNew, sourceLines]);
+  }, [isNew, orderLines, packedElsewhere]);
 
-  const addLine = () => setLines((p) => [...p, { line_no: p.length + 1, item_id: null, description: "", quantity: 1 }]);
+  const addLine = () => {
+    const open = orderLines.find((o) => remainingQty(o.item_id) > 0);
+    setLines((p) => [
+      ...p,
+      {
+        line_no: p.length + 1,
+        item_id: (open?.item_id as string) ?? null,
+        description: (open?.description as string) ?? "",
+        quantity: open ? remainingQty(open.item_id) : 1,
+        sales_order_line_id: (open?.id as string) ?? null,
+      },
+    ]);
+  };
   const updateLine = (idx: number, patch: Partial<Line>) =>
     setLines((p) => p.map((l, i) => (i === idx ? { ...l, ...patch } : l)));
   const removeLine = (idx: number) =>
@@ -210,6 +270,17 @@ export function PackageEditor({ id }: { id: string }) {
         ...editablePayload
       } = payload;
 
+      if (!lines.length) throw new Error("Add at least one item to pack");
+      if (lines.some((l) => !l.item_id)) throw new Error("Every packed line needs an item");
+      if (lines.some((l) => !(Number(l.quantity) > 0)))
+        throw new Error("Every packed line needs a quantity greater than zero");
+      const over = lines.findIndex((l, i) => remainingQty(l.item_id, i) < Number(l.quantity));
+      if (over >= 0) {
+        const name =
+          items.find((i) => i.id === lines[over]!.item_id)?.name ?? lines[over]!.description ?? "this item";
+        throw new Error(`Packed quantity for ${name} is more than the sales order still has outstanding`);
+      }
+
       let docId: string | null = isNew ? null : id;
       if (isNew) {
         if (!payload.sales_order_id) throw new Error("Please select a Sales Order");
@@ -217,7 +288,11 @@ export function PackageEditor({ id }: { id: string }) {
         const { data, error } = await (db as any).rpc("create_package_from_sales_order", {
           _sales_order_id: payload.sales_order_id,
           _warehouse_id: payload.warehouse_id,
-          _lines: lines.map((line, index) => ({ sales_order_line_id: sourceLines?.find((source) => source.item_id === line.item_id)?.id, line_no: index + 1, quantity: Number(line.quantity) || 0 })),
+          _lines: lines.map((line, index) => ({
+            sales_order_line_id: line.sales_order_line_id ?? orderLineFor(line.item_id)?.id,
+            line_no: index + 1,
+            quantity: Number(line.quantity) || 0,
+          })),
           _weight: payload.weight,
           _length: payload.length,
           _width: payload.width,
@@ -228,10 +303,15 @@ export function PackageEditor({ id }: { id: string }) {
         docId = data as string;
       } else {
         await updateRow("packages", id, editablePayload);
-      }
 
-      if (!isNew) await updateRow("package_lines", docId!, { deleted_at: new Date().toISOString() });
-      if (lines.length && !isNew) {
+        // Replace the package's lines: retire the current ones, then write the edited set
+        const { error: retireError } = await db
+          .from("package_lines")
+          .update({ deleted_at: new Date().toISOString() })
+          .eq("document_id", docId!)
+          .is("deleted_at", null);
+        if (retireError) throw retireError;
+
         const { error } = await db.from("package_lines").insert(
           lines.map(
             (l, i): PackageLineInsert => ({
