@@ -85,6 +85,13 @@
       "when": 1789836481712,
       "tag": "0011_platform_tenant_permission_matrix",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1789836792464,
+      "tag": "0012_fix_active_support_session_ambiguity",
+      "breakpoints": true
     }
   ]
 }
