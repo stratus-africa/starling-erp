@@ -850,6 +850,36 @@ export function PackageEditor({ id }: { id: string }) {
                     </Select>
                   </td>
                   <td className="px-2 py-1.5">
+                    <Select
+                      value={l.location_id ?? NO_LOCATION}
+                      onValueChange={(v) =>
+                        updateLine(idx, { location_id: v === NO_LOCATION ? null : v })
+                      }
+                      disabled={!editable || !shipFromWarehouse}
+                    >
+                      <SelectTrigger className="h-8">
+                        <SelectValue
+                          placeholder={shipFromWarehouse ? "Any bin" : "Pick a warehouse first"}
+                        />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value={NO_LOCATION}>Any bin</SelectItem>
+                        {binsForItem(l.item_id).map((b) => (
+                          <SelectItem key={b.location_id} value={b.location_id}>
+                            {b.location_code}
+                            {b.zone_name ? ` · ${b.zone_name}` : ""} — {Number(b.on_hand)} on hand
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {l.location_id && (
+                      <p className="mt-0.5 text-[10px] text-muted-foreground">
+                        {binOnHand(l.item_id, l.location_id)} available in this bin
+                      </p>
+                    )}
+                  </td>
+
+                  <td className="px-2 py-1.5">
                     <Input
                       className="h-8"
                       value={l.description}
