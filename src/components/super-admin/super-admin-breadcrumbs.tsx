@@ -26,6 +26,7 @@ const ROUTE_LABELS: Record<string, string> = {
   "/super-admin/usage": "Usage",
   "/super-admin/admin": "Platform Admins",
   "/super-admin/roles": "Roles & Permissions",
+  "/super-admin/permissions": "Workspace Permissions",
   "/super-admin/sessions": "Sessions",
   "/super-admin/security-events": "Security Events",
   "/super-admin/security": "Security Center",

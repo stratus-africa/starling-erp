@@ -203,6 +203,12 @@ const NAV: NavGroup[] = [
         permission: PLATFORM_PERMISSIONS.adminsView,
       },
       {
+        title: "Workspace Permissions",
+        url: "/super-admin/permissions",
+        icon: Layers,
+        permission: PLATFORM_PERMISSIONS.tenantsView,
+      },
+      {
         title: "Sessions",
         url: "/super-admin/sessions",
         icon: Globe,
