@@ -56,12 +56,15 @@ interface Line {
   sales_order_line_id: string | null;
 }
 
-const rpcClient = db as typeof db & {
+interface RpcClient {
   rpc: <T>(
     fn: string,
     args: Record<string, unknown>,
   ) => Promise<{ data: T | null; error: { message?: string } | null }>;
-};
+}
+
+const rpcClient: RpcClient = db as RpcClient;
+
 
 export function PackageEditor({ id }: { id: string }) {
   const qc = useQueryClient();
