@@ -99,6 +99,13 @@
       "when": 1789837443493,
       "tag": "0013_allocate_supplier_payment_allow_posted_update",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1789837915056,
+      "tag": "0014_fix_refresh_purchase_order_status_paid_alias",
+      "breakpoints": true
     }
   ]
 }
