@@ -38,7 +38,7 @@ function StockAuditPage() {
     queryFn: async () => {
       const [{ data: stock, error }, { data: items }, { data: warehouses }] = await Promise.all([
         supabase.from("inventory_location_stock").select("*").eq("tenant_id", tenant!.id),
-        supabase.from("items").select("id,name,sku,unit").eq("tenant_id", tenant!.id),
+        supabase.from("items").select("id,name,sku,uom").eq("tenant_id", tenant!.id),
         supabase.from("warehouses").select("id,name,code").eq("tenant_id", tenant!.id),
       ]);
       if (error) throw error;
@@ -59,7 +59,7 @@ function StockAuditPage() {
           coords: coords || null,
           itemName: item?.name ?? "—",
           itemSku: item?.sku ?? null,
-          uom: item?.unit ?? null,
+          uom: item?.uom ?? null,
           onHand: Number(row.on_hand ?? 0),
         };
       });

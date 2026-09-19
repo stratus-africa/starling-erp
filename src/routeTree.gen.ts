@@ -80,6 +80,7 @@ import { Route as AuthenticatedPurchasingPaymentsRouteImport } from './routes/_a
 import { Route as AuthenticatedPurchasingCreditsRouteImport } from './routes/_authenticated/purchasing.credits'
 import { Route as AuthenticatedManufacturingRunsRouteImport } from './routes/_authenticated/manufacturing.runs'
 import { Route as AuthenticatedManufacturingPlanningRouteImport } from './routes/_authenticated/manufacturing.planning'
+import { Route as AuthenticatedInventoryStockAuditRouteImport } from './routes/_authenticated/inventory_.stock-audit'
 import { Route as AuthenticatedInventoryTransfersRouteImport } from './routes/_authenticated/inventory.transfers'
 import { Route as AuthenticatedInventorySerialsRouteImport } from './routes/_authenticated/inventory.serials'
 import { Route as AuthenticatedInventoryLotsRouteImport } from './routes/_authenticated/inventory.lots'
@@ -564,6 +565,12 @@ const AuthenticatedManufacturingPlanningRoute =
   AuthenticatedManufacturingPlanningRouteImport.update({
     id: '/manufacturing/planning',
     path: '/manufacturing/planning',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedInventoryStockAuditRoute =
+  AuthenticatedInventoryStockAuditRouteImport.update({
+    id: '/inventory_/stock-audit',
+    path: '/inventory/stock-audit',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedInventoryTransfersRoute =
@@ -1215,6 +1222,7 @@ export interface FileRoutesByFullPath {
   '/inventory/lots': typeof AuthenticatedInventoryLotsRoute
   '/inventory/serials': typeof AuthenticatedInventorySerialsRoute
   '/inventory/transfers': typeof AuthenticatedInventoryTransfersRoute
+  '/inventory/stock-audit': typeof AuthenticatedInventoryStockAuditRoute
   '/manufacturing/planning': typeof AuthenticatedManufacturingPlanningRoute
   '/manufacturing/runs': typeof AuthenticatedManufacturingRunsRoute
   '/purchasing/credits': typeof AuthenticatedPurchasingCreditsRouteWithChildren
@@ -1383,6 +1391,7 @@ export interface FileRoutesByTo {
   '/inventory/lots': typeof AuthenticatedInventoryLotsRoute
   '/inventory/serials': typeof AuthenticatedInventorySerialsRoute
   '/inventory/transfers': typeof AuthenticatedInventoryTransfersRoute
+  '/inventory/stock-audit': typeof AuthenticatedInventoryStockAuditRoute
   '/manufacturing/planning': typeof AuthenticatedManufacturingPlanningRoute
   '/manufacturing/runs': typeof AuthenticatedManufacturingRunsRoute
   '/purchasing/credits': typeof AuthenticatedPurchasingCreditsRouteWithChildren
@@ -1554,6 +1563,7 @@ export interface FileRoutesById {
   '/_authenticated/inventory/lots': typeof AuthenticatedInventoryLotsRoute
   '/_authenticated/inventory/serials': typeof AuthenticatedInventorySerialsRoute
   '/_authenticated/inventory/transfers': typeof AuthenticatedInventoryTransfersRoute
+  '/_authenticated/inventory_/stock-audit': typeof AuthenticatedInventoryStockAuditRoute
   '/_authenticated/manufacturing/planning': typeof AuthenticatedManufacturingPlanningRoute
   '/_authenticated/manufacturing/runs': typeof AuthenticatedManufacturingRunsRoute
   '/_authenticated/purchasing/credits': typeof AuthenticatedPurchasingCreditsRouteWithChildren
@@ -1725,6 +1735,7 @@ export interface FileRouteTypes {
     | '/inventory/lots'
     | '/inventory/serials'
     | '/inventory/transfers'
+    | '/inventory/stock-audit'
     | '/manufacturing/planning'
     | '/manufacturing/runs'
     | '/purchasing/credits'
@@ -1893,6 +1904,7 @@ export interface FileRouteTypes {
     | '/inventory/lots'
     | '/inventory/serials'
     | '/inventory/transfers'
+    | '/inventory/stock-audit'
     | '/manufacturing/planning'
     | '/manufacturing/runs'
     | '/purchasing/credits'
@@ -2063,6 +2075,7 @@ export interface FileRouteTypes {
     | '/_authenticated/inventory/lots'
     | '/_authenticated/inventory/serials'
     | '/_authenticated/inventory/transfers'
+    | '/_authenticated/inventory_/stock-audit'
     | '/_authenticated/manufacturing/planning'
     | '/_authenticated/manufacturing/runs'
     | '/_authenticated/purchasing/credits'
@@ -2676,6 +2689,13 @@ declare module '@tanstack/react-router' {
       path: '/manufacturing/planning'
       fullPath: '/manufacturing/planning'
       preLoaderRoute: typeof AuthenticatedManufacturingPlanningRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/inventory_/stock-audit': {
+      id: '/_authenticated/inventory_/stock-audit'
+      path: '/inventory/stock-audit'
+      fullPath: '/inventory/stock-audit'
+      preLoaderRoute: typeof AuthenticatedInventoryStockAuditRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/inventory/transfers': {
@@ -3596,6 +3616,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedInventoryLotsRoute: typeof AuthenticatedInventoryLotsRoute
   AuthenticatedInventorySerialsRoute: typeof AuthenticatedInventorySerialsRoute
   AuthenticatedInventoryTransfersRoute: typeof AuthenticatedInventoryTransfersRoute
+  AuthenticatedInventoryStockAuditRoute: typeof AuthenticatedInventoryStockAuditRoute
   AuthenticatedManufacturingPlanningRoute: typeof AuthenticatedManufacturingPlanningRoute
   AuthenticatedManufacturingRunsRoute: typeof AuthenticatedManufacturingRunsRoute
   AuthenticatedPurchasingCreditsRoute: typeof AuthenticatedPurchasingCreditsRouteWithChildren
@@ -3706,6 +3727,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedInventoryLotsRoute: AuthenticatedInventoryLotsRoute,
   AuthenticatedInventorySerialsRoute: AuthenticatedInventorySerialsRoute,
   AuthenticatedInventoryTransfersRoute: AuthenticatedInventoryTransfersRoute,
+  AuthenticatedInventoryStockAuditRoute: AuthenticatedInventoryStockAuditRoute,
   AuthenticatedManufacturingPlanningRoute:
     AuthenticatedManufacturingPlanningRoute,
   AuthenticatedManufacturingRunsRoute: AuthenticatedManufacturingRunsRoute,
