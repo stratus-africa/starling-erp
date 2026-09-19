@@ -50,6 +50,13 @@
       "when": 1789835554561,
       "tag": "0006_package_post_updates_order_fulfillment",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1789835862281,
+      "tag": "0007_auto_number_invoices",
+      "breakpoints": true
     }
   ]
 }

@@ -486,6 +486,7 @@ function InvoiceOverviewView({ id }: { id: string }) {
   ]);
   const canRecordPayment = can(["payments.create", "payments.post"]);
   const canDelete = can(["sales.delete", "admin"]);
+  const canPost = can(["sales.post", "accounting.post"]);
   const deleteMutation = useMutation({
     mutationFn: async () => {
       const { error } = await db.rpc("delete_invoice", { _invoice_id: id });
@@ -495,6 +496,18 @@ function InvoiceOverviewView({ id }: { id: string }) {
       toast.success("Invoice deleted");
       qc.invalidateQueries({ queryKey: ["invoices"] });
       nav({ to: "/sales/invoices" as never });
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+  const issueMutation = useMutation({
+    mutationFn: async () => {
+      const { error } = await db.rpc("post_invoice", { _invoice_id: id });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Invoice issued");
+      qc.invalidateQueries({ queryKey: ["invoices"] });
+      qc.invalidateQueries({ queryKey: ["invoices", id] });
     },
     onError: (error: Error) => toast.error(error.message),
   });
@@ -631,8 +644,18 @@ function InvoiceOverviewView({ id }: { id: string }) {
             >
               <Download className="mr-1.5 h-4 w-4" /> Download PDF
             </Button>
+            {canPost && !invoice.posted_at && (
+              <Button
+                variant="default"
+                size="sm"
+                disabled={issueMutation.isPending}
+                onClick={() => issueMutation.mutate()}
+              >
+                <Send className="mr-1.5 h-4 w-4" /> Issue Invoice
+              </Button>
+            )}
             {canRecordPayment && outstanding > 0 && (
-              <Button variant="default" size="sm" onClick={() => setPayOpen(true)}>
+              <Button variant={invoice.posted_at ? "default" : "secondary"} size="sm" onClick={() => setPayOpen(true)}>
                 <DollarSign className="mr-1.5 h-4 w-4" /> Record Payment
               </Button>
             )}
