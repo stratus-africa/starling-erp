@@ -1677,6 +1677,31 @@ export function DocViewPanel({ kind, id, embedded = false, onClose, onSaved }: D
   });
 
   const canPost = can([`${permModule}.post`, "accounting.post"]);
+
+  const CONVERT_ARG: Record<string, string> = {
+    convert_quote_to_order: "_quote_id",
+    convert_order_to_invoice: "_order_id",
+    convert_po_to_bill: "_po_id",
+  };
+  const CONVERT_TARGET: Record<string, string> = {
+    convert_quote_to_order: "/sales/orders",
+    convert_order_to_invoice: "/sales/invoices",
+    convert_po_to_bill: "/purchasing/bills",
+  };
+  const convertMutation = useMutation({
+    mutationFn: async (action: string) => {
+      const { data, error } = await db.rpc(action, { [CONVERT_ARG[action]]: id });
+      if (error) throw error;
+      return { action, newId: String(data ?? "") };
+    },
+    onSuccess: ({ action, newId }) => {
+      toast.success("Document created");
+      qc.invalidateQueries();
+      const base = CONVERT_TARGET[action];
+      if (base && newId) nav({ to: `${base}/${newId}` as any });
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
   const postMutation = useMutation({
     mutationFn: async () => {
       const { error } = await db.rpc("post_bill", { _bill_id: id });
