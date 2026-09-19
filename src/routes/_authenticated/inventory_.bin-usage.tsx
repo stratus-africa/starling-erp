@@ -232,6 +232,7 @@ function BinUsageLogPage() {
                     <Link
                       to="/sales/packages/$id"
                       params={{ id: row.packageId }}
+                      search={{ order: undefined }}
                       className="inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline"
                     >
                       {row.packageNumber ?? "Draft package"}
