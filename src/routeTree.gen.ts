@@ -27,6 +27,7 @@ import { Route as SuperAdminSecurityEventsRouteImport } from './routes/super-adm
 import { Route as SuperAdminSecurityRouteImport } from './routes/super-admin/security'
 import { Route as SuperAdminRolesRouteImport } from './routes/super-admin/roles'
 import { Route as SuperAdminPlansRouteImport } from './routes/super-admin/plans'
+import { Route as SuperAdminPermissionsRouteImport } from './routes/super-admin/permissions'
 import { Route as SuperAdminPaymentsRouteImport } from './routes/super-admin/payments'
 import { Route as SuperAdminJobsRouteImport } from './routes/super-admin/jobs'
 import { Route as SuperAdminInvoicesRouteImport } from './routes/super-admin/invoices'
@@ -266,6 +267,11 @@ const SuperAdminRolesRoute = SuperAdminRolesRouteImport.update({
 const SuperAdminPlansRoute = SuperAdminPlansRouteImport.update({
   id: '/plans',
   path: '/plans',
+  getParentRoute: () => SuperAdminRouteRoute,
+} as any)
+const SuperAdminPermissionsRoute = SuperAdminPermissionsRouteImport.update({
+  id: '/permissions',
+  path: '/permissions',
   getParentRoute: () => SuperAdminRouteRoute,
 } as any)
 const SuperAdminPaymentsRoute = SuperAdminPaymentsRouteImport.update({
@@ -1168,6 +1174,7 @@ export interface FileRoutesByFullPath {
   '/super-admin/invoices': typeof SuperAdminInvoicesRoute
   '/super-admin/jobs': typeof SuperAdminJobsRoute
   '/super-admin/payments': typeof SuperAdminPaymentsRoute
+  '/super-admin/permissions': typeof SuperAdminPermissionsRoute
   '/super-admin/plans': typeof SuperAdminPlansRoute
   '/super-admin/roles': typeof SuperAdminRolesRoute
   '/super-admin/security': typeof SuperAdminSecurityRouteWithChildren
@@ -1335,6 +1342,7 @@ export interface FileRoutesByTo {
   '/super-admin/invoices': typeof SuperAdminInvoicesRoute
   '/super-admin/jobs': typeof SuperAdminJobsRoute
   '/super-admin/payments': typeof SuperAdminPaymentsRoute
+  '/super-admin/permissions': typeof SuperAdminPermissionsRoute
   '/super-admin/plans': typeof SuperAdminPlansRoute
   '/super-admin/roles': typeof SuperAdminRolesRoute
   '/super-admin/security': typeof SuperAdminSecurityRouteWithChildren
@@ -1504,6 +1512,7 @@ export interface FileRoutesById {
   '/super-admin/invoices': typeof SuperAdminInvoicesRoute
   '/super-admin/jobs': typeof SuperAdminJobsRoute
   '/super-admin/payments': typeof SuperAdminPaymentsRoute
+  '/super-admin/permissions': typeof SuperAdminPermissionsRoute
   '/super-admin/plans': typeof SuperAdminPlansRoute
   '/super-admin/roles': typeof SuperAdminRolesRoute
   '/super-admin/security': typeof SuperAdminSecurityRouteWithChildren
@@ -1675,6 +1684,7 @@ export interface FileRouteTypes {
     | '/super-admin/invoices'
     | '/super-admin/jobs'
     | '/super-admin/payments'
+    | '/super-admin/permissions'
     | '/super-admin/plans'
     | '/super-admin/roles'
     | '/super-admin/security'
@@ -1842,6 +1852,7 @@ export interface FileRouteTypes {
     | '/super-admin/invoices'
     | '/super-admin/jobs'
     | '/super-admin/payments'
+    | '/super-admin/permissions'
     | '/super-admin/plans'
     | '/super-admin/roles'
     | '/super-admin/security'
@@ -2010,6 +2021,7 @@ export interface FileRouteTypes {
     | '/super-admin/invoices'
     | '/super-admin/jobs'
     | '/super-admin/payments'
+    | '/super-admin/permissions'
     | '/super-admin/plans'
     | '/super-admin/roles'
     | '/super-admin/security'
@@ -2293,6 +2305,13 @@ declare module '@tanstack/react-router' {
       path: '/plans'
       fullPath: '/super-admin/plans'
       preLoaderRoute: typeof SuperAdminPlansRouteImport
+      parentRoute: typeof SuperAdminRouteRoute
+    }
+    '/super-admin/permissions': {
+      id: '/super-admin/permissions'
+      path: '/permissions'
+      fullPath: '/super-admin/permissions'
+      preLoaderRoute: typeof SuperAdminPermissionsRouteImport
       parentRoute: typeof SuperAdminRouteRoute
     }
     '/super-admin/payments': {
@@ -3810,6 +3829,7 @@ interface SuperAdminRouteRouteChildren {
   SuperAdminInvoicesRoute: typeof SuperAdminInvoicesRoute
   SuperAdminJobsRoute: typeof SuperAdminJobsRoute
   SuperAdminPaymentsRoute: typeof SuperAdminPaymentsRoute
+  SuperAdminPermissionsRoute: typeof SuperAdminPermissionsRoute
   SuperAdminPlansRoute: typeof SuperAdminPlansRoute
   SuperAdminRolesRoute: typeof SuperAdminRolesRoute
   SuperAdminSecurityRoute: typeof SuperAdminSecurityRouteWithChildren
@@ -3846,6 +3866,7 @@ const SuperAdminRouteRouteChildren: SuperAdminRouteRouteChildren = {
   SuperAdminInvoicesRoute: SuperAdminInvoicesRoute,
   SuperAdminJobsRoute: SuperAdminJobsRoute,
   SuperAdminPaymentsRoute: SuperAdminPaymentsRoute,
+  SuperAdminPermissionsRoute: SuperAdminPermissionsRoute,
   SuperAdminPlansRoute: SuperAdminPlansRoute,
   SuperAdminRolesRoute: SuperAdminRolesRoute,
   SuperAdminSecurityRoute: SuperAdminSecurityRouteWithChildren,
