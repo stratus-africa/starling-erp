@@ -10,8 +10,25 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, CheckCircle2, Loader2, Mail, Package, Plus, Printer, Receipt, Save, Trash2 } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  ArrowLeft,
+  CheckCircle2,
+  Loader2,
+  Mail,
+  Package,
+  Plus,
+  Printer,
+  Receipt,
+  Save,
+  Trash2,
+} from "lucide-react";
 import { downloadDocumentPdf, type PdfDocInput } from "@/lib/document-pdf";
 import { EmailDocumentDialog } from "@/components/email-document-dialog";
 import { EmailStatus } from "@/components/email-status";
@@ -20,7 +37,14 @@ import { PostingDetailsDrawer } from "@/components/posting-details-drawer";
 import { useDocumentBranding } from "@/hooks/use-document-branding";
 import { logDocumentEvent } from "@/lib/document-events";
 import { fetchRow, insertRow, updateRow, db, type Row } from "@/lib/typed-db";
-import type { PackageInsert, PackageLine, PackageLineInsert, SalesOrder, Customer } from "@/lib/db-types";
+import type {
+  PackageInsert,
+  PackageLine,
+  PackageLineInsert,
+  SalesOrder,
+  Customer,
+} from "@/lib/db-types";
+import { getPackagePickerItems } from "./package-editor-utils";
 
 const STATUSES = ["Draft", "Packed", "Shipped", "Delivered", "Cancelled"] as const;
 
@@ -31,6 +55,13 @@ interface Line {
   quantity: number;
   sales_order_line_id: string | null;
 }
+
+const rpcClient = db as typeof db & {
+  rpc: <T>(
+    fn: string,
+    args: Record<string, unknown>,
+  ) => Promise<{ data: T | null; error: { message?: string } | null }>;
+};
 
 export function PackageEditor({ id }: { id: string }) {
   const qc = useQueryClient();
@@ -55,7 +86,8 @@ export function PackageEditor({ id }: { id: string }) {
     queryKey: ["package_lines", id],
     enabled: !isNew,
     queryFn: async () => {
-      const { data, error } = await db.from("package_lines")
+      const { data, error } = await db
+        .from("package_lines")
         .select("*")
         .eq("document_id", id)
         .is("deleted_at", null)
@@ -68,7 +100,8 @@ export function PackageEditor({ id }: { id: string }) {
   const { data: orders = [] } = useQuery({
     queryKey: ["sales_orders", "picker"],
     queryFn: async () => {
-      const { data, error } = await db.from("sales_orders")
+      const { data, error } = await db
+        .from("sales_orders")
         .select("id,number,customer_id")
         .is("deleted_at", null)
         .order("created_at", { ascending: false });
@@ -81,7 +114,8 @@ export function PackageEditor({ id }: { id: string }) {
   const { data: customers = [] } = useQuery({
     queryKey: ["customers", "picker"],
     queryFn: async () => {
-      const { data, error } = await db.from("customers")
+      const { data, error } = await db
+        .from("customers")
         .select("id,name,email")
         .is("deleted_at", null)
         .order("name");
@@ -94,7 +128,11 @@ export function PackageEditor({ id }: { id: string }) {
   const { data: warehouses = [] } = useQuery({
     queryKey: ["warehouses", "picker"],
     queryFn: async () => {
-      const { data, error } = await db.from("warehouses").select("id,name").is("deleted_at", null).order("name");
+      const { data, error } = await db
+        .from("warehouses")
+        .select("id,name")
+        .is("deleted_at", null)
+        .order("name");
       if (error) throw error;
       return (data ?? []) as Row[];
     },
@@ -104,7 +142,11 @@ export function PackageEditor({ id }: { id: string }) {
   const { data: items = [] } = useQuery({
     queryKey: ["items", "picker"],
     queryFn: async () => {
-      const { data, error } = await db.from("items").select("id,name,sku").is("deleted_at", null).order("name");
+      const { data, error } = await db
+        .from("items")
+        .select("id,name,sku")
+        .is("deleted_at", null)
+        .order("name");
       if (error) throw error;
       return (data ?? []) as Row[];
     },
@@ -194,6 +236,7 @@ export function PackageEditor({ id }: { id: string }) {
     },
   });
 
+  const packagePickerItems = getPackagePickerItems(items, orderLines, sourceOrderId);
   const orderLineFor = (itemId: string | null) => orderLines.find((o) => o.item_id === itemId);
   const remainingQty = (itemId: string | null, excludeIdx?: number) => {
     if (!itemId) return 0;
@@ -208,7 +251,8 @@ export function PackageEditor({ id }: { id: string }) {
   useEffect(() => {
     if (!isNew || !sourceOrderId) return;
     const so = orders.find((o) => o.id === sourceOrderId);
-    if (so?.customer_id) setHeader((h) => (h.customer_id ? h : { ...h, customer_id: so.customer_id }));
+    if (so?.customer_id)
+      setHeader((h) => (h.customer_id ? h : { ...h, customer_id: so.customer_id }));
   }, [isNew, sourceOrderId, orders]);
 
   // Seed a new package with whatever is still outstanding on the order
@@ -277,15 +321,19 @@ export function PackageEditor({ id }: { id: string }) {
       const over = lines.findIndex((l, i) => remainingQty(l.item_id, i) < Number(l.quantity));
       if (over >= 0) {
         const name =
-          items.find((i) => i.id === lines[over]!.item_id)?.name ?? lines[over]!.description ?? "this item";
-        throw new Error(`Packed quantity for ${name} is more than the sales order still has outstanding`);
+          items.find((i) => i.id === lines[over]!.item_id)?.name ??
+          lines[over]!.description ??
+          "this item";
+        throw new Error(
+          `Packed quantity for ${name} is more than the sales order still has outstanding`,
+        );
       }
 
       let docId: string | null = isNew ? null : id;
       if (isNew) {
         if (!payload.sales_order_id) throw new Error("Please select a Sales Order");
         if (!payload.warehouse_id) throw new Error("Please select a warehouse");
-        const { data, error } = await (db as any).rpc("create_package_from_sales_order", {
+        const { data, error } = await rpcClient.rpc<string>("create_package_from_sales_order", {
           _sales_order_id: payload.sales_order_id,
           _warehouse_id: payload.warehouse_id,
           _lines: lines.map((line, index) => ({
@@ -313,16 +361,14 @@ export function PackageEditor({ id }: { id: string }) {
         if (retireError) throw retireError;
 
         const { error } = await db.from("package_lines").insert(
-          lines.map(
-            (l, i): PackageLineInsert => ({
-              tenant_id: tenant.id,
-              document_id: docId!,
-              line_no: i + 1,
-              item_id: l.item_id || null,
-              description: l.description,
-              quantity: Number(l.quantity) || 0,
-            }),
-          ),
+          lines.map((l, i): PackageLineInsert => ({
+            tenant_id: tenant.id,
+            document_id: docId!,
+            line_no: i + 1,
+            item_id: l.item_id || null,
+            description: l.description,
+            quantity: Number(l.quantity) || 0,
+          })),
         );
         if (error) throw error;
       }
@@ -351,7 +397,7 @@ export function PackageEditor({ id }: { id: string }) {
 
   const confirmPackage = useMutation({
     mutationFn: async () => {
-      const { error } = await db.rpc("post_package", { _package_id: id });
+      const { error } = await rpcClient.rpc<null>("post_package", { _package_id: id });
       if (error) throw error;
     },
     onSuccess: () => {
@@ -364,10 +410,16 @@ export function PackageEditor({ id }: { id: string }) {
 
   const transition = useMutation({
     mutationFn: async (status: string) => {
-      const { error } = await (db as any).rpc("transition_package", { _package_id: id, _new_status: status });
+      const { error } = await rpcClient.rpc<null>("transition_package", {
+        _package_id: id,
+        _new_status: status,
+      });
       if (error) throw error;
     },
-    onSuccess: () => { toast.success("Package status updated"); qc.invalidateQueries(); },
+    onSuccess: () => {
+      toast.success("Package status updated");
+      qc.invalidateQueries();
+    },
     onError: (e: Error) => toast.error(e.message ?? "Unable to update package"),
   });
 
@@ -410,16 +462,22 @@ export function PackageEditor({ id }: { id: string }) {
           <div className="min-w-0">
             <div className="flex items-center gap-2">
               <Package className="h-4 w-4 text-muted-foreground" />
-              <h1 className="text-xl font-semibold truncate">{isNew ? "New Package" : header.number || "Package"}</h1>
+              <h1 className="text-xl font-semibold truncate">
+                {isNew ? "New Package" : header.number || "Package"}
+              </h1>
               <Badge variant="secondary">{posted ? "Confirmed" : header.status}</Badge>
             </div>
             <p className="text-xs text-muted-foreground mt-0.5">
-              {lines.length} line{lines.length === 1 ? "" : "s"} · {totalQty} unit{totalQty === 1 ? "" : "s"} packed
+              {lines.length} line{lines.length === 1 ? "" : "s"} · {totalQty} unit
+              {totalQty === 1 ? "" : "s"} packed
               {order && (
                 <>
                   {" "}
                   · from{" "}
-                  <Link className="underline hover:text-foreground" to={`/sales/orders/${order.id}` as never}>
+                  <Link
+                    className="underline hover:text-foreground"
+                    to={`/sales/orders/${order.id}` as never}
+                  >
                     {order.number}
                   </Link>
                 </>
@@ -444,9 +502,33 @@ export function PackageEditor({ id }: { id: string }) {
               <Receipt className="h-4 w-4 mr-1.5" /> Post details
             </Button>
           )}
-          {!isNew && canWrite && header.status === "Draft" && <Button size="sm" onClick={() => transition.mutate("Packed")} disabled={transition.isPending}>Pack</Button>}
-          {!isNew && canWrite && ["Packed", "Ready to Ship"].includes(header.status) && <Button size="sm" onClick={() => transition.mutate("Shipped")} disabled={transition.isPending}>Ship</Button>}
-          {!isNew && canWrite && header.status === "Shipped" && <Button size="sm" onClick={() => transition.mutate("Delivered")} disabled={transition.isPending}>Mark Delivered</Button>}
+          {!isNew && canWrite && header.status === "Draft" && (
+            <Button
+              size="sm"
+              onClick={() => transition.mutate("Packed")}
+              disabled={transition.isPending}
+            >
+              Pack
+            </Button>
+          )}
+          {!isNew && canWrite && ["Packed", "Ready to Ship"].includes(header.status) && (
+            <Button
+              size="sm"
+              onClick={() => transition.mutate("Shipped")}
+              disabled={transition.isPending}
+            >
+              Ship
+            </Button>
+          )}
+          {!isNew && canWrite && header.status === "Shipped" && (
+            <Button
+              size="sm"
+              onClick={() => transition.mutate("Delivered")}
+              disabled={transition.isPending}
+            >
+              Mark Delivered
+            </Button>
+          )}
           {canWrite && !isNew && !posted && (
             <Button
               variant="default"
@@ -492,7 +574,11 @@ export function PackageEditor({ id }: { id: string }) {
             value={header.sales_order_id ?? ""}
             onValueChange={(v) => {
               const so = orders.find((o) => o.id === v);
-              setHeader({ ...header, sales_order_id: v, customer_id: header.customer_id || so?.customer_id || "" });
+              setHeader({
+                ...header,
+                sales_order_id: v,
+                customer_id: header.customer_id || so?.customer_id || "",
+              });
             }}
             disabled={!editable}
           >
@@ -648,7 +734,10 @@ export function PackageEditor({ id }: { id: string }) {
                       value={l.item_id ?? ""}
                       onValueChange={(v) => {
                         const it = items.find((i) => i.id === v);
-                        updateLine(idx, { item_id: v, description: l.description || it?.name || "" });
+                        updateLine(idx, {
+                          item_id: v,
+                          description: l.description || it?.name || "",
+                        });
                       }}
                       disabled={!editable}
                     >
@@ -656,7 +745,7 @@ export function PackageEditor({ id }: { id: string }) {
                         <SelectValue placeholder="Pick item…" />
                       </SelectTrigger>
                       <SelectContent>
-                        {items.map((i) => (
+                        {packagePickerItems.map((i) => (
                           <SelectItem key={i.id} value={i.id}>
                             {i.sku ? `${i.sku} — ` : ""}
                             {i.name}
@@ -685,7 +774,12 @@ export function PackageEditor({ id }: { id: string }) {
                   </td>
                   <td className="px-2 py-1.5">
                     {editable && (
-                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => removeLine(idx)}>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7"
+                        onClick={() => removeLine(idx)}
+                      >
                         <Trash2 className="h-3.5 w-3.5 text-destructive" />
                       </Button>
                     )}
