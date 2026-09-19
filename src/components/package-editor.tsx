@@ -277,7 +277,12 @@ export function PackageEditor({ id }: { id: string }) {
     },
   });
 
-  const packagePickerItems = getPackagePickerItems(items, orderLines, sourceOrderId);
+  const packagePickerItems = getPackagePickerItems(
+    items as Array<{ id: string; name?: string; sku?: string }>,
+    orderLines,
+    sourceOrderId,
+  );
+
   const orderLineFor = (itemId: string | null) => orderLines.find((o) => o.item_id === itemId);
   const remainingQty = (itemId: string | null, excludeIdx?: number) => {
     if (!itemId) return 0;
@@ -303,19 +308,45 @@ export function PackageEditor({ id }: { id: string }) {
       prev.length
         ? prev
         : orderLines
-            .map((l) => ({
-              item_id: (l.item_id as string) ?? null,
-              description: (l.description as string) ?? "",
-              quantity: Number(l.quantity || 0) - (packedElsewhere[l.item_id as string] ?? 0),
-              sales_order_line_id: l.id as string,
-            }))
+            .map(
+              (l): Line => ({
+                line_no: 0,
+                item_id: (l.item_id as string) ?? null,
+                description: (l.description as string) ?? "",
+                quantity: Number(l.quantity || 0) - (packedElsewhere[l.item_id as string] ?? 0),
+                sales_order_line_id: l.id as string,
+                location_id: null,
+              }),
+            )
             .filter((l) => l.quantity > 0)
-            .map((l, i) => ({ ...l, line_no: i + 1 })),
+            .map((l, i): Line => ({ ...l, line_no: i + 1 })),
     );
   }, [isNew, orderLines, packedElsewhere]);
 
+  // Default each line to the fullest bin holding that item, once bin stock is known
+  useEffect(() => {
+    if (!binStock.length) return;
+    setLines((prev) => {
+      let changed = false;
+      const next = prev.map((l) => {
+        if (l.location_id) return l;
+        const best = binsForItem(l.item_id).sort(
+          (a, b) => Number(b.on_hand || 0) - Number(a.on_hand || 0),
+        )[0];
+        if (!best) return l;
+        changed = true;
+        return { ...l, location_id: best.location_id as string };
+      });
+      return changed ? next : prev;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [binStock]);
+
   const addLine = () => {
     const open = orderLines.find((o) => remainingQty(o.item_id) > 0);
+    const bestBin = binsForItem((open?.item_id as string) ?? null).sort(
+      (a, b) => Number(b.on_hand || 0) - Number(a.on_hand || 0),
+    )[0];
     setLines((p) => [
       ...p,
       {
@@ -324,9 +355,11 @@ export function PackageEditor({ id }: { id: string }) {
         description: (open?.description as string) ?? "",
         quantity: open ? remainingQty(open.item_id) : 1,
         sales_order_line_id: (open?.id as string) ?? null,
+        location_id: (bestBin?.location_id as string) ?? null,
       },
     ]);
   };
+
   const updateLine = (idx: number, patch: Partial<Line>) =>
     setLines((p) => p.map((l, i) => (i === idx ? { ...l, ...patch } : l)));
   const removeLine = (idx: number) =>
