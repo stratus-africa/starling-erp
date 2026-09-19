@@ -160,23 +160,6 @@ export function PackageEditor({ id }: { id: string }) {
     staleTime: 30_000,
   });
 
-  // Stock available per bin/location for the selected ship-from warehouse
-  const { data: binStock = [] } = useQuery({
-    queryKey: ["inventory_location_stock", "for-package", header_warehouse_key],
-    enabled: !!header_warehouse_key,
-    queryFn: async () => {
-      const { data, error } = await db
-        .from("inventory_location_stock")
-        .select("item_id,location_id,location_code,zone_name,on_hand")
-        .eq("warehouse_id", header_warehouse_key!)
-        .order("location_code");
-      if (error) throw error;
-      return (data ?? []) as Row[];
-    },
-  });
-
-
-
   const [header, setHeader] = useState<Row>({
     number: "",
     sales_order_id: search?.order ?? "",
@@ -195,6 +178,36 @@ export function PackageEditor({ id }: { id: string }) {
     shipment_status: "Not Shipped",
   });
   const [lines, setLines] = useState<Line[]>([]);
+
+  const shipFromWarehouse = (header.warehouse_id as string) || null;
+
+  // Stock available per bin/location for the selected ship-from warehouse
+  const { data: binStock = [] } = useQuery({
+    queryKey: ["inventory_location_stock", "for-package", shipFromWarehouse],
+    enabled: !!shipFromWarehouse,
+    queryFn: async () => {
+      const { data, error } = await db
+        .from("inventory_location_stock")
+        .select("item_id,location_id,location_code,zone_name,on_hand")
+        .eq("warehouse_id", shipFromWarehouse!)
+        .order("location_code");
+      if (error) throw error;
+      return (data ?? []) as Row[];
+    },
+  });
+
+  const binsForItem = (itemId: string | null) =>
+    itemId ? binStock.filter((b) => b.item_id === itemId && Number(b.on_hand || 0) > 0) : [];
+  const binLabel = (locationId: string | null) => {
+    const bin = binStock.find((b) => b.location_id === locationId);
+    if (!bin) return "Any bin";
+    return `${bin.location_code}${bin.zone_name ? ` · ${bin.zone_name}` : ""}`;
+  };
+  const binOnHand = (itemId: string | null, locationId: string | null) =>
+    Number(
+      binStock.find((b) => b.item_id === itemId && b.location_id === locationId)?.on_hand ?? 0,
+    );
+
 
   useEffect(() => {
     if (doc) setHeader(doc);
