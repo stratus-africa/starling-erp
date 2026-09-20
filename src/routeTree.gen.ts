@@ -77,6 +77,7 @@ import { Route as AuthenticatedReportsInventoryRouteImport } from './routes/_aut
 import { Route as AuthenticatedReportsFinancialRouteImport } from './routes/_authenticated/reports.financial'
 import { Route as AuthenticatedReportsExpensesRouteImport } from './routes/_authenticated/reports.expenses'
 import { Route as AuthenticatedPurchasingPaymentsRouteImport } from './routes/_authenticated/purchasing.payments'
+import { Route as AuthenticatedPurchasingDashboardRouteImport } from './routes/_authenticated/purchasing.dashboard'
 import { Route as AuthenticatedPurchasingCreditsRouteImport } from './routes/_authenticated/purchasing.credits'
 import { Route as AuthenticatedManufacturingRunsRouteImport } from './routes/_authenticated/manufacturing.runs'
 import { Route as AuthenticatedManufacturingPlanningRouteImport } from './routes/_authenticated/manufacturing.planning'
@@ -548,6 +549,12 @@ const AuthenticatedPurchasingPaymentsRoute =
   AuthenticatedPurchasingPaymentsRouteImport.update({
     id: '/purchasing/payments',
     path: '/purchasing/payments',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedPurchasingDashboardRoute =
+  AuthenticatedPurchasingDashboardRouteImport.update({
+    id: '/purchasing/dashboard',
+    path: '/purchasing/dashboard',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedPurchasingCreditsRoute =
@@ -1234,6 +1241,7 @@ export interface FileRoutesByFullPath {
   '/manufacturing/planning': typeof AuthenticatedManufacturingPlanningRoute
   '/manufacturing/runs': typeof AuthenticatedManufacturingRunsRoute
   '/purchasing/credits': typeof AuthenticatedPurchasingCreditsRouteWithChildren
+  '/purchasing/dashboard': typeof AuthenticatedPurchasingDashboardRoute
   '/purchasing/payments': typeof AuthenticatedPurchasingPaymentsRoute
   '/reports/expenses': typeof AuthenticatedReportsExpensesRouteWithChildren
   '/reports/financial': typeof AuthenticatedReportsFinancialRoute
@@ -1404,6 +1412,7 @@ export interface FileRoutesByTo {
   '/manufacturing/planning': typeof AuthenticatedManufacturingPlanningRoute
   '/manufacturing/runs': typeof AuthenticatedManufacturingRunsRoute
   '/purchasing/credits': typeof AuthenticatedPurchasingCreditsRouteWithChildren
+  '/purchasing/dashboard': typeof AuthenticatedPurchasingDashboardRoute
   '/purchasing/payments': typeof AuthenticatedPurchasingPaymentsRoute
   '/reports/expenses': typeof AuthenticatedReportsExpensesRouteWithChildren
   '/reports/financial': typeof AuthenticatedReportsFinancialRoute
@@ -1577,6 +1586,7 @@ export interface FileRoutesById {
   '/_authenticated/manufacturing/planning': typeof AuthenticatedManufacturingPlanningRoute
   '/_authenticated/manufacturing/runs': typeof AuthenticatedManufacturingRunsRoute
   '/_authenticated/purchasing/credits': typeof AuthenticatedPurchasingCreditsRouteWithChildren
+  '/_authenticated/purchasing/dashboard': typeof AuthenticatedPurchasingDashboardRoute
   '/_authenticated/purchasing/payments': typeof AuthenticatedPurchasingPaymentsRoute
   '/_authenticated/reports/expenses': typeof AuthenticatedReportsExpensesRouteWithChildren
   '/_authenticated/reports/financial': typeof AuthenticatedReportsFinancialRoute
@@ -1750,6 +1760,7 @@ export interface FileRouteTypes {
     | '/manufacturing/planning'
     | '/manufacturing/runs'
     | '/purchasing/credits'
+    | '/purchasing/dashboard'
     | '/purchasing/payments'
     | '/reports/expenses'
     | '/reports/financial'
@@ -1920,6 +1931,7 @@ export interface FileRouteTypes {
     | '/manufacturing/planning'
     | '/manufacturing/runs'
     | '/purchasing/credits'
+    | '/purchasing/dashboard'
     | '/purchasing/payments'
     | '/reports/expenses'
     | '/reports/financial'
@@ -2092,6 +2104,7 @@ export interface FileRouteTypes {
     | '/_authenticated/manufacturing/planning'
     | '/_authenticated/manufacturing/runs'
     | '/_authenticated/purchasing/credits'
+    | '/_authenticated/purchasing/dashboard'
     | '/_authenticated/purchasing/payments'
     | '/_authenticated/reports/expenses'
     | '/_authenticated/reports/financial'
@@ -2681,6 +2694,13 @@ declare module '@tanstack/react-router' {
       path: '/purchasing/payments'
       fullPath: '/purchasing/payments'
       preLoaderRoute: typeof AuthenticatedPurchasingPaymentsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/purchasing/dashboard': {
+      id: '/_authenticated/purchasing/dashboard'
+      path: '/purchasing/dashboard'
+      fullPath: '/purchasing/dashboard'
+      preLoaderRoute: typeof AuthenticatedPurchasingDashboardRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/purchasing/credits': {
@@ -3641,6 +3661,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedManufacturingPlanningRoute: typeof AuthenticatedManufacturingPlanningRoute
   AuthenticatedManufacturingRunsRoute: typeof AuthenticatedManufacturingRunsRoute
   AuthenticatedPurchasingCreditsRoute: typeof AuthenticatedPurchasingCreditsRouteWithChildren
+  AuthenticatedPurchasingDashboardRoute: typeof AuthenticatedPurchasingDashboardRoute
   AuthenticatedPurchasingPaymentsRoute: typeof AuthenticatedPurchasingPaymentsRoute
   AuthenticatedReportsExpensesRoute: typeof AuthenticatedReportsExpensesRouteWithChildren
   AuthenticatedReportsFinancialRoute: typeof AuthenticatedReportsFinancialRoute
@@ -3755,6 +3776,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedManufacturingRunsRoute: AuthenticatedManufacturingRunsRoute,
   AuthenticatedPurchasingCreditsRoute:
     AuthenticatedPurchasingCreditsRouteWithChildren,
+  AuthenticatedPurchasingDashboardRoute: AuthenticatedPurchasingDashboardRoute,
   AuthenticatedPurchasingPaymentsRoute: AuthenticatedPurchasingPaymentsRoute,
   AuthenticatedReportsExpensesRoute:
     AuthenticatedReportsExpensesRouteWithChildren,
