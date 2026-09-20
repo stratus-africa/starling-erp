@@ -39,7 +39,11 @@ const ALL_ROLES: RoleSpec[] = [
 
 const ACCOUNTING_ROLES = ["tenant_admin", "accountant", "finance_clerk", "auditor", "accounting"];
 const OTHER_ROLES = ["tenant_admin", "sales", "purchasing", "inventory", "manufacturing", "viewer"];
+const PROCUREMENT_ROLES = ["tenant_admin", "accountant", "finance_clerk", "accounting", "purchasing"];
 const ACCOUNTING_MODULES = new Set(["accounting", "banking", "payments", "reports"]);
+
+const matchesPermissionGroup = (permission: PermissionRow, patterns: RegExp[]) =>
+  patterns.some((pattern) => pattern.test(permission.module) || pattern.test(permission.action) || pattern.test(permission.description ?? ""));
 
 const titleCase = (value: string) => value.replaceAll("_", " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
 
@@ -161,7 +165,20 @@ function RolesPage() {
   const grants = new Set<string>((data?.grants ?? []).map((row: any) => `${row.role}:${row.permission_code}`));
   const overrides = new Map<string, boolean>((data?.overrides ?? []).map((row: any) => [`${row.role}:${row.permission_code}`, Boolean(row.enabled)] as [string, boolean]));
   const accountingPermissions = (data?.permissions ?? []).filter((permission) => ACCOUNTING_MODULES.has(permission.module.split(".")[0]));
-  const otherPermissions = (data?.permissions ?? []).filter((permission) => !ACCOUNTING_MODULES.has(permission.module.split(".")[0]));
+  const supplierCreditsPermissions = (data?.permissions ?? []).filter((permission) =>
+    matchesPermissionGroup(permission, [/supplier.*credit|credit.*supplier/i, /credit.*apply|apply.*credit/i]),
+  );
+  const purchaseOrderPermissions = (data?.permissions ?? []).filter((permission) =>
+    matchesPermissionGroup(permission, [/purchase.*order|order.*purchase/i, /po\./i, /purchase_order/i]),
+  );
+  const supplierPaymentsPermissions = (data?.permissions ?? []).filter((permission) =>
+    matchesPermissionGroup(permission, [/supplier.*payment|payment.*supplier/i, /payments?\.made|payment_made/i, /allocate.*payment/i]),
+  );
+  const otherPermissions = (data?.permissions ?? []).filter(
+    (permission) =>
+      !ACCOUNTING_MODULES.has(permission.module.split(".")[0]) &&
+      !matchesPermissionGroup(permission, [/supplier.*credit|credit.*supplier/i, /purchase.*order|order.*purchase/i, /supplier.*payment|payment.*supplier/i]),
+  );
   const changing = updatePermission.isPending ? `${updatePermission.variables?.role}:${updatePermission.variables?.permission}` : null;
 
   if (!allowed) return <div className="p-6 text-sm text-muted-foreground">Administrator access required.</div>;
@@ -181,8 +198,11 @@ function RolesPage() {
       <Tabs defaultValue="roles" className="w-full">
         <TabsList className="h-auto w-full justify-start overflow-x-auto">
           <TabsTrigger value="roles">All Roles</TabsTrigger>
-          <TabsTrigger value="accounting">Accounting Permission Matrix</TabsTrigger>
-          <TabsTrigger value="other">Other Module Matrix</TabsTrigger>
+          <TabsTrigger value="accounting">Accounting</TabsTrigger>
+          <TabsTrigger value="supplier-credits">Supplier Credits</TabsTrigger>
+          <TabsTrigger value="purchase-orders">Purchase Orders</TabsTrigger>
+          <TabsTrigger value="supplier-payments">Supplier Payments</TabsTrigger>
+          <TabsTrigger value="other">Other Modules</TabsTrigger>
         </TabsList>
         <TabsContent value="roles" className="pt-3">
           <div className="mb-3 flex items-center justify-between gap-3"><p className="text-sm text-muted-foreground">Available roles for this workspace.</p><Link to="/settings/users" className="inline-flex items-center gap-1 text-sm text-primary hover:underline">Assign roles <ArrowRight className="h-4 w-4" /></Link></div>
@@ -191,6 +211,18 @@ function RolesPage() {
         <TabsContent value="accounting" className="space-y-3 pt-3">
           <div className="flex items-start gap-2"><Shield className="mt-0.5 h-4 w-4 text-primary" /><p className="text-xs text-muted-foreground">Tick or untick a permission to change access. Tenant Admin always retains full access.</p></div>
           {matrix(accountingPermissions, ACCOUNTING_ROLES)}
+        </TabsContent>
+        <TabsContent value="supplier-credits" className="space-y-3 pt-3">
+          <div className="flex items-start gap-2"><Shield className="mt-0.5 h-4 w-4 text-primary" /><p className="text-xs text-muted-foreground">Supplier credit permissions control issuance, posting, and application of credits against bills.</p></div>
+          {matrix(supplierCreditsPermissions, PROCUREMENT_ROLES)}
+        </TabsContent>
+        <TabsContent value="purchase-orders" className="space-y-3 pt-3">
+          <div className="flex items-start gap-2"><Shield className="mt-0.5 h-4 w-4 text-primary" /><p className="text-xs text-muted-foreground">Purchase order access controls creation, approval, and posting across supplier requisitions and orders.</p></div>
+          {matrix(purchaseOrderPermissions, PROCUREMENT_ROLES)}
+        </TabsContent>
+        <TabsContent value="supplier-payments" className="space-y-3 pt-3">
+          <div className="flex items-start gap-2"><Shield className="mt-0.5 h-4 w-4 text-primary" /><p className="text-xs text-muted-foreground">Supplier payment permissions cover payment entry, allocation, and settlement actions.</p></div>
+          {matrix(supplierPaymentsPermissions, PROCUREMENT_ROLES)}
         </TabsContent>
         <TabsContent value="other" className="space-y-3 pt-3">
           <div className="flex items-start gap-2"><Shield className="mt-0.5 h-4 w-4 text-primary" /><p className="text-xs text-muted-foreground">Permissions are grouped by module. Changes apply only to this workspace.</p></div>

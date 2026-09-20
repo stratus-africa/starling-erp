@@ -69,7 +69,7 @@ const NAV: NavGroup[] = [
     label: "Customers",
     items: [
       {
-        title: "Tenants",
+        title: "Workspaces",
         url: "/super-admin/tenants",
         icon: Building2,
         permission: PLATFORM_PERMISSIONS.tenantsView,

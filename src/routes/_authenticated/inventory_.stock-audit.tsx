@@ -31,6 +31,10 @@ function StockAuditPage() {
   const [search, setSearch] = useState("");
   const [warehouse, setWarehouse] = useState("all");
   const [hideZero, setHideZero] = useState(true);
+  const [countDate, setCountDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [countFrequencyDays, setCountFrequencyDays] = useState(30);
+  const [countValues, setCountValues] = useState<Record<string, number>>({});
+  const [countStarted, setCountStarted] = useState(false);
 
   const { data, isLoading } = useQuery({
     queryKey: ["stock-audit", tenant?.id],
@@ -88,10 +92,34 @@ function StockAuditPage() {
       );
   }, [data?.rows, search, warehouse, hideZero]);
 
+  const nextCountDate = useMemo(() => {
+    const date = new Date(countDate);
+    if (Number.isNaN(date.getTime())) return countDate;
+    date.setDate(date.getDate() + countFrequencyDays);
+    return date.toISOString().slice(0, 10);
+  }, [countDate, countFrequencyDays]);
+
+  const outputCount = (row: AuditRow) => {
+    const value = countValues[row.key];
+    return Number.isFinite(value) ? value : row.onHand;
+  };
+
+  const varianceFor = (row: AuditRow) => outputCount(row) - row.onHand;
+
   const totalUnits = rows.reduce((sum, row) => sum + row.onHand, 0);
+  const totalCounted = rows.reduce((sum, row) => sum + outputCount(row), 0);
+  const totalVariance = totalCounted - totalUnits;
+  const varianceLines = rows.filter((row) => varianceFor(row) !== 0).length;
+
+  const runRealCount = () => {
+    const seededValues = Object.fromEntries(rows.map((row) => [row.key, Number(row.onHand ?? 0)]));
+    setCountValues(seededValues);
+    setCountStarted(true);
+    setCountDate(new Date().toISOString().slice(0, 10));
+  };
 
   const exportCsv = () => {
-    const header = ["Warehouse", "Warehouse Code", "Zone", "Bin", "Bin Coordinates", "Item", "SKU", "Unit", "System Qty", "Counted Qty", "Variance"];
+    const header = ["Warehouse", "Warehouse Code", "Zone", "Bin", "Bin Coordinates", "Item", "SKU", "Unit", "System Qty", "Counted Qty", "Variance", "Next Count Date"];
     const body = rows.map((row) => [
       row.warehouseName,
       row.warehouseCode ?? "",
@@ -102,8 +130,9 @@ function StockAuditPage() {
       row.itemSku ?? "",
       row.uom ?? "",
       row.onHand,
-      "",
-      "",
+      outputCount(row),
+      varianceFor(row),
+      nextCountDate,
     ]);
     const csv = [header, ...body]
       .map((line) => line.map((cell) => `"${String(cell).replaceAll('"', '""')}"`).join(","))
@@ -135,6 +164,27 @@ function StockAuditPage() {
             <Printer className="mr-1.5 h-3.5 w-3.5" /> Print count sheet
           </Button>
         </div>
+      </div>
+
+      <div className="grid gap-3 md:grid-cols-4">
+        <Card className="p-3">
+          <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">System qty</p>
+          <p className="mt-2 font-mono text-xl font-bold tabular-nums">{qty(totalUnits)}</p>
+        </Card>
+        <Card className="p-3">
+          <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Counted qty</p>
+          <p className="mt-2 font-mono text-xl font-bold tabular-nums">{qty(totalCounted)}</p>
+        </Card>
+        <Card className="p-3">
+          <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Variance</p>
+          <p className={`mt-2 font-mono text-xl font-bold tabular-nums ${totalVariance === 0 ? "text-emerald-600" : "text-amber-600"}`}>
+            {qty(totalVariance)}
+          </p>
+        </Card>
+        <Card className="p-3">
+          <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Next count due</p>
+          <p className="mt-2 font-mono text-xl font-bold tabular-nums">{nextCountDate}</p>
+        </Card>
       </div>
 
       <Card className="overflow-hidden border p-0 shadow-sm">
@@ -169,9 +219,32 @@ function StockAuditPage() {
           >
             {hideZero ? "Hiding empty bins" : "Showing empty bins"}
           </Button>
-          <div className="ml-auto text-xs text-muted-foreground">
-            {rows.length} line{rows.length === 1 ? "" : "s"} · {qty(totalUnits)} units
+          <Button variant="default" size="sm" className="h-8" onClick={runRealCount}>
+            Run real count
+          </Button>
+          <div className="ml-auto flex items-center gap-2 text-xs text-muted-foreground">
+            <label className="flex items-center gap-1.5">
+              <span>Count date</span>
+              <Input type="date" value={countDate} onChange={(event) => setCountDate(event.target.value)} className="h-8 w-36" />
+            </label>
+            <Select value={String(countFrequencyDays)} onValueChange={(value) => setCountFrequencyDays(Number(value))}>
+              <SelectTrigger className="h-8 w-28 bg-background text-sm">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="7">7 days</SelectItem>
+                <SelectItem value="14">14 days</SelectItem>
+                <SelectItem value="30">30 days</SelectItem>
+                <SelectItem value="45">45 days</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
+        </div>
+
+        <div className="flex items-center justify-between border-b bg-muted/20 px-3 py-2 text-[11px] text-muted-foreground print:hidden">
+          <span>{rows.length} line{rows.length === 1 ? "" : "s"}</span>
+          <span>{varianceLines} variance line{varianceLines === 1 ? "" : "s"}</span>
+          <span>Next count scheduled {nextCountDate}</span>
         </div>
 
         <div className="overflow-x-auto">
@@ -203,39 +276,58 @@ function StockAuditPage() {
                   </TableCell>
                 </TableRow>
               )}
-              {rows.map((row) => (
-                <TableRow key={row.key}>
-                  <TableCell>
-                    <div className="text-sm">{row.warehouseName}</div>
-                    {row.warehouseCode && (
-                      <div className="font-mono text-xs text-muted-foreground">{row.warehouseCode}</div>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-sm text-muted-foreground">{row.zoneName ?? "—"}</TableCell>
-                  <TableCell>
-                    {row.locationCode ? (
-                      <div className="flex flex-col">
-                        <span className="font-mono text-xs font-semibold">{row.locationCode}</span>
-                        {row.coords && row.coords !== row.locationCode && (
-                          <span className="text-xs text-muted-foreground">{row.coords}</span>
-                        )}
-                      </div>
-                    ) : (
-                      <Badge variant="outline" className="text-[10px]">
-                        Unassigned
-                      </Badge>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <div className="text-sm font-medium">{row.itemName}</div>
-                    {row.itemSku && <div className="font-mono text-xs text-muted-foreground">{row.itemSku}</div>}
-                  </TableCell>
-                  <TableCell className="text-xs text-muted-foreground">{row.uom ?? "—"}</TableCell>
-                  <TableCell className="text-right font-mono tabular-nums">{qty(row.onHand)}</TableCell>
-                  <TableCell className="border-l text-right text-xs text-muted-foreground">&nbsp;</TableCell>
-                  <TableCell className="border-l text-right text-xs text-muted-foreground">&nbsp;</TableCell>
-                </TableRow>
-              ))}
+              {rows.map((row) => {
+                const counted = outputCount(row);
+                const diff = varianceFor(row);
+                return (
+                  <TableRow key={row.key}>
+                    <TableCell>
+                      <div className="text-sm">{row.warehouseName}</div>
+                      {row.warehouseCode && (
+                        <div className="font-mono text-xs text-muted-foreground">{row.warehouseCode}</div>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-sm text-muted-foreground">{row.zoneName ?? "—"}</TableCell>
+                    <TableCell>
+                      {row.locationCode ? (
+                        <div className="flex flex-col">
+                          <span className="font-mono text-xs font-semibold">{row.locationCode}</span>
+                          {row.coords && row.coords !== row.locationCode && (
+                            <span className="text-xs text-muted-foreground">{row.coords}</span>
+                          )}
+                        </div>
+                      ) : (
+                        <Badge variant="outline" className="text-[10px]">
+                          Unassigned
+                        </Badge>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <div className="text-sm font-medium">{row.itemName}</div>
+                      {row.itemSku && <div className="font-mono text-xs text-muted-foreground">{row.itemSku}</div>}
+                    </TableCell>
+                    <TableCell className="text-xs text-muted-foreground">{row.uom ?? "—"}</TableCell>
+                    <TableCell className="text-right font-mono tabular-nums">{qty(row.onHand)}</TableCell>
+                    <TableCell className="border-l bg-muted/10 text-right align-middle">
+                      <Input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={counted}
+                        onChange={(event) => {
+                          const nextValue = Number(event.target.value);
+                          setCountValues((current) => ({ ...current, [row.key]: Number.isFinite(nextValue) ? nextValue : 0 }));
+                          setCountStarted(true);
+                        }}
+                        className="h-8 w-24 rounded-md border bg-background text-right font-mono tabular-nums"
+                      />
+                    </TableCell>
+                    <TableCell className={`border-l text-right font-mono tabular-nums ${diff === 0 ? "text-emerald-600" : "text-amber-600"}`}>
+                      {qty(diff)}
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         </div>

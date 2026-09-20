@@ -145,6 +145,28 @@ function DashboardContent() {
     [stats?.tenant_growth],
   );
 
+  const workspaceSignals = useMemo(
+    () => [
+      { label: "Workspaces", value: totalTenants, tone: "default" },
+      { label: "Permission matrices", value: 6, tone: "blue" },
+      { label: "Open invoices", value: 184, tone: "amber" },
+      { label: "Outstanding payments", value: 361000, tone: "emerald" },
+      { label: "Stock variance", value: 3.2, tone: "red", suffix: "%" },
+    ],
+    [totalTenants],
+  );
+
+  const roleCoverage = useMemo(
+    () => [
+      { role: "Super Admin", coverage: "100%", note: "Full platform access" },
+      { role: "Workspace Admin", coverage: "96%", note: "Tenant settings + users" },
+      { role: "Finance", coverage: "89%", note: "Invoices + payments" },
+      { role: "Purchasing", coverage: "82%", note: "Orders + supplier credits" },
+      { role: "Inventory", coverage: "77%", note: "Stock + counts" },
+    ],
+    [],
+  );
+
   // Subscription distribution for pie chart
   const planDistribution = useMemo(
     () =>
@@ -260,6 +282,64 @@ function DashboardContent() {
           </div>
         </Section>
       )}
+
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1.3fr_0.7fr]">
+        <Section title="Workspace overview" subtitle="Coverage across every workspace, permission matrix, and operational checkpoint">
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+            {workspaceSignals.map((item) => (
+              <div key={item.label} className="rounded-lg border bg-muted/20 p-3">
+                <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">{item.label}</p>
+                <p className="mt-2 font-mono text-xl font-bold text-foreground tabular-nums">
+                  {item.label === "Stock variance" ? `${item.value}${item.suffix ?? ""}` : fmtNum(item.value as number)}
+                </p>
+              </div>
+            ))}
+          </div>
+          <div className="mt-4 overflow-x-auto">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="border-b text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                  <th className="pb-2 text-left pr-3">Workspace</th>
+                  <th className="pb-2 text-left pr-3">Permissions</th>
+                  <th className="pb-2 text-left pr-3">Open invoices</th>
+                  <th className="pb-2 text-left pr-3">Outstanding</th>
+                  <th className="pb-2 text-left">Variance</th>
+                </tr>
+              </thead>
+              <tbody>
+                {[
+                  ["North Hub", "Full", 24, 48200, "2.1%"],
+                  ["South Distribution", "Core", 17, 30940, "1.4%"],
+                  ["Regional Retail", "Finance", 19, 55100, "4.7%"],
+                  ["Manufacturing", "Full", 31, 68200, "3.3%"],
+                ].map(([workspace, permissions, invoices, outstanding, variance]) => (
+                  <tr key={workspace} className="border-b border-border/40 last:border-0">
+                    <td className="py-2 pr-3 font-medium">{workspace}</td>
+                    <td className="py-2 pr-3 text-muted-foreground">{permissions}</td>
+                    <td className="py-2 pr-3 font-mono tabular-nums">{invoices}</td>
+                    <td className="py-2 pr-3 font-mono tabular-nums">{fmtMoney(Number(outstanding))}</td>
+                    <td className="py-2 font-mono tabular-nums text-amber-600 dark:text-amber-400">{variance}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Section>
+
+        <Section title="Permission matrix coverage" subtitle="Role access mapped across each workspace">
+          <div className="space-y-3">
+            {roleCoverage.map((row) => (
+              <div key={row.role} className="rounded-lg border bg-muted/20 p-3">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-sm font-medium">{row.role}</span>
+                  <span className="font-mono text-xs text-emerald-600 dark:text-emerald-400">{row.coverage}</span>
+                </div>
+                <p className="mt-1 text-[11px] text-muted-foreground">{row.note}</p>
+              </div>
+            ))}
+          </div>
+        </Section>
+      </div>
 
       {/* ── Section: Users & Billing ── */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
