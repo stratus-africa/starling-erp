@@ -7326,6 +7326,44 @@ export type Database = {
           },
         ]
       }
+      tenant_role_record_restrictions: {
+        Row: {
+          allowed: boolean
+          record_id: string
+          record_type: string
+          role: string
+          tenant_id: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          allowed?: boolean
+          record_id: string
+          record_type: string
+          role: string
+          tenant_id: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          allowed?: boolean
+          record_id?: string
+          record_type?: string
+          role?: string
+          tenant_id?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_role_record_restrictions_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tenant_subscriptions: {
         Row: {
           amount: number | null
@@ -8609,6 +8647,10 @@ export type Database = {
         Returns: string
       }
       bom_refresh_uom_factors: { Args: { _bom_id: string }; Returns: number }
+      can_access_record: {
+        Args: { _record_id: string; _record_type: string }
+        Returns: boolean
+      }
       can_tenant_use_feature: {
         Args: { _feature_code: string; _tenant_id: string }
         Returns: boolean
@@ -9855,6 +9897,15 @@ export type Database = {
       }
       set_role_permission_override: {
         Args: { _enabled: boolean; _permission_code: string; _role: string }
+        Returns: undefined
+      }
+      set_role_record_restriction: {
+        Args: {
+          _allowed: boolean
+          _record_id: string
+          _record_type: string
+          _role: string
+        }
         Returns: undefined
       }
       start_production_order: {
