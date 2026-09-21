@@ -7,10 +7,10 @@
  */
 
 import { Fragment, useMemo, useState } from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Building2, Layers, Loader2, Search, Shield } from "lucide-react";
+import { Building2, Layers, Loader2, PencilLine, Search, Shield } from "lucide-react";
 
 import { PermissionGuard } from "@/components/super-admin/permission-guard";
 import { PLATFORM_PERMISSIONS } from "@/lib/platform-permissions";
@@ -254,37 +254,49 @@ function WorkspacePermissionsContent() {
               <div className="p-4 text-sm text-muted-foreground">No workspaces found.</div>
             )}
             {filtered.map((tenant) => (
-              <button
+              <div
                 key={tenant.id}
-                type="button"
-                onClick={() => setSelected(tenant.id)}
-                className={`flex w-full flex-col gap-1 px-3 py-2.5 text-left transition-colors hover:bg-muted/40 ${
+                className={`flex items-start justify-between gap-2 px-3 py-2.5 transition-colors hover:bg-muted/40 ${
                   tenant.id === activeId ? "bg-primary/5" : ""
                 }`}
               >
-                <div className="flex items-center justify-between gap-2">
-                  <span className="flex items-center gap-1.5 text-sm font-medium">
-                    <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
-                    {tenant.name}
-                  </span>
-                  {tenant.status && (
-                    <Badge variant="outline" className="text-[10px] capitalize">
-                      {tenant.status}
-                    </Badge>
-                  )}
-                </div>
-                <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
-                  <span className="font-mono">{tenant.slug ?? "—"}</span>
-                  <span>·</span>
-                  <span>
-                    {tenant.user_count} user{tenant.user_count === 1 ? "" : "s"}
-                  </span>
-                  <span>·</span>
-                  <span>
-                    {tenant.override_count} custom rule{tenant.override_count === 1 ? "" : "s"}
-                  </span>
-                </div>
-              </button>
+                <button
+                  type="button"
+                  onClick={() => setSelected(tenant.id)}
+                  className="flex flex-1 flex-col gap-1 text-left"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="flex items-center gap-1.5 text-sm font-medium">
+                      <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
+                      {tenant.name}
+                    </span>
+                    {tenant.status && (
+                      <Badge variant="outline" className="text-[10px] capitalize">
+                        {tenant.status}
+                      </Badge>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
+                    <span className="font-mono">{tenant.slug ?? "—"}</span>
+                    <span>·</span>
+                    <span>
+                      {tenant.user_count} user{tenant.user_count === 1 ? "" : "s"}
+                    </span>
+                    <span>·</span>
+                    <span>
+                      {tenant.override_count} custom rule{tenant.override_count === 1 ? "" : "s"}
+                    </span>
+                  </div>
+                </button>
+                <Link
+                  to="/super-admin/tenants/$id"
+                  params={{ id: tenant.id }}
+                  className="inline-flex items-center gap-1 rounded-md border bg-background px-2 py-1 text-[10px] text-primary hover:bg-muted"
+                  onClick={(event) => event.stopPropagation()}
+                >
+                  <PencilLine className="h-3 w-3" /> Edit
+                </Link>
+              </div>
             ))}
           </div>
         </Card>

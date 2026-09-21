@@ -22,7 +22,7 @@
  * Data source: get_tenant_detail(_tenant_id) → single JSONB round-trip
  */
 
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { db } from "@/lib/typed-db";
@@ -48,6 +48,7 @@ import { Separator } from "@/components/ui/separator";
 import { Progress } from "@/components/ui/progress";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import {
@@ -625,6 +626,174 @@ function FeatureToggle({
           aria-label={`Toggle ${meta.label}`}
         />
       </div>
+    </div>
+  );
+}
+
+function WorkspaceSettingsTab({
+  tenant,
+  users,
+  tenantId,
+  onSuccess,
+}: {
+  tenant: Tenant;
+  users: TenantUser[];
+  tenantId: string;
+  onSuccess: () => void;
+}) {
+  const navigate = useNavigate();
+  const [workspaceName, setWorkspaceName] = useState(tenant.name);
+  const [workspaceSlug, setWorkspaceSlug] = useState(tenant.slug ?? "");
+  const [workspaceStatus, setWorkspaceStatus] = useState<string>(tenant.status ?? "active");
+  const [primaryAdminId, setPrimaryAdminId] = useState(() => {
+    const adminUser = users.find((user) => (user.roles ?? []).includes("tenant_admin"));
+    return adminUser?.id ?? users[0]?.id ?? "";
+  });
+  const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  const handleSave = async () => {
+    if (!workspaceName.trim()) {
+      toast.error("Workspace name is required.");
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const cleanSlug = workspaceSlug.trim() || workspaceName.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+      const { error } = await supabase
+        .from("tenants")
+        .update({
+          name: workspaceName.trim(),
+          slug: cleanSlug || null,
+          status: workspaceStatus,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", tenantId);
+
+      if (error) throw error;
+
+      if (primaryAdminId) {
+        const selectedUser = users.find((user) => user.id === primaryAdminId);
+        if (selectedUser) {
+          const roles = Array.from(new Set([...(selectedUser.roles ?? []), "tenant_admin"]));
+          const { error: roleError } = await db.rpc("admin_set_tenant_user_roles", {
+            _tenant_id: tenantId,
+            _user_id: selectedUser.id,
+            _roles: roles,
+            _reason: "Workspace admin reassigned by Super Admin",
+          });
+          if (roleError) throw roleError;
+        }
+      }
+
+      toast.success("Workspace updated.");
+      onSuccess();
+    } catch (error: any) {
+      toast.error(error?.message ?? "Failed to update workspace.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    setDeleting(true);
+    try {
+      const { error } = await supabase
+        .from("tenants")
+        .update({ deleted_at: new Date().toISOString(), status: "cancelled", updated_at: new Date().toISOString() })
+        .eq("id", tenantId);
+
+      if (error) throw error;
+      toast.success("Workspace archived.");
+      navigate({ to: "/super-admin/tenants" });
+    } catch (error: any) {
+      toast.error(error?.message ?? "Failed to delete workspace.");
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  return (
+    <div className="grid gap-6 xl:grid-cols-[1.4fr_0.8fr]">
+      <Card className="p-5">
+        <div className="mb-4">
+          <h3 className="text-sm font-semibold">Workspace settings</h3>
+          <p className="mt-1 text-xs text-muted-foreground">Rename the workspace, adjust its status, and assign a primary administrator.</p>
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-2">
+          <div className="space-y-2 md:col-span-2">
+            <Label htmlFor="workspace-name">Workspace name</Label>
+            <Input id="workspace-name" value={workspaceName} onChange={(event) => setWorkspaceName(event.target.value)} />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="workspace-slug">Workspace slug</Label>
+            <Input id="workspace-slug" value={workspaceSlug} onChange={(event) => setWorkspaceSlug(event.target.value)} />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="workspace-status">Status</Label>
+            <Select value={workspaceStatus} onValueChange={setWorkspaceStatus}>
+              <SelectTrigger id="workspace-status">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="active">Active</SelectItem>
+                <SelectItem value="trial">Trial</SelectItem>
+                <SelectItem value="suspended">Suspended</SelectItem>
+                <SelectItem value="cancelled">Cancelled</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2 md:col-span-2">
+            <Label htmlFor="workspace-admin">Primary workspace admin</Label>
+            <Select value={primaryAdminId} onValueChange={setPrimaryAdminId}>
+              <SelectTrigger id="workspace-admin">
+                <SelectValue placeholder="Select a workspace admin" />
+              </SelectTrigger>
+              <SelectContent>
+                {users.map((user) => (
+                  <SelectItem key={user.id} value={user.id}>
+                    {user.full_name || user.email} {user.roles?.includes("tenant_admin") ? "(current admin)" : ""}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        <div className="mt-5 flex items-center justify-end gap-2">
+          <Button variant="outline" onClick={() => navigate({ to: "/super-admin/tenants" })}>
+            Back to list
+          </Button>
+          <Button onClick={handleSave} disabled={saving}>
+            {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+            Save workspace
+          </Button>
+        </div>
+      </Card>
+
+      <Card className="p-5 border-destructive/20 bg-destructive/5">
+        <div className="mb-4">
+          <h3 className="text-sm font-semibold text-destructive">Danger zone</h3>
+          <p className="mt-1 text-xs text-muted-foreground">Deleting archives the workspace and removes it from active operations. This can be undone manually from the database if needed.</p>
+        </div>
+
+        <div className="rounded-lg border border-destructive/20 bg-background/60 p-3 text-xs text-muted-foreground">
+          <p className="font-medium text-foreground">{tenant.name}</p>
+          <p className="mt-1 font-mono">{tenant.slug ?? "workspace"}</p>
+        </div>
+
+        <Button
+          variant="destructive"
+          className="mt-4 w-full"
+          onClick={handleDelete}
+          disabled={deleting}
+        >
+          {deleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+          Delete workspace
+        </Button>
+      </Card>
     </div>
   );
 }
@@ -1479,6 +1648,7 @@ function TenantDetailPage() {
           <TabsList className="mb-6 flex-wrap h-auto gap-1">
             {[
               ["overview", "Overview", Building2],
+              ["workspace-settings", "Workspace settings", Shield],
               ["users", "Users", Users],
               ["subscription", "Subscription", CreditCard],
               ["usage", "Usage", Activity],
@@ -1501,6 +1671,10 @@ function TenantDetailPage() {
 
           <TabsContent value="overview">
             <OverviewTab data={payload} tenant={tenant} />
+          </TabsContent>
+
+          <TabsContent value="workspace-settings">
+            <WorkspaceSettingsTab tenant={tenant} users={payload.users ?? []} tenantId={tenant.id} onSuccess={invalidate} />
           </TabsContent>
 
           <TabsContent value="users">
