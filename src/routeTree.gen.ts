@@ -147,10 +147,8 @@ import { Route as AuthenticatedReportsSalesProfitabilityRouteImport } from './ro
 import { Route as AuthenticatedReportsSalesProductsRouteImport } from './routes/_authenticated/reports.sales.products'
 import { Route as AuthenticatedReportsSalesFulfillmentRouteImport } from './routes/_authenticated/reports.sales.fulfillment'
 import { Route as AuthenticatedReportsSalesCustomersRouteImport } from './routes/_authenticated/reports.sales.customers'
-import { Route as AuthenticatedReportsSalesCustomerStatementsRouteImport } from './routes/_authenticated/reports.sales.customer-statements'
 import { Route as AuthenticatedReportsSalesCollectionsRouteImport } from './routes/_authenticated/reports.sales.collections'
 import { Route as AuthenticatedReportsPurchasesSuppliersRouteImport } from './routes/_authenticated/reports.purchases.suppliers'
-import { Route as AuthenticatedReportsPurchasesSupplierStatementsRouteImport } from './routes/_authenticated/reports.purchases.supplier-statements'
 import { Route as AuthenticatedReportsPurchasesReceivingRouteImport } from './routes/_authenticated/reports.purchases.receiving'
 import { Route as AuthenticatedReportsPurchasesProductsRouteImport } from './routes/_authenticated/reports.purchases.products'
 import { Route as AuthenticatedReportsPurchasesPriceVarianceRouteImport } from './routes/_authenticated/reports.purchases.price-variance'
@@ -179,6 +177,8 @@ import { Route as AuthenticatedManufacturingBomIdRouteImport } from './routes/_a
 import { Route as AuthenticatedInventoryWarehousesIdRouteImport } from './routes/_authenticated/inventory.warehouses.$id'
 import { Route as AuthenticatedInventoryItemsIdRouteImport } from './routes/_authenticated/inventory.items.$id'
 import { Route as AuthenticatedCrmCustomersIdRouteImport } from './routes/_authenticated/crm.customers.$id'
+import { Route as AuthenticatedReportsSalesCustomerStatementsIndexRouteImport } from './routes/_authenticated/reports.sales.customer-statements.index'
+import { Route as AuthenticatedReportsPurchasesSupplierStatementsIndexRouteImport } from './routes/_authenticated/reports.purchases.supplier-statements.index'
 import { Route as AuthenticatedReportsSalesCustomerStatementsCustomerIdRouteImport } from './routes/_authenticated/reports.sales.customer-statements.$customerId'
 import { Route as AuthenticatedReportsPurchasesSupplierStatementsSupplierIdRouteImport } from './routes/_authenticated/reports.purchases.supplier-statements.$supplierId'
 
@@ -970,12 +970,6 @@ const AuthenticatedReportsSalesCustomersRoute =
     path: '/reports/sales/customers',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedReportsSalesCustomerStatementsRoute =
-  AuthenticatedReportsSalesCustomerStatementsRouteImport.update({
-    id: '/reports/sales/customer-statements',
-    path: '/reports/sales/customer-statements',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
 const AuthenticatedReportsSalesCollectionsRoute =
   AuthenticatedReportsSalesCollectionsRouteImport.update({
     id: '/reports/sales/collections',
@@ -986,12 +980,6 @@ const AuthenticatedReportsPurchasesSuppliersRoute =
   AuthenticatedReportsPurchasesSuppliersRouteImport.update({
     id: '/reports/purchases/suppliers',
     path: '/reports/purchases/suppliers',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedReportsPurchasesSupplierStatementsRoute =
-  AuthenticatedReportsPurchasesSupplierStatementsRouteImport.update({
-    id: '/reports/purchases/supplier-statements',
-    path: '/reports/purchases/supplier-statements',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedReportsPurchasesReceivingRoute =
@@ -1162,17 +1150,29 @@ const AuthenticatedCrmCustomersIdRoute =
     path: '/crm/customers/$id',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedReportsSalesCustomerStatementsIndexRoute =
+  AuthenticatedReportsSalesCustomerStatementsIndexRouteImport.update({
+    id: '/reports/sales/customer-statements/',
+    path: '/reports/sales/customer-statements/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedReportsPurchasesSupplierStatementsIndexRoute =
+  AuthenticatedReportsPurchasesSupplierStatementsIndexRouteImport.update({
+    id: '/reports/purchases/supplier-statements/',
+    path: '/reports/purchases/supplier-statements/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedReportsSalesCustomerStatementsCustomerIdRoute =
   AuthenticatedReportsSalesCustomerStatementsCustomerIdRouteImport.update({
-    id: '/$customerId',
-    path: '/$customerId',
-    getParentRoute: () => AuthenticatedReportsSalesCustomerStatementsRoute,
+    id: '/reports/sales/customer-statements/$customerId',
+    path: '/reports/sales/customer-statements/$customerId',
+    getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedReportsPurchasesSupplierStatementsSupplierIdRoute =
   AuthenticatedReportsPurchasesSupplierStatementsSupplierIdRouteImport.update({
-    id: '/$supplierId',
-    path: '/$supplierId',
-    getParentRoute: () => AuthenticatedReportsPurchasesSupplierStatementsRoute,
+    id: '/reports/purchases/supplier-statements/$supplierId',
+    path: '/reports/purchases/supplier-statements/$supplierId',
+    getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 
 export interface FileRoutesByFullPath {
@@ -1299,10 +1299,8 @@ export interface FileRoutesByFullPath {
   '/reports/purchases/price-variance': typeof AuthenticatedReportsPurchasesPriceVarianceRoute
   '/reports/purchases/products': typeof AuthenticatedReportsPurchasesProductsRoute
   '/reports/purchases/receiving': typeof AuthenticatedReportsPurchasesReceivingRoute
-  '/reports/purchases/supplier-statements': typeof AuthenticatedReportsPurchasesSupplierStatementsRouteWithChildren
   '/reports/purchases/suppliers': typeof AuthenticatedReportsPurchasesSuppliersRoute
   '/reports/sales/collections': typeof AuthenticatedReportsSalesCollectionsRoute
-  '/reports/sales/customer-statements': typeof AuthenticatedReportsSalesCustomerStatementsRouteWithChildren
   '/reports/sales/customers': typeof AuthenticatedReportsSalesCustomersRoute
   '/reports/sales/fulfillment': typeof AuthenticatedReportsSalesFulfillmentRoute
   '/reports/sales/products': typeof AuthenticatedReportsSalesProductsRoute
@@ -1346,6 +1344,8 @@ export interface FileRoutesByFullPath {
   '/settings/warehouses/': typeof AuthenticatedSettingsWarehousesIndexRoute
   '/reports/purchases/supplier-statements/$supplierId': typeof AuthenticatedReportsPurchasesSupplierStatementsSupplierIdRoute
   '/reports/sales/customer-statements/$customerId': typeof AuthenticatedReportsSalesCustomerStatementsCustomerIdRoute
+  '/reports/purchases/supplier-statements/': typeof AuthenticatedReportsPurchasesSupplierStatementsIndexRoute
+  '/reports/sales/customer-statements/': typeof AuthenticatedReportsSalesCustomerStatementsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof AuthenticatedIndexRoute
@@ -1469,10 +1469,8 @@ export interface FileRoutesByTo {
   '/reports/purchases/price-variance': typeof AuthenticatedReportsPurchasesPriceVarianceRoute
   '/reports/purchases/products': typeof AuthenticatedReportsPurchasesProductsRoute
   '/reports/purchases/receiving': typeof AuthenticatedReportsPurchasesReceivingRoute
-  '/reports/purchases/supplier-statements': typeof AuthenticatedReportsPurchasesSupplierStatementsRouteWithChildren
   '/reports/purchases/suppliers': typeof AuthenticatedReportsPurchasesSuppliersRoute
   '/reports/sales/collections': typeof AuthenticatedReportsSalesCollectionsRoute
-  '/reports/sales/customer-statements': typeof AuthenticatedReportsSalesCustomerStatementsRouteWithChildren
   '/reports/sales/customers': typeof AuthenticatedReportsSalesCustomersRoute
   '/reports/sales/fulfillment': typeof AuthenticatedReportsSalesFulfillmentRoute
   '/reports/sales/products': typeof AuthenticatedReportsSalesProductsRoute
@@ -1516,6 +1514,8 @@ export interface FileRoutesByTo {
   '/settings/warehouses': typeof AuthenticatedSettingsWarehousesIndexRoute
   '/reports/purchases/supplier-statements/$supplierId': typeof AuthenticatedReportsPurchasesSupplierStatementsSupplierIdRoute
   '/reports/sales/customer-statements/$customerId': typeof AuthenticatedReportsSalesCustomerStatementsCustomerIdRoute
+  '/reports/purchases/supplier-statements': typeof AuthenticatedReportsPurchasesSupplierStatementsIndexRoute
+  '/reports/sales/customer-statements': typeof AuthenticatedReportsSalesCustomerStatementsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -1644,10 +1644,8 @@ export interface FileRoutesById {
   '/_authenticated/reports/purchases/price-variance': typeof AuthenticatedReportsPurchasesPriceVarianceRoute
   '/_authenticated/reports/purchases/products': typeof AuthenticatedReportsPurchasesProductsRoute
   '/_authenticated/reports/purchases/receiving': typeof AuthenticatedReportsPurchasesReceivingRoute
-  '/_authenticated/reports/purchases/supplier-statements': typeof AuthenticatedReportsPurchasesSupplierStatementsRouteWithChildren
   '/_authenticated/reports/purchases/suppliers': typeof AuthenticatedReportsPurchasesSuppliersRoute
   '/_authenticated/reports/sales/collections': typeof AuthenticatedReportsSalesCollectionsRoute
-  '/_authenticated/reports/sales/customer-statements': typeof AuthenticatedReportsSalesCustomerStatementsRouteWithChildren
   '/_authenticated/reports/sales/customers': typeof AuthenticatedReportsSalesCustomersRoute
   '/_authenticated/reports/sales/fulfillment': typeof AuthenticatedReportsSalesFulfillmentRoute
   '/_authenticated/reports/sales/products': typeof AuthenticatedReportsSalesProductsRoute
@@ -1691,6 +1689,8 @@ export interface FileRoutesById {
   '/_authenticated/settings/warehouses/': typeof AuthenticatedSettingsWarehousesIndexRoute
   '/_authenticated/reports/purchases/supplier-statements/$supplierId': typeof AuthenticatedReportsPurchasesSupplierStatementsSupplierIdRoute
   '/_authenticated/reports/sales/customer-statements/$customerId': typeof AuthenticatedReportsSalesCustomerStatementsCustomerIdRoute
+  '/_authenticated/reports/purchases/supplier-statements/': typeof AuthenticatedReportsPurchasesSupplierStatementsIndexRoute
+  '/_authenticated/reports/sales/customer-statements/': typeof AuthenticatedReportsSalesCustomerStatementsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -1818,10 +1818,8 @@ export interface FileRouteTypes {
     | '/reports/purchases/price-variance'
     | '/reports/purchases/products'
     | '/reports/purchases/receiving'
-    | '/reports/purchases/supplier-statements'
     | '/reports/purchases/suppliers'
     | '/reports/sales/collections'
-    | '/reports/sales/customer-statements'
     | '/reports/sales/customers'
     | '/reports/sales/fulfillment'
     | '/reports/sales/products'
@@ -1865,6 +1863,8 @@ export interface FileRouteTypes {
     | '/settings/warehouses/'
     | '/reports/purchases/supplier-statements/$supplierId'
     | '/reports/sales/customer-statements/$customerId'
+    | '/reports/purchases/supplier-statements/'
+    | '/reports/sales/customer-statements/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -1988,10 +1988,8 @@ export interface FileRouteTypes {
     | '/reports/purchases/price-variance'
     | '/reports/purchases/products'
     | '/reports/purchases/receiving'
-    | '/reports/purchases/supplier-statements'
     | '/reports/purchases/suppliers'
     | '/reports/sales/collections'
-    | '/reports/sales/customer-statements'
     | '/reports/sales/customers'
     | '/reports/sales/fulfillment'
     | '/reports/sales/products'
@@ -2035,6 +2033,8 @@ export interface FileRouteTypes {
     | '/settings/warehouses'
     | '/reports/purchases/supplier-statements/$supplierId'
     | '/reports/sales/customer-statements/$customerId'
+    | '/reports/purchases/supplier-statements'
+    | '/reports/sales/customer-statements'
   id:
     | '__root__'
     | '/_admin'
@@ -2162,10 +2162,8 @@ export interface FileRouteTypes {
     | '/_authenticated/reports/purchases/price-variance'
     | '/_authenticated/reports/purchases/products'
     | '/_authenticated/reports/purchases/receiving'
-    | '/_authenticated/reports/purchases/supplier-statements'
     | '/_authenticated/reports/purchases/suppliers'
     | '/_authenticated/reports/sales/collections'
-    | '/_authenticated/reports/sales/customer-statements'
     | '/_authenticated/reports/sales/customers'
     | '/_authenticated/reports/sales/fulfillment'
     | '/_authenticated/reports/sales/products'
@@ -2209,6 +2207,8 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/warehouses/'
     | '/_authenticated/reports/purchases/supplier-statements/$supplierId'
     | '/_authenticated/reports/sales/customer-statements/$customerId'
+    | '/_authenticated/reports/purchases/supplier-statements/'
+    | '/_authenticated/reports/sales/customer-statements/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -3186,13 +3186,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedReportsSalesCustomersRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/reports/sales/customer-statements': {
-      id: '/_authenticated/reports/sales/customer-statements'
-      path: '/reports/sales/customer-statements'
-      fullPath: '/reports/sales/customer-statements'
-      preLoaderRoute: typeof AuthenticatedReportsSalesCustomerStatementsRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/_authenticated/reports/sales/collections': {
       id: '/_authenticated/reports/sales/collections'
       path: '/reports/sales/collections'
@@ -3205,13 +3198,6 @@ declare module '@tanstack/react-router' {
       path: '/reports/purchases/suppliers'
       fullPath: '/reports/purchases/suppliers'
       preLoaderRoute: typeof AuthenticatedReportsPurchasesSuppliersRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/reports/purchases/supplier-statements': {
-      id: '/_authenticated/reports/purchases/supplier-statements'
-      path: '/reports/purchases/supplier-statements'
-      fullPath: '/reports/purchases/supplier-statements'
-      preLoaderRoute: typeof AuthenticatedReportsPurchasesSupplierStatementsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/reports/purchases/receiving': {
@@ -3410,19 +3396,33 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCrmCustomersIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/reports/sales/customer-statements/': {
+      id: '/_authenticated/reports/sales/customer-statements/'
+      path: '/reports/sales/customer-statements'
+      fullPath: '/reports/sales/customer-statements/'
+      preLoaderRoute: typeof AuthenticatedReportsSalesCustomerStatementsIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/reports/purchases/supplier-statements/': {
+      id: '/_authenticated/reports/purchases/supplier-statements/'
+      path: '/reports/purchases/supplier-statements'
+      fullPath: '/reports/purchases/supplier-statements/'
+      preLoaderRoute: typeof AuthenticatedReportsPurchasesSupplierStatementsIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/reports/sales/customer-statements/$customerId': {
       id: '/_authenticated/reports/sales/customer-statements/$customerId'
-      path: '/$customerId'
+      path: '/reports/sales/customer-statements/$customerId'
       fullPath: '/reports/sales/customer-statements/$customerId'
       preLoaderRoute: typeof AuthenticatedReportsSalesCustomerStatementsCustomerIdRouteImport
-      parentRoute: typeof AuthenticatedReportsSalesCustomerStatementsRoute
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/reports/purchases/supplier-statements/$supplierId': {
       id: '/_authenticated/reports/purchases/supplier-statements/$supplierId'
-      path: '/$supplierId'
+      path: '/reports/purchases/supplier-statements/$supplierId'
       fullPath: '/reports/purchases/supplier-statements/$supplierId'
       preLoaderRoute: typeof AuthenticatedReportsPurchasesSupplierStatementsSupplierIdRouteImport
-      parentRoute: typeof AuthenticatedReportsPurchasesSupplierStatementsRoute
+      parentRoute: typeof AuthenticatedRouteRoute
     }
   }
 }
@@ -3474,36 +3474,6 @@ const AuthenticatedSalesPaymentsRouteChildren: AuthenticatedSalesPaymentsRouteCh
 const AuthenticatedSalesPaymentsRouteWithChildren =
   AuthenticatedSalesPaymentsRoute._addFileChildren(
     AuthenticatedSalesPaymentsRouteChildren,
-  )
-
-interface AuthenticatedReportsPurchasesSupplierStatementsRouteChildren {
-  AuthenticatedReportsPurchasesSupplierStatementsSupplierIdRoute: typeof AuthenticatedReportsPurchasesSupplierStatementsSupplierIdRoute
-}
-
-const AuthenticatedReportsPurchasesSupplierStatementsRouteChildren: AuthenticatedReportsPurchasesSupplierStatementsRouteChildren =
-  {
-    AuthenticatedReportsPurchasesSupplierStatementsSupplierIdRoute:
-      AuthenticatedReportsPurchasesSupplierStatementsSupplierIdRoute,
-  }
-
-const AuthenticatedReportsPurchasesSupplierStatementsRouteWithChildren =
-  AuthenticatedReportsPurchasesSupplierStatementsRoute._addFileChildren(
-    AuthenticatedReportsPurchasesSupplierStatementsRouteChildren,
-  )
-
-interface AuthenticatedReportsSalesCustomerStatementsRouteChildren {
-  AuthenticatedReportsSalesCustomerStatementsCustomerIdRoute: typeof AuthenticatedReportsSalesCustomerStatementsCustomerIdRoute
-}
-
-const AuthenticatedReportsSalesCustomerStatementsRouteChildren: AuthenticatedReportsSalesCustomerStatementsRouteChildren =
-  {
-    AuthenticatedReportsSalesCustomerStatementsCustomerIdRoute:
-      AuthenticatedReportsSalesCustomerStatementsCustomerIdRoute,
-  }
-
-const AuthenticatedReportsSalesCustomerStatementsRouteWithChildren =
-  AuthenticatedReportsSalesCustomerStatementsRoute._addFileChildren(
-    AuthenticatedReportsSalesCustomerStatementsRouteChildren,
   )
 
 interface AuthenticatedRouteRouteChildren {
@@ -3588,10 +3558,8 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedReportsPurchasesPriceVarianceRoute: typeof AuthenticatedReportsPurchasesPriceVarianceRoute
   AuthenticatedReportsPurchasesProductsRoute: typeof AuthenticatedReportsPurchasesProductsRoute
   AuthenticatedReportsPurchasesReceivingRoute: typeof AuthenticatedReportsPurchasesReceivingRoute
-  AuthenticatedReportsPurchasesSupplierStatementsRoute: typeof AuthenticatedReportsPurchasesSupplierStatementsRouteWithChildren
   AuthenticatedReportsPurchasesSuppliersRoute: typeof AuthenticatedReportsPurchasesSuppliersRoute
   AuthenticatedReportsSalesCollectionsRoute: typeof AuthenticatedReportsSalesCollectionsRoute
-  AuthenticatedReportsSalesCustomerStatementsRoute: typeof AuthenticatedReportsSalesCustomerStatementsRouteWithChildren
   AuthenticatedReportsSalesCustomersRoute: typeof AuthenticatedReportsSalesCustomersRoute
   AuthenticatedReportsSalesFulfillmentRoute: typeof AuthenticatedReportsSalesFulfillmentRoute
   AuthenticatedReportsSalesProductsRoute: typeof AuthenticatedReportsSalesProductsRoute
@@ -3631,6 +3599,10 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedSalesQuotesIndexRoute: typeof AuthenticatedSalesQuotesIndexRoute
   AuthenticatedSalesShipmentsIndexRoute: typeof AuthenticatedSalesShipmentsIndexRoute
   AuthenticatedSettingsWarehousesIndexRoute: typeof AuthenticatedSettingsWarehousesIndexRoute
+  AuthenticatedReportsPurchasesSupplierStatementsSupplierIdRoute: typeof AuthenticatedReportsPurchasesSupplierStatementsSupplierIdRoute
+  AuthenticatedReportsSalesCustomerStatementsCustomerIdRoute: typeof AuthenticatedReportsSalesCustomerStatementsCustomerIdRoute
+  AuthenticatedReportsPurchasesSupplierStatementsIndexRoute: typeof AuthenticatedReportsPurchasesSupplierStatementsIndexRoute
+  AuthenticatedReportsSalesCustomerStatementsIndexRoute: typeof AuthenticatedReportsSalesCustomerStatementsIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -3749,14 +3721,10 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
     AuthenticatedReportsPurchasesProductsRoute,
   AuthenticatedReportsPurchasesReceivingRoute:
     AuthenticatedReportsPurchasesReceivingRoute,
-  AuthenticatedReportsPurchasesSupplierStatementsRoute:
-    AuthenticatedReportsPurchasesSupplierStatementsRouteWithChildren,
   AuthenticatedReportsPurchasesSuppliersRoute:
     AuthenticatedReportsPurchasesSuppliersRoute,
   AuthenticatedReportsSalesCollectionsRoute:
     AuthenticatedReportsSalesCollectionsRoute,
-  AuthenticatedReportsSalesCustomerStatementsRoute:
-    AuthenticatedReportsSalesCustomerStatementsRouteWithChildren,
   AuthenticatedReportsSalesCustomersRoute:
     AuthenticatedReportsSalesCustomersRoute,
   AuthenticatedReportsSalesFulfillmentRoute:
@@ -3820,6 +3788,14 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSalesShipmentsIndexRoute: AuthenticatedSalesShipmentsIndexRoute,
   AuthenticatedSettingsWarehousesIndexRoute:
     AuthenticatedSettingsWarehousesIndexRoute,
+  AuthenticatedReportsPurchasesSupplierStatementsSupplierIdRoute:
+    AuthenticatedReportsPurchasesSupplierStatementsSupplierIdRoute,
+  AuthenticatedReportsSalesCustomerStatementsCustomerIdRoute:
+    AuthenticatedReportsSalesCustomerStatementsCustomerIdRoute,
+  AuthenticatedReportsPurchasesSupplierStatementsIndexRoute:
+    AuthenticatedReportsPurchasesSupplierStatementsIndexRoute,
+  AuthenticatedReportsSalesCustomerStatementsIndexRoute:
+    AuthenticatedReportsSalesCustomerStatementsIndexRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
