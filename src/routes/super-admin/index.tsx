@@ -145,16 +145,6 @@ function DashboardContent() {
     [stats?.tenant_growth],
   );
 
-  const workspaceSignals = useMemo(
-    () => [
-      { label: "Workspaces", value: totalTenants, tone: "default" },
-      { label: "Permission matrices", value: 6, tone: "blue" },
-      { label: "Open invoices", value: 184, tone: "amber" },
-      { label: "Outstanding payments", value: 361000, tone: "emerald" },
-      { label: "Stock variance", value: 3.2, tone: "red", suffix: "%" },
-    ],
-    [totalTenants],
-  );
 
   const roleCoverage = useMemo(
     () => [
