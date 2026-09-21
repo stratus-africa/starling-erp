@@ -145,16 +145,6 @@ function DashboardContent() {
     [stats?.tenant_growth],
   );
 
-  const workspaceSignals = useMemo(
-    () => [
-      { label: "Workspaces", value: totalTenants, tone: "default" },
-      { label: "Permission matrices", value: 6, tone: "blue" },
-      { label: "Open invoices", value: 184, tone: "amber" },
-      { label: "Outstanding payments", value: 361000, tone: "emerald" },
-      { label: "Stock variance", value: 3.2, tone: "red", suffix: "%" },
-    ],
-    [totalTenants],
-  );
 
   const roleCoverage = useMemo(
     () => [
@@ -180,6 +170,18 @@ function DashboardContent() {
   );
 
   const totalTenants = stats?.tenants?.total ?? 0;
+
+  const workspaceSignals = useMemo(
+    (): Array<{ label: string; value: number; tone: string; suffix?: string }> => [
+      { label: "Workspaces", value: totalTenants, tone: "default" },
+      { label: "Permission matrices", value: 6, tone: "blue" },
+      { label: "Open invoices", value: 184, tone: "amber" },
+      { label: "Outstanding payments", value: 361000, tone: "emerald" },
+      { label: "Stock variance", value: 3.2, tone: "red", suffix: "%" },
+    ],
+    [totalTenants],
+  );
+
   const activeTenants = stats?.tenants?.active ?? 0;
   const trialTenants = stats?.tenants?.trial ?? 0;
   const suspTenants = stats?.tenants?.suspended ?? 0;
