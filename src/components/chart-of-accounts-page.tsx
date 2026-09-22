@@ -825,6 +825,25 @@ export function ChartOfAccountsPage() {
         </div>
       </div>
 
+      {/* ── Banking link summary ── */}
+      <div className="flex shrink-0 flex-wrap items-center gap-3 border-b bg-muted/20 px-6 py-2 text-xs">
+        <span className="flex items-center gap-1.5 font-medium">
+          <Landmark className="h-3.5 w-3.5 text-primary" /> Banking
+        </span>
+        <span className="text-muted-foreground">
+          {bankAccounts.length - unlinkedBanks.length} of {bankAccounts.length} bank account
+          {bankAccounts.length === 1 ? "" : "s"} linked to a ledger account
+        </span>
+        {unlinkedBanks.length > 0 && (
+          <span className="text-amber-600 dark:text-amber-400">
+            {unlinkedBanks.length} not linked: {unlinkedBanks.map((b) => b.name).join(", ")}
+          </span>
+        )}
+        <Link to="/accounting/banking" className="ml-auto text-primary hover:underline">
+          Open Banking →
+        </Link>
+      </div>
+
       {/* ── Table ── */}
       <div className="min-h-0 flex-1 overflow-auto">
         <table className="w-full text-sm">
