@@ -520,7 +520,7 @@ export function AccountingLedgerPage() {
                             <td className="whitespace-nowrap p-3">{KIND_LABELS[txn.kind]}</td>
                             <td className="whitespace-nowrap p-3 font-mono text-xs">
                               {path ? (
-                                <Link className="text-primary hover:underline" to={`${path}/${txn.id}`}>
+                                <Link className="text-primary hover:underline" to={`${path}/${txn.id}` as string as never}>
                                   {txn.number ?? "—"}
                                 </Link>
                               ) : (
