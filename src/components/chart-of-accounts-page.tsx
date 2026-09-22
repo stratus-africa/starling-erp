@@ -836,6 +836,7 @@ export function ChartOfAccountsPage() {
               <th className="px-4 py-2.5 text-left whitespace-nowrap">Parent</th>
               <th className="px-4 py-2.5 text-left whitespace-nowrap">Normal Bal.</th>
               <th className="px-4 py-2.5 text-left whitespace-nowrap">Currency</th>
+              <th className="px-4 py-2.5 text-left whitespace-nowrap">Bank Account</th>
               <th className="px-4 py-2.5 text-left whitespace-nowrap">Status</th>
               <th className="px-4 py-2.5 text-left whitespace-nowrap">Manual Post</th>
               <th className="px-4 py-2.5 text-right whitespace-nowrap">Balance</th>
@@ -845,14 +846,14 @@ export function ChartOfAccountsPage() {
           <tbody>
             {isLoading && (
               <tr>
-                <td colSpan={10} className="py-16 text-center text-muted-foreground">
+                <td colSpan={11} className="py-16 text-center text-muted-foreground">
                   <Loader2 className="mx-auto h-5 w-5 animate-spin" />
                 </td>
               </tr>
             )}
             {!isLoading && rows.length === 0 && (
               <tr>
-                <td colSpan={10} className="py-16 text-center text-xs text-muted-foreground">
+                <td colSpan={11} className="py-16 text-center text-xs text-muted-foreground">
                   No accounts found.
                 </td>
               </tr>
@@ -930,6 +931,30 @@ export function ChartOfAccountsPage() {
                   <td className="px-4 py-2.5 whitespace-nowrap text-xs text-muted-foreground">
                     {row.currency ?? <span className="text-muted-foreground/50">Default</span>}
                   </td>
+
+                  {/* Linked bank account */}
+                  <td className="px-4 py-2.5 whitespace-nowrap text-xs" onClick={(e) => e.stopPropagation()}>
+                    {(bankByGlAccount.get(row.id) ?? []).length > 0 ? (
+                      <div className="flex flex-col gap-0.5">
+                        {(bankByGlAccount.get(row.id) ?? []).map((b) => (
+                          <Link
+                            key={b.id}
+                            to="/accounting/banking"
+                            className="flex items-center gap-1.5 text-primary hover:underline"
+                          >
+                            <Landmark className="h-3 w-3 shrink-0" />
+                            <span className="max-w-[160px] truncate">{b.name}</span>
+                            <span className="font-mono tabular-nums text-muted-foreground">
+                              {money(b.balance ?? 0)}
+                            </span>
+                          </Link>
+                        ))}
+                      </div>
+                    ) : (
+                      <span className="text-muted-foreground/50">—</span>
+                    )}
+                  </td>
+
 
                   {/* Status */}
                   <td className="px-4 py-2.5 whitespace-nowrap">
