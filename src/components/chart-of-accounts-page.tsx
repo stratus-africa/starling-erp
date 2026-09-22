@@ -1,5 +1,7 @@
 import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Link } from "@tanstack/react-router";
+import { Landmark } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
@@ -584,6 +586,46 @@ export function ChartOfAccountsPage() {
     staleTime: 30_000,
   });
 
+  // Bank accounts linked to GL accounts (banking ↔ chart of accounts integration)
+  const { data: bankAccounts = [] } = useQuery({
+    queryKey: ["bank_accounts", "coa-link"],
+    queryFn: async () => {
+      const { data } = await db
+        .from("bank_accounts")
+        .select("id,name,account_number,bank_name,account_type,balance,currency,status,gl_account_id")
+        .is("deleted_at", null)
+        .order("name");
+      return (data ?? []) as Array<{
+        id: string;
+        name: string;
+        account_number: string | null;
+        bank_name: string | null;
+        account_type: string | null;
+        balance: number | null;
+        currency: string | null;
+        status: string | null;
+        gl_account_id: string | null;
+      }>;
+    },
+    staleTime: 30_000,
+  });
+
+  const bankByGlAccount = useMemo(() => {
+    const m = new Map<string, (typeof bankAccounts)[number][]>();
+    for (const b of bankAccounts) {
+      if (!b.gl_account_id) continue;
+      const list = m.get(b.gl_account_id) ?? [];
+      list.push(b);
+      m.set(b.gl_account_id, list);
+    }
+    return m;
+  }, [bankAccounts]);
+
+  const unlinkedBanks = useMemo(
+    () => bankAccounts.filter((b) => !b.gl_account_id),
+    [bankAccounts],
+  );
+
   const rows = data?.rows ?? [];
   const total = data?.count ?? 0;
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
@@ -783,6 +825,25 @@ export function ChartOfAccountsPage() {
         </div>
       </div>
 
+      {/* ── Banking link summary ── */}
+      <div className="flex shrink-0 flex-wrap items-center gap-3 border-b bg-muted/20 px-6 py-2 text-xs">
+        <span className="flex items-center gap-1.5 font-medium">
+          <Landmark className="h-3.5 w-3.5 text-primary" /> Banking
+        </span>
+        <span className="text-muted-foreground">
+          {bankAccounts.length - unlinkedBanks.length} of {bankAccounts.length} bank account
+          {bankAccounts.length === 1 ? "" : "s"} linked to a ledger account
+        </span>
+        {unlinkedBanks.length > 0 && (
+          <span className="text-amber-600 dark:text-amber-400">
+            {unlinkedBanks.length} not linked: {unlinkedBanks.map((b) => b.name).join(", ")}
+          </span>
+        )}
+        <Link to="/accounting/banking" className="ml-auto text-primary hover:underline">
+          Open Banking →
+        </Link>
+      </div>
+
       {/* ── Table ── */}
       <div className="min-h-0 flex-1 overflow-auto">
         <table className="w-full text-sm">
@@ -794,6 +855,7 @@ export function ChartOfAccountsPage() {
               <th className="px-4 py-2.5 text-left whitespace-nowrap">Parent</th>
               <th className="px-4 py-2.5 text-left whitespace-nowrap">Normal Bal.</th>
               <th className="px-4 py-2.5 text-left whitespace-nowrap">Currency</th>
+              <th className="px-4 py-2.5 text-left whitespace-nowrap">Bank Account</th>
               <th className="px-4 py-2.5 text-left whitespace-nowrap">Status</th>
               <th className="px-4 py-2.5 text-left whitespace-nowrap">Manual Post</th>
               <th className="px-4 py-2.5 text-right whitespace-nowrap">Balance</th>
@@ -803,14 +865,14 @@ export function ChartOfAccountsPage() {
           <tbody>
             {isLoading && (
               <tr>
-                <td colSpan={10} className="py-16 text-center text-muted-foreground">
+                <td colSpan={11} className="py-16 text-center text-muted-foreground">
                   <Loader2 className="mx-auto h-5 w-5 animate-spin" />
                 </td>
               </tr>
             )}
             {!isLoading && rows.length === 0 && (
               <tr>
-                <td colSpan={10} className="py-16 text-center text-xs text-muted-foreground">
+                <td colSpan={11} className="py-16 text-center text-xs text-muted-foreground">
                   No accounts found.
                 </td>
               </tr>
@@ -888,6 +950,30 @@ export function ChartOfAccountsPage() {
                   <td className="px-4 py-2.5 whitespace-nowrap text-xs text-muted-foreground">
                     {row.currency ?? <span className="text-muted-foreground/50">Default</span>}
                   </td>
+
+                  {/* Linked bank account */}
+                  <td className="px-4 py-2.5 whitespace-nowrap text-xs" onClick={(e) => e.stopPropagation()}>
+                    {(bankByGlAccount.get(row.id) ?? []).length > 0 ? (
+                      <div className="flex flex-col gap-0.5">
+                        {(bankByGlAccount.get(row.id) ?? []).map((b) => (
+                          <Link
+                            key={b.id}
+                            to="/accounting/banking"
+                            className="flex items-center gap-1.5 text-primary hover:underline"
+                          >
+                            <Landmark className="h-3 w-3 shrink-0" />
+                            <span className="max-w-[160px] truncate">{b.name}</span>
+                            <span className="font-mono tabular-nums text-muted-foreground">
+                              {money(b.balance ?? 0)}
+                            </span>
+                          </Link>
+                        ))}
+                      </div>
+                    ) : (
+                      <span className="text-muted-foreground/50">—</span>
+                    )}
+                  </td>
+
 
                   {/* Status */}
                   <td className="px-4 py-2.5 whitespace-nowrap">

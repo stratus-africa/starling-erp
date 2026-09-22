@@ -665,7 +665,7 @@ function WorkspaceSettingsTab({
         .from("tenants")
         .update({
           name: workspaceName.trim(),
-          slug: cleanSlug || null,
+          slug: cleanSlug || undefined,
           status: workspaceStatus,
           updated_at: new Date().toISOString(),
         })
