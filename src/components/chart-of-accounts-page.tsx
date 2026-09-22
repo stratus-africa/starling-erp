@@ -1,5 +1,7 @@
 import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Link } from "@tanstack/react-router";
+import { Landmark } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
@@ -583,6 +585,46 @@ export function ChartOfAccountsPage() {
     },
     staleTime: 30_000,
   });
+
+  // Bank accounts linked to GL accounts (banking ↔ chart of accounts integration)
+  const { data: bankAccounts = [] } = useQuery({
+    queryKey: ["bank_accounts", "coa-link"],
+    queryFn: async () => {
+      const { data } = await db
+        .from("bank_accounts")
+        .select("id,name,account_number,bank_name,account_type,balance,currency,status,gl_account_id")
+        .is("deleted_at", null)
+        .order("name");
+      return (data ?? []) as Array<{
+        id: string;
+        name: string;
+        account_number: string | null;
+        bank_name: string | null;
+        account_type: string | null;
+        balance: number | null;
+        currency: string | null;
+        status: string | null;
+        gl_account_id: string | null;
+      }>;
+    },
+    staleTime: 30_000,
+  });
+
+  const bankByGlAccount = useMemo(() => {
+    const m = new Map<string, (typeof bankAccounts)[number][]>();
+    for (const b of bankAccounts) {
+      if (!b.gl_account_id) continue;
+      const list = m.get(b.gl_account_id) ?? [];
+      list.push(b);
+      m.set(b.gl_account_id, list);
+    }
+    return m;
+  }, [bankAccounts]);
+
+  const unlinkedBanks = useMemo(
+    () => bankAccounts.filter((b) => !b.gl_account_id),
+    [bankAccounts],
+  );
 
   const rows = data?.rows ?? [];
   const total = data?.count ?? 0;
