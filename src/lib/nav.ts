@@ -191,6 +191,7 @@ export const navGroups: NavGroup[] = [
       { title: "Manual Journals", url: "/accounting/journals", icon: BookMarked },
       { title: "Banking", url: "/accounting/banking", icon: Landmark },
       { title: "Bank Reconciliation", url: "/accounting/reconciliation", icon: Scale },
+      { title: "Transactions Ledger", url: "/accounting/transactions", icon: LayoutList },
     ],
   },
   {
@@ -199,6 +200,7 @@ export const navGroups: NavGroup[] = [
       { title: "Financial Reports", url: "/reports/financial", icon: Wallet2 },
       { title: "Sales Reports", url: "/reports/sales", icon: BarChart3 },
       { title: "Purchase Reports", url: "/reports/purchases", icon: LineChart },
+      { title: "Expense Reports", url: "/reports/expenses", icon: Coins },
       { title: "Inventory Reports", url: "/reports/inventory", icon: PieChart },
       {
         title: "Manufacturing Reports",
@@ -210,7 +212,10 @@ export const navGroups: NavGroup[] = [
   },
   {
     label: "Settings",
-    items: [{ title: "Settings", url: "/settings", icon: Settings2 }],
+    items: [
+      { title: "Settings", url: "/settings", icon: Settings2 },
+      { title: "Audit Events", url: "/audit-events", icon: ShieldCheck },
+    ],
   },
 ];
 
