@@ -79,7 +79,7 @@ type Outstanding = {
 // ── page-mode wrappers ──
 const PageRoot = ({ children }: any) => <div className="w-full p-4 md:p-6">{children}</div>;
 const PageContent = ({ children }: any) => (
-  <div className="mx-auto flex w-full max-w-5xl flex-col gap-4 rounded-lg border bg-card p-6 shadow-sm">{children}</div>
+  <div className="flex w-full flex-col gap-4 rounded-lg border bg-card p-6 shadow-sm">{children}</div>
 );
 const PageHeader = ({ children }: any) => <div className="grid gap-1 border-b pb-4">{children}</div>;
 const PageTitle = ({ children, className }: any) => <h1 className={`text-xl font-semibold ${className ?? ""}`}>{children}</h1>;
