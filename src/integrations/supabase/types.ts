@@ -6710,6 +6710,52 @@ export type Database = {
           },
         ]
       }
+      shipment_sales_orders: {
+        Row: {
+          created_at: string
+          id: string
+          sales_order_id: string
+          shipment_id: string
+          tenant_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          sales_order_id: string
+          shipment_id: string
+          tenant_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          sales_order_id?: string
+          shipment_id?: string
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shipment_sales_orders_sales_order_id_fkey"
+            columns: ["sales_order_id"]
+            isOneToOne: false
+            referencedRelation: "sales_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shipment_sales_orders_shipment_id_fkey"
+            columns: ["shipment_id"]
+            isOneToOne: false
+            referencedRelation: "shipments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shipment_sales_orders_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       shipments: {
         Row: {
           carrier: string | null
@@ -7437,6 +7483,144 @@ export type Database = {
           },
         ]
       }
+      tenant_api_keys: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          expires_at: string | null
+          id: string
+          key_hash: string
+          key_prefix: string
+          last_used_at: string | null
+          name: string
+          revoked_at: string | null
+          revoked_by: string | null
+          tenant_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string
+          key_hash: string
+          key_prefix: string
+          last_used_at?: string | null
+          name: string
+          revoked_at?: string | null
+          revoked_by?: string | null
+          tenant_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string
+          key_hash?: string
+          key_prefix?: string
+          last_used_at?: string | null
+          name?: string
+          revoked_at?: string | null
+          revoked_by?: string | null
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_api_keys_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tenant_currencies: {
+        Row: {
+          code: string
+          created_at: string
+          deleted_at: string | null
+          exchange_rate: number
+          id: string
+          is_active: boolean
+          name: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          deleted_at?: string | null
+          exchange_rate?: number
+          id?: string
+          is_active?: boolean
+          name: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          deleted_at?: string | null
+          exchange_rate?: number
+          id?: string
+          is_active?: boolean
+          name?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_currencies_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tenant_document_numbering: {
+        Row: {
+          created_at: string
+          deleted_at: string | null
+          document_type: string
+          id: string
+          is_active: boolean
+          next_number: number
+          prefix: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          deleted_at?: string | null
+          document_type: string
+          id?: string
+          is_active?: boolean
+          next_number?: number
+          prefix?: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          deleted_at?: string | null
+          document_type?: string
+          id?: string
+          is_active?: boolean
+          next_number?: number
+          prefix?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_document_numbering_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tenant_feature_flags: {
         Row: {
           created_at: string
@@ -7551,6 +7735,91 @@ export type Database = {
           },
           {
             foreignKeyName: "tenant_invitations_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tenant_notification_preferences: {
+        Row: {
+          audience: string
+          channels: string[]
+          created_at: string
+          deleted_at: string | null
+          event: string
+          id: string
+          is_active: boolean
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          audience: string
+          channels?: string[]
+          created_at?: string
+          deleted_at?: string | null
+          event: string
+          id?: string
+          is_active?: boolean
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          audience?: string
+          channels?: string[]
+          created_at?: string
+          deleted_at?: string | null
+          event?: string
+          id?: string
+          is_active?: boolean
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_notification_preferences_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tenant_payment_terms: {
+        Row: {
+          created_at: string
+          days_due: number
+          deleted_at: string | null
+          id: string
+          is_active: boolean
+          name: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          days_due: number
+          deleted_at?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          days_due?: number
+          deleted_at?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_payment_terms_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
@@ -9366,6 +9635,10 @@ export type Database = {
         }
         Returns: string
       }
+      create_tenant_api_key: {
+        Args: { _expires_at?: string; _name: string }
+        Returns: Json
+      }
       create_tenant_invitation: {
         Args: {
           _email: string
@@ -10265,6 +10538,10 @@ export type Database = {
         Args: { _order_id: string }
         Returns: number
       }
+      replace_shipment_sales_orders: {
+        Args: { _sales_order_ids: string[]; _shipment_id: string }
+        Returns: undefined
+      }
       resume_production_order: {
         Args: { _order_id: string }
         Returns: undefined
@@ -10273,6 +10550,7 @@ export type Database = {
         Args: { _reason?: string; _session_id: string }
         Returns: undefined
       }
+      revoke_tenant_api_key: { Args: { _key_id: string }; Returns: undefined }
       run_accounting_integrity_checks: { Args: never; Returns: Json }
       sales_order_transition_allowed: {
         Args: { _new: string; _old: string }
@@ -10458,6 +10736,10 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      update_tenant_api_key: {
+        Args: { _expires_at?: string; _key_id: string; _name: string }
+        Returns: undefined
       }
       upsert_inventory_config: {
         Args: { _key: string; _value: string }
