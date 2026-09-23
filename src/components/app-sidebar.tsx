@@ -6,12 +6,14 @@ import {
 } from "@/components/ui/sidebar";
 import { navGroups } from "@/lib/nav";
 import { useAuth } from "@/hooks/use-auth";
+import { useInventoryModules } from "@/hooks/use-inventory-modules";
 
 export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const pathname = useRouterState({ select: (r) => r.location.pathname });
   const { hasFeature } = useAuth();
+  const { isUrlEnabled } = useInventoryModules();
 
   return (
     <Sidebar collapsible="icon" className="border-r">
