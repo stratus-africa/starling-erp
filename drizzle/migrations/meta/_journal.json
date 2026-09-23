@@ -134,6 +134,13 @@
       "when": 1790170244554,
       "tag": "0018_fix_sales_order_transition_package_column",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1790170295995,
+      "tag": "0019_fix_system_health_ambiguous_status",
+      "breakpoints": true
     }
   ]
 }
