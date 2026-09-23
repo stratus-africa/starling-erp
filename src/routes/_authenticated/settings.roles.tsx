@@ -63,13 +63,14 @@ function RoleCard({ spec }: { spec: RoleSpec }) {
   );
 }
 
-function PermissionMatrix({ permissions, roles, grants, overrides, changing, onToggle }: {
+function PermissionMatrix({ permissions, roles, grants, overrides, changing, onToggle, labels }: {
   permissions: PermissionRow[];
   roles: string[];
   grants: Set<string>;
   overrides: Map<string, boolean>;
   changing: string | null;
   onToggle: (role: string, permission: string, enabled: boolean) => void;
+  labels: Record<string, string>;
 }) {
   const sections = permissions.reduce<Record<string, PermissionRow[]>>((groups, permission) => {
     const key = permission.module.split(".").map(titleCase).join(" · ");
@@ -88,7 +89,7 @@ function PermissionMatrix({ permissions, roles, grants, overrides, changing, onT
         <thead className="bg-muted/60">
           <tr className="border-b text-[11px] font-semibold uppercase text-muted-foreground">
             <th className="w-72 px-3 py-2.5 text-left">Permission</th>
-            {roles.map((role) => <th key={role} className="min-w-24 px-3 py-2.5 text-center">{titleCase(role)}</th>)}
+            {roles.map((role) => <th key={role} className="min-w-24 px-3 py-2.5 text-center">{labels[role] ?? titleCase(role)}</th>)}
             <th className="w-56 px-3 py-2.5 text-left">Code</th>
           </tr>
         </thead>
