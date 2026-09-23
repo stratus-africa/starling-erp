@@ -38,6 +38,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { db } from "@/lib/typed-db";
+import { RemittanceMatcher } from "@/components/remittance-matcher";
 
 export type PaymentCreateKind = "received" | "made";
 
@@ -423,6 +424,21 @@ export function CreatePaymentDialog({ open, onOpenChange, kind, variant = "dialo
                     </span>
                   )}
                 </div>
+
+                <RemittanceMatcher
+                  kind={kind}
+                  party={selectedParty?.name ?? ""}
+                  currency={currency}
+                  amount={isNaN(parseFloat(amount)) ? null : parseFloat(amount)}
+                  docs={outstandingDocs.map((d) => ({
+                    id: d.id, number: d.number, due_date: d.due_date,
+                    grand_total: Number(d.grand_total), balance_due: Number(d.balance_due),
+                  }))}
+                  onApply={(ms) => {
+                    setChecked(new Set(ms.map((m) => m.doc_id)));
+                    setApplied(Object.fromEntries(ms.map((m) => [m.doc_id, m.amount.toFixed(2)])));
+                  }}
+                />
 
                 {!loadingDocs && outstandingDocs.length === 0 && (
                   <div className="rounded-md border bg-muted/30 px-4 py-6 text-center text-sm text-muted-foreground">
