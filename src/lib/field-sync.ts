@@ -124,6 +124,12 @@ async function send(it: OutboxItem): Promise<string> {
       const lines = (p.lines as any[]).map((l) => ({ ...l, document_id: docId, tenant_id: p.header.tenant_id }));
       const { error: le } = await db.from(linesTable).insert(lines);
       if (le) throw le;
+      if (p.finalize) {
+        const rpc = it.kind === "quote" ? "transition_quote" : "transition_sales_order";
+        const key = it.kind === "quote" ? "_quote_id" : "_order_id";
+        const { error: te } = await (supabase as any).rpc(rpc, { [key]: docId, _new_status: p.finalize, _reason: "Created from Field Sales" });
+        if (te) throw new Error(`Saved as draft, but could not mark ${p.finalize}: ${te.message}`);
+      }
       return docId;
     }
     case "payment": {
