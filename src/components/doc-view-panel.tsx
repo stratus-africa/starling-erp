@@ -74,7 +74,6 @@ import { AttachmentsPanel } from "@/components/attachments-panel";
 import { RecordPaymentDialog } from "@/components/record-payment-dialog";
 import { getDocumentTemplate } from "@/lib/document-template-types";
 import { SalesDocumentLineage } from "@/components/sales-document-lineage";
-import { SalesNextAction } from "@/components/sales-next-action";
 import { PaymentProgress } from "@/components/payment-progress";
 import { AgingBadge } from "@/components/aging-badge";
 import { RelatedDocuments } from "@/components/related-documents";
