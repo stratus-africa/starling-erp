@@ -17,6 +17,7 @@ This file is the source of truth for component cleanup decisions in this workspa
 - [src/components/supplier-editor.tsx](src/components/supplier-editor.tsx) — no imports, dynamic imports, route references, or barrel usage found.
 - [src/components/supplier-payment-allocation-table.tsx](src/components/supplier-payment-allocation-table.tsx) — no imports, dynamic imports, route references, or barrel usage found.
 - [src/components/supplier-payment-dialog.tsx](src/components/supplier-payment-dialog.tsx) — no imports, dynamic imports, route references, or barrel usage found.
+- [src/components/super-admin/page-stub.tsx](src/components/super-admin/page-stub.tsx) — placeholder "coming soon" component for unbuilt super-admin pages; every super-admin route now has a real implementation, and `PageStub` had no imports, dynamic imports, or route references anywhere in the repo.
 
 ## Intentionally retained
 

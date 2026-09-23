@@ -9,6 +9,8 @@
     "build:dev": "vite build --mode development",
     "db:audit": "node supabase/scripts/audit-migrations.mjs",
     "routes:smoke": "node scripts/verify-platform-routes.mjs",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "preview": "vite preview",
     "lint": "eslint .",
     "format": "prettier --write ."
