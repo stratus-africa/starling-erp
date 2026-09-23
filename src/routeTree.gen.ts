@@ -197,6 +197,7 @@ import { Route as AuthenticatedReportsSalesCustomerStatementsIndexRouteImport } 
 import { Route as AuthenticatedReportsPurchasesSupplierStatementsIndexRouteImport } from './routes/_authenticated/reports.purchases.supplier-statements.index'
 import { Route as AuthenticatedReportsSalesCustomerStatementsCustomerIdRouteImport } from './routes/_authenticated/reports.sales.customer-statements.$customerId'
 import { Route as AuthenticatedReportsPurchasesSupplierStatementsSupplierIdRouteImport } from './routes/_authenticated/reports.purchases.supplier-statements.$supplierId'
+import { Route as AuthenticatedFieldSalesKindIdRouteImport } from './routes/_authenticated/field.sales.$kind.$id'
 
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
@@ -1283,6 +1284,12 @@ const AuthenticatedReportsPurchasesSupplierStatementsSupplierIdRoute =
     path: '/reports/purchases/supplier-statements/$supplierId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedFieldSalesKindIdRoute =
+  AuthenticatedFieldSalesKindIdRouteImport.update({
+    id: '/sales/$kind/$id',
+    path: '/sales/$kind/$id',
+    getParentRoute: () => AuthenticatedFieldRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
@@ -1467,6 +1474,7 @@ export interface FileRoutesByFullPath {
   '/sales/quotes/': typeof AuthenticatedSalesQuotesIndexRoute
   '/sales/shipments/': typeof AuthenticatedSalesShipmentsIndexRoute
   '/settings/warehouses/': typeof AuthenticatedSettingsWarehousesIndexRoute
+  '/field/sales/$kind/$id': typeof AuthenticatedFieldSalesKindIdRoute
   '/reports/purchases/supplier-statements/$supplierId': typeof AuthenticatedReportsPurchasesSupplierStatementsSupplierIdRoute
   '/reports/sales/customer-statements/$customerId': typeof AuthenticatedReportsSalesCustomerStatementsCustomerIdRoute
   '/reports/purchases/supplier-statements/': typeof AuthenticatedReportsPurchasesSupplierStatementsIndexRoute
@@ -1652,6 +1660,7 @@ export interface FileRoutesByTo {
   '/sales/quotes': typeof AuthenticatedSalesQuotesIndexRoute
   '/sales/shipments': typeof AuthenticatedSalesShipmentsIndexRoute
   '/settings/warehouses': typeof AuthenticatedSettingsWarehousesIndexRoute
+  '/field/sales/$kind/$id': typeof AuthenticatedFieldSalesKindIdRoute
   '/reports/purchases/supplier-statements/$supplierId': typeof AuthenticatedReportsPurchasesSupplierStatementsSupplierIdRoute
   '/reports/sales/customer-statements/$customerId': typeof AuthenticatedReportsSalesCustomerStatementsCustomerIdRoute
   '/reports/purchases/supplier-statements': typeof AuthenticatedReportsPurchasesSupplierStatementsIndexRoute
@@ -1843,6 +1852,7 @@ export interface FileRoutesById {
   '/_authenticated/sales/quotes/': typeof AuthenticatedSalesQuotesIndexRoute
   '/_authenticated/sales/shipments/': typeof AuthenticatedSalesShipmentsIndexRoute
   '/_authenticated/settings/warehouses/': typeof AuthenticatedSettingsWarehousesIndexRoute
+  '/_authenticated/field/sales/$kind/$id': typeof AuthenticatedFieldSalesKindIdRoute
   '/_authenticated/reports/purchases/supplier-statements/$supplierId': typeof AuthenticatedReportsPurchasesSupplierStatementsSupplierIdRoute
   '/_authenticated/reports/sales/customer-statements/$customerId': typeof AuthenticatedReportsSalesCustomerStatementsCustomerIdRoute
   '/_authenticated/reports/purchases/supplier-statements/': typeof AuthenticatedReportsPurchasesSupplierStatementsIndexRoute
@@ -2033,6 +2043,7 @@ export interface FileRouteTypes {
     | '/sales/quotes/'
     | '/sales/shipments/'
     | '/settings/warehouses/'
+    | '/field/sales/$kind/$id'
     | '/reports/purchases/supplier-statements/$supplierId'
     | '/reports/sales/customer-statements/$customerId'
     | '/reports/purchases/supplier-statements/'
@@ -2218,6 +2229,7 @@ export interface FileRouteTypes {
     | '/sales/quotes'
     | '/sales/shipments'
     | '/settings/warehouses'
+    | '/field/sales/$kind/$id'
     | '/reports/purchases/supplier-statements/$supplierId'
     | '/reports/sales/customer-statements/$customerId'
     | '/reports/purchases/supplier-statements'
@@ -2408,6 +2420,7 @@ export interface FileRouteTypes {
     | '/_authenticated/sales/quotes/'
     | '/_authenticated/sales/shipments/'
     | '/_authenticated/settings/warehouses/'
+    | '/_authenticated/field/sales/$kind/$id'
     | '/_authenticated/reports/purchases/supplier-statements/$supplierId'
     | '/_authenticated/reports/sales/customer-statements/$customerId'
     | '/_authenticated/reports/purchases/supplier-statements/'
@@ -3739,6 +3752,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedReportsPurchasesSupplierStatementsSupplierIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/field/sales/$kind/$id': {
+      id: '/_authenticated/field/sales/$kind/$id'
+      path: '/sales/$kind/$id'
+      fullPath: '/field/sales/$kind/$id'
+      preLoaderRoute: typeof AuthenticatedFieldSalesKindIdRouteImport
+      parentRoute: typeof AuthenticatedFieldRoute
+    }
   }
 }
 
@@ -3772,6 +3792,7 @@ interface AuthenticatedFieldRouteChildren {
   AuthenticatedFieldCustomersIndexRoute: typeof AuthenticatedFieldCustomersIndexRoute
   AuthenticatedFieldLeadsIndexRoute: typeof AuthenticatedFieldLeadsIndexRoute
   AuthenticatedFieldSalesIndexRoute: typeof AuthenticatedFieldSalesIndexRoute
+  AuthenticatedFieldSalesKindIdRoute: typeof AuthenticatedFieldSalesKindIdRoute
 }
 
 const AuthenticatedFieldRouteChildren: AuthenticatedFieldRouteChildren = {
@@ -3784,6 +3805,7 @@ const AuthenticatedFieldRouteChildren: AuthenticatedFieldRouteChildren = {
   AuthenticatedFieldCustomersIndexRoute: AuthenticatedFieldCustomersIndexRoute,
   AuthenticatedFieldLeadsIndexRoute: AuthenticatedFieldLeadsIndexRoute,
   AuthenticatedFieldSalesIndexRoute: AuthenticatedFieldSalesIndexRoute,
+  AuthenticatedFieldSalesKindIdRoute: AuthenticatedFieldSalesKindIdRoute,
 }
 
 const AuthenticatedFieldRouteWithChildren =
