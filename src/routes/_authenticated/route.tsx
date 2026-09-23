@@ -21,7 +21,7 @@ export const Route = createFileRoute("/_authenticated")({
 });
 
 function Gate() {
-  const { session, loading, profile, hasFeature } = useAuth();
+  const { session, loading, profile, hasFeature, roles } = useAuth();
   const pathname = useRouterState({ select: (r) => r.location.pathname });
   if (loading) return <div className="flex min-h-screen items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>;
   if (!session) return <Navigate to="/auth" />;
@@ -46,6 +46,10 @@ function Gate() {
       </div>
     );
   }
+  const isField = pathname === "/field" || pathname.startsWith("/field/");
+  const fieldOnly = roles.length > 0 && roles.every((r) => r === "field_sales");
+  if (fieldOnly && !isField) return <Navigate to="/field" />;
+  if (isField) return <Outlet />;
   return (
     <SidebarProvider>
       <div className="flex min-h-screen w-full bg-background flex-col">
