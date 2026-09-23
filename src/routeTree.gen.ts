@@ -32,6 +32,7 @@ import { Route as SuperAdminPaymentsRouteImport } from './routes/super-admin/pay
 import { Route as SuperAdminJobsRouteImport } from './routes/super-admin/jobs'
 import { Route as SuperAdminInvoicesRouteImport } from './routes/super-admin/invoices'
 import { Route as SuperAdminIntegrationsRouteImport } from './routes/super-admin/integrations'
+import { Route as SuperAdminGapsRouteImport } from './routes/super-admin/gaps'
 import { Route as SuperAdminFeaturesRouteImport } from './routes/super-admin/features'
 import { Route as SuperAdminErrorsRouteImport } from './routes/super-admin/errors'
 import { Route as SuperAdminAuditRouteImport } from './routes/super-admin/audit'
@@ -296,6 +297,11 @@ const SuperAdminInvoicesRoute = SuperAdminInvoicesRouteImport.update({
 const SuperAdminIntegrationsRoute = SuperAdminIntegrationsRouteImport.update({
   id: '/integrations',
   path: '/integrations',
+  getParentRoute: () => SuperAdminRouteRoute,
+} as any)
+const SuperAdminGapsRoute = SuperAdminGapsRouteImport.update({
+  id: '/gaps',
+  path: '/gaps',
   getParentRoute: () => SuperAdminRouteRoute,
 } as any)
 const SuperAdminFeaturesRoute = SuperAdminFeaturesRouteImport.update({
@@ -1198,6 +1204,7 @@ export interface FileRoutesByFullPath {
   '/super-admin/audit': typeof SuperAdminAuditRoute
   '/super-admin/errors': typeof SuperAdminErrorsRoute
   '/super-admin/features': typeof SuperAdminFeaturesRoute
+  '/super-admin/gaps': typeof SuperAdminGapsRoute
   '/super-admin/integrations': typeof SuperAdminIntegrationsRoute
   '/super-admin/invoices': typeof SuperAdminInvoicesRoute
   '/super-admin/jobs': typeof SuperAdminJobsRoute
@@ -1370,6 +1377,7 @@ export interface FileRoutesByTo {
   '/super-admin/audit': typeof SuperAdminAuditRoute
   '/super-admin/errors': typeof SuperAdminErrorsRoute
   '/super-admin/features': typeof SuperAdminFeaturesRoute
+  '/super-admin/gaps': typeof SuperAdminGapsRoute
   '/super-admin/integrations': typeof SuperAdminIntegrationsRoute
   '/super-admin/invoices': typeof SuperAdminInvoicesRoute
   '/super-admin/jobs': typeof SuperAdminJobsRoute
@@ -1544,6 +1552,7 @@ export interface FileRoutesById {
   '/super-admin/audit': typeof SuperAdminAuditRoute
   '/super-admin/errors': typeof SuperAdminErrorsRoute
   '/super-admin/features': typeof SuperAdminFeaturesRoute
+  '/super-admin/gaps': typeof SuperAdminGapsRoute
   '/super-admin/integrations': typeof SuperAdminIntegrationsRoute
   '/super-admin/invoices': typeof SuperAdminInvoicesRoute
   '/super-admin/jobs': typeof SuperAdminJobsRoute
@@ -1720,6 +1729,7 @@ export interface FileRouteTypes {
     | '/super-admin/audit'
     | '/super-admin/errors'
     | '/super-admin/features'
+    | '/super-admin/gaps'
     | '/super-admin/integrations'
     | '/super-admin/invoices'
     | '/super-admin/jobs'
@@ -1892,6 +1902,7 @@ export interface FileRouteTypes {
     | '/super-admin/audit'
     | '/super-admin/errors'
     | '/super-admin/features'
+    | '/super-admin/gaps'
     | '/super-admin/integrations'
     | '/super-admin/invoices'
     | '/super-admin/jobs'
@@ -2065,6 +2076,7 @@ export interface FileRouteTypes {
     | '/super-admin/audit'
     | '/super-admin/errors'
     | '/super-admin/features'
+    | '/super-admin/gaps'
     | '/super-admin/integrations'
     | '/super-admin/invoices'
     | '/super-admin/jobs'
@@ -2392,6 +2404,13 @@ declare module '@tanstack/react-router' {
       path: '/integrations'
       fullPath: '/super-admin/integrations'
       preLoaderRoute: typeof SuperAdminIntegrationsRouteImport
+      parentRoute: typeof SuperAdminRouteRoute
+    }
+    '/super-admin/gaps': {
+      id: '/super-admin/gaps'
+      path: '/gaps'
+      fullPath: '/super-admin/gaps'
+      preLoaderRoute: typeof SuperAdminGapsRouteImport
       parentRoute: typeof SuperAdminRouteRoute
     }
     '/super-admin/features': {
@@ -3842,6 +3861,7 @@ interface SuperAdminRouteRouteChildren {
   SuperAdminAuditRoute: typeof SuperAdminAuditRoute
   SuperAdminErrorsRoute: typeof SuperAdminErrorsRoute
   SuperAdminFeaturesRoute: typeof SuperAdminFeaturesRoute
+  SuperAdminGapsRoute: typeof SuperAdminGapsRoute
   SuperAdminIntegrationsRoute: typeof SuperAdminIntegrationsRoute
   SuperAdminInvoicesRoute: typeof SuperAdminInvoicesRoute
   SuperAdminJobsRoute: typeof SuperAdminJobsRoute
@@ -3879,6 +3899,7 @@ const SuperAdminRouteRouteChildren: SuperAdminRouteRouteChildren = {
   SuperAdminAuditRoute: SuperAdminAuditRoute,
   SuperAdminErrorsRoute: SuperAdminErrorsRoute,
   SuperAdminFeaturesRoute: SuperAdminFeaturesRoute,
+  SuperAdminGapsRoute: SuperAdminGapsRoute,
   SuperAdminIntegrationsRoute: SuperAdminIntegrationsRoute,
   SuperAdminInvoicesRoute: SuperAdminInvoicesRoute,
   SuperAdminJobsRoute: SuperAdminJobsRoute,
