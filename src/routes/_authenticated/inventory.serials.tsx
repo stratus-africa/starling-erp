@@ -1,3 +1,4 @@
+import { InventoryModuleGate } from "@/components/inventory-module-gate";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -11,7 +12,11 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { AlertTriangle, ExternalLink, Fingerprint, Loader2, Search, Shield } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/inventory/serials")({
-  component: SerialsPage,
+  component: () => (
+    <InventoryModuleGate moduleKey="module_serials">
+      <SerialsPage />
+    </InventoryModuleGate>
+  ),
 });
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
