@@ -32,6 +32,7 @@ const ALL_ROLES: RoleSpec[] = [
   { role: "auditor", label: "Auditor", description: "Read-focused financial and operational review access.", modules: ["Accounting", "Reports", "Operations"], badge: "bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/20" },
   { role: "accounting", label: "Accounting", description: "General accounting, banking, payments, and reports access.", modules: ["Accounting", "Banking", "Payments", "Reports"], badge: "bg-muted text-muted-foreground border-border" },
   { role: "sales", label: "Sales", description: "Customers, quotes, orders, invoices, and receipts.", modules: ["CRM", "Sales", "Payments"], badge: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/20" },
+  { role: "field_sales", label: "Field Sales", description: "Mobile app: customers, leads, quotes, sales orders and customer payments.", modules: ["Customers", "Leads", "Quotes", "Orders", "Payments"], badge: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/20" },
   { role: "purchasing", label: "Purchasing", description: "Suppliers, requisitions, purchase orders, bills, and expenses.", modules: ["Purchasing"], badge: "bg-orange-500/10 text-orange-700 dark:text-orange-300 border-orange-500/20" },
   { role: "inventory", label: "Inventory", description: "Items, warehouses, adjustments, and stock transfers.", modules: ["Inventory"], badge: "bg-cyan-500/10 text-cyan-700 dark:text-cyan-300 border-cyan-500/20" },
   { role: "manufacturing", label: "Manufacturing", description: "Bills of materials and production orders.", modules: ["Manufacturing"], badge: "bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/20" },
@@ -39,7 +40,7 @@ const ALL_ROLES: RoleSpec[] = [
 ];
 
 const ACCOUNTING_ROLES = ["tenant_admin", "accountant", "finance_clerk", "auditor", "accounting"];
-const OTHER_ROLES = ["tenant_admin", "sales", "purchasing", "inventory", "manufacturing", "viewer"];
+const OTHER_ROLES = ["tenant_admin", "sales", "field_sales", "purchasing", "inventory", "manufacturing", "viewer"];
 const PROCUREMENT_ROLES = ["tenant_admin", "accountant", "finance_clerk", "accounting", "purchasing"];
 const ACCOUNTING_MODULES = new Set(["accounting", "banking", "payments", "reports"]);
 
