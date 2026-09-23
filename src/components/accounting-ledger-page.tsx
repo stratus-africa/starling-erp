@@ -1,3 +1,4 @@
+import { QueryError } from "@/components/query-state";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
@@ -484,9 +485,7 @@ export function AccountingLedgerPage() {
             <Loader2 className="h-4 w-4 animate-spin" /> Loading ledger…
           </Card>
         ) : query.isError ? (
-          <Card className="p-5 text-sm text-destructive">
-            Unable to load the ledger. {(query.error as Error).message}
-          </Card>
+          <QueryError error={query.error} retry={() => query.refetch()} label="We couldn't load the ledger." />
         ) : (
           <Tabs defaultValue="transactions">
             <TabsList className="h-auto w-full justify-start overflow-x-auto">

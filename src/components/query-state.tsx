@@ -43,3 +43,32 @@ export function QueryError({
     </Card>
   );
 }
+
+/** Table-body row that shows loading, a recoverable error, or an empty message. */
+export function TableStateRow({
+  colSpan,
+  isLoading,
+  error,
+  retry,
+  empty,
+}: {
+  colSpan: number;
+  isLoading: boolean;
+  error: unknown;
+  retry: () => void;
+  empty: string;
+}) {
+  return (
+    <tr>
+      <td colSpan={colSpan} className="p-4">
+        {isLoading ? (
+          <QueryLoading />
+        ) : error ? (
+          <QueryError error={error} retry={retry} label="We couldn't load this list." />
+        ) : (
+          <p className="py-8 text-center text-sm text-muted-foreground">{empty}</p>
+        )}
+      </td>
+    </tr>
+  );
+}

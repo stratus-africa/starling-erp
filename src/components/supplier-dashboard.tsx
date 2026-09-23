@@ -1,3 +1,4 @@
+import { TableStateRow, QueryError, QueryLoading } from "@/components/query-state";
 import { useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
@@ -130,7 +131,7 @@ export function SupplierDashboardPage() {
   const [applyOpen, setApplyOpen] = useState(false);
   const canApply = can(["purchasing.credits.apply", "purchasing.post"]);
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ["supplier-dashboard"],
     queryFn: () => loadSupplierLedger(),
   });
@@ -190,7 +191,9 @@ export function SupplierDashboardPage() {
         />
       </div>
 
-      {isLoading ? (
+      {isError ? (
+        <QueryError error={error} retry={() => refetch()} label="We couldn't load supplier balances." />
+      ) : isLoading ? (
         <div className="grid min-h-48 place-items-center rounded-lg border">
           <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
         </div>
@@ -260,7 +263,7 @@ export function SupplierAccountSummary({ supplierId }: { supplierId: string }) {
   const [applyOpen, setApplyOpen] = useState(false);
   const canApply = can(["purchasing.credits.apply", "purchasing.post"]);
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ["supplier-dashboard", supplierId],
     enabled: Boolean(supplierId) && supplierId !== "new",
     queryFn: () => loadSupplierLedger(supplierId),
@@ -273,6 +276,7 @@ export function SupplierAccountSummary({ supplierId }: { supplierId: string }) {
     .slice(0, 6);
   const payments = (data?.payments ?? []).slice(0, 5);
 
+  if (isError) return <QueryError error={error} retry={() => refetch()} label="We couldn't load this supplier's account." />;
   if (isLoading) {
     return (
       <div className="grid min-h-24 place-items-center rounded-lg border">
