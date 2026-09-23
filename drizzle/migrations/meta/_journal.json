@@ -176,6 +176,13 @@
       "when": 1790203928828,
       "tag": "0024_salesperson_on_sales_documents",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1790204820936,
+      "tag": "0025_field_sales_role_and_crm_leads",
+      "breakpoints": true
     }
   ]
 }
