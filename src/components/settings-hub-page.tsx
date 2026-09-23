@@ -232,6 +232,16 @@ const REGISTRY: SettingEntry[] = [
     route: "/settings/inventory",
     keywords: ["serial", "lot", "batch", "adjustment", "toggle", "inventory"],
   },
+  {
+    id: "sales-settings",
+    title: "Sales Settings",
+    description: "Make the Salesperson field mandatory or optional on quotes, orders and invoices.",
+    category: "operations",
+    subcategory: "Sales",
+    icon: Users,
+    route: "/settings/sales",
+    keywords: ["sales", "salesperson", "rep", "mandatory", "quote", "invoice", "order"],
+  },
 
   // ── Documents & Communication ────────────────────────────────────────────────
   {
