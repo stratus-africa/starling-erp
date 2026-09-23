@@ -127,6 +127,13 @@
       "when": 1790170187552,
       "tag": "0017_missing_backend_actions",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1790170244554,
+      "tag": "0018_fix_sales_order_transition_package_column",
+      "breakpoints": true
     }
   ]
 }
