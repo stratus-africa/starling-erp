@@ -186,6 +186,7 @@ import { Route as AuthenticatedManufacturingBomIdRouteImport } from './routes/_a
 import { Route as AuthenticatedInventoryWarehousesIdRouteImport } from './routes/_authenticated/inventory.warehouses.$id'
 import { Route as AuthenticatedInventoryItemsIdRouteImport } from './routes/_authenticated/inventory.items.$id'
 import { Route as AuthenticatedFieldCustomersNewRouteImport } from './routes/_authenticated/field.customers.new'
+import { Route as AuthenticatedFieldCustomersIdRouteImport } from './routes/_authenticated/field.customers.$id'
 import { Route as AuthenticatedCrmCustomersIdRouteImport } from './routes/_authenticated/crm.customers.$id'
 import { Route as AuthenticatedReportsSalesCustomerStatementsIndexRouteImport } from './routes/_authenticated/reports.sales.customer-statements.index'
 import { Route as AuthenticatedReportsPurchasesSupplierStatementsIndexRouteImport } from './routes/_authenticated/reports.purchases.supplier-statements.index'
@@ -1211,6 +1212,12 @@ const AuthenticatedFieldCustomersNewRoute =
     path: '/customers/new',
     getParentRoute: () => AuthenticatedFieldRoute,
   } as any)
+const AuthenticatedFieldCustomersIdRoute =
+  AuthenticatedFieldCustomersIdRouteImport.update({
+    id: '/customers/$id',
+    path: '/customers/$id',
+    getParentRoute: () => AuthenticatedFieldRoute,
+  } as any)
 const AuthenticatedCrmCustomersIdRoute =
   AuthenticatedCrmCustomersIdRouteImport.update({
     id: '/crm/customers/$id',
@@ -1345,6 +1352,7 @@ export interface FileRoutesByFullPath {
   '/settings/': typeof AuthenticatedSettingsIndexRoute
   '/super-admin/billing/': typeof SuperAdminBillingIndexRoute
   '/crm/customers/$id': typeof AuthenticatedCrmCustomersIdRoute
+  '/field/customers/$id': typeof AuthenticatedFieldCustomersIdRoute
   '/field/customers/new': typeof AuthenticatedFieldCustomersNewRoute
   '/inventory/items/$id': typeof AuthenticatedInventoryItemsIdRoute
   '/inventory/warehouses/$id': typeof AuthenticatedInventoryWarehousesIdRoute
@@ -1524,6 +1532,7 @@ export interface FileRoutesByTo {
   '/field': typeof AuthenticatedFieldIndexRoute
   '/super-admin/billing': typeof SuperAdminBillingIndexRoute
   '/crm/customers/$id': typeof AuthenticatedCrmCustomersIdRoute
+  '/field/customers/$id': typeof AuthenticatedFieldCustomersIdRoute
   '/field/customers/new': typeof AuthenticatedFieldCustomersNewRoute
   '/inventory/items/$id': typeof AuthenticatedInventoryItemsIdRoute
   '/inventory/warehouses/$id': typeof AuthenticatedInventoryWarehousesIdRoute
@@ -1709,6 +1718,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
   '/super-admin/billing/': typeof SuperAdminBillingIndexRoute
   '/_authenticated/crm/customers/$id': typeof AuthenticatedCrmCustomersIdRoute
+  '/_authenticated/field/customers/$id': typeof AuthenticatedFieldCustomersIdRoute
   '/_authenticated/field/customers/new': typeof AuthenticatedFieldCustomersNewRoute
   '/_authenticated/inventory/items/$id': typeof AuthenticatedInventoryItemsIdRoute
   '/_authenticated/inventory/warehouses/$id': typeof AuthenticatedInventoryWarehousesIdRoute
@@ -1893,6 +1903,7 @@ export interface FileRouteTypes {
     | '/settings/'
     | '/super-admin/billing/'
     | '/crm/customers/$id'
+    | '/field/customers/$id'
     | '/field/customers/new'
     | '/inventory/items/$id'
     | '/inventory/warehouses/$id'
@@ -2072,6 +2083,7 @@ export interface FileRouteTypes {
     | '/field'
     | '/super-admin/billing'
     | '/crm/customers/$id'
+    | '/field/customers/$id'
     | '/field/customers/new'
     | '/inventory/items/$id'
     | '/inventory/warehouses/$id'
@@ -2256,6 +2268,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/'
     | '/super-admin/billing/'
     | '/_authenticated/crm/customers/$id'
+    | '/_authenticated/field/customers/$id'
     | '/_authenticated/field/customers/new'
     | '/_authenticated/inventory/items/$id'
     | '/_authenticated/inventory/warehouses/$id'
@@ -3584,6 +3597,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedFieldCustomersNewRouteImport
       parentRoute: typeof AuthenticatedFieldRoute
     }
+    '/_authenticated/field/customers/$id': {
+      id: '/_authenticated/field/customers/$id'
+      path: '/customers/$id'
+      fullPath: '/field/customers/$id'
+      preLoaderRoute: typeof AuthenticatedFieldCustomersIdRouteImport
+      parentRoute: typeof AuthenticatedFieldRoute
+    }
     '/_authenticated/crm/customers/$id': {
       id: '/_authenticated/crm/customers/$id'
       path: '/crm/customers/$id'
@@ -3644,12 +3664,14 @@ const AdminRouteRouteWithChildren = AdminRouteRoute._addFileChildren(
 
 interface AuthenticatedFieldRouteChildren {
   AuthenticatedFieldIndexRoute: typeof AuthenticatedFieldIndexRoute
+  AuthenticatedFieldCustomersIdRoute: typeof AuthenticatedFieldCustomersIdRoute
   AuthenticatedFieldCustomersNewRoute: typeof AuthenticatedFieldCustomersNewRoute
   AuthenticatedFieldCustomersIndexRoute: typeof AuthenticatedFieldCustomersIndexRoute
 }
 
 const AuthenticatedFieldRouteChildren: AuthenticatedFieldRouteChildren = {
   AuthenticatedFieldIndexRoute: AuthenticatedFieldIndexRoute,
+  AuthenticatedFieldCustomersIdRoute: AuthenticatedFieldCustomersIdRoute,
   AuthenticatedFieldCustomersNewRoute: AuthenticatedFieldCustomersNewRoute,
   AuthenticatedFieldCustomersIndexRoute: AuthenticatedFieldCustomersIndexRoute,
 }
