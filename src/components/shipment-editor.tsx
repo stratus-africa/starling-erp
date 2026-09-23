@@ -328,6 +328,14 @@ export function ShipmentEditor({ id }: { id: string }) {
     totals: null,
     quantityOnly: true,
     notes: header.notes ?? null,
+    sections: [
+      {
+        heading: "Orders on this shipment",
+        rows: linkedOrders.map(
+          (o) => `${o.number ?? "Order"} · ${customerName(o.customer_id)} · ${o.status ?? ""}`,
+        ),
+      },
+    ],
     branding,
   });
 
