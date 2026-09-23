@@ -229,6 +229,7 @@ export function QuoteViewPage({ id }: { id: string }) {
   const { branding } = useDocumentBranding("quote");
   const [editMode, setEditMode] = useState(false);
   const [emailOpen, setEmailOpen] = useState(false);
+  const [followUpOpen, setFollowUpOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [tab, setTab] = useState("overview");
   const canWrite = can(["sales.create", "sales.update"]);
