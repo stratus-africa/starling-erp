@@ -133,6 +133,12 @@ const NAV: NavGroup[] = [
         permission: PLATFORM_PERMISSIONS.announcementsView,
       },
       {
+        title: "Gap Tracking",
+        url: "/super-admin/gaps",
+        icon: ClipboardList,
+        permission: PLATFORM_PERMISSIONS.settingsView,
+      },
+      {
         title: "Settings",
         url: "/super-admin/settings",
         icon: Settings2,
