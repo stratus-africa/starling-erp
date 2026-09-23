@@ -222,6 +222,16 @@ const REGISTRY: SettingEntry[] = [
     route: "/settings/uom",
     keywords: ["unit", "measure", "uom", "kg", "litre", "piece", "inventory"],
   },
+  {
+    id: "inventory-features",
+    title: "Inventory Features",
+    description: "Turn Serial Numbers, Lots & Batches and Adjustments on or off.",
+    category: "operations",
+    subcategory: "Inventory",
+    icon: Ruler,
+    route: "/settings/inventory",
+    keywords: ["serial", "lot", "batch", "adjustment", "toggle", "inventory"],
+  },
 
   // ── Documents & Communication ────────────────────────────────────────────────
   {

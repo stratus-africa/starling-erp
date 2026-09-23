@@ -6,12 +6,14 @@ import {
 } from "@/components/ui/sidebar";
 import { navGroups } from "@/lib/nav";
 import { useAuth } from "@/hooks/use-auth";
+import { useInventoryModules } from "@/hooks/use-inventory-modules";
 
 export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const pathname = useRouterState({ select: (r) => r.location.pathname });
   const { hasFeature } = useAuth();
+  const { isUrlEnabled } = useInventoryModules();
 
   return (
     <Sidebar collapsible="icon" className="border-r">
@@ -39,7 +41,7 @@ export function AppSidebar() {
             )}
             <SidebarGroupContent>
               <SidebarMenu>
-                {group.items.filter((item) => !item.feature || hasFeature(item.feature)).map((item) => {
+                {group.items.filter((item) => (!item.feature || hasFeature(item.feature)) && isUrlEnabled(item.url)).map((item) => {
                   const active = pathname === item.url;
                   return (
                     <SidebarMenuItem key={item.url}>
