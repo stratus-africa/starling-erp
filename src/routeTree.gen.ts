@@ -67,6 +67,7 @@ import { Route as AuthenticatedSettingsRolesRouteImport } from './routes/_authen
 import { Route as AuthenticatedSettingsPaymentTermsRouteImport } from './routes/_authenticated/settings.payment-terms'
 import { Route as AuthenticatedSettingsNumberingRouteImport } from './routes/_authenticated/settings.numbering'
 import { Route as AuthenticatedSettingsNotificationsRouteImport } from './routes/_authenticated/settings.notifications'
+import { Route as AuthenticatedSettingsInventoryRouteImport } from './routes/_authenticated/settings.inventory'
 import { Route as AuthenticatedSettingsCurrenciesRouteImport } from './routes/_authenticated/settings.currencies'
 import { Route as AuthenticatedSettingsCompanyRouteImport } from './routes/_authenticated/settings.company'
 import { Route as AuthenticatedSettingsApiKeysRouteImport } from './routes/_authenticated/settings.api-keys'
@@ -492,6 +493,12 @@ const AuthenticatedSettingsNotificationsRoute =
   AuthenticatedSettingsNotificationsRouteImport.update({
     id: '/settings/notifications',
     path: '/settings/notifications',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedSettingsInventoryRoute =
+  AuthenticatedSettingsInventoryRouteImport.update({
+    id: '/settings/inventory',
+    path: '/settings/inventory',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedSettingsCurrenciesRoute =
@@ -1278,6 +1285,7 @@ export interface FileRoutesByFullPath {
   '/settings/api-keys': typeof AuthenticatedSettingsApiKeysRoute
   '/settings/company': typeof AuthenticatedSettingsCompanyRoute
   '/settings/currencies': typeof AuthenticatedSettingsCurrenciesRoute
+  '/settings/inventory': typeof AuthenticatedSettingsInventoryRoute
   '/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
   '/settings/numbering': typeof AuthenticatedSettingsNumberingRoute
   '/settings/payment-terms': typeof AuthenticatedSettingsPaymentTermsRoute
@@ -1453,6 +1461,7 @@ export interface FileRoutesByTo {
   '/settings/api-keys': typeof AuthenticatedSettingsApiKeysRoute
   '/settings/company': typeof AuthenticatedSettingsCompanyRoute
   '/settings/currencies': typeof AuthenticatedSettingsCurrenciesRoute
+  '/settings/inventory': typeof AuthenticatedSettingsInventoryRoute
   '/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
   '/settings/numbering': typeof AuthenticatedSettingsNumberingRoute
   '/settings/payment-terms': typeof AuthenticatedSettingsPaymentTermsRoute
@@ -1631,6 +1640,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/api-keys': typeof AuthenticatedSettingsApiKeysRoute
   '/_authenticated/settings/company': typeof AuthenticatedSettingsCompanyRoute
   '/_authenticated/settings/currencies': typeof AuthenticatedSettingsCurrenciesRoute
+  '/_authenticated/settings/inventory': typeof AuthenticatedSettingsInventoryRoute
   '/_authenticated/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
   '/_authenticated/settings/numbering': typeof AuthenticatedSettingsNumberingRoute
   '/_authenticated/settings/payment-terms': typeof AuthenticatedSettingsPaymentTermsRoute
@@ -1809,6 +1819,7 @@ export interface FileRouteTypes {
     | '/settings/api-keys'
     | '/settings/company'
     | '/settings/currencies'
+    | '/settings/inventory'
     | '/settings/notifications'
     | '/settings/numbering'
     | '/settings/payment-terms'
@@ -1984,6 +1995,7 @@ export interface FileRouteTypes {
     | '/settings/api-keys'
     | '/settings/company'
     | '/settings/currencies'
+    | '/settings/inventory'
     | '/settings/notifications'
     | '/settings/numbering'
     | '/settings/payment-terms'
@@ -2161,6 +2173,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/api-keys'
     | '/_authenticated/settings/company'
     | '/_authenticated/settings/currencies'
+    | '/_authenticated/settings/inventory'
     | '/_authenticated/settings/notifications'
     | '/_authenticated/settings/numbering'
     | '/_authenticated/settings/payment-terms'
@@ -2675,6 +2688,13 @@ declare module '@tanstack/react-router' {
       path: '/settings/notifications'
       fullPath: '/settings/notifications'
       preLoaderRoute: typeof AuthenticatedSettingsNotificationsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/settings/inventory': {
+      id: '/_authenticated/settings/inventory'
+      path: '/settings/inventory'
+      fullPath: '/settings/inventory'
+      preLoaderRoute: typeof AuthenticatedSettingsInventoryRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/settings/currencies': {
@@ -3599,6 +3619,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedSettingsApiKeysRoute: typeof AuthenticatedSettingsApiKeysRoute
   AuthenticatedSettingsCompanyRoute: typeof AuthenticatedSettingsCompanyRoute
   AuthenticatedSettingsCurrenciesRoute: typeof AuthenticatedSettingsCurrenciesRoute
+  AuthenticatedSettingsInventoryRoute: typeof AuthenticatedSettingsInventoryRoute
   AuthenticatedSettingsNotificationsRoute: typeof AuthenticatedSettingsNotificationsRoute
   AuthenticatedSettingsNumberingRoute: typeof AuthenticatedSettingsNumberingRoute
   AuthenticatedSettingsPaymentTermsRoute: typeof AuthenticatedSettingsPaymentTermsRoute
@@ -3744,6 +3765,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSettingsApiKeysRoute: AuthenticatedSettingsApiKeysRoute,
   AuthenticatedSettingsCompanyRoute: AuthenticatedSettingsCompanyRoute,
   AuthenticatedSettingsCurrenciesRoute: AuthenticatedSettingsCurrenciesRoute,
+  AuthenticatedSettingsInventoryRoute: AuthenticatedSettingsInventoryRoute,
   AuthenticatedSettingsNotificationsRoute:
     AuthenticatedSettingsNotificationsRoute,
   AuthenticatedSettingsNumberingRoute: AuthenticatedSettingsNumberingRoute,

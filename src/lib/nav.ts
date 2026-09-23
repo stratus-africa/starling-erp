@@ -1,6 +1,5 @@
 import {
   ClipboardCheck,
-  QrCode,
   LayoutDashboard,
   Building2,
   Users,

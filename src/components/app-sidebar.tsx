@@ -41,7 +41,7 @@ export function AppSidebar() {
             )}
             <SidebarGroupContent>
               <SidebarMenu>
-                {group.items.filter((item) => !item.feature || hasFeature(item.feature)).map((item) => {
+                {group.items.filter((item) => (!item.feature || hasFeature(item.feature)) && isUrlEnabled(item.url)).map((item) => {
                   const active = pathname === item.url;
                   return (
                     <SidebarMenuItem key={item.url}>
