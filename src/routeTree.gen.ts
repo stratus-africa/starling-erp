@@ -135,6 +135,7 @@ import { Route as AuthenticatedManufacturingItemsIndexRouteImport } from './rout
 import { Route as AuthenticatedManufacturingBomIndexRouteImport } from './routes/_authenticated/manufacturing.bom.index'
 import { Route as AuthenticatedInventoryWarehousesIndexRouteImport } from './routes/_authenticated/inventory.warehouses.index'
 import { Route as AuthenticatedInventoryItemsIndexRouteImport } from './routes/_authenticated/inventory.items.index'
+import { Route as AuthenticatedFieldCustomersIndexRouteImport } from './routes/_authenticated/field.customers.index'
 import { Route as AuthenticatedCrmCustomersIndexRouteImport } from './routes/_authenticated/crm.customers.index'
 import { Route as SuperAdminTenantsTenantIdUsersRouteImport } from './routes/super-admin/tenants_.$tenantId.users'
 import { Route as AuthenticatedSettingsWarehousesIdRouteImport } from './routes/_authenticated/settings.warehouses.$id'
@@ -184,6 +185,7 @@ import { Route as AuthenticatedManufacturingItemsIdRouteImport } from './routes/
 import { Route as AuthenticatedManufacturingBomIdRouteImport } from './routes/_authenticated/manufacturing.bom.$id'
 import { Route as AuthenticatedInventoryWarehousesIdRouteImport } from './routes/_authenticated/inventory.warehouses.$id'
 import { Route as AuthenticatedInventoryItemsIdRouteImport } from './routes/_authenticated/inventory.items.$id'
+import { Route as AuthenticatedFieldCustomersNewRouteImport } from './routes/_authenticated/field.customers.new'
 import { Route as AuthenticatedCrmCustomersIdRouteImport } from './routes/_authenticated/crm.customers.$id'
 import { Route as AuthenticatedReportsSalesCustomerStatementsIndexRouteImport } from './routes/_authenticated/reports.sales.customer-statements.index'
 import { Route as AuthenticatedReportsPurchasesSupplierStatementsIndexRouteImport } from './routes/_authenticated/reports.purchases.supplier-statements.index'
@@ -903,6 +905,12 @@ const AuthenticatedInventoryItemsIndexRoute =
     path: '/inventory/items/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedFieldCustomersIndexRoute =
+  AuthenticatedFieldCustomersIndexRouteImport.update({
+    id: '/customers/',
+    path: '/customers/',
+    getParentRoute: () => AuthenticatedFieldRoute,
+  } as any)
 const AuthenticatedCrmCustomersIndexRoute =
   AuthenticatedCrmCustomersIndexRouteImport.update({
     id: '/crm/customers/',
@@ -1197,6 +1205,12 @@ const AuthenticatedInventoryItemsIdRoute =
     path: '/inventory/items/$id',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedFieldCustomersNewRoute =
+  AuthenticatedFieldCustomersNewRouteImport.update({
+    id: '/customers/new',
+    path: '/customers/new',
+    getParentRoute: () => AuthenticatedFieldRoute,
+  } as any)
 const AuthenticatedCrmCustomersIdRoute =
   AuthenticatedCrmCustomersIdRouteImport.update({
     id: '/crm/customers/$id',
@@ -1331,6 +1345,7 @@ export interface FileRoutesByFullPath {
   '/settings/': typeof AuthenticatedSettingsIndexRoute
   '/super-admin/billing/': typeof SuperAdminBillingIndexRoute
   '/crm/customers/$id': typeof AuthenticatedCrmCustomersIdRoute
+  '/field/customers/new': typeof AuthenticatedFieldCustomersNewRoute
   '/inventory/items/$id': typeof AuthenticatedInventoryItemsIdRoute
   '/inventory/warehouses/$id': typeof AuthenticatedInventoryWarehousesIdRoute
   '/manufacturing/bom/$id': typeof AuthenticatedManufacturingBomIdRoute
@@ -1380,6 +1395,7 @@ export interface FileRoutesByFullPath {
   '/settings/warehouses/$id': typeof AuthenticatedSettingsWarehousesIdRoute
   '/super-admin/tenants/$tenantId/users': typeof SuperAdminTenantsTenantIdUsersRoute
   '/crm/customers/': typeof AuthenticatedCrmCustomersIndexRoute
+  '/field/customers/': typeof AuthenticatedFieldCustomersIndexRoute
   '/inventory/items/': typeof AuthenticatedInventoryItemsIndexRoute
   '/inventory/warehouses/': typeof AuthenticatedInventoryWarehousesIndexRoute
   '/manufacturing/bom/': typeof AuthenticatedManufacturingBomIndexRoute
@@ -1508,6 +1524,7 @@ export interface FileRoutesByTo {
   '/field': typeof AuthenticatedFieldIndexRoute
   '/super-admin/billing': typeof SuperAdminBillingIndexRoute
   '/crm/customers/$id': typeof AuthenticatedCrmCustomersIdRoute
+  '/field/customers/new': typeof AuthenticatedFieldCustomersNewRoute
   '/inventory/items/$id': typeof AuthenticatedInventoryItemsIdRoute
   '/inventory/warehouses/$id': typeof AuthenticatedInventoryWarehousesIdRoute
   '/manufacturing/bom/$id': typeof AuthenticatedManufacturingBomIdRoute
@@ -1557,6 +1574,7 @@ export interface FileRoutesByTo {
   '/settings/warehouses/$id': typeof AuthenticatedSettingsWarehousesIdRoute
   '/super-admin/tenants/$tenantId/users': typeof SuperAdminTenantsTenantIdUsersRoute
   '/crm/customers': typeof AuthenticatedCrmCustomersIndexRoute
+  '/field/customers': typeof AuthenticatedFieldCustomersIndexRoute
   '/inventory/items': typeof AuthenticatedInventoryItemsIndexRoute
   '/inventory/warehouses': typeof AuthenticatedInventoryWarehousesIndexRoute
   '/manufacturing/bom': typeof AuthenticatedManufacturingBomIndexRoute
@@ -1691,6 +1709,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
   '/super-admin/billing/': typeof SuperAdminBillingIndexRoute
   '/_authenticated/crm/customers/$id': typeof AuthenticatedCrmCustomersIdRoute
+  '/_authenticated/field/customers/new': typeof AuthenticatedFieldCustomersNewRoute
   '/_authenticated/inventory/items/$id': typeof AuthenticatedInventoryItemsIdRoute
   '/_authenticated/inventory/warehouses/$id': typeof AuthenticatedInventoryWarehousesIdRoute
   '/_authenticated/manufacturing/bom/$id': typeof AuthenticatedManufacturingBomIdRoute
@@ -1740,6 +1759,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/warehouses/$id': typeof AuthenticatedSettingsWarehousesIdRoute
   '/super-admin/tenants_/$tenantId/users': typeof SuperAdminTenantsTenantIdUsersRoute
   '/_authenticated/crm/customers/': typeof AuthenticatedCrmCustomersIndexRoute
+  '/_authenticated/field/customers/': typeof AuthenticatedFieldCustomersIndexRoute
   '/_authenticated/inventory/items/': typeof AuthenticatedInventoryItemsIndexRoute
   '/_authenticated/inventory/warehouses/': typeof AuthenticatedInventoryWarehousesIndexRoute
   '/_authenticated/manufacturing/bom/': typeof AuthenticatedManufacturingBomIndexRoute
@@ -1873,6 +1893,7 @@ export interface FileRouteTypes {
     | '/settings/'
     | '/super-admin/billing/'
     | '/crm/customers/$id'
+    | '/field/customers/new'
     | '/inventory/items/$id'
     | '/inventory/warehouses/$id'
     | '/manufacturing/bom/$id'
@@ -1922,6 +1943,7 @@ export interface FileRouteTypes {
     | '/settings/warehouses/$id'
     | '/super-admin/tenants/$tenantId/users'
     | '/crm/customers/'
+    | '/field/customers/'
     | '/inventory/items/'
     | '/inventory/warehouses/'
     | '/manufacturing/bom/'
@@ -2050,6 +2072,7 @@ export interface FileRouteTypes {
     | '/field'
     | '/super-admin/billing'
     | '/crm/customers/$id'
+    | '/field/customers/new'
     | '/inventory/items/$id'
     | '/inventory/warehouses/$id'
     | '/manufacturing/bom/$id'
@@ -2099,6 +2122,7 @@ export interface FileRouteTypes {
     | '/settings/warehouses/$id'
     | '/super-admin/tenants/$tenantId/users'
     | '/crm/customers'
+    | '/field/customers'
     | '/inventory/items'
     | '/inventory/warehouses'
     | '/manufacturing/bom'
@@ -2232,6 +2256,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/'
     | '/super-admin/billing/'
     | '/_authenticated/crm/customers/$id'
+    | '/_authenticated/field/customers/new'
     | '/_authenticated/inventory/items/$id'
     | '/_authenticated/inventory/warehouses/$id'
     | '/_authenticated/manufacturing/bom/$id'
@@ -2281,6 +2306,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/warehouses/$id'
     | '/super-admin/tenants_/$tenantId/users'
     | '/_authenticated/crm/customers/'
+    | '/_authenticated/field/customers/'
     | '/_authenticated/inventory/items/'
     | '/_authenticated/inventory/warehouses/'
     | '/_authenticated/manufacturing/bom/'
@@ -3201,6 +3227,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedInventoryItemsIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/field/customers/': {
+      id: '/_authenticated/field/customers/'
+      path: '/customers'
+      fullPath: '/field/customers/'
+      preLoaderRoute: typeof AuthenticatedFieldCustomersIndexRouteImport
+      parentRoute: typeof AuthenticatedFieldRoute
+    }
     '/_authenticated/crm/customers/': {
       id: '/_authenticated/crm/customers/'
       path: '/crm/customers'
@@ -3544,6 +3577,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedInventoryItemsIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/field/customers/new': {
+      id: '/_authenticated/field/customers/new'
+      path: '/customers/new'
+      fullPath: '/field/customers/new'
+      preLoaderRoute: typeof AuthenticatedFieldCustomersNewRouteImport
+      parentRoute: typeof AuthenticatedFieldRoute
+    }
     '/_authenticated/crm/customers/$id': {
       id: '/_authenticated/crm/customers/$id'
       path: '/crm/customers/$id'
@@ -3604,10 +3644,14 @@ const AdminRouteRouteWithChildren = AdminRouteRoute._addFileChildren(
 
 interface AuthenticatedFieldRouteChildren {
   AuthenticatedFieldIndexRoute: typeof AuthenticatedFieldIndexRoute
+  AuthenticatedFieldCustomersNewRoute: typeof AuthenticatedFieldCustomersNewRoute
+  AuthenticatedFieldCustomersIndexRoute: typeof AuthenticatedFieldCustomersIndexRoute
 }
 
 const AuthenticatedFieldRouteChildren: AuthenticatedFieldRouteChildren = {
   AuthenticatedFieldIndexRoute: AuthenticatedFieldIndexRoute,
+  AuthenticatedFieldCustomersNewRoute: AuthenticatedFieldCustomersNewRoute,
+  AuthenticatedFieldCustomersIndexRoute: AuthenticatedFieldCustomersIndexRoute,
 }
 
 const AuthenticatedFieldRouteWithChildren =
