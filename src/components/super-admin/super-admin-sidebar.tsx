@@ -5,6 +5,7 @@ import {
   BarChart3,
   Bell,
   Building2,
+  ClipboardList,
   CreditCard,
   FileText,
   Flag,
