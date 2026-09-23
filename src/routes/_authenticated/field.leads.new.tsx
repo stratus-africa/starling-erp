@@ -12,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { FieldHeader, StickyFooter, NoAccess, useFieldAccess } from "@/components/field/field-ui";
 import { enqueue, newClientId } from "@/lib/field-sync";
-import { LEAD_SOURCES, LEAD_STATUSES } from "./field.leads.index";
+import { LEAD_SOURCES, LEAD_STATUSES } from "@/lib/field-leads";
 
 export const Route = createFileRoute("/_authenticated/field/leads/new")({
   validateSearch: (s: Record<string, unknown>): { edit?: string } => (typeof s.edit === "string" ? { edit: s.edit } : {}),

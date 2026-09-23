@@ -1,28 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { db } from "@/lib/typed-db";
+import { useLeads, LEAD_STATUSES } from "@/lib/field-leads";
 import { FieldHeader, SearchBar, Chips, Row, Loading, Empty, ErrorBox, NoAccess, Fab, StatusPill, useFieldAccess } from "@/components/field/field-ui";
 
 export const Route = createFileRoute("/_authenticated/field/leads/")({
   head: () => ({ meta: [{ title: "Leads — Field Sales" }] }),
   component: LeadsList,
 });
-
-export const LEAD_STATUSES = ["New", "Contacted", "Qualified", "Unqualified", "Converted", "Lost"] as const;
-export const LEAD_SOURCES = ["Walk-in", "Referral", "Phone", "Website", "Social media", "Event", "Other"];
-
-export function useLeads(enabled: boolean) {
-  return useQuery({
-    queryKey: ["crm_leads"],
-    enabled,
-    queryFn: async () => {
-      const { data, error } = await db.from("crm_leads").select("*, assignee:profiles!crm_leads_assigned_to_fkey(full_name,email)").is("deleted_at", null).order("last_activity_at", { ascending: false }).limit(500);
-      if (error) throw error;
-      return (data ?? []) as any[];
-    },
-  });
-}
 
 function LeadsList() {
   const a = useFieldAccess();
