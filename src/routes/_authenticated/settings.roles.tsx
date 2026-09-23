@@ -7,6 +7,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/use-auth";
 import { db } from "@/lib/typed-db";
+import { CustomRolesManager, type CustomRole } from "@/components/custom-roles-manager";
 
 interface RoleSpec {
   role: string;
@@ -63,13 +64,14 @@ function RoleCard({ spec }: { spec: RoleSpec }) {
   );
 }
 
-function PermissionMatrix({ permissions, roles, grants, overrides, changing, onToggle }: {
+function PermissionMatrix({ permissions, roles, grants, overrides, changing, onToggle, labels }: {
   permissions: PermissionRow[];
   roles: string[];
   grants: Set<string>;
   overrides: Map<string, boolean>;
   changing: string | null;
   onToggle: (role: string, permission: string, enabled: boolean) => void;
+  labels: Record<string, string>;
 }) {
   const sections = permissions.reduce<Record<string, PermissionRow[]>>((groups, permission) => {
     const key = permission.module.split(".").map(titleCase).join(" · ");
@@ -88,7 +90,7 @@ function PermissionMatrix({ permissions, roles, grants, overrides, changing, onT
         <thead className="bg-muted/60">
           <tr className="border-b text-[11px] font-semibold uppercase text-muted-foreground">
             <th className="w-72 px-3 py-2.5 text-left">Permission</th>
-            {roles.map((role) => <th key={role} className="min-w-24 px-3 py-2.5 text-center">{titleCase(role)}</th>)}
+            {roles.map((role) => <th key={role} className="min-w-24 px-3 py-2.5 text-center">{labels[role] ?? titleCase(role)}</th>)}
             <th className="w-56 px-3 py-2.5 text-left">Code</th>
           </tr>
         </thead>
@@ -136,16 +138,17 @@ function RolesPage() {
     queryKey: ["role-permission-matrix", tenant?.id],
     enabled: allowed && !!tenant?.id,
     queryFn: async () => {
-      if (!tenant?.id) return { permissions: [], grants: [], overrides: [] };
-      const [permissionResult, grantResult, overrideResult] = await Promise.all([
+      if (!tenant?.id) return { permissions: [], grants: [], overrides: [], customRoles: [] as CustomRole[] };
+      const [permissionResult, grantResult, overrideResult, customResult] = await Promise.all([
         db.from("permissions").select("code,module,action,description").order("module").order("code"),
         db.from("role_permissions").select("role,permission_code"),
         db.from("tenant_role_permission_overrides").select("role,permission_code,enabled").eq("tenant_id", tenant.id),
+        db.from("tenant_custom_roles").select("id,role_key,label,description").eq("tenant_id", tenant.id).order("label"),
       ]);
       if (permissionResult.error) throw permissionResult.error;
       if (grantResult.error) throw grantResult.error;
       if (overrideResult.error) throw overrideResult.error;
-      return { permissions: (permissionResult.data ?? []) as PermissionRow[], grants: grantResult.data ?? [], overrides: overrideResult.data ?? [] };
+      return { permissions: (permissionResult.data ?? []) as PermissionRow[], grants: grantResult.data ?? [], overrides: overrideResult.data ?? [], customRoles: (customResult.data ?? []) as CustomRole[] };
     },
   });
 
@@ -179,6 +182,10 @@ function RolesPage() {
       !ACCOUNTING_MODULES.has(permission.module.split(".")[0]) &&
       !matchesPermissionGroup(permission, [/supplier.*credit|credit.*supplier/i, /purchase.*order|order.*purchase/i, /supplier.*payment|payment.*supplier/i]),
   );
+  const customRoles = data?.customRoles ?? [];
+  const customKeys = customRoles.map((r) => r.role_key);
+  const labels: Record<string, string> = Object.fromEntries([...ALL_ROLES.map((r) => [r.role, r.label]), ...customRoles.map((r) => [r.role_key, r.label])]);
+  const refreshMatrix = () => queryClient.invalidateQueries({ queryKey: ["role-permission-matrix", tenant?.id] });
   const changing = updatePermission.isPending ? `${updatePermission.variables?.role}:${updatePermission.variables?.permission}` : null;
 
   if (!allowed) return <div className="p-6 text-sm text-muted-foreground">Administrator access required.</div>;
@@ -186,7 +193,7 @@ function RolesPage() {
   const matrix = (permissions: PermissionRow[], roles: string[]) => isLoading ? (
     <div className="grid min-h-48 place-items-center rounded-lg border"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
   ) : (
-    <PermissionMatrix permissions={permissions} roles={roles} grants={grants} overrides={overrides} changing={changing} onToggle={(role, permission, enabled) => updatePermission.mutate({ role, permission, enabled })} />
+    <PermissionMatrix labels={labels} permissions={permissions} roles={[...roles, ...customKeys]} grants={grants} overrides={overrides} changing={changing} onToggle={(role, permission, enabled) => updatePermission.mutate({ role, permission, enabled })} />
   );
 
   return (
@@ -207,6 +214,7 @@ function RolesPage() {
         <TabsContent value="roles" className="pt-3">
           <div className="mb-3 flex items-center justify-between gap-3"><p className="text-sm text-muted-foreground">Available roles for this workspace.</p><Link to="/settings/users" className="inline-flex items-center gap-1 text-sm text-primary hover:underline">Assign roles <ArrowRight className="h-4 w-4" /></Link></div>
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">{ALL_ROLES.map((role) => <RoleCard key={role.role} spec={role} />)}</div>
+          <div className="mt-6"><CustomRolesManager roles={customRoles} builtIn={ALL_ROLES.filter((r) => r.role !== "super_admin")} onChanged={refreshMatrix} /></div>
         </TabsContent>
         <TabsContent value="accounting" className="space-y-3 pt-3">
           <div className="flex items-start gap-2"><Shield className="mt-0.5 h-4 w-4 text-primary" /><p className="text-xs text-muted-foreground">Tick or untick a permission to change access. Tenant Admin always retains full access.</p></div>

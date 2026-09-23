@@ -7577,6 +7577,47 @@ export type Database = {
           },
         ]
       }
+      tenant_custom_roles: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          label: string
+          role_key: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          label: string
+          role_key: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          label?: string
+          role_key?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_custom_roles_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tenant_document_numbering: {
         Row: {
           created_at: string
@@ -7990,6 +8031,42 @@ export type Database = {
           },
           {
             foreignKeyName: "tenant_subscriptions_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tenant_user_custom_roles: {
+        Row: {
+          created_at: string
+          role_id: string
+          tenant_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          role_id: string
+          tenant_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          role_id?: string
+          tenant_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_user_custom_roles_role_id_fkey"
+            columns: ["role_id"]
+            isOneToOne: false
+            referencedRelation: "tenant_custom_roles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tenant_user_custom_roles_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
@@ -8577,6 +8654,7 @@ export type Database = {
     }
     Functions: {
       _account_id: { Args: { _code: string; _tenant: string }; Returns: string }
+      _assert_tenant_admin: { Args: never; Returns: string }
       _cfg_account: {
         Args: { _purpose: string; _tenant_id: string }
         Returns: string
@@ -9660,6 +9738,7 @@ export type Database = {
         Args: { _step_id: string }
         Returns: boolean
       }
+      delete_custom_role: { Args: { _id: string }; Returns: undefined }
       delete_invoice: { Args: { _invoice_id: string }; Returns: string }
       delete_sales_fulfillment: {
         Args: { _fulfillment_id: string }
@@ -10560,6 +10639,15 @@ export type Database = {
         Args: { _new: string; _old: string }
         Returns: boolean
       }
+      save_custom_role: {
+        Args: {
+          _copy_from?: string
+          _description: string
+          _id: string
+          _label: string
+        }
+        Returns: string
+      }
       set_item_opening_stock: {
         Args: {
           _item_id: string
@@ -10580,6 +10668,10 @@ export type Database = {
           _record_type: string
           _role: string
         }
+        Returns: undefined
+      }
+      set_user_custom_roles: {
+        Args: { _role_ids: string[]; _user_id: string }
         Returns: undefined
       }
       start_production_order: {
