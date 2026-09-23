@@ -4,7 +4,6 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { db } from "@/lib/typed-db";
 import { useAuth } from "@/hooks/use-auth";
 import { toast } from "sonner";
-import { useDocumentEvents } from "@/lib/document-events";
 import { logDocumentEvent } from "@/lib/document-events";
 import { callRpc } from "@/lib/db-rpc";
 import { useDocumentBranding } from "@/hooks/use-document-branding";
@@ -18,7 +17,6 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { SalesDocumentLineage } from "@/components/sales-document-lineage";
-import { SalesNextAction } from "@/components/sales-next-action";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   DropdownMenu,
@@ -82,17 +80,6 @@ function Detail({ label, value }: { label: string; value: ReactNode }) {
       <span className="text-xs text-muted-foreground">{label}</span>
       <span className="break-words text-sm font-medium">{value || "Not set"}</span>
     </div>
-  );
-}
-function SidebarCard({ title, children }: { title: string; children: ReactNode }) {
-  return (
-    <Card className="w-full">
-      <CardHeader className="pb-3">
-        <CardTitle className="text-sm">{title}</CardTitle>
-      </CardHeader>
-      <Separator />
-      <CardContent className="pt-4">{children}</CardContent>
-    </Card>
   );
 }
 function TotalRow({
@@ -316,7 +303,6 @@ export function QuoteViewPage({ id }: { id: string }) {
       return data as Row | null;
     },
   });
-  const { data: events = [] } = useDocumentEvents("quote", id);
   const { data: audit = [] } = useQuery({
     queryKey: ["audit_logs", "sales_quotes", id],
     queryFn: async () => {
@@ -420,20 +406,6 @@ export function QuoteViewPage({ id }: { id: string }) {
       : ["Draft", "Sent", "Viewed", "Accepted"];
   if (!["Draft", "Sent", "Viewed", "Accepted", "Rejected"].includes(currentStatus))
     workflow.push(currentStatus);
-  const statusMessage =
-    currentStatus === "Draft"
-      ? "Send this quote to the customer to continue the sales process."
-      : currentStatus === "Sent"
-        ? "Waiting for the customer to review this quote."
-        : currentStatus === "Viewed"
-          ? "Customer has viewed this quote."
-          : currentStatus === "Accepted"
-            ? "Quote accepted. You can now convert it to an order."
-            : currentStatus === "Rejected"
-              ? "Quote rejected by the customer."
-              : currentStatus === "Expired"
-                ? "This quote has expired."
-                : "Review the next available quote action.";
   const pdf = (): PdfDocInput => ({
     title: "Quote",
     number: String(quote.number ?? ""),
@@ -594,6 +566,7 @@ export function QuoteViewPage({ id }: { id: string }) {
             <TabsTrigger value="customer">Customer</TabsTrigger>
             <TabsTrigger value="terms">Terms & Conditions</TabsTrigger>
             <TabsTrigger value="documents">Documents</TabsTrigger>
+            <TabsTrigger value="notes">Notes</TabsTrigger>
             <TabsTrigger value="activity">Activity</TabsTrigger>
             <TabsTrigger value="audit">Audit Trail</TabsTrigger>
           </TabsList>
@@ -673,13 +646,56 @@ export function QuoteViewPage({ id }: { id: string }) {
               </CardContent>
             </Card>
           </TabsContent>
+          <TabsContent value="notes" className="mt-4">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle className="text-sm">Notes</CardTitle>
+                {canWrite && (
+                  <Button size="sm" variant="outline" onClick={() => setEditMode(true)}>
+                    <Pencil className="mr-1.5 h-4 w-4" /> Edit Notes
+                  </Button>
+                )}
+              </CardHeader>
+              <CardContent>
+                <p className="whitespace-pre-wrap text-sm text-muted-foreground">
+                  {quote.notes || "No notes added."}
+                </p>
+              </CardContent>
+            </Card>
+          </TabsContent>
           <TabsContent value="activity" className="mt-4">
-            <DocumentTimeline
-              entityType="quote"
-              entityId={id}
-              stages={workflow}
-              currentStage={currentStatus}
-            />
+            <div className="flex flex-col gap-4">
+              <SalesDocumentLineage
+                nodes={
+                  [
+                    {
+                      type: "Quote",
+                      number: quote.number,
+                      status: currentStatus,
+                      amount: total,
+                      currency,
+                      date: quote.date,
+                      href: `/sales/quotes/${id}`,
+                    },
+                    convertedOrder && {
+                      type: "Sales Order",
+                      number: convertedOrder.number,
+                      status: convertedOrder.status,
+                      amount: convertedOrder.grand_total,
+                      currency: convertedOrder.currency ?? currency,
+                      date: convertedOrder.date,
+                      href: `/sales/orders/${convertedOrder.id}`,
+                    },
+                  ].filter(Boolean) as never[]
+                }
+              />
+              <DocumentTimeline
+                entityType="quote"
+                entityId={id}
+                stages={workflow}
+                currentStage={currentStatus}
+              />
+            </div>
           </TabsContent>
           <TabsContent value="audit" className="mt-4">
             <Card>
@@ -705,131 +721,18 @@ export function QuoteViewPage({ id }: { id: string }) {
             </Card>
           </TabsContent>
         </Tabs>
-        <div
-          className={
-            tab === "overview"
-              ? "grid items-start gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(280px,1fr)]"
-              : "hidden"
-          }
-        >
-          <div>
-            <LineItems
-              lines={lines}
-              items={items}
-              currency={currency}
-              subtotal={subtotal}
-              discount={discount}
-              tax={tax}
-              total={total}
-              onEdit={() => setEditMode(true)}
-            />
-          </div>
-          <aside className="flex min-w-0 flex-col gap-4">
-            <SalesNextAction
-              state={{ kind: "quote", status: currentStatus }}
-              onAction={() =>
-                currentStatus === "Accepted" ? convertMutation.mutate() : setEmailOpen(true)
-              }
-            />
-            <SalesDocumentLineage
-              nodes={
-                [
-                  {
-                    type: "Quote",
-                    number: quote.number,
-                    status: currentStatus,
-                    amount: total,
-                    currency,
-                    date: quote.date,
-                    href: `/sales/quotes/${id}`,
-                  },
-                  convertedOrder && {
-                    type: "Sales Order",
-                    number: convertedOrder.number,
-                    status: convertedOrder.status,
-                    amount: convertedOrder.grand_total,
-                    currency: convertedOrder.currency ?? currency,
-                    date: convertedOrder.date,
-                    href: `/sales/orders/${convertedOrder.id}`,
-                  },
-                ].filter(Boolean) as never[]
-              }
-            />
-            <SidebarCard title="Status & Workflow">
-              <div className="flex flex-wrap items-center gap-1 text-xs">
-                {workflow.map((stage, index) => (
-                  <span key={stage} className="flex items-center gap-1">
-                    <span
-                      className={`rounded-full px-2 py-1 font-medium ${stage === currentStatus ? "bg-primary text-primary-foreground" : workflow.indexOf(currentStatus) >= index ? "bg-emerald-100 text-emerald-700" : "bg-muted text-muted-foreground"}`}
-                    >
-                      {stage}
-                    </span>
-                    {index < workflow.length - 1 && <span>→</span>}
-                  </span>
-                ))}
-              </div>
-              <p className="mt-4 text-sm text-muted-foreground">{statusMessage}</p>
-              {daysToExpiry != null && currentStatus !== "Expired" && (
-                <p
-                  className={`mt-2 text-xs ${daysToExpiry < 0 ? "text-destructive" : "text-muted-foreground"}`}
-                >
-                  {daysToExpiry >= 0
-                    ? `Quote expires in ${daysToExpiry} days (${dateFmt(quote.expiry)})`
-                    : `Quote expired on ${dateFmt(quote.expiry)}`}
-                </p>
-              )}
-            </SidebarCard>
-            <SidebarCard title="Activity">
-              <div className="space-y-3">
-                {events.length ? (
-                  events
-                    .slice(-5)
-                    .reverse()
-                    .map((event) => (
-                      <div key={event.id} className="flex gap-2">
-                        <div className="mt-1 h-2 w-2 shrink-0 rounded-full bg-primary" />
-                        <div>
-                          <p className="text-xs font-medium">
-                            {event.note ?? `Quote ${event.status.toLowerCase()}`}
-                          </p>
-                          <p className="text-[11px] text-muted-foreground">
-                            {dateTimeFmt(event.created_at)} · {event.actor_email ?? "System"}
-                          </p>
-                        </div>
-                      </div>
-                    ))
-                ) : (
-                  <p className="text-sm text-muted-foreground">No activity yet.</p>
-                )}
-              </div>
-              <Button
-                variant="link"
-                size="sm"
-                className="mt-3 h-auto px-0"
-                onClick={() => setTab("activity")}
-              >
-                View All
-              </Button>
-            </SidebarCard>
-            <SidebarCard title="Notes">
-              <div className="flex items-start justify-between gap-3">
-                <p className="whitespace-pre-wrap text-sm text-muted-foreground">
-                  {quote.notes || "No notes added."}
-                </p>
-                {canWrite && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setEditMode(true)}
-                    aria-label="Edit quote notes"
-                  >
-                    <Pencil className="h-3.5 w-3.5" />
-                  </Button>
-                )}
-              </div>
-            </SidebarCard>
-          </aside>
-        </div>
+        {tab === "overview" && (
+          <LineItems
+            lines={lines}
+            items={items}
+            currency={currency}
+            subtotal={subtotal}
+            discount={discount}
+            tax={tax}
+            total={total}
+            onEdit={() => setEditMode(true)}
+          />
+        )}
       </div>
       <EmailDocumentDialog
         open={emailOpen}
