@@ -1,14 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Search, Loader2, Boxes, ChevronLeft, ChevronRight, QrCode } from "lucide-react";
+import { Loader2, Boxes, QrCode } from "lucide-react";
+import { useReportTable, ReportToolbar, ReportPagination, downloadCsv } from "@/components/report-table-kit";
 import { InventoryStockTools } from "@/components/inventory-stock-tools";
 
 const REF_LABELS: Record<string, string> = {
@@ -28,12 +26,9 @@ const money = (n: number) => (n || 0).toLocaleString(undefined, { minimumFractio
 
 function InventoryLedgerPage() {
   const { tenant } = useAuth();
-  const [search, setSearch] = useState("");
-  const [page, setPage] = useState(1);
-  const pageSize = 50;
 
   const { data, isLoading } = useQuery({
-    queryKey: ["stock_movements", "ledger", page],
+    queryKey: ["stock_movements", "ledger", tenant?.id],
     enabled: !!tenant?.id,
     queryFn: async () => {
       const {
@@ -45,7 +40,7 @@ function InventoryLedgerPage() {
         .select("*", { count: "exact" })
         .eq("tenant_id", tenant!.id)
         .order("created_at", { ascending: false })
-        .range((page - 1) * pageSize, page * pageSize - 1);
+        .limit(5000);
       if (error) throw error;
 
       const itemIds = [...new Set((movements ?? []).map((m: any) => m.item_id).filter(Boolean))];
@@ -83,19 +78,27 @@ function InventoryLedgerPage() {
     },
   });
 
-  const rows = (data?.rows ?? []).filter((r: any) => {
-    if (!search.trim()) return true;
-    const s = search.toLowerCase();
-    return (
-      r.item?.name?.toLowerCase().includes(s) ||
-      r.item?.sku?.toLowerCase().includes(s) ||
-      r.note?.toLowerCase().includes(s) ||
-      r.warehouse?.name?.toLowerCase().includes(s) ||
-      r.location?.code?.toLowerCase().includes(s)
-    );
+  const table = useReportTable<any>({
+    rows: data?.rows ?? [],
+    searchText: (r) => [r.item?.name, r.item?.sku, r.note, r.warehouse?.name, r.location?.code, REF_LABELS[r.ref_type] ?? r.ref_type],
+    getDate: (r) => r.created_at,
+    sorts: [
+      { value: "date", label: "Date", get: (r) => r.created_at },
+      { value: "item", label: "Item", get: (r) => r.item?.name },
+      { value: "warehouse", label: "Warehouse", get: (r) => r.warehouse?.name },
+      { value: "type", label: "Type", get: (r) => REF_LABELS[r.ref_type] ?? r.ref_type },
+      { value: "qty", label: "Quantity", get: (r) => Number(r.quantity) },
+      { value: "value", label: "Value", get: (r) => Math.abs(Number(r.quantity) * Number(r.unit_cost || 0)) },
+    ],
+    defaultSort: "date",
   });
-
-  const total = data?.count ?? 0;
+  const rows = table.pageRows;
+  const exportCsv = () =>
+    downloadCsv("inventory-ledger", ["Date", "Item", "SKU", "Warehouse", "Bin", "Type", "Reference", "In", "Out", "Value"],
+      table.filtered.map((m: any) => {
+        const q = Number(m.quantity);
+        return [m.created_at, m.item?.name, m.item?.sku, m.warehouse?.name, m.location?.code, REF_LABELS[m.ref_type] ?? m.ref_type, m.note, q > 0 ? q : "", q < 0 ? -q : "", Math.abs(q * Number(m.unit_cost || 0)).toFixed(2)];
+      }));
 
   return (
     <div className="flex flex-col gap-4 p-4 md:p-6">
@@ -111,20 +114,7 @@ function InventoryLedgerPage() {
       <InventoryStockTools />
 
       <Card className="overflow-hidden border shadow-sm p-0">
-        <div className="flex items-center gap-2 border-b px-3 py-2 bg-muted/30">
-          <div className="relative flex-1 max-w-sm">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-            <Input
-              placeholder="Search item, SKU, or note…"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="h-8 pl-8 text-sm bg-background"
-            />
-          </div>
-          <div className="ml-auto text-xs text-muted-foreground">
-            {total} movement{total === 1 ? "" : "s"}
-          </div>
-        </div>
+        <ReportToolbar table={table} placeholder="Search item, SKU, type or note…" onExport={exportCsv} />
 
         <div className="overflow-x-auto">
           <Table>
@@ -217,31 +207,7 @@ function InventoryLedgerPage() {
           </Table>
         </div>
 
-        <div className="flex items-center justify-between border-t px-3 py-2 text-xs text-muted-foreground">
-          <div>
-            Page {page} of {Math.max(1, Math.ceil(total / pageSize))}
-          </div>
-          <div className="flex items-center gap-1">
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-7"
-              disabled={page <= 1}
-              onClick={() => setPage((p) => p - 1)}
-            >
-              <ChevronLeft className="h-3 w-3" />
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-7"
-              disabled={page * pageSize >= total}
-              onClick={() => setPage((p) => p + 1)}
-            >
-              <ChevronRight className="h-3 w-3" />
-            </Button>
-          </div>
-        </div>
+        <ReportPagination table={table} label="movements" />
       </Card>
     </div>
   );

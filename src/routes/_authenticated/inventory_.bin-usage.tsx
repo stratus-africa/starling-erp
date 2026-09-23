@@ -1,14 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Download, ExternalLink, Loader2, QrCode, Search } from "lucide-react";
+import { ExternalLink, Loader2, QrCode } from "lucide-react";
+import { useReportTable, ReportToolbar, ReportPagination, downloadCsv } from "@/components/report-table-kit";
 
 type UsageRow = {
   id: string;
@@ -32,7 +30,6 @@ const qty = (value: number) => value.toLocaleString(undefined, { maximumFraction
 
 function BinUsageLogPage() {
   const { tenant } = useAuth();
-  const [search, setSearch] = useState("");
 
   const { data, isLoading } = useQuery({
     queryKey: ["bin-usage-log", tenant?.id],
@@ -119,41 +116,25 @@ function BinUsageLogPage() {
     },
   });
 
-  const rows = useMemo(() => {
-    const term = search.trim().toLowerCase();
-    if (!term) return data ?? [];
-    return (data ?? []).filter((row) =>
-      [row.packageNumber, row.orderNumber, row.customerName, row.binCode, row.binName, row.itemName, row.itemSku, row.warehouseName]
-        .filter(Boolean)
-        .some((value) => String(value).toLowerCase().includes(term)),
-    );
-  }, [data, search]);
+  const table = useReportTable<UsageRow>({
+    rows: data ?? [],
+    searchText: (r) => [r.packageNumber, r.orderNumber, r.customerName, r.binCode, r.binName, r.itemName, r.itemSku, r.warehouseName],
+    getDate: (r) => r.packageDate,
+    sorts: [
+      { value: "date", label: "Date", get: (r) => r.packageDate },
+      { value: "package", label: "Package", get: (r) => r.packageNumber },
+      { value: "customer", label: "Customer", get: (r) => r.customerName },
+      { value: "bin", label: "Bin", get: (r) => r.binCode },
+      { value: "item", label: "Item", get: (r) => r.itemName },
+      { value: "qty", label: "Quantity", get: (r) => r.quantity },
+    ],
+    defaultSort: "date",
+  });
+  const rows = table.pageRows;
 
-  const exportCsv = () => {
-    const header = ["Date", "Package", "Sales Order", "Customer", "Warehouse", "Bin", "Bin Name", "Item", "SKU", "Quantity", "Status"];
-    const body = rows.map((row) => [
-      row.packageDate ?? "",
-      row.packageNumber ?? "",
-      row.orderNumber ?? "",
-      row.customerName ?? "",
-      row.warehouseName ?? "",
-      row.binCode ?? "Not recorded",
-      row.binName ?? "",
-      row.itemName,
-      row.itemSku ?? "",
-      row.quantity,
-      row.posted ? "Confirmed" : "Draft",
-    ]);
-    const csv = [header, ...body]
-      .map((line) => line.map((cell) => `"${String(cell).replaceAll('"', '""')}"`).join(","))
-      .join("\n");
-    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `bin-usage-log-${new Date().toISOString().slice(0, 10)}.csv`;
-    link.click();
-    URL.revokeObjectURL(url);
-  };
+  const exportCsv = () =>
+    downloadCsv("bin-usage-log", ["Date", "Package", "Sales Order", "Customer", "Warehouse", "Bin", "Bin Name", "Item", "SKU", "Quantity", "Status"],
+      table.filtered.map((row) => [row.packageDate, row.packageNumber, row.orderNumber, row.customerName, row.warehouseName, row.binCode ?? "Not recorded", row.binName, row.itemName, row.itemSku, row.quantity, row.posted ? "Confirmed" : "Draft"]));
 
   return (
     <div className="flex w-full flex-col gap-4 p-4 md:p-6">
@@ -166,26 +147,10 @@ function BinUsageLogPage() {
             Every packed line with the bin it was picked from, its package, order and customer.
           </p>
         </div>
-        <Button variant="outline" size="sm" className="h-8" onClick={exportCsv}>
-          <Download className="mr-1.5 h-3.5 w-3.5" /> Export CSV
-        </Button>
       </div>
 
       <Card className="overflow-hidden border p-0 shadow-sm">
-        <div className="flex flex-wrap items-center gap-2 border-b bg-muted/30 px-3 py-2">
-          <div className="relative w-full max-w-sm">
-            <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder="Search package, order, bin, item…"
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              className="h-8 bg-background pl-8 text-sm"
-            />
-          </div>
-          <div className="ml-auto text-xs text-muted-foreground">
-            {rows.length} packed line{rows.length === 1 ? "" : "s"}
-          </div>
-        </div>
+        <ReportToolbar table={table} placeholder="Search package, order, bin, item…" onExport={exportCsv} />
 
         <div className="overflow-x-auto">
           <Table>
@@ -283,6 +248,7 @@ function BinUsageLogPage() {
             </TableBody>
           </Table>
         </div>
+        <ReportPagination table={table} label="packed lines" />
       </Card>
     </div>
   );
