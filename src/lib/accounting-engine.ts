@@ -130,6 +130,50 @@ export function assertBalancedPosting(lines: PostingLine[]) {
   }
 }
 
+const STATUS_TRANSITIONS: Record<string, readonly string[]> = {
+  quote: ["Draft", "Sent", "Viewed", "Accepted", "Rejected", "Cancelled"],
+  sales_order: ["Draft", "Confirmed", "Processing", "Completed", "Cancelled"],
+};
+
+export function assertStatusTransitionAllowed(
+  entityType: string,
+  oldStatus: string | null | undefined,
+  newStatus: string | null | undefined,
+): boolean {
+  const normalizedType = entityType.toLowerCase().replace(/[_\-\s]+/g, "_");
+  const from = (oldStatus ?? "").trim();
+  const to = (newStatus ?? "").trim();
+  if (!from || !to) return false;
+
+  const allowed = STATUS_TRANSITIONS[normalizedType];
+  if (!allowed) return false;
+
+  const validPair =
+    normalizedType === "quote"
+      ? [
+          ["Draft", "Sent"],
+          ["Draft", "Cancelled"],
+          ["Sent", "Viewed"],
+          ["Sent", "Cancelled"],
+          ["Viewed", "Accepted"],
+          ["Viewed", "Rejected"],
+          ["Viewed", "Cancelled"],
+          ["Accepted", "Cancelled"],
+          ["Rejected", "Cancelled"],
+        ]
+      : [
+          ["Draft", "Confirmed"],
+          ["Draft", "Cancelled"],
+          ["Confirmed", "Processing"],
+          ["Confirmed", "Cancelled"],
+          ["Processing", "Completed"],
+          ["Processing", "Cancelled"],
+          ["Completed", "Cancelled"],
+        ];
+
+  return validPair.some(([previous, next]) => previous === from && next === to);
+}
+
 export function makeIdempotencyKey(sourceType: string, sourceId: string, eventType: string) {
   return `${sourceType}:${sourceId}:${eventType}`;
 }

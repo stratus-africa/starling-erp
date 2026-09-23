@@ -347,19 +347,23 @@ export function QuoteViewPage({ id }: { id: string }) {
   });
   const setStatus = useMutation({
     mutationFn: async (status: string) => {
-      const { error } = await db.from("sales_quotes").update({ status }).eq("id", id);
+      const { data, error } = await db.rpc("transition_quote", {
+        _quote_id: id,
+        _new_status: status,
+        _reason: `Quote transitioned to ${status}`,
+      });
       if (error) throw error;
       if (tenant?.id)
         await logDocumentEvent({
           tenantId: tenant.id,
           entityType: "quote",
           entityId: id,
-          status,
-          note: `Quote ${status.toLowerCase()}`,
+          status: String(data ?? status),
+          note: `Quote ${String(data ?? status).toLowerCase()}`,
           actorId: user?.id ?? null,
           actorEmail: profile?.email ?? null,
         });
-      return status;
+      return String(data ?? status);
     },
     onSuccess: (status) => {
       toast.success(`Quote ${status.toLowerCase()}`);

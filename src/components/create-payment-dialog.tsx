@@ -96,6 +96,7 @@ export function CreatePaymentDialog({ open, onOpenChange, kind }: CreatePaymentD
   const [amount, setAmount] = useState("");
   const [reference, setReference] = useState("");
   const [notes, setNotes] = useState("");
+  const [bankAccountId, setBankAccountId] = useState("");
   // per-doc applied amounts: docId → string (amount)
   const [applied, setApplied] = useState<Record<string, string>>({});
   // checked docs
@@ -112,6 +113,23 @@ export function CreatePaymentDialog({ open, onOpenChange, kind }: CreatePaymentD
         .is("deleted_at", null)
         .order("name");
       return (data ?? []) as { id: string; name: string; currency?: string | null }[];
+    },
+    staleTime: 30_000,
+  });
+
+  const { data: bankAccounts = [] } = useQuery({
+    queryKey: ["bank_accounts", "for-payment-dialog", tenant?.id],
+    enabled: open && !!tenant?.id,
+    queryFn: async () => {
+      const { data, error } = await db
+        .from("bank_accounts")
+        .select("id,name,currency,status")
+        .eq("tenant_id", tenant!.id)
+        .is("deleted_at", null)
+        .eq("status", "Active")
+        .order("name");
+      if (error) throw error;
+      return (data ?? []) as { id: string; name: string; currency?: string | null; status?: string }[];
     },
     staleTime: 30_000,
   });
@@ -137,6 +155,7 @@ export function CreatePaymentDialog({ open, onOpenChange, kind }: CreatePaymentD
   // reset checks when party changes
   const handlePartyChange = (id: string) => {
     setPartyId(id);
+    setBankAccountId("");
     setChecked(new Set());
     setApplied({});
   };
@@ -174,6 +193,9 @@ export function CreatePaymentDialog({ open, onOpenChange, kind }: CreatePaymentD
     mutationFn: async () => {
       if (!tenant?.id) throw new Error("No workspace");
       if (!partyId) throw new Error(`Please select a ${partyLabel.toLowerCase()}`);
+      if (!bankAccountId) {
+        throw new Error(isReceived ? "Select a deposit-to account" : "Select a paid-from account");
+      }
 
       const typedAmount = parseFloat(amount);
       const effectiveAmount =
@@ -201,6 +223,7 @@ export function CreatePaymentDialog({ open, onOpenChange, kind }: CreatePaymentD
           _reference: reference || null,
           _notes: notes || null,
           _currency: currency,
+          _bank_account_id: bankAccountId,
           ...(allocations.length > 0 ? { _allocations: allocations } : {}),
         };
         const { data, error } = await (supabase as any).rpc(rpcName, rpcArgs);
@@ -226,7 +249,7 @@ export function CreatePaymentDialog({ open, onOpenChange, kind }: CreatePaymentD
           _amount: totalAmt,
           _date: date,
           _currency: currency,
-          _bank_account_id: null,
+          _bank_account_id: bankAccountId,
           _payment_method: mode,
           _reference: reference || docNumbers,
           _notes: notes || null,
@@ -257,6 +280,7 @@ export function CreatePaymentDialog({ open, onOpenChange, kind }: CreatePaymentD
       setAmount("");
       setReference("");
       setNotes("");
+      setBankAccountId("");
       setChecked(new Set());
       setApplied({});
       onOpenChange(false);
@@ -336,6 +360,22 @@ export function CreatePaymentDialog({ open, onOpenChange, kind }: CreatePaymentD
               <p className="text-xs text-muted-foreground">
                 Leave blank to use the total of the amounts applied below.
               </p>
+            </div>
+
+            <div className="grid gap-1.5">
+              <Label>{isReceived ? "Deposit To Account" : "Paid From Account"}</Label>
+              <Select value={bankAccountId} onValueChange={setBankAccountId}>
+                <SelectTrigger>
+                  <SelectValue placeholder={isReceived ? "Select deposit account…" : "Select payment account…"} />
+                </SelectTrigger>
+                <SelectContent className="max-h-60 overflow-y-auto">
+                  {bankAccounts.map((account) => (
+                    <SelectItem key={account.id} value={account.id}>
+                      {account.name} {account.currency ? `(${account.currency})` : ""}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             {/* ── Reference ── */}
@@ -495,7 +535,10 @@ export function CreatePaymentDialog({ open, onOpenChange, kind }: CreatePaymentD
               <Button
                 onClick={() => saveMutation.mutate()}
                 disabled={
-                  saveMutation.isPending || !partyId || (isReceived ? !amount : checked.size === 0)
+                  saveMutation.isPending ||
+                  !partyId ||
+                  !bankAccountId ||
+                  (isReceived ? !amount : checked.size === 0)
                 }
               >
                 {saveMutation.isPending ? (

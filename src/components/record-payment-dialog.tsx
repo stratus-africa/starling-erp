@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { toast } from "sonner";
@@ -56,14 +56,35 @@ export function RecordPaymentDialog({
   const [mode, setMode] = useState<string>("Bank Transfer");
   const [reference, setReference] = useState("");
   const [notes, setNotes] = useState("");
+  const [bankAccountId, setBankAccountId] = useState<string>("");
 
   const table = kind === "receive" ? "payments_received" : "payments_made";
+
+  const { data: bankAccounts = [] } = useQuery({
+    queryKey: ["bank_accounts", "single-payment-dialog", tenant?.id],
+    enabled: open && !!tenant?.id,
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("bank_accounts")
+        .select("id,name,currency,status")
+        .eq("tenant_id", tenant!.id)
+        .is("deleted_at", null)
+        .eq("status", "Active")
+        .order("name");
+      if (error) throw error;
+      return (data ?? []) as { id: string; name: string; currency?: string | null; status?: string }[];
+    },
+    staleTime: 30_000,
+  });
 
   const record = useMutation({
     mutationFn: async () => {
       if (!tenant?.id) throw new Error("No workspace selected");
       const amt = parseFloat(amount);
       if (isNaN(amt) || amt <= 0) throw new Error("Enter a valid amount greater than zero");
+      if (!bankAccountId) {
+        throw new Error(kind === "receive" ? "Select a deposit-to account" : "Select a paid-from account");
+      }
 
       if (kind === "receive") {
         const allocationAmount = Math.min(amt, Math.max(0, balanceDue));
@@ -85,6 +106,7 @@ export function RecordPaymentDialog({
           _reference: reference || null,
           _notes: notes || null,
           _currency: currency,
+          _bank_account_id: bankAccountId,
           _allocations:
             allocationAmount > 0 ? [{ invoice_id: docId, amount: allocationAmount }] : [],
         });
@@ -100,7 +122,7 @@ export function RecordPaymentDialog({
           _amount: amt,
           _date: date,
           _currency: currency,
-          _bank_account_id: null,
+          _bank_account_id: bankAccountId,
           _payment_method: mode,
           _reference: reference || null,
           _notes: notes || null,
@@ -196,6 +218,26 @@ export function RecordPaymentDialog({
           </div>
 
           <div className="grid gap-1.5">
+            <Label htmlFor="pay-account">
+              {kind === "receive" ? "Deposit To Account" : "Paid From Account"}
+            </Label>
+            <Select value={bankAccountId} onValueChange={setBankAccountId}>
+              <SelectTrigger id="pay-account">
+                <SelectValue
+                  placeholder={kind === "receive" ? "Select deposit account…" : "Select payment account…"}
+                />
+              </SelectTrigger>
+              <SelectContent>
+                {bankAccounts.map((account) => (
+                  <SelectItem key={account.id} value={account.id}>
+                    {account.name} {account.currency ? `(${account.currency})` : ""}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="grid gap-1.5">
             <Label htmlFor="pay-ref">Reference / Cheque No.</Label>
             <Input
               id="pay-ref"
@@ -221,7 +263,7 @@ export function RecordPaymentDialog({
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={record.isPending}>
             Cancel
           </Button>
-          <Button onClick={() => record.mutate()} disabled={record.isPending}>
+          <Button onClick={() => record.mutate()} disabled={record.isPending || !bankAccountId}>
             {record.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Record Payment
           </Button>

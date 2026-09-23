@@ -590,19 +590,23 @@ export function SalesOrderViewPage({ id }: { id: string }) {
   });
   const setStatus = useMutation({
     mutationFn: async (status: string) => {
-      const { error } = await db.from("sales_orders").update({ status }).eq("id", id);
+      const { data, error } = await db.rpc("transition_sales_order", {
+        _order_id: id,
+        _new_status: status,
+        _reason: `Sales order transitioned to ${status}`,
+      });
       if (error) throw error;
       if (tenant?.id)
         await logDocumentEvent({
           tenantId: tenant.id,
           entityType: "order",
           entityId: id,
-          status,
-          note: `Sales Order ${status.toLowerCase()}`,
+          status: String(data ?? status),
+          note: `Sales Order ${String(data ?? status).toLowerCase()}`,
           actorId: null,
           actorEmail: null,
         });
-      return status;
+      return String(data ?? status);
     },
     onSuccess: (status) => {
       toast.success(`Order ${status.toLowerCase()}`);
