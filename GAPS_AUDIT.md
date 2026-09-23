@@ -1,14 +1,16 @@
 # Gaps Audit — missing backend actions, unreachable pages, broken buttons
 
-Read-only audit. Nothing in this document has been fixed. Verified on 23 Sep 2026 against the live database function list (`pg_proc`, schema `public`), the route files under `src/routes`, and every `db.rpc(...)` call site in `src`.
+Audit taken 23 Sep 2026 against the live database function list (`pg_proc`, schema `public`), the route files under `src/routes`, and every `db.rpc(...)` call site in `src`.
 
 Method: 179 distinct backend action names are called from the front end; each was checked for existence in the database. Route files were compared against every `to=` / `url:` / `href` link in the app (menu, hubs, breadcrumbs).
 
+**Status: section A is RESOLVED** (migrations `0017`–`0019`). All 12 actions now exist with tenant scoping, permission checks, status-transition validation and plain-language error messages; the four platform observability tables they read (`platform_system_health`, `platform_error_logs`, `platform_background_jobs`, `platform_api_metrics`) were created with grants and platform-admin-only policies. Sections B and C are unchanged and still open.
+
 ---
 
-## A. Missing backend actions (called by the app, do not exist in the database)
+## A. Missing backend actions — RESOLVED
 
-12 of the 179 called actions have no matching database function. Every call goes out as a `POST /rest/v1/rpc/<name>` and comes back `404 / PGRST202`.
+12 of the 179 called actions had no matching database function; every call returned `404 / PGRST202`. The table below is the original finding, kept as the record of what was fixed.
 
 | Action | Route | Calling component | Observed behavior |
 |---|---|---|---|

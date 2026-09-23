@@ -4482,6 +4482,57 @@ export type Database = {
         }
         Relationships: []
       }
+      platform_api_metrics: {
+        Row: {
+          avg_latency_ms: number
+          created_at: string
+          endpoint: string
+          failure_count: number
+          id: string
+          method: string
+          p95_latency_ms: number
+          p99_latency_ms: number
+          request_volume: number
+          status_2xx: number
+          status_4xx: number
+          status_5xx: number
+          window_end: string
+          window_start: string
+        }
+        Insert: {
+          avg_latency_ms?: number
+          created_at?: string
+          endpoint: string
+          failure_count?: number
+          id?: string
+          method?: string
+          p95_latency_ms?: number
+          p99_latency_ms?: number
+          request_volume?: number
+          status_2xx?: number
+          status_4xx?: number
+          status_5xx?: number
+          window_end?: string
+          window_start?: string
+        }
+        Update: {
+          avg_latency_ms?: number
+          created_at?: string
+          endpoint?: string
+          failure_count?: number
+          id?: string
+          method?: string
+          p95_latency_ms?: number
+          p99_latency_ms?: number
+          request_volume?: number
+          status_2xx?: number
+          status_4xx?: number
+          status_5xx?: number
+          window_end?: string
+          window_start?: string
+        }
+        Relationships: []
+      }
       platform_audit_log: {
         Row: {
           acting_as_tenant_id: string | null
@@ -4547,6 +4598,136 @@ export type Database = {
             columns: ["support_session_id"]
             isOneToOne: false
             referencedRelation: "platform_support_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      platform_background_jobs: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          duration_ms: number | null
+          error_message: string | null
+          id: string
+          job_name: string
+          max_retries: number
+          payload: Json
+          queue_name: string
+          retry_count: number
+          scheduled_at: string
+          started_at: string | null
+          status: string
+          tenant_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          duration_ms?: number | null
+          error_message?: string | null
+          id?: string
+          job_name: string
+          max_retries?: number
+          payload?: Json
+          queue_name?: string
+          retry_count?: number
+          scheduled_at?: string
+          started_at?: string | null
+          status?: string
+          tenant_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          duration_ms?: number | null
+          error_message?: string | null
+          id?: string
+          job_name?: string
+          max_retries?: number
+          payload?: Json
+          queue_name?: string
+          retry_count?: number
+          scheduled_at?: string
+          started_at?: string | null
+          status?: string
+          tenant_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "platform_background_jobs_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      platform_error_logs: {
+        Row: {
+          client_ip: string | null
+          created_at: string
+          endpoint: string
+          error_code: string | null
+          error_message: string
+          first_seen_at: string
+          frequency_count: number
+          id: string
+          last_seen_at: string
+          method: string
+          resolution_note: string | null
+          resolved: boolean
+          resolved_at: string | null
+          resolved_by: string | null
+          severity: string
+          stack_trace: string | null
+          tenant_id: string | null
+        }
+        Insert: {
+          client_ip?: string | null
+          created_at?: string
+          endpoint?: string
+          error_code?: string | null
+          error_message: string
+          first_seen_at?: string
+          frequency_count?: number
+          id?: string
+          last_seen_at?: string
+          method?: string
+          resolution_note?: string | null
+          resolved?: boolean
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: string
+          stack_trace?: string | null
+          tenant_id?: string | null
+        }
+        Update: {
+          client_ip?: string | null
+          created_at?: string
+          endpoint?: string
+          error_code?: string | null
+          error_message?: string
+          first_seen_at?: string
+          frequency_count?: number
+          id?: string
+          last_seen_at?: string
+          method?: string
+          resolution_note?: string | null
+          resolved?: boolean
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: string
+          stack_trace?: string | null
+          tenant_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "platform_error_logs_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
             referencedColumns: ["id"]
           },
         ]
@@ -4854,6 +5035,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      platform_system_health: {
+        Row: {
+          component: string
+          created_at: string
+          id: string
+          incident_message: string | null
+          last_checked_at: string
+          latency_ms: number | null
+          metrics: Json
+          status: string
+          uptime_pct: number
+        }
+        Insert: {
+          component: string
+          created_at?: string
+          id?: string
+          incident_message?: string | null
+          last_checked_at?: string
+          latency_ms?: number | null
+          metrics?: Json
+          status?: string
+          uptime_pct?: number
+        }
+        Update: {
+          component?: string
+          created_at?: string
+          id?: string
+          incident_message?: string | null
+          last_checked_at?: string
+          latency_ms?: number | null
+          metrics?: Json
+          status?: string
+          uptime_pct?: number
+        }
+        Relationships: []
       }
       posting_audit_events: {
         Row: {
@@ -8109,6 +8326,10 @@ export type Database = {
         }
         Returns: string
       }
+      admin_cancel_background_job: {
+        Args: { _job_id: string }
+        Returns: undefined
+      }
       admin_cancel_subscription: {
         Args: {
           _cancellation_reason?: string
@@ -8148,6 +8369,22 @@ export type Database = {
           _subscription_id: string
         }
         Returns: Json
+      }
+      admin_get_api_monitoring_metrics: {
+        Args: { _timeframe?: string }
+        Returns: {
+          avg_latency_ms: number
+          endpoint: string
+          error_rate_pct: number
+          failure_count: number
+          method: string
+          p95_latency_ms: number
+          p99_latency_ms: number
+          request_volume: number
+          status_2xx: number
+          status_4xx: number
+          status_5xx: number
+        }[]
       }
       admin_get_flag_history: { Args: { _flag_code: string }; Returns: Json }
       admin_get_platform_audit_stats: {
@@ -8213,6 +8450,18 @@ export type Database = {
           user_agent: string
         }[]
       }
+      admin_get_system_health: {
+        Args: never
+        Returns: {
+          component: string
+          incident_message: string
+          last_checked_at: string
+          latency_ms: number
+          metrics: Json
+          status: string
+          uptime_pct: number
+        }[]
+      }
       admin_get_user_activity: {
         Args: { _limit?: number; _tenant_id: string; _user_id: string }
         Returns: {
@@ -8227,6 +8476,62 @@ export type Database = {
       admin_grant_platform_access: {
         Args: { _notes?: string; _platform_role?: string; _user_id: string }
         Returns: undefined
+      }
+      admin_list_background_jobs: {
+        Args: {
+          _limit?: number
+          _offset?: number
+          _queue?: string
+          _search?: string
+          _status?: string
+        }
+        Returns: {
+          completed_at: string
+          created_at: string
+          duration_ms: number
+          error_message: string
+          id: string
+          job_name: string
+          max_retries: number
+          payload: Json
+          queue_name: string
+          retry_count: number
+          scheduled_at: string
+          started_at: string
+          status: string
+          tenant_id: string
+          tenant_name: string
+          total_count: number
+        }[]
+      }
+      admin_list_error_logs: {
+        Args: {
+          _limit?: number
+          _offset?: number
+          _resolved?: boolean
+          _search?: string
+          _severity?: string
+          _tenant_id?: string
+        }
+        Returns: {
+          client_ip: string
+          endpoint: string
+          error_code: string
+          error_message: string
+          first_seen_at: string
+          frequency_count: number
+          id: string
+          last_seen_at: string
+          method: string
+          resolution_note: string
+          resolved: boolean
+          resolved_at: string
+          severity: string
+          stack_trace: string
+          tenant_id: string
+          tenant_name: string
+          total_count: number
+        }[]
       }
       admin_list_feature_flags: { Args: never; Returns: Json }
       admin_list_login_activity: {
@@ -8440,6 +8745,10 @@ export type Database = {
         }[]
       }
       admin_ping: { Args: never; Returns: boolean }
+      admin_ping_system_component: {
+        Args: { _component: string }
+        Returns: Json
+      }
       admin_reactivate_subscription: {
         Args: { _reason?: string; _subscription_id: string }
         Returns: Json
@@ -8448,8 +8757,16 @@ export type Database = {
         Args: { _reason?: string; _tenant_id: string; _user_id: string }
         Returns: Json
       }
+      admin_resolve_error_log: {
+        Args: { _error_id: string; _resolution_note?: string }
+        Returns: undefined
+      }
       admin_resolve_security_event: {
         Args: { _event_id: string; _resolution_note?: string }
+        Returns: undefined
+      }
+      admin_retry_background_job: {
+        Args: { _job_id: string }
         Returns: undefined
       }
       admin_revoke_all_admin_sessions: {
@@ -8629,6 +8946,7 @@ export type Database = {
         Args: { _req_id: string }
         Returns: string[]
       }
+      archive_bom: { Args: { _bom_id: string }; Returns: string }
       assert_period_open: {
         Args: { _date: string; _tenant_id: string }
         Returns: undefined
@@ -8713,6 +9031,19 @@ export type Database = {
           uom: string
           warehouse_id: string
           warehouse_name: string
+        }[]
+      }
+      check_reservation_integrity: {
+        Args: { _item_id?: string }
+        Returns: {
+          available_qty: number
+          is_overreserved: boolean
+          item_id: string
+          item_name: string
+          on_hand: number
+          orphan_count: number
+          reserved_qty: number
+          sku: string
         }[]
       }
       check_tenant_limit_enforcement: {
@@ -9886,6 +10217,14 @@ export type Database = {
         Returns: undefined
       }
       run_accounting_integrity_checks: { Args: never; Returns: Json }
+      sales_order_transition_allowed: {
+        Args: { _new: string; _old: string }
+        Returns: boolean
+      }
+      sales_quote_transition_allowed: {
+        Args: { _new: string; _old: string }
+        Returns: boolean
+      }
       set_item_opening_stock: {
         Args: {
           _item_id: string
@@ -9951,8 +10290,16 @@ export type Database = {
         Args: { _new_status: string; _reason?: string; _requisition_id: string }
         Returns: string
       }
+      transition_quote: {
+        Args: { _new_status: string; _quote_id: string; _reason?: string }
+        Returns: string
+      }
       transition_sales_fulfillment: {
         Args: { _fulfillment_id: string; _new_status: string; _reason?: string }
+        Returns: string
+      }
+      transition_sales_order: {
+        Args: { _new_status: string; _order_id: string; _reason?: string }
         Returns: string
       }
       transition_supplier_bill: {
