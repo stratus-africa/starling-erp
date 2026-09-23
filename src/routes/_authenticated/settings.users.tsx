@@ -178,7 +178,7 @@ function UsersPage() {
         <Table>
           <TableHeader>
             <TableRow className="bg-muted/20">
-              <TableHead>User</TableHead>
+              <TableHead className="min-w-[220px]">User</TableHead>
               {ALL_ROLES.map((r) => (
                 <TableHead key={r} className="text-center text-[10px] uppercase tracking-wider">
                   {r.replace("_", " ")}
@@ -220,21 +220,21 @@ function UsersPage() {
                   </TableCell>
                   {ALL_ROLES.map((r) => (
                     <TableCell key={r} className="text-center">
-                      <Checkbox
+                      <div className="flex justify-center"><Checkbox
                         checked={u.effective.includes(r)}
                         onCheckedChange={() => toggleRole(u.id, u.effective, r)}
-                      />
+                      /></div>
                     </TableCell>
                   ))}
                   {customRoles.map((r) => {
                     const current = customFor(u.id);
                     return (
                       <TableCell key={r.id} className="text-center">
-                        <Checkbox
+                        <div className="flex justify-center"><Checkbox
                           checked={current.includes(r.id)}
                           disabled={saveCustom.isPending}
                           onCheckedChange={(c) => saveCustom.mutate({ userId: u.id, roleIds: c ? [...current, r.id] : current.filter((x) => x !== r.id) })}
-                        />
+                        /></div>
                       </TableCell>
                     );
                   })}
