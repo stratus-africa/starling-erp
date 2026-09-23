@@ -63,6 +63,7 @@ import { Route as AuthenticatedSettingsUsersRouteImport } from './routes/_authen
 import { Route as AuthenticatedSettingsUomRouteImport } from './routes/_authenticated/settings.uom'
 import { Route as AuthenticatedSettingsTemplatesRouteImport } from './routes/_authenticated/settings.templates'
 import { Route as AuthenticatedSettingsTaxesRouteImport } from './routes/_authenticated/settings.taxes'
+import { Route as AuthenticatedSettingsSalesRouteImport } from './routes/_authenticated/settings.sales'
 import { Route as AuthenticatedSettingsRolesRouteImport } from './routes/_authenticated/settings.roles'
 import { Route as AuthenticatedSettingsPaymentTermsRouteImport } from './routes/_authenticated/settings.payment-terms'
 import { Route as AuthenticatedSettingsNumberingRouteImport } from './routes/_authenticated/settings.numbering'
@@ -469,6 +470,12 @@ const AuthenticatedSettingsTaxesRoute =
   AuthenticatedSettingsTaxesRouteImport.update({
     id: '/settings/taxes',
     path: '/settings/taxes',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedSettingsSalesRoute =
+  AuthenticatedSettingsSalesRouteImport.update({
+    id: '/settings/sales',
+    path: '/settings/sales',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedSettingsRolesRoute =
@@ -1290,6 +1297,7 @@ export interface FileRoutesByFullPath {
   '/settings/numbering': typeof AuthenticatedSettingsNumberingRoute
   '/settings/payment-terms': typeof AuthenticatedSettingsPaymentTermsRoute
   '/settings/roles': typeof AuthenticatedSettingsRolesRoute
+  '/settings/sales': typeof AuthenticatedSettingsSalesRoute
   '/settings/taxes': typeof AuthenticatedSettingsTaxesRoute
   '/settings/templates': typeof AuthenticatedSettingsTemplatesRoute
   '/settings/uom': typeof AuthenticatedSettingsUomRoute
@@ -1466,6 +1474,7 @@ export interface FileRoutesByTo {
   '/settings/numbering': typeof AuthenticatedSettingsNumberingRoute
   '/settings/payment-terms': typeof AuthenticatedSettingsPaymentTermsRoute
   '/settings/roles': typeof AuthenticatedSettingsRolesRoute
+  '/settings/sales': typeof AuthenticatedSettingsSalesRoute
   '/settings/taxes': typeof AuthenticatedSettingsTaxesRoute
   '/settings/templates': typeof AuthenticatedSettingsTemplatesRoute
   '/settings/uom': typeof AuthenticatedSettingsUomRoute
@@ -1645,6 +1654,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/numbering': typeof AuthenticatedSettingsNumberingRoute
   '/_authenticated/settings/payment-terms': typeof AuthenticatedSettingsPaymentTermsRoute
   '/_authenticated/settings/roles': typeof AuthenticatedSettingsRolesRoute
+  '/_authenticated/settings/sales': typeof AuthenticatedSettingsSalesRoute
   '/_authenticated/settings/taxes': typeof AuthenticatedSettingsTaxesRoute
   '/_authenticated/settings/templates': typeof AuthenticatedSettingsTemplatesRoute
   '/_authenticated/settings/uom': typeof AuthenticatedSettingsUomRoute
@@ -1824,6 +1834,7 @@ export interface FileRouteTypes {
     | '/settings/numbering'
     | '/settings/payment-terms'
     | '/settings/roles'
+    | '/settings/sales'
     | '/settings/taxes'
     | '/settings/templates'
     | '/settings/uom'
@@ -2000,6 +2011,7 @@ export interface FileRouteTypes {
     | '/settings/numbering'
     | '/settings/payment-terms'
     | '/settings/roles'
+    | '/settings/sales'
     | '/settings/taxes'
     | '/settings/templates'
     | '/settings/uom'
@@ -2178,6 +2190,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/numbering'
     | '/_authenticated/settings/payment-terms'
     | '/_authenticated/settings/roles'
+    | '/_authenticated/settings/sales'
     | '/_authenticated/settings/taxes'
     | '/_authenticated/settings/templates'
     | '/_authenticated/settings/uom'
@@ -2660,6 +2673,13 @@ declare module '@tanstack/react-router' {
       path: '/settings/taxes'
       fullPath: '/settings/taxes'
       preLoaderRoute: typeof AuthenticatedSettingsTaxesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/settings/sales': {
+      id: '/_authenticated/settings/sales'
+      path: '/settings/sales'
+      fullPath: '/settings/sales'
+      preLoaderRoute: typeof AuthenticatedSettingsSalesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/settings/roles': {
@@ -3624,6 +3644,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedSettingsNumberingRoute: typeof AuthenticatedSettingsNumberingRoute
   AuthenticatedSettingsPaymentTermsRoute: typeof AuthenticatedSettingsPaymentTermsRoute
   AuthenticatedSettingsRolesRoute: typeof AuthenticatedSettingsRolesRoute
+  AuthenticatedSettingsSalesRoute: typeof AuthenticatedSettingsSalesRoute
   AuthenticatedSettingsTaxesRoute: typeof AuthenticatedSettingsTaxesRoute
   AuthenticatedSettingsTemplatesRoute: typeof AuthenticatedSettingsTemplatesRoute
   AuthenticatedSettingsUomRoute: typeof AuthenticatedSettingsUomRoute
@@ -3772,6 +3793,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSettingsPaymentTermsRoute:
     AuthenticatedSettingsPaymentTermsRoute,
   AuthenticatedSettingsRolesRoute: AuthenticatedSettingsRolesRoute,
+  AuthenticatedSettingsSalesRoute: AuthenticatedSettingsSalesRoute,
   AuthenticatedSettingsTaxesRoute: AuthenticatedSettingsTaxesRoute,
   AuthenticatedSettingsTemplatesRoute: AuthenticatedSettingsTemplatesRoute,
   AuthenticatedSettingsUomRoute: AuthenticatedSettingsUomRoute,
