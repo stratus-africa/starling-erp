@@ -698,7 +698,7 @@ export function SalesOrderViewPage({ id }: { id: string }) {
   };
   return (
     <div className="min-h-full bg-muted/20 p-4 md:p-6">
-      <div className="mx-auto flex max-w-[1600px] flex-col gap-4">
+      <div className="flex w-full flex-col gap-4">
         <header className="flex flex-wrap items-start justify-between gap-4">
           <div className="flex items-start gap-3">
             <Button variant="ghost" size="sm" onClick={() => nav({ to: "/sales/orders" as never })}>
