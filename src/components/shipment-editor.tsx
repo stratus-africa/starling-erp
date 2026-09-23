@@ -192,10 +192,40 @@ export function ShipmentEditor({ id }: { id: string }) {
     salesOrderIds,
   ]);
 
-  const customer = customers.find((c) => c.id === header.customer_id);
+  const [orderSearch, setOrderSearch] = useState("");
   const linkedOrders = orders.filter((o) => salesOrderIds.includes(o.id));
-  const order = linkedOrders[0] ?? orders.find((o) => o.id === header.sales_order_id);
+  const loadedCustomerIds = [
+    ...new Set(linkedOrders.map((o) => o.customer_id).filter(Boolean)),
+  ] as string[];
+  const customer = customers.find(
+    (c) => c.id === (loadedCustomerIds.length === 1 ? loadedCustomerIds[0] : header.customer_id),
+  );
+  const customerName = (cid?: string | null) =>
+    customers.find((c) => c.id === cid)?.name ?? "—";
   const pkg = packages.find((p) => p.id === header.package_id);
+  const q = orderSearch.trim().toLowerCase();
+  const visibleOrders = [...orders]
+    .filter(
+      (o) =>
+        !q ||
+        String(o.number ?? "").toLowerCase().includes(q) ||
+        customerName(o.customer_id).toLowerCase().includes(q),
+    )
+    .sort((a, b) => Number(salesOrderIds.includes(b.id)) - Number(salesOrderIds.includes(a.id)));
+  const toggleOrder = (oid: string) => {
+    const next = salesOrderIds.includes(oid)
+      ? salesOrderIds.filter((x) => x !== oid)
+      : [...salesOrderIds, oid];
+    setSalesOrderIds(next);
+    setHeader((h) => {
+      const p = packages.find((row) => row.id === h.package_id);
+      return {
+        ...h,
+        sales_order_id: next[0] ?? "",
+        package_id: p && !next.includes(p.sales_order_id) ? "" : h.package_id,
+      };
+    });
+  };
 
   const save = useMutation({
     mutationFn: async () => {
@@ -208,10 +238,6 @@ export function ShipmentEditor({ id }: { id: string }) {
       const customerIds = [
         ...new Set(selectedOrders.map((row) => row.customer_id).filter(Boolean)),
       ];
-      if (customerIds.length > 1)
-        throw new Error("A shipment can only combine sales orders for the same customer");
-      if (header.customer_id && customerIds[0] && header.customer_id !== customerIds[0])
-        throw new Error("Shipment customer must match the selected sales orders");
       const selectedPackage = packages.find((row) => row.id === header.package_id);
       if (
         selectedPackage?.sales_order_id &&
