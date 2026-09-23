@@ -45,6 +45,7 @@ interface CreatePaymentDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   kind: PaymentCreateKind;
+  variant?: "dialog" | "page";
 }
 
 const PAYMENT_MODES = [
@@ -75,9 +76,19 @@ type Outstanding = {
   status: string;
 };
 
+// ── page-mode wrappers ──
+const PageRoot = ({ children }: any) => <div className="w-full p-4 md:p-6">{children}</div>;
+const PageContent = ({ children }: any) => (
+  <div className="mx-auto flex w-full max-w-5xl flex-col gap-4 rounded-lg border bg-card p-6 shadow-sm">{children}</div>
+);
+const PageHeader = ({ children }: any) => <div className="grid gap-1 border-b pb-4">{children}</div>;
+const PageTitle = ({ children, className }: any) => <h1 className={`text-xl font-semibold ${className ?? ""}`}>{children}</h1>;
+const PageDescription = ({ children }: any) => <p className="text-sm text-muted-foreground">{children}</p>;
+const PageFooter = ({ children }: any) => <div className="border-t pt-4">{children}</div>;
+
 // ── component ─────────────────────────────────────────────────────────────────
 
-export function CreatePaymentDialog({ open, onOpenChange, kind }: CreatePaymentDialogProps) {
+export function CreatePaymentDialog({ open, onOpenChange, kind, variant = "dialog" }: CreatePaymentDialogProps) {
   const { tenant } = useAuth();
   const qc = useQueryClient();
 
@@ -288,22 +299,30 @@ export function CreatePaymentDialog({ open, onOpenChange, kind }: CreatePaymentD
     onError: (e: Error) => toast.error(e.message ?? "Failed to record payment"),
   });
 
+  const isPage = variant === "page";
+  const Root: any = isPage ? PageRoot : Dialog;
+  const Content: any = isPage ? PageContent : DialogContent;
+  const Header: any = isPage ? PageHeader : DialogHeader;
+  const Title: any = isPage ? PageTitle : DialogTitle;
+  const Description: any = isPage ? PageDescription : DialogDescription;
+  const Footer: any = isPage ? PageFooter : DialogFooter;
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
-        <DialogHeader className="shrink-0">
-          <DialogTitle className="flex items-center gap-2">
+    <Root open={open} onOpenChange={onOpenChange}>
+      <Content className="max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
+        <Header className="shrink-0">
+          <Title className="flex items-center gap-2">
             <DollarSign className="h-4 w-4" />
             {isReceived ? "Create Payment Received" : "Create Payment Made"}
-          </DialogTitle>
-          <DialogDescription>
+          </Title>
+          <Description>
             {isReceived
               ? "Record a customer payment and apply it to one or more outstanding invoices."
               : "Record a supplier payment and apply it to one or more outstanding bills."}
-          </DialogDescription>
-        </DialogHeader>
+          </Description>
+        </Header>
 
-        <div className="flex-1 overflow-y-auto min-h-0 pr-1">
+        <div className={isPage ? "" : "flex-1 overflow-y-auto min-h-0 pr-1"}>
           <div className="grid gap-5 py-2">
             {/* ── Party selector ── */}
             <div className="grid gap-1.5">
@@ -507,7 +526,7 @@ export function CreatePaymentDialog({ open, onOpenChange, kind }: CreatePaymentD
         </div>
 
         {/* ── Footer ── */}
-        <DialogFooter className="shrink-0 border-t pt-3">
+        <Footer className="shrink-0 border-t pt-3">
           <div className="flex w-full items-center justify-between gap-2">
             {/* Summary */}
             {checked.size > 0 ? (
@@ -550,8 +569,8 @@ export function CreatePaymentDialog({ open, onOpenChange, kind }: CreatePaymentD
               </Button>
             </div>
           </div>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </Footer>
+      </Content>
+    </Root>
   );
 }

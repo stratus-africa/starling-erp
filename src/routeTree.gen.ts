@@ -136,6 +136,7 @@ import { Route as SuperAdminTenantsTenantIdUsersRouteImport } from './routes/sup
 import { Route as AuthenticatedSettingsWarehousesIdRouteImport } from './routes/_authenticated/settings.warehouses.$id'
 import { Route as AuthenticatedSalesShipmentsIdRouteImport } from './routes/_authenticated/sales.shipments.$id'
 import { Route as AuthenticatedSalesQuotesIdRouteImport } from './routes/_authenticated/sales.quotes.$id'
+import { Route as AuthenticatedSalesPaymentsNewRouteImport } from './routes/_authenticated/sales.payments_.new'
 import { Route as AuthenticatedSalesPaymentsIdRouteImport } from './routes/_authenticated/sales.payments.$id'
 import { Route as AuthenticatedSalesPackagesIdRouteImport } from './routes/_authenticated/sales.packages.$id'
 import { Route as AuthenticatedSalesOrdersIdRouteImport } from './routes/_authenticated/sales.orders.$id'
@@ -166,6 +167,7 @@ import { Route as AuthenticatedReportsExpensesDepartmentsRouteImport } from './r
 import { Route as AuthenticatedReportsExpensesCategoriesRouteImport } from './routes/_authenticated/reports.expenses.categories'
 import { Route as AuthenticatedPurchasingSuppliersIdRouteImport } from './routes/_authenticated/purchasing.suppliers.$id'
 import { Route as AuthenticatedPurchasingRequisitionsIdRouteImport } from './routes/_authenticated/purchasing.requisitions.$id'
+import { Route as AuthenticatedPurchasingPaymentsNewRouteImport } from './routes/_authenticated/purchasing.payments_.new'
 import { Route as AuthenticatedPurchasingOrdersIdRouteImport } from './routes/_authenticated/purchasing.orders.$id'
 import { Route as AuthenticatedPurchasingExpensesIdRouteImport } from './routes/_authenticated/purchasing.expenses.$id'
 import { Route as AuthenticatedPurchasingCreditsIdRouteImport } from './routes/_authenticated/purchasing.credits.$id'
@@ -905,6 +907,12 @@ const AuthenticatedSalesQuotesIdRoute =
     path: '/sales/quotes/$id',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedSalesPaymentsNewRoute =
+  AuthenticatedSalesPaymentsNewRouteImport.update({
+    id: '/sales/payments_/new',
+    path: '/sales/payments/new',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedSalesPaymentsIdRoute =
   AuthenticatedSalesPaymentsIdRouteImport.update({
     id: '/$id',
@@ -1083,6 +1091,12 @@ const AuthenticatedPurchasingRequisitionsIdRoute =
   AuthenticatedPurchasingRequisitionsIdRouteImport.update({
     id: '/purchasing/requisitions/$id',
     path: '/purchasing/requisitions/$id',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedPurchasingPaymentsNewRoute =
+  AuthenticatedPurchasingPaymentsNewRouteImport.update({
+    id: '/purchasing/payments_/new',
+    path: '/purchasing/payments/new',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedPurchasingOrdersIdRoute =
@@ -1299,6 +1313,7 @@ export interface FileRoutesByFullPath {
   '/purchasing/credits/$id': typeof AuthenticatedPurchasingCreditsIdRoute
   '/purchasing/expenses/$id': typeof AuthenticatedPurchasingExpensesIdRoute
   '/purchasing/orders/$id': typeof AuthenticatedPurchasingOrdersIdRoute
+  '/purchasing/payments/new': typeof AuthenticatedPurchasingPaymentsNewRoute
   '/purchasing/requisitions/$id': typeof AuthenticatedPurchasingRequisitionsIdRoute
   '/purchasing/suppliers/$id': typeof AuthenticatedPurchasingSuppliersIdRoute
   '/reports/expenses/categories': typeof AuthenticatedReportsExpensesCategoriesRoute
@@ -1329,6 +1344,7 @@ export interface FileRoutesByFullPath {
   '/sales/orders/$id': typeof AuthenticatedSalesOrdersIdRoute
   '/sales/packages/$id': typeof AuthenticatedSalesPackagesIdRoute
   '/sales/payments/$id': typeof AuthenticatedSalesPaymentsIdRoute
+  '/sales/payments/new': typeof AuthenticatedSalesPaymentsNewRoute
   '/sales/quotes/$id': typeof AuthenticatedSalesQuotesIdRoute
   '/sales/shipments/$id': typeof AuthenticatedSalesShipmentsIdRoute
   '/settings/warehouses/$id': typeof AuthenticatedSettingsWarehousesIdRoute
@@ -1471,6 +1487,7 @@ export interface FileRoutesByTo {
   '/purchasing/credits/$id': typeof AuthenticatedPurchasingCreditsIdRoute
   '/purchasing/expenses/$id': typeof AuthenticatedPurchasingExpensesIdRoute
   '/purchasing/orders/$id': typeof AuthenticatedPurchasingOrdersIdRoute
+  '/purchasing/payments/new': typeof AuthenticatedPurchasingPaymentsNewRoute
   '/purchasing/requisitions/$id': typeof AuthenticatedPurchasingRequisitionsIdRoute
   '/purchasing/suppliers/$id': typeof AuthenticatedPurchasingSuppliersIdRoute
   '/reports/expenses/categories': typeof AuthenticatedReportsExpensesCategoriesRoute
@@ -1501,6 +1518,7 @@ export interface FileRoutesByTo {
   '/sales/orders/$id': typeof AuthenticatedSalesOrdersIdRoute
   '/sales/packages/$id': typeof AuthenticatedSalesPackagesIdRoute
   '/sales/payments/$id': typeof AuthenticatedSalesPaymentsIdRoute
+  '/sales/payments/new': typeof AuthenticatedSalesPaymentsNewRoute
   '/sales/quotes/$id': typeof AuthenticatedSalesQuotesIdRoute
   '/sales/shipments/$id': typeof AuthenticatedSalesShipmentsIdRoute
   '/settings/warehouses/$id': typeof AuthenticatedSettingsWarehousesIdRoute
@@ -1648,6 +1666,7 @@ export interface FileRoutesById {
   '/_authenticated/purchasing/credits/$id': typeof AuthenticatedPurchasingCreditsIdRoute
   '/_authenticated/purchasing/expenses/$id': typeof AuthenticatedPurchasingExpensesIdRoute
   '/_authenticated/purchasing/orders/$id': typeof AuthenticatedPurchasingOrdersIdRoute
+  '/_authenticated/purchasing/payments_/new': typeof AuthenticatedPurchasingPaymentsNewRoute
   '/_authenticated/purchasing/requisitions/$id': typeof AuthenticatedPurchasingRequisitionsIdRoute
   '/_authenticated/purchasing/suppliers/$id': typeof AuthenticatedPurchasingSuppliersIdRoute
   '/_authenticated/reports/expenses/categories': typeof AuthenticatedReportsExpensesCategoriesRoute
@@ -1678,6 +1697,7 @@ export interface FileRoutesById {
   '/_authenticated/sales/orders/$id': typeof AuthenticatedSalesOrdersIdRoute
   '/_authenticated/sales/packages/$id': typeof AuthenticatedSalesPackagesIdRoute
   '/_authenticated/sales/payments/$id': typeof AuthenticatedSalesPaymentsIdRoute
+  '/_authenticated/sales/payments_/new': typeof AuthenticatedSalesPaymentsNewRoute
   '/_authenticated/sales/quotes/$id': typeof AuthenticatedSalesQuotesIdRoute
   '/_authenticated/sales/shipments/$id': typeof AuthenticatedSalesShipmentsIdRoute
   '/_authenticated/settings/warehouses/$id': typeof AuthenticatedSettingsWarehousesIdRoute
@@ -1824,6 +1844,7 @@ export interface FileRouteTypes {
     | '/purchasing/credits/$id'
     | '/purchasing/expenses/$id'
     | '/purchasing/orders/$id'
+    | '/purchasing/payments/new'
     | '/purchasing/requisitions/$id'
     | '/purchasing/suppliers/$id'
     | '/reports/expenses/categories'
@@ -1854,6 +1875,7 @@ export interface FileRouteTypes {
     | '/sales/orders/$id'
     | '/sales/packages/$id'
     | '/sales/payments/$id'
+    | '/sales/payments/new'
     | '/sales/quotes/$id'
     | '/sales/shipments/$id'
     | '/settings/warehouses/$id'
@@ -1996,6 +2018,7 @@ export interface FileRouteTypes {
     | '/purchasing/credits/$id'
     | '/purchasing/expenses/$id'
     | '/purchasing/orders/$id'
+    | '/purchasing/payments/new'
     | '/purchasing/requisitions/$id'
     | '/purchasing/suppliers/$id'
     | '/reports/expenses/categories'
@@ -2026,6 +2049,7 @@ export interface FileRouteTypes {
     | '/sales/orders/$id'
     | '/sales/packages/$id'
     | '/sales/payments/$id'
+    | '/sales/payments/new'
     | '/sales/quotes/$id'
     | '/sales/shipments/$id'
     | '/settings/warehouses/$id'
@@ -2172,6 +2196,7 @@ export interface FileRouteTypes {
     | '/_authenticated/purchasing/credits/$id'
     | '/_authenticated/purchasing/expenses/$id'
     | '/_authenticated/purchasing/orders/$id'
+    | '/_authenticated/purchasing/payments_/new'
     | '/_authenticated/purchasing/requisitions/$id'
     | '/_authenticated/purchasing/suppliers/$id'
     | '/_authenticated/reports/expenses/categories'
@@ -2202,6 +2227,7 @@ export interface FileRouteTypes {
     | '/_authenticated/sales/orders/$id'
     | '/_authenticated/sales/packages/$id'
     | '/_authenticated/sales/payments/$id'
+    | '/_authenticated/sales/payments_/new'
     | '/_authenticated/sales/quotes/$id'
     | '/_authenticated/sales/shipments/$id'
     | '/_authenticated/settings/warehouses/$id'
@@ -3134,6 +3160,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSalesQuotesIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/sales/payments_/new': {
+      id: '/_authenticated/sales/payments_/new'
+      path: '/sales/payments/new'
+      fullPath: '/sales/payments/new'
+      preLoaderRoute: typeof AuthenticatedSalesPaymentsNewRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/sales/payments/$id': {
       id: '/_authenticated/sales/payments/$id'
       path: '/$id'
@@ -3342,6 +3375,13 @@ declare module '@tanstack/react-router' {
       path: '/purchasing/requisitions/$id'
       fullPath: '/purchasing/requisitions/$id'
       preLoaderRoute: typeof AuthenticatedPurchasingRequisitionsIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/purchasing/payments_/new': {
+      id: '/_authenticated/purchasing/payments_/new'
+      path: '/purchasing/payments/new'
+      fullPath: '/purchasing/payments/new'
+      preLoaderRoute: typeof AuthenticatedPurchasingPaymentsNewRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/purchasing/orders/$id': {
@@ -3583,6 +3623,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedPurchasingBillsIdRoute: typeof AuthenticatedPurchasingBillsIdRoute
   AuthenticatedPurchasingExpensesIdRoute: typeof AuthenticatedPurchasingExpensesIdRoute
   AuthenticatedPurchasingOrdersIdRoute: typeof AuthenticatedPurchasingOrdersIdRoute
+  AuthenticatedPurchasingPaymentsNewRoute: typeof AuthenticatedPurchasingPaymentsNewRoute
   AuthenticatedPurchasingRequisitionsIdRoute: typeof AuthenticatedPurchasingRequisitionsIdRoute
   AuthenticatedPurchasingSuppliersIdRoute: typeof AuthenticatedPurchasingSuppliersIdRoute
   AuthenticatedReportsExpensesCategoriesRoute: typeof AuthenticatedReportsExpensesCategoriesRoute
@@ -3612,6 +3653,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedSalesInvoicesIdRoute: typeof AuthenticatedSalesInvoicesIdRoute
   AuthenticatedSalesOrdersIdRoute: typeof AuthenticatedSalesOrdersIdRoute
   AuthenticatedSalesPackagesIdRoute: typeof AuthenticatedSalesPackagesIdRoute
+  AuthenticatedSalesPaymentsNewRoute: typeof AuthenticatedSalesPaymentsNewRoute
   AuthenticatedSalesQuotesIdRoute: typeof AuthenticatedSalesQuotesIdRoute
   AuthenticatedSalesShipmentsIdRoute: typeof AuthenticatedSalesShipmentsIdRoute
   AuthenticatedSettingsWarehousesIdRoute: typeof AuthenticatedSettingsWarehousesIdRoute
@@ -3733,6 +3775,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedPurchasingExpensesIdRoute:
     AuthenticatedPurchasingExpensesIdRoute,
   AuthenticatedPurchasingOrdersIdRoute: AuthenticatedPurchasingOrdersIdRoute,
+  AuthenticatedPurchasingPaymentsNewRoute:
+    AuthenticatedPurchasingPaymentsNewRoute,
   AuthenticatedPurchasingRequisitionsIdRoute:
     AuthenticatedPurchasingRequisitionsIdRoute,
   AuthenticatedPurchasingSuppliersIdRoute:
@@ -3786,6 +3830,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSalesInvoicesIdRoute: AuthenticatedSalesInvoicesIdRoute,
   AuthenticatedSalesOrdersIdRoute: AuthenticatedSalesOrdersIdRoute,
   AuthenticatedSalesPackagesIdRoute: AuthenticatedSalesPackagesIdRoute,
+  AuthenticatedSalesPaymentsNewRoute: AuthenticatedSalesPaymentsNewRoute,
   AuthenticatedSalesQuotesIdRoute: AuthenticatedSalesQuotesIdRoute,
   AuthenticatedSalesShipmentsIdRoute: AuthenticatedSalesShipmentsIdRoute,
   AuthenticatedSettingsWarehousesIdRoute:

@@ -286,7 +286,7 @@ export function PaymentsListPage({ kind }: { kind: PaymentKind }) {
         </h1>
         <div className="flex items-center gap-2">
           {canCreate && (
-            <Button size="sm" className="h-8" onClick={() => setCreateOpen(true)}>
+            <Button size="sm" className="h-8" onClick={() => navigate({ to: isReceived ? "/sales/payments/new" : "/purchasing/payments/new" })}>
               {isReceived ? "Receive Payment" : "Make Payment"}
             </Button>
           )}
@@ -585,7 +585,6 @@ export function PaymentsListPage({ kind }: { kind: PaymentKind }) {
           </Button>
         </div>
       </div>
-      <CreatePaymentDialog open={createOpen} onOpenChange={setCreateOpen} kind={kind} />
     </div>
   );
 }
