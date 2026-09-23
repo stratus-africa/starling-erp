@@ -404,14 +404,14 @@ function InvoiceOverviewView({ id }: { id: string }) {
   });
 
   const { data: salesperson } = useQuery({
-    queryKey: ["profiles", invoice?.created_by],
-    enabled: !!invoice?.created_by,
+    queryKey: ["profiles", invoice?.salesperson_id ?? invoice?.created_by],
+    enabled: !!(invoice?.salesperson_id ?? invoice?.created_by),
     queryFn: async () => {
-      if (!invoice?.created_by) throw new Error("Invoice creator is unavailable");
+      if (!(invoice?.salesperson_id ?? invoice?.created_by)) throw new Error("Invoice creator is unavailable");
       const { data, error } = await db
         .from("profiles")
         .select("full_name,email")
-        .eq("id", invoice.created_by)
+        .eq("id", invoice.salesperson_id ?? invoice.created_by)
         .maybeSingle();
       if (error) throw error;
       return (data ?? null) as Record<string, any> | null;
