@@ -89,6 +89,8 @@ import { Route as AuthenticatedInventorySerialsRouteImport } from './routes/_aut
 import { Route as AuthenticatedInventoryLotsRouteImport } from './routes/_authenticated/inventory.lots'
 import { Route as AuthenticatedInventoryLedgerRouteImport } from './routes/_authenticated/inventory.ledger'
 import { Route as AuthenticatedInventoryAdjustmentsRouteImport } from './routes/_authenticated/inventory.adjustments'
+import { Route as AuthenticatedFieldNotificationsRouteImport } from './routes/_authenticated/field.notifications'
+import { Route as AuthenticatedFieldMoreRouteImport } from './routes/_authenticated/field.more'
 import { Route as AuthenticatedExpensesReimbursementsRouteImport } from './routes/_authenticated/expenses.reimbursements'
 import { Route as AuthenticatedExpensesApprovalsRouteImport } from './routes/_authenticated/expenses.approvals'
 import { Route as AuthenticatedExpensesIdRouteImport } from './routes/_authenticated/expenses.$id'
@@ -136,6 +138,7 @@ import { Route as AuthenticatedManufacturingBomIndexRouteImport } from './routes
 import { Route as AuthenticatedInventoryWarehousesIndexRouteImport } from './routes/_authenticated/inventory.warehouses.index'
 import { Route as AuthenticatedInventoryItemsIndexRouteImport } from './routes/_authenticated/inventory.items.index'
 import { Route as AuthenticatedFieldSalesIndexRouteImport } from './routes/_authenticated/field.sales.index'
+import { Route as AuthenticatedFieldPaymentsIndexRouteImport } from './routes/_authenticated/field.payments.index'
 import { Route as AuthenticatedFieldLeadsIndexRouteImport } from './routes/_authenticated/field.leads.index'
 import { Route as AuthenticatedFieldCustomersIndexRouteImport } from './routes/_authenticated/field.customers.index'
 import { Route as AuthenticatedCrmCustomersIndexRouteImport } from './routes/_authenticated/crm.customers.index'
@@ -188,6 +191,7 @@ import { Route as AuthenticatedManufacturingBomIdRouteImport } from './routes/_a
 import { Route as AuthenticatedInventoryWarehousesIdRouteImport } from './routes/_authenticated/inventory.warehouses.$id'
 import { Route as AuthenticatedInventoryItemsIdRouteImport } from './routes/_authenticated/inventory.items.$id'
 import { Route as AuthenticatedFieldSalesNewRouteImport } from './routes/_authenticated/field.sales.new'
+import { Route as AuthenticatedFieldPaymentsNewRouteImport } from './routes/_authenticated/field.payments.new'
 import { Route as AuthenticatedFieldLeadsNewRouteImport } from './routes/_authenticated/field.leads.new'
 import { Route as AuthenticatedFieldLeadsIdRouteImport } from './routes/_authenticated/field.leads.$id'
 import { Route as AuthenticatedFieldCustomersNewRouteImport } from './routes/_authenticated/field.customers.new'
@@ -637,6 +641,17 @@ const AuthenticatedInventoryAdjustmentsRoute =
     path: '/inventory/adjustments',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedFieldNotificationsRoute =
+  AuthenticatedFieldNotificationsRouteImport.update({
+    id: '/notifications',
+    path: '/notifications',
+    getParentRoute: () => AuthenticatedFieldRoute,
+  } as any)
+const AuthenticatedFieldMoreRoute = AuthenticatedFieldMoreRouteImport.update({
+  id: '/more',
+  path: '/more',
+  getParentRoute: () => AuthenticatedFieldRoute,
+} as any)
 const AuthenticatedExpensesReimbursementsRoute =
   AuthenticatedExpensesReimbursementsRouteImport.update({
     id: '/expenses/reimbursements',
@@ -916,6 +931,12 @@ const AuthenticatedFieldSalesIndexRoute =
   AuthenticatedFieldSalesIndexRouteImport.update({
     id: '/sales/',
     path: '/sales/',
+    getParentRoute: () => AuthenticatedFieldRoute,
+  } as any)
+const AuthenticatedFieldPaymentsIndexRoute =
+  AuthenticatedFieldPaymentsIndexRouteImport.update({
+    id: '/payments/',
+    path: '/payments/',
     getParentRoute: () => AuthenticatedFieldRoute,
   } as any)
 const AuthenticatedFieldLeadsIndexRoute =
@@ -1230,6 +1251,12 @@ const AuthenticatedFieldSalesNewRoute =
     path: '/sales/new',
     getParentRoute: () => AuthenticatedFieldRoute,
   } as any)
+const AuthenticatedFieldPaymentsNewRoute =
+  AuthenticatedFieldPaymentsNewRouteImport.update({
+    id: '/payments/new',
+    path: '/payments/new',
+    getParentRoute: () => AuthenticatedFieldRoute,
+  } as any)
 const AuthenticatedFieldLeadsNewRoute =
   AuthenticatedFieldLeadsNewRouteImport.update({
     id: '/leads/new',
@@ -1350,6 +1377,8 @@ export interface FileRoutesByFullPath {
   '/expenses/$id': typeof AuthenticatedExpensesIdRoute
   '/expenses/approvals': typeof AuthenticatedExpensesApprovalsRoute
   '/expenses/reimbursements': typeof AuthenticatedExpensesReimbursementsRoute
+  '/field/more': typeof AuthenticatedFieldMoreRoute
+  '/field/notifications': typeof AuthenticatedFieldNotificationsRoute
   '/inventory/adjustments': typeof AuthenticatedInventoryAdjustmentsRoute
   '/inventory/ledger': typeof AuthenticatedInventoryLedgerRoute
   '/inventory/lots': typeof AuthenticatedInventoryLotsRoute
@@ -1398,6 +1427,7 @@ export interface FileRoutesByFullPath {
   '/field/customers/new': typeof AuthenticatedFieldCustomersNewRoute
   '/field/leads/$id': typeof AuthenticatedFieldLeadsIdRoute
   '/field/leads/new': typeof AuthenticatedFieldLeadsNewRoute
+  '/field/payments/new': typeof AuthenticatedFieldPaymentsNewRoute
   '/field/sales/new': typeof AuthenticatedFieldSalesNewRoute
   '/inventory/items/$id': typeof AuthenticatedInventoryItemsIdRoute
   '/inventory/warehouses/$id': typeof AuthenticatedInventoryWarehousesIdRoute
@@ -1450,6 +1480,7 @@ export interface FileRoutesByFullPath {
   '/crm/customers/': typeof AuthenticatedCrmCustomersIndexRoute
   '/field/customers/': typeof AuthenticatedFieldCustomersIndexRoute
   '/field/leads/': typeof AuthenticatedFieldLeadsIndexRoute
+  '/field/payments/': typeof AuthenticatedFieldPaymentsIndexRoute
   '/field/sales/': typeof AuthenticatedFieldSalesIndexRoute
   '/inventory/items/': typeof AuthenticatedInventoryItemsIndexRoute
   '/inventory/warehouses/': typeof AuthenticatedInventoryWarehousesIndexRoute
@@ -1537,6 +1568,8 @@ export interface FileRoutesByTo {
   '/expenses/$id': typeof AuthenticatedExpensesIdRoute
   '/expenses/approvals': typeof AuthenticatedExpensesApprovalsRoute
   '/expenses/reimbursements': typeof AuthenticatedExpensesReimbursementsRoute
+  '/field/more': typeof AuthenticatedFieldMoreRoute
+  '/field/notifications': typeof AuthenticatedFieldNotificationsRoute
   '/inventory/adjustments': typeof AuthenticatedInventoryAdjustmentsRoute
   '/inventory/ledger': typeof AuthenticatedInventoryLedgerRoute
   '/inventory/lots': typeof AuthenticatedInventoryLotsRoute
@@ -1584,6 +1617,7 @@ export interface FileRoutesByTo {
   '/field/customers/new': typeof AuthenticatedFieldCustomersNewRoute
   '/field/leads/$id': typeof AuthenticatedFieldLeadsIdRoute
   '/field/leads/new': typeof AuthenticatedFieldLeadsNewRoute
+  '/field/payments/new': typeof AuthenticatedFieldPaymentsNewRoute
   '/field/sales/new': typeof AuthenticatedFieldSalesNewRoute
   '/inventory/items/$id': typeof AuthenticatedInventoryItemsIdRoute
   '/inventory/warehouses/$id': typeof AuthenticatedInventoryWarehousesIdRoute
@@ -1636,6 +1670,7 @@ export interface FileRoutesByTo {
   '/crm/customers': typeof AuthenticatedCrmCustomersIndexRoute
   '/field/customers': typeof AuthenticatedFieldCustomersIndexRoute
   '/field/leads': typeof AuthenticatedFieldLeadsIndexRoute
+  '/field/payments': typeof AuthenticatedFieldPaymentsIndexRoute
   '/field/sales': typeof AuthenticatedFieldSalesIndexRoute
   '/inventory/items': typeof AuthenticatedInventoryItemsIndexRoute
   '/inventory/warehouses': typeof AuthenticatedInventoryWarehousesIndexRoute
@@ -1728,6 +1763,8 @@ export interface FileRoutesById {
   '/_authenticated/expenses/$id': typeof AuthenticatedExpensesIdRoute
   '/_authenticated/expenses/approvals': typeof AuthenticatedExpensesApprovalsRoute
   '/_authenticated/expenses/reimbursements': typeof AuthenticatedExpensesReimbursementsRoute
+  '/_authenticated/field/more': typeof AuthenticatedFieldMoreRoute
+  '/_authenticated/field/notifications': typeof AuthenticatedFieldNotificationsRoute
   '/_authenticated/inventory/adjustments': typeof AuthenticatedInventoryAdjustmentsRoute
   '/_authenticated/inventory/ledger': typeof AuthenticatedInventoryLedgerRoute
   '/_authenticated/inventory/lots': typeof AuthenticatedInventoryLotsRoute
@@ -1776,6 +1813,7 @@ export interface FileRoutesById {
   '/_authenticated/field/customers/new': typeof AuthenticatedFieldCustomersNewRoute
   '/_authenticated/field/leads/$id': typeof AuthenticatedFieldLeadsIdRoute
   '/_authenticated/field/leads/new': typeof AuthenticatedFieldLeadsNewRoute
+  '/_authenticated/field/payments/new': typeof AuthenticatedFieldPaymentsNewRoute
   '/_authenticated/field/sales/new': typeof AuthenticatedFieldSalesNewRoute
   '/_authenticated/inventory/items/$id': typeof AuthenticatedInventoryItemsIdRoute
   '/_authenticated/inventory/warehouses/$id': typeof AuthenticatedInventoryWarehousesIdRoute
@@ -1828,6 +1866,7 @@ export interface FileRoutesById {
   '/_authenticated/crm/customers/': typeof AuthenticatedCrmCustomersIndexRoute
   '/_authenticated/field/customers/': typeof AuthenticatedFieldCustomersIndexRoute
   '/_authenticated/field/leads/': typeof AuthenticatedFieldLeadsIndexRoute
+  '/_authenticated/field/payments/': typeof AuthenticatedFieldPaymentsIndexRoute
   '/_authenticated/field/sales/': typeof AuthenticatedFieldSalesIndexRoute
   '/_authenticated/inventory/items/': typeof AuthenticatedInventoryItemsIndexRoute
   '/_authenticated/inventory/warehouses/': typeof AuthenticatedInventoryWarehousesIndexRoute
@@ -1919,6 +1958,8 @@ export interface FileRouteTypes {
     | '/expenses/$id'
     | '/expenses/approvals'
     | '/expenses/reimbursements'
+    | '/field/more'
+    | '/field/notifications'
     | '/inventory/adjustments'
     | '/inventory/ledger'
     | '/inventory/lots'
@@ -1967,6 +2008,7 @@ export interface FileRouteTypes {
     | '/field/customers/new'
     | '/field/leads/$id'
     | '/field/leads/new'
+    | '/field/payments/new'
     | '/field/sales/new'
     | '/inventory/items/$id'
     | '/inventory/warehouses/$id'
@@ -2019,6 +2061,7 @@ export interface FileRouteTypes {
     | '/crm/customers/'
     | '/field/customers/'
     | '/field/leads/'
+    | '/field/payments/'
     | '/field/sales/'
     | '/inventory/items/'
     | '/inventory/warehouses/'
@@ -2106,6 +2149,8 @@ export interface FileRouteTypes {
     | '/expenses/$id'
     | '/expenses/approvals'
     | '/expenses/reimbursements'
+    | '/field/more'
+    | '/field/notifications'
     | '/inventory/adjustments'
     | '/inventory/ledger'
     | '/inventory/lots'
@@ -2153,6 +2198,7 @@ export interface FileRouteTypes {
     | '/field/customers/new'
     | '/field/leads/$id'
     | '/field/leads/new'
+    | '/field/payments/new'
     | '/field/sales/new'
     | '/inventory/items/$id'
     | '/inventory/warehouses/$id'
@@ -2205,6 +2251,7 @@ export interface FileRouteTypes {
     | '/crm/customers'
     | '/field/customers'
     | '/field/leads'
+    | '/field/payments'
     | '/field/sales'
     | '/inventory/items'
     | '/inventory/warehouses'
@@ -2296,6 +2343,8 @@ export interface FileRouteTypes {
     | '/_authenticated/expenses/$id'
     | '/_authenticated/expenses/approvals'
     | '/_authenticated/expenses/reimbursements'
+    | '/_authenticated/field/more'
+    | '/_authenticated/field/notifications'
     | '/_authenticated/inventory/adjustments'
     | '/_authenticated/inventory/ledger'
     | '/_authenticated/inventory/lots'
@@ -2344,6 +2393,7 @@ export interface FileRouteTypes {
     | '/_authenticated/field/customers/new'
     | '/_authenticated/field/leads/$id'
     | '/_authenticated/field/leads/new'
+    | '/_authenticated/field/payments/new'
     | '/_authenticated/field/sales/new'
     | '/_authenticated/inventory/items/$id'
     | '/_authenticated/inventory/warehouses/$id'
@@ -2396,6 +2446,7 @@ export interface FileRouteTypes {
     | '/_authenticated/crm/customers/'
     | '/_authenticated/field/customers/'
     | '/_authenticated/field/leads/'
+    | '/_authenticated/field/payments/'
     | '/_authenticated/field/sales/'
     | '/_authenticated/inventory/items/'
     | '/_authenticated/inventory/warehouses/'
@@ -2996,6 +3047,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedInventoryAdjustmentsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/field/notifications': {
+      id: '/_authenticated/field/notifications'
+      path: '/notifications'
+      fullPath: '/field/notifications'
+      preLoaderRoute: typeof AuthenticatedFieldNotificationsRouteImport
+      parentRoute: typeof AuthenticatedFieldRoute
+    }
+    '/_authenticated/field/more': {
+      id: '/_authenticated/field/more'
+      path: '/more'
+      fullPath: '/field/more'
+      preLoaderRoute: typeof AuthenticatedFieldMoreRouteImport
+      parentRoute: typeof AuthenticatedFieldRoute
+    }
     '/_authenticated/expenses/reimbursements': {
       id: '/_authenticated/expenses/reimbursements'
       path: '/expenses/reimbursements'
@@ -3323,6 +3388,13 @@ declare module '@tanstack/react-router' {
       path: '/sales'
       fullPath: '/field/sales/'
       preLoaderRoute: typeof AuthenticatedFieldSalesIndexRouteImport
+      parentRoute: typeof AuthenticatedFieldRoute
+    }
+    '/_authenticated/field/payments/': {
+      id: '/_authenticated/field/payments/'
+      path: '/payments'
+      fullPath: '/field/payments/'
+      preLoaderRoute: typeof AuthenticatedFieldPaymentsIndexRouteImport
       parentRoute: typeof AuthenticatedFieldRoute
     }
     '/_authenticated/field/leads/': {
@@ -3689,6 +3761,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedFieldSalesNewRouteImport
       parentRoute: typeof AuthenticatedFieldRoute
     }
+    '/_authenticated/field/payments/new': {
+      id: '/_authenticated/field/payments/new'
+      path: '/payments/new'
+      fullPath: '/field/payments/new'
+      preLoaderRoute: typeof AuthenticatedFieldPaymentsNewRouteImport
+      parentRoute: typeof AuthenticatedFieldRoute
+    }
     '/_authenticated/field/leads/new': {
       id: '/_authenticated/field/leads/new'
       path: '/leads/new'
@@ -3783,27 +3862,35 @@ const AdminRouteRouteWithChildren = AdminRouteRoute._addFileChildren(
 )
 
 interface AuthenticatedFieldRouteChildren {
+  AuthenticatedFieldMoreRoute: typeof AuthenticatedFieldMoreRoute
+  AuthenticatedFieldNotificationsRoute: typeof AuthenticatedFieldNotificationsRoute
   AuthenticatedFieldIndexRoute: typeof AuthenticatedFieldIndexRoute
   AuthenticatedFieldCustomersIdRoute: typeof AuthenticatedFieldCustomersIdRoute
   AuthenticatedFieldCustomersNewRoute: typeof AuthenticatedFieldCustomersNewRoute
   AuthenticatedFieldLeadsIdRoute: typeof AuthenticatedFieldLeadsIdRoute
   AuthenticatedFieldLeadsNewRoute: typeof AuthenticatedFieldLeadsNewRoute
+  AuthenticatedFieldPaymentsNewRoute: typeof AuthenticatedFieldPaymentsNewRoute
   AuthenticatedFieldSalesNewRoute: typeof AuthenticatedFieldSalesNewRoute
   AuthenticatedFieldCustomersIndexRoute: typeof AuthenticatedFieldCustomersIndexRoute
   AuthenticatedFieldLeadsIndexRoute: typeof AuthenticatedFieldLeadsIndexRoute
+  AuthenticatedFieldPaymentsIndexRoute: typeof AuthenticatedFieldPaymentsIndexRoute
   AuthenticatedFieldSalesIndexRoute: typeof AuthenticatedFieldSalesIndexRoute
   AuthenticatedFieldSalesKindIdRoute: typeof AuthenticatedFieldSalesKindIdRoute
 }
 
 const AuthenticatedFieldRouteChildren: AuthenticatedFieldRouteChildren = {
+  AuthenticatedFieldMoreRoute: AuthenticatedFieldMoreRoute,
+  AuthenticatedFieldNotificationsRoute: AuthenticatedFieldNotificationsRoute,
   AuthenticatedFieldIndexRoute: AuthenticatedFieldIndexRoute,
   AuthenticatedFieldCustomersIdRoute: AuthenticatedFieldCustomersIdRoute,
   AuthenticatedFieldCustomersNewRoute: AuthenticatedFieldCustomersNewRoute,
   AuthenticatedFieldLeadsIdRoute: AuthenticatedFieldLeadsIdRoute,
   AuthenticatedFieldLeadsNewRoute: AuthenticatedFieldLeadsNewRoute,
+  AuthenticatedFieldPaymentsNewRoute: AuthenticatedFieldPaymentsNewRoute,
   AuthenticatedFieldSalesNewRoute: AuthenticatedFieldSalesNewRoute,
   AuthenticatedFieldCustomersIndexRoute: AuthenticatedFieldCustomersIndexRoute,
   AuthenticatedFieldLeadsIndexRoute: AuthenticatedFieldLeadsIndexRoute,
+  AuthenticatedFieldPaymentsIndexRoute: AuthenticatedFieldPaymentsIndexRoute,
   AuthenticatedFieldSalesIndexRoute: AuthenticatedFieldSalesIndexRoute,
   AuthenticatedFieldSalesKindIdRoute: AuthenticatedFieldSalesKindIdRoute,
 }
