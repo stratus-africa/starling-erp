@@ -105,6 +105,7 @@ export const navGroups: NavGroup[] = [
       { title: "Invoices", url: "/sales/invoices", icon: Receipt },
       { title: "Payments Received", url: "/sales/payments", icon: Wallet },
       { title: "Credit Notes", url: "/sales/credit-notes", icon: FileMinus },
+      { title: "Field Sales (mobile)", url: "/field", icon: Wallet },
     ],
   },
   {
