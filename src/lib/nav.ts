@@ -88,6 +88,7 @@ export const navGroups: NavGroup[] = [
         feature: "manufacturing",
       },
       { title: "Procurement", url: "/dashboards/procurement", icon: Gauge },
+      { title: "Purchases", url: "/dashboards/purchases", icon: LineChart },
       { title: "Inventory", url: "/dashboards/inventory", icon: PackageSearch },
     ],
   },
@@ -101,6 +102,7 @@ export const navGroups: NavGroup[] = [
       { title: "Quotes", url: "/sales/quotes", icon: FileText },
       { title: "Sales Orders", url: "/sales/orders", icon: ShoppingCart },
       { title: "Fulfillment", url: "/sales/packages", icon: Package },
+      { title: "Shipments", url: "/sales/shipments", icon: TruckIcon },
       { title: "Invoices", url: "/sales/invoices", icon: Receipt },
       { title: "Payments Received", url: "/sales/payments", icon: Wallet },
       { title: "Credit Notes", url: "/sales/credit-notes", icon: FileMinus },
@@ -109,13 +111,23 @@ export const navGroups: NavGroup[] = [
   {
     label: "Purchasing",
     items: [
+      { title: "Supplier Dashboard", url: "/purchasing/dashboard", icon: Gauge },
       { title: "Suppliers", url: "/purchasing/suppliers", icon: Store },
       { title: "Requisitions", url: "/purchasing/requisitions", icon: ClipboardList },
       { title: "Purchase Orders", url: "/purchasing/orders", icon: ShoppingBag },
+      { title: "Goods Receipts", url: "/purchases/receipts", icon: ClipboardCheck },
       { title: "Bills", url: "/purchasing/bills", icon: FileSpreadsheet },
       { title: "Expenses", url: "/purchasing/expenses", icon: Coins },
       { title: "Supplier Credits", url: "/purchasing/credits", icon: HandCoins },
       { title: "Payments Made", url: "/purchasing/payments", icon: PiggyBank },
+    ],
+  },
+  {
+    label: "Expenses",
+    items: [
+      { title: "My Expenses", url: "/expenses", icon: Coins },
+      { title: "Expense Approvals", url: "/expenses/approvals", icon: ClipboardCheck },
+      { title: "Reimbursements", url: "/expenses/reimbursements", icon: HandCoins },
     ],
   },
   {
@@ -179,6 +191,7 @@ export const navGroups: NavGroup[] = [
       { title: "Manual Journals", url: "/accounting/journals", icon: BookMarked },
       { title: "Banking", url: "/accounting/banking", icon: Landmark },
       { title: "Bank Reconciliation", url: "/accounting/reconciliation", icon: Scale },
+      { title: "Transactions Ledger", url: "/accounting/transactions", icon: LayoutList },
     ],
   },
   {
@@ -187,6 +200,7 @@ export const navGroups: NavGroup[] = [
       { title: "Financial Reports", url: "/reports/financial", icon: Wallet2 },
       { title: "Sales Reports", url: "/reports/sales", icon: BarChart3 },
       { title: "Purchase Reports", url: "/reports/purchases", icon: LineChart },
+      { title: "Expense Reports", url: "/reports/expenses", icon: Coins },
       { title: "Inventory Reports", url: "/reports/inventory", icon: PieChart },
       {
         title: "Manufacturing Reports",
@@ -198,7 +212,10 @@ export const navGroups: NavGroup[] = [
   },
   {
     label: "Settings",
-    items: [{ title: "Settings", url: "/settings", icon: Settings2 }],
+    items: [
+      { title: "Settings", url: "/settings", icon: Settings2 },
+      { title: "Audit Events", url: "/audit-events", icon: ShieldCheck },
+    ],
   },
 ];
 

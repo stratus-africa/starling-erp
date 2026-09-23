@@ -4732,6 +4732,63 @@ export type Database = {
           },
         ]
       }
+      platform_gap_findings: {
+        Row: {
+          category: string
+          code: string
+          component: string | null
+          created_at: string
+          id: string
+          imported_at: string
+          observed_behavior: string | null
+          owner: string | null
+          priority: string
+          route: string | null
+          section: string
+          source_document: string
+          status: string
+          title: string
+          updated_at: string
+          verification_notes: string | null
+        }
+        Insert: {
+          category: string
+          code: string
+          component?: string | null
+          created_at?: string
+          id?: string
+          imported_at?: string
+          observed_behavior?: string | null
+          owner?: string | null
+          priority?: string
+          route?: string | null
+          section: string
+          source_document?: string
+          status?: string
+          title: string
+          updated_at?: string
+          verification_notes?: string | null
+        }
+        Update: {
+          category?: string
+          code?: string
+          component?: string | null
+          created_at?: string
+          id?: string
+          imported_at?: string
+          observed_behavior?: string | null
+          owner?: string | null
+          priority?: string
+          route?: string | null
+          section?: string
+          source_document?: string
+          status?: string
+          title?: string
+          updated_at?: string
+          verification_notes?: string | null
+        }
+        Relationships: []
+      }
       platform_login_activity: {
         Row: {
           city: string | null

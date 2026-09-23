@@ -5,6 +5,7 @@ import {
   BarChart3,
   Bell,
   Building2,
+  ClipboardList,
   CreditCard,
   FileText,
   Flag,
@@ -131,6 +132,12 @@ const NAV: NavGroup[] = [
         url: "/super-admin/announcements",
         icon: Bell,
         permission: PLATFORM_PERMISSIONS.announcementsView,
+      },
+      {
+        title: "Gap Tracking",
+        url: "/super-admin/gaps",
+        icon: ClipboardList,
+        permission: PLATFORM_PERMISSIONS.settingsView,
       },
       {
         title: "Settings",
