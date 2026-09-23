@@ -513,7 +513,12 @@ export function BankingPage() {
             <Landmark className="h-4 w-4 text-muted-foreground" />
             <span className="text-sm font-semibold">Bank Accounts</span>
           </div>
-          {canWrite && <Button variant="ghost" size="sm" className="h-7 w-7 p-0" title="New bank account" onClick={() => setAccountEditor(null)}><Plus className="h-4 w-4" /></Button>}
+          {canWrite && (
+            <div className="flex items-center gap-1">
+              <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" title="Guided setup" onClick={() => setWizardOpen(true)}>Setup</Button>
+              <Button variant="ghost" size="sm" className="h-7 w-7 p-0" title="New bank account" onClick={() => setAccountEditor(null)}><Plus className="h-4 w-4" /></Button>
+            </div>
+          )}
         </div>
 
         <div className="flex-1 overflow-y-auto py-2">
