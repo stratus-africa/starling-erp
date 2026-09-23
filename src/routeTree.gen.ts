@@ -135,6 +135,7 @@ import { Route as AuthenticatedManufacturingItemsIndexRouteImport } from './rout
 import { Route as AuthenticatedManufacturingBomIndexRouteImport } from './routes/_authenticated/manufacturing.bom.index'
 import { Route as AuthenticatedInventoryWarehousesIndexRouteImport } from './routes/_authenticated/inventory.warehouses.index'
 import { Route as AuthenticatedInventoryItemsIndexRouteImport } from './routes/_authenticated/inventory.items.index'
+import { Route as AuthenticatedFieldSalesIndexRouteImport } from './routes/_authenticated/field.sales.index'
 import { Route as AuthenticatedFieldLeadsIndexRouteImport } from './routes/_authenticated/field.leads.index'
 import { Route as AuthenticatedFieldCustomersIndexRouteImport } from './routes/_authenticated/field.customers.index'
 import { Route as AuthenticatedCrmCustomersIndexRouteImport } from './routes/_authenticated/crm.customers.index'
@@ -186,6 +187,7 @@ import { Route as AuthenticatedManufacturingItemsIdRouteImport } from './routes/
 import { Route as AuthenticatedManufacturingBomIdRouteImport } from './routes/_authenticated/manufacturing.bom.$id'
 import { Route as AuthenticatedInventoryWarehousesIdRouteImport } from './routes/_authenticated/inventory.warehouses.$id'
 import { Route as AuthenticatedInventoryItemsIdRouteImport } from './routes/_authenticated/inventory.items.$id'
+import { Route as AuthenticatedFieldSalesNewRouteImport } from './routes/_authenticated/field.sales.new'
 import { Route as AuthenticatedFieldLeadsNewRouteImport } from './routes/_authenticated/field.leads.new'
 import { Route as AuthenticatedFieldLeadsIdRouteImport } from './routes/_authenticated/field.leads.$id'
 import { Route as AuthenticatedFieldCustomersNewRouteImport } from './routes/_authenticated/field.customers.new'
@@ -909,6 +911,12 @@ const AuthenticatedInventoryItemsIndexRoute =
     path: '/inventory/items/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedFieldSalesIndexRoute =
+  AuthenticatedFieldSalesIndexRouteImport.update({
+    id: '/sales/',
+    path: '/sales/',
+    getParentRoute: () => AuthenticatedFieldRoute,
+  } as any)
 const AuthenticatedFieldLeadsIndexRoute =
   AuthenticatedFieldLeadsIndexRouteImport.update({
     id: '/leads/',
@@ -1215,6 +1223,12 @@ const AuthenticatedInventoryItemsIdRoute =
     path: '/inventory/items/$id',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedFieldSalesNewRoute =
+  AuthenticatedFieldSalesNewRouteImport.update({
+    id: '/sales/new',
+    path: '/sales/new',
+    getParentRoute: () => AuthenticatedFieldRoute,
+  } as any)
 const AuthenticatedFieldLeadsNewRoute =
   AuthenticatedFieldLeadsNewRouteImport.update({
     id: '/leads/new',
@@ -1377,6 +1391,7 @@ export interface FileRoutesByFullPath {
   '/field/customers/new': typeof AuthenticatedFieldCustomersNewRoute
   '/field/leads/$id': typeof AuthenticatedFieldLeadsIdRoute
   '/field/leads/new': typeof AuthenticatedFieldLeadsNewRoute
+  '/field/sales/new': typeof AuthenticatedFieldSalesNewRoute
   '/inventory/items/$id': typeof AuthenticatedInventoryItemsIdRoute
   '/inventory/warehouses/$id': typeof AuthenticatedInventoryWarehousesIdRoute
   '/manufacturing/bom/$id': typeof AuthenticatedManufacturingBomIdRoute
@@ -1428,6 +1443,7 @@ export interface FileRoutesByFullPath {
   '/crm/customers/': typeof AuthenticatedCrmCustomersIndexRoute
   '/field/customers/': typeof AuthenticatedFieldCustomersIndexRoute
   '/field/leads/': typeof AuthenticatedFieldLeadsIndexRoute
+  '/field/sales/': typeof AuthenticatedFieldSalesIndexRoute
   '/inventory/items/': typeof AuthenticatedInventoryItemsIndexRoute
   '/inventory/warehouses/': typeof AuthenticatedInventoryWarehousesIndexRoute
   '/manufacturing/bom/': typeof AuthenticatedManufacturingBomIndexRoute
@@ -1560,6 +1576,7 @@ export interface FileRoutesByTo {
   '/field/customers/new': typeof AuthenticatedFieldCustomersNewRoute
   '/field/leads/$id': typeof AuthenticatedFieldLeadsIdRoute
   '/field/leads/new': typeof AuthenticatedFieldLeadsNewRoute
+  '/field/sales/new': typeof AuthenticatedFieldSalesNewRoute
   '/inventory/items/$id': typeof AuthenticatedInventoryItemsIdRoute
   '/inventory/warehouses/$id': typeof AuthenticatedInventoryWarehousesIdRoute
   '/manufacturing/bom/$id': typeof AuthenticatedManufacturingBomIdRoute
@@ -1611,6 +1628,7 @@ export interface FileRoutesByTo {
   '/crm/customers': typeof AuthenticatedCrmCustomersIndexRoute
   '/field/customers': typeof AuthenticatedFieldCustomersIndexRoute
   '/field/leads': typeof AuthenticatedFieldLeadsIndexRoute
+  '/field/sales': typeof AuthenticatedFieldSalesIndexRoute
   '/inventory/items': typeof AuthenticatedInventoryItemsIndexRoute
   '/inventory/warehouses': typeof AuthenticatedInventoryWarehousesIndexRoute
   '/manufacturing/bom': typeof AuthenticatedManufacturingBomIndexRoute
@@ -1749,6 +1767,7 @@ export interface FileRoutesById {
   '/_authenticated/field/customers/new': typeof AuthenticatedFieldCustomersNewRoute
   '/_authenticated/field/leads/$id': typeof AuthenticatedFieldLeadsIdRoute
   '/_authenticated/field/leads/new': typeof AuthenticatedFieldLeadsNewRoute
+  '/_authenticated/field/sales/new': typeof AuthenticatedFieldSalesNewRoute
   '/_authenticated/inventory/items/$id': typeof AuthenticatedInventoryItemsIdRoute
   '/_authenticated/inventory/warehouses/$id': typeof AuthenticatedInventoryWarehousesIdRoute
   '/_authenticated/manufacturing/bom/$id': typeof AuthenticatedManufacturingBomIdRoute
@@ -1800,6 +1819,7 @@ export interface FileRoutesById {
   '/_authenticated/crm/customers/': typeof AuthenticatedCrmCustomersIndexRoute
   '/_authenticated/field/customers/': typeof AuthenticatedFieldCustomersIndexRoute
   '/_authenticated/field/leads/': typeof AuthenticatedFieldLeadsIndexRoute
+  '/_authenticated/field/sales/': typeof AuthenticatedFieldSalesIndexRoute
   '/_authenticated/inventory/items/': typeof AuthenticatedInventoryItemsIndexRoute
   '/_authenticated/inventory/warehouses/': typeof AuthenticatedInventoryWarehousesIndexRoute
   '/_authenticated/manufacturing/bom/': typeof AuthenticatedManufacturingBomIndexRoute
@@ -1937,6 +1957,7 @@ export interface FileRouteTypes {
     | '/field/customers/new'
     | '/field/leads/$id'
     | '/field/leads/new'
+    | '/field/sales/new'
     | '/inventory/items/$id'
     | '/inventory/warehouses/$id'
     | '/manufacturing/bom/$id'
@@ -1988,6 +2009,7 @@ export interface FileRouteTypes {
     | '/crm/customers/'
     | '/field/customers/'
     | '/field/leads/'
+    | '/field/sales/'
     | '/inventory/items/'
     | '/inventory/warehouses/'
     | '/manufacturing/bom/'
@@ -2120,6 +2142,7 @@ export interface FileRouteTypes {
     | '/field/customers/new'
     | '/field/leads/$id'
     | '/field/leads/new'
+    | '/field/sales/new'
     | '/inventory/items/$id'
     | '/inventory/warehouses/$id'
     | '/manufacturing/bom/$id'
@@ -2171,6 +2194,7 @@ export interface FileRouteTypes {
     | '/crm/customers'
     | '/field/customers'
     | '/field/leads'
+    | '/field/sales'
     | '/inventory/items'
     | '/inventory/warehouses'
     | '/manufacturing/bom'
@@ -2308,6 +2332,7 @@ export interface FileRouteTypes {
     | '/_authenticated/field/customers/new'
     | '/_authenticated/field/leads/$id'
     | '/_authenticated/field/leads/new'
+    | '/_authenticated/field/sales/new'
     | '/_authenticated/inventory/items/$id'
     | '/_authenticated/inventory/warehouses/$id'
     | '/_authenticated/manufacturing/bom/$id'
@@ -2359,6 +2384,7 @@ export interface FileRouteTypes {
     | '/_authenticated/crm/customers/'
     | '/_authenticated/field/customers/'
     | '/_authenticated/field/leads/'
+    | '/_authenticated/field/sales/'
     | '/_authenticated/inventory/items/'
     | '/_authenticated/inventory/warehouses/'
     | '/_authenticated/manufacturing/bom/'
@@ -3279,6 +3305,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedInventoryItemsIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/field/sales/': {
+      id: '/_authenticated/field/sales/'
+      path: '/sales'
+      fullPath: '/field/sales/'
+      preLoaderRoute: typeof AuthenticatedFieldSalesIndexRouteImport
+      parentRoute: typeof AuthenticatedFieldRoute
+    }
     '/_authenticated/field/leads/': {
       id: '/_authenticated/field/leads/'
       path: '/leads'
@@ -3636,6 +3669,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedInventoryItemsIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/field/sales/new': {
+      id: '/_authenticated/field/sales/new'
+      path: '/sales/new'
+      fullPath: '/field/sales/new'
+      preLoaderRoute: typeof AuthenticatedFieldSalesNewRouteImport
+      parentRoute: typeof AuthenticatedFieldRoute
+    }
     '/_authenticated/field/leads/new': {
       id: '/_authenticated/field/leads/new'
       path: '/leads/new'
@@ -3728,8 +3768,10 @@ interface AuthenticatedFieldRouteChildren {
   AuthenticatedFieldCustomersNewRoute: typeof AuthenticatedFieldCustomersNewRoute
   AuthenticatedFieldLeadsIdRoute: typeof AuthenticatedFieldLeadsIdRoute
   AuthenticatedFieldLeadsNewRoute: typeof AuthenticatedFieldLeadsNewRoute
+  AuthenticatedFieldSalesNewRoute: typeof AuthenticatedFieldSalesNewRoute
   AuthenticatedFieldCustomersIndexRoute: typeof AuthenticatedFieldCustomersIndexRoute
   AuthenticatedFieldLeadsIndexRoute: typeof AuthenticatedFieldLeadsIndexRoute
+  AuthenticatedFieldSalesIndexRoute: typeof AuthenticatedFieldSalesIndexRoute
 }
 
 const AuthenticatedFieldRouteChildren: AuthenticatedFieldRouteChildren = {
@@ -3738,8 +3780,10 @@ const AuthenticatedFieldRouteChildren: AuthenticatedFieldRouteChildren = {
   AuthenticatedFieldCustomersNewRoute: AuthenticatedFieldCustomersNewRoute,
   AuthenticatedFieldLeadsIdRoute: AuthenticatedFieldLeadsIdRoute,
   AuthenticatedFieldLeadsNewRoute: AuthenticatedFieldLeadsNewRoute,
+  AuthenticatedFieldSalesNewRoute: AuthenticatedFieldSalesNewRoute,
   AuthenticatedFieldCustomersIndexRoute: AuthenticatedFieldCustomersIndexRoute,
   AuthenticatedFieldLeadsIndexRoute: AuthenticatedFieldLeadsIndexRoute,
+  AuthenticatedFieldSalesIndexRoute: AuthenticatedFieldSalesIndexRoute,
 }
 
 const AuthenticatedFieldRouteWithChildren =
