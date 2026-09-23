@@ -797,3 +797,43 @@ export function BankingPage() {
     </div>
   );
 }
+
+function VerifyConnectionDialog({
+  accountId, tenantId, onClose,
+}: { accountId: string | null; tenantId: string | null; onClose: () => void }) {
+  const checks = useQuery({
+    queryKey: ["bank-account-verify", accountId],
+    enabled: !!accountId && !!tenantId,
+    queryFn: () => verifyBankAccountConnection(accountId!, tenantId!),
+  });
+  const failed = (checks.data ?? []).some((r) => r.state === "fail");
+
+  return (
+    <Dialog open={!!accountId} onOpenChange={(v) => !v && onClose()}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Verify bank connection</DialogTitle>
+          <DialogDescription>
+            Checks that this account is linked to a usable ledger account and that activity reaches the ledger.
+          </DialogDescription>
+        </DialogHeader>
+        {checks.isFetching ? (
+          <div className="flex items-center gap-2 py-4 text-sm text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" /> Checking the connection…
+          </div>
+        ) : (
+          <div className="space-y-3 py-2">
+            <BankAccountChecklist results={checks.data ?? []} />
+            <Badge variant="outline" className={failed ? "border-destructive/30 text-destructive" : "border-emerald-500/30 text-emerald-700 dark:text-emerald-300"}>
+              {failed ? "Needs attention" : "Connection verified"}
+            </Badge>
+          </div>
+        )}
+        <DialogFooter className="gap-2">
+          <Button variant="outline" size="sm" onClick={() => checks.refetch()} disabled={checks.isFetching}>Re-run checks</Button>
+          <Button size="sm" onClick={onClose}>Close</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
