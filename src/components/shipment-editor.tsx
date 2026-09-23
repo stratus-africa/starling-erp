@@ -431,172 +431,193 @@ export function ShipmentEditor({ id }: { id: string }) {
         </div>
       </div>
 
-      <Card className="p-4 grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="grid gap-1.5">
-          <Label>Shipment #</Label>
-          <Input
-            value={header.number ?? ""}
-            onChange={(e) => setHeader({ ...header, number: e.target.value })}
-            placeholder="Auto"
-            disabled={!canWrite}
-          />
-        </div>
-        <div className="grid gap-1.5 md:col-span-4">
-          <Label>Sales Orders being loaded</Label>
-          <div className="grid max-h-40 grid-cols-1 gap-2 overflow-y-auto rounded-md border p-3 sm:grid-cols-2 lg:grid-cols-3">
-            {orders.map((o) => (
-              <label className="flex items-center gap-2 text-sm" key={o.id}>
-                <input
-                  type="checkbox"
-                  checked={salesOrderIds.includes(o.id)}
-                  disabled={!canWrite || !!doc?.posted_at}
-                  onChange={() => {
-                    const next = salesOrderIds.includes(o.id)
-                      ? salesOrderIds.filter((orderId) => orderId !== o.id)
-                      : [...salesOrderIds, o.id];
-                    const nextCustomers = orders
-                      .filter((row) => next.includes(row.id))
-                      .map((row) => row.customer_id)
-                      .filter(Boolean);
-                    if (new Set(nextCustomers).size > 1) {
-                      toast.error("Select sales orders for the same customer");
-                      return;
-                    }
-                    setSalesOrderIds(next);
-                    setHeader((h) => ({
-                      ...h,
-                      sales_order_id: next[0] ?? "",
-                      customer_id: nextCustomers[0] ?? h.customer_id,
-                    }));
-                  }}
-                />
-                <span>{o.number ?? "Sales Order"}</span>
-              </label>
-            ))}
+      <Card className="p-4">
+        <h2 className="mb-3 text-sm font-semibold">Shipment Details</h2>
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+          <div className="grid gap-1.5">
+            <Label>Shipment #</Label>
+            <Input
+              value={header.number ?? ""}
+              onChange={(e) => setHeader({ ...header, number: e.target.value })}
+              placeholder="Auto"
+              disabled={!canWrite}
+            />
           </div>
-          <p className="text-xs text-muted-foreground">
-            One shipment can load multiple sales orders for the same customer.
-          </p>
-        </div>
-        <div className="grid gap-1.5">
-          <Label>Package</Label>
-          <Select
-            value={header.package_id ?? ""}
-            onValueChange={(v) => setHeader({ ...header, package_id: v })}
-            disabled={!canWrite}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Select package…" />
-            </SelectTrigger>
-            <SelectContent>
-              {packages
-                .filter((p) => salesOrderIds.includes(p.sales_order_id))
-                .map((p) => (
-                  <SelectItem key={p.id} value={p.id}>
-                    {p.number}
+          <div className="grid gap-1.5">
+            <Label>Ship Date</Label>
+            <Input
+              type="date"
+              value={header.ship_date ?? ""}
+              onChange={(e) => setHeader({ ...header, ship_date: e.target.value })}
+              disabled={!canWrite}
+            />
+          </div>
+          <div className="grid gap-1.5">
+            <Label>Delivery Date</Label>
+            <Input
+              type="date"
+              value={header.delivery_date ?? ""}
+              onChange={(e) => setHeader({ ...header, delivery_date: e.target.value })}
+              disabled={!canWrite}
+            />
+          </div>
+          <div className="grid gap-1.5">
+            <Label>Status</Label>
+            <Select
+              value={header.status ?? "Draft"}
+              onValueChange={(v) => setHeader({ ...header, status: v })}
+              disabled={!canWrite}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {STATUSES.map((s) => (
+                  <SelectItem key={s} value={s}>
+                    {s}
                   </SelectItem>
                 ))}
-            </SelectContent>
-          </Select>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="grid gap-1.5">
+            <Label>Carrier / Vehicle</Label>
+            <Input
+              value={header.carrier ?? ""}
+              onChange={(e) => setHeader({ ...header, carrier: e.target.value })}
+              disabled={!canWrite}
+            />
+          </div>
+          <div className="grid gap-1.5">
+            <Label>Service Level</Label>
+            <Input
+              value={header.service_level ?? ""}
+              onChange={(e) => setHeader({ ...header, service_level: e.target.value })}
+              disabled={!canWrite}
+            />
+          </div>
+          <div className="grid gap-1.5">
+            <Label>Tracking</Label>
+            <Input
+              value={header.tracking ?? ""}
+              onChange={(e) => setHeader({ ...header, tracking: e.target.value })}
+              disabled={!canWrite}
+            />
+          </div>
+          <div className="grid gap-1.5">
+            <Label>Cost</Label>
+            <Input
+              type="number"
+              step="any"
+              value={header.cost ?? 0}
+              onChange={(e) => setHeader({ ...header, cost: e.target.value })}
+              disabled={!canWrite}
+            />
+          </div>
+          <div className="grid gap-1.5">
+            <Label>Package (optional)</Label>
+            <Select
+              value={header.package_id || "none"}
+              onValueChange={(v) => setHeader({ ...header, package_id: v === "none" ? "" : v })}
+              disabled={!canWrite}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select package…" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">None</SelectItem>
+                {packages
+                  .filter((p) => salesOrderIds.includes(p.sales_order_id))
+                  .map((p) => (
+                    <SelectItem key={p.id} value={p.id}>
+                      {p.number}
+                    </SelectItem>
+                  ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="grid gap-1.5 md:col-span-3">
+            <Label>Notes</Label>
+            <Textarea
+              rows={1}
+              value={header.notes ?? ""}
+              onChange={(e) => setHeader({ ...header, notes: e.target.value })}
+              disabled={!canWrite}
+            />
+          </div>
         </div>
-        <div className="grid gap-1.5">
-          <Label>Customer</Label>
-          <Select
-            value={header.customer_id ?? ""}
-            onValueChange={(v) => setHeader({ ...header, customer_id: v })}
-            disabled={!canWrite}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Select customer…" />
-            </SelectTrigger>
-            <SelectContent>
-              {customers.map((c) => (
-                <SelectItem key={c.id} value={c.id}>
-                  {c.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="grid gap-1.5">
-          <Label>Ship Date</Label>
+      </Card>
+
+      <Card className="p-4">
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <h2 className="text-sm font-semibold">Orders being loaded</h2>
+            <p className="text-xs text-muted-foreground">
+              {linkedOrders.length} order{linkedOrders.length === 1 ? "" : "s"} ·{" "}
+              {loadedCustomerIds.length} customer{loadedCustomerIds.length === 1 ? "" : "s"} — one
+              shipment can deliver orders for different customers.
+            </p>
+          </div>
           <Input
-            type="date"
-            value={header.ship_date ?? ""}
-            onChange={(e) => setHeader({ ...header, ship_date: e.target.value })}
-            disabled={!canWrite}
+            className="w-64"
+            placeholder="Search order or customer…"
+            value={orderSearch}
+            onChange={(e) => setOrderSearch(e.target.value)}
           />
         </div>
-        <div className="grid gap-1.5">
-          <Label>Delivery Date</Label>
-          <Input
-            type="date"
-            value={header.delivery_date ?? ""}
-            onChange={(e) => setHeader({ ...header, delivery_date: e.target.value })}
-            disabled={!canWrite}
-          />
-        </div>
-        <div className="grid gap-1.5">
-          <Label>Carrier</Label>
-          <Input
-            value={header.carrier ?? ""}
-            onChange={(e) => setHeader({ ...header, carrier: e.target.value })}
-            disabled={!canWrite}
-          />
-        </div>
-        <div className="grid gap-1.5">
-          <Label>Service Level</Label>
-          <Input
-            value={header.service_level ?? ""}
-            onChange={(e) => setHeader({ ...header, service_level: e.target.value })}
-            disabled={!canWrite}
-          />
-        </div>
-        <div className="grid gap-1.5">
-          <Label>Tracking</Label>
-          <Input
-            value={header.tracking ?? ""}
-            onChange={(e) => setHeader({ ...header, tracking: e.target.value })}
-            disabled={!canWrite}
-          />
-        </div>
-        <div className="grid gap-1.5">
-          <Label>Cost</Label>
-          <Input
-            type="number"
-            step="any"
-            value={header.cost ?? 0}
-            onChange={(e) => setHeader({ ...header, cost: e.target.value })}
-            disabled={!canWrite}
-          />
-        </div>
-        <div className="grid gap-1.5">
-          <Label>Status</Label>
-          <Select
-            value={header.status ?? "Draft"}
-            onValueChange={(v) => setHeader({ ...header, status: v })}
-            disabled={!canWrite}
-          >
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {STATUSES.map((s) => (
-                <SelectItem key={s} value={s}>
-                  {s}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="grid gap-1.5">
-          <Label>Notes</Label>
-          <Textarea
-            rows={1}
-            value={header.notes ?? ""}
-            onChange={(e) => setHeader({ ...header, notes: e.target.value })}
-            disabled={!canWrite}
-          />
+        <div className="max-h-[420px] overflow-auto rounded-md border">
+          <table className="w-full text-sm">
+            <thead className="sticky top-0 bg-muted text-left text-xs text-muted-foreground">
+              <tr>
+                <th className="w-10 p-2"></th>
+                <th className="p-2">Order</th>
+                <th className="p-2">Customer</th>
+                <th className="p-2">Date</th>
+                <th className="p-2">Status</th>
+                <th className="p-2 text-right">Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              {visibleOrders.length === 0 && (
+                <tr>
+                  <td colSpan={6} className="p-4 text-center text-muted-foreground">
+                    No sales orders match.
+                  </td>
+                </tr>
+              )}
+              {visibleOrders.map((o) => {
+                const checked = salesOrderIds.includes(o.id);
+                return (
+                  <tr key={o.id} className={`border-t ${checked ? "bg-primary/5" : ""}`}>
+                    <td className="p-2">
+                      <input
+                        type="checkbox"
+                        aria-label={`Load ${o.number}`}
+                        checked={checked}
+                        disabled={!canWrite || !!doc?.posted_at}
+                        onChange={() => toggleOrder(o.id)}
+                      />
+                    </td>
+                    <td className="p-2 font-medium">
+                      <Link className="hover:underline" to={`/sales/orders/${o.id}` as never}>
+                        {o.number ?? "Sales Order"}
+                      </Link>
+                    </td>
+                    <td className="p-2">{customerName(o.customer_id)}</td>
+                    <td className="p-2">{o.date ?? "—"}</td>
+                    <td className="p-2">
+                      <Badge variant="outline">{o.status ?? "—"}</Badge>
+                    </td>
+                    <td className="p-2 text-right tabular-nums">
+                      {Number(o.grand_total ?? 0).toLocaleString(undefined, {
+                        minimumFractionDigits: 2,
+                      })}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
       </Card>
 
