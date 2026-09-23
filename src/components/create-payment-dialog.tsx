@@ -45,6 +45,7 @@ interface CreatePaymentDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   kind: PaymentCreateKind;
+  variant?: "dialog" | "page";
 }
 
 const PAYMENT_MODES = [
@@ -75,9 +76,19 @@ type Outstanding = {
   status: string;
 };
 
+// ── page-mode wrappers ──
+const PageRoot = ({ children }: any) => <div className="w-full p-4 md:p-6">{children}</div>;
+const PageContent = ({ children }: any) => (
+  <div className="mx-auto flex w-full max-w-5xl flex-col gap-4 rounded-lg border bg-card p-6 shadow-sm">{children}</div>
+);
+const PageHeader = ({ children }: any) => <div className="grid gap-1 border-b pb-4">{children}</div>;
+const PageTitle = ({ children, className }: any) => <h1 className={`text-xl font-semibold ${className ?? ""}`}>{children}</h1>;
+const PageDescription = ({ children }: any) => <p className="text-sm text-muted-foreground">{children}</p>;
+const PageFooter = ({ children }: any) => <div className="border-t pt-4">{children}</div>;
+
 // ── component ─────────────────────────────────────────────────────────────────
 
-export function CreatePaymentDialog({ open, onOpenChange, kind }: CreatePaymentDialogProps) {
+export function CreatePaymentDialog({ open, onOpenChange, kind, variant = "dialog" }: CreatePaymentDialogProps) {
   const { tenant } = useAuth();
   const qc = useQueryClient();
 
@@ -515,7 +526,7 @@ export function CreatePaymentDialog({ open, onOpenChange, kind }: CreatePaymentD
         </div>
 
         {/* ── Footer ── */}
-        <DialogFooter className="shrink-0 border-t pt-3">
+        <Footer className="shrink-0 border-t pt-3">
           <div className="flex w-full items-center justify-between gap-2">
             {/* Summary */}
             {checked.size > 0 ? (
@@ -558,8 +569,8 @@ export function CreatePaymentDialog({ open, onOpenChange, kind }: CreatePaymentD
               </Button>
             </div>
           </div>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </Footer>
+      </Content>
+    </Root>
   );
 }
