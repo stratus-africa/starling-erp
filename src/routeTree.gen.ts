@@ -39,6 +39,7 @@ import { Route as SuperAdminAuditRouteImport } from './routes/super-admin/audit'
 import { Route as SuperAdminApiRouteImport } from './routes/super-admin/api'
 import { Route as SuperAdminAnnouncementsRouteImport } from './routes/super-admin/announcements'
 import { Route as SuperAdminAdminRouteImport } from './routes/super-admin/admin'
+import { Route as AuthenticatedFieldRouteImport } from './routes/_authenticated/field'
 import { Route as AuthenticatedAuditEventsRouteImport } from './routes/_authenticated/audit-events'
 import { Route as AdminUsersRouteImport } from './routes/_admin/users'
 import { Route as AdminTenantsRouteImport } from './routes/_admin/tenants'
@@ -47,6 +48,7 @@ import { Route as AdminPlansRouteImport } from './routes/_admin/plans'
 import { Route as AdminAuditRouteImport } from './routes/_admin/audit'
 import { Route as SuperAdminBillingIndexRouteImport } from './routes/super-admin/billing/index'
 import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authenticated/settings.index'
+import { Route as AuthenticatedFieldIndexRouteImport } from './routes/_authenticated/field.index'
 import { Route as AuthenticatedExpensesIndexRouteImport } from './routes/_authenticated/expenses.index'
 import { Route as AuthenticatedAccountingIndexRouteImport } from './routes/_authenticated/accounting.index'
 import { Route as SuperAdminTenantsIdRouteImport } from './routes/super-admin/tenants_.$id'
@@ -338,6 +340,11 @@ const SuperAdminAdminRoute = SuperAdminAdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => SuperAdminRouteRoute,
 } as any)
+const AuthenticatedFieldRoute = AuthenticatedFieldRouteImport.update({
+  id: '/field',
+  path: '/field',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedAuditEventsRoute =
   AuthenticatedAuditEventsRouteImport.update({
     id: '/audit-events',
@@ -380,6 +387,11 @@ const AuthenticatedSettingsIndexRoute =
     path: '/settings/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedFieldIndexRoute = AuthenticatedFieldIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AuthenticatedFieldRoute,
+} as any)
 const AuthenticatedExpensesIndexRoute =
   AuthenticatedExpensesIndexRouteImport.update({
     id: '/expenses/',
@@ -1226,6 +1238,7 @@ export interface FileRoutesByFullPath {
   '/tenants': typeof AdminTenantsRoute
   '/users': typeof AdminUsersRoute
   '/audit-events': typeof AuthenticatedAuditEventsRoute
+  '/field': typeof AuthenticatedFieldRouteWithChildren
   '/super-admin/admin': typeof SuperAdminAdminRoute
   '/super-admin/announcements': typeof SuperAdminAnnouncementsRoute
   '/super-admin/api': typeof SuperAdminApiRoute
@@ -1314,6 +1327,7 @@ export interface FileRoutesByFullPath {
   '/super-admin/tenants/$id': typeof SuperAdminTenantsIdRoute
   '/accounting/': typeof AuthenticatedAccountingIndexRoute
   '/expenses/': typeof AuthenticatedExpensesIndexRoute
+  '/field/': typeof AuthenticatedFieldIndexRoute
   '/settings/': typeof AuthenticatedSettingsIndexRoute
   '/super-admin/billing/': typeof SuperAdminBillingIndexRoute
   '/crm/customers/$id': typeof AuthenticatedCrmCustomersIdRoute
@@ -1491,6 +1505,7 @@ export interface FileRoutesByTo {
   '/super-admin/tenants/$id': typeof SuperAdminTenantsIdRoute
   '/accounting': typeof AuthenticatedAccountingIndexRoute
   '/expenses': typeof AuthenticatedExpensesIndexRoute
+  '/field': typeof AuthenticatedFieldIndexRoute
   '/super-admin/billing': typeof SuperAdminBillingIndexRoute
   '/crm/customers/$id': typeof AuthenticatedCrmCustomersIdRoute
   '/inventory/items/$id': typeof AuthenticatedInventoryItemsIdRoute
@@ -1582,6 +1597,7 @@ export interface FileRoutesById {
   '/_admin/tenants': typeof AdminTenantsRoute
   '/_admin/users': typeof AdminUsersRoute
   '/_authenticated/audit-events': typeof AuthenticatedAuditEventsRoute
+  '/_authenticated/field': typeof AuthenticatedFieldRouteWithChildren
   '/super-admin/admin': typeof SuperAdminAdminRoute
   '/super-admin/announcements': typeof SuperAdminAnnouncementsRoute
   '/super-admin/api': typeof SuperAdminApiRoute
@@ -1671,6 +1687,7 @@ export interface FileRoutesById {
   '/super-admin/tenants_/$id': typeof SuperAdminTenantsIdRoute
   '/_authenticated/accounting/': typeof AuthenticatedAccountingIndexRoute
   '/_authenticated/expenses/': typeof AuthenticatedExpensesIndexRoute
+  '/_authenticated/field/': typeof AuthenticatedFieldIndexRoute
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
   '/super-admin/billing/': typeof SuperAdminBillingIndexRoute
   '/_authenticated/crm/customers/$id': typeof AuthenticatedCrmCustomersIdRoute
@@ -1763,6 +1780,7 @@ export interface FileRouteTypes {
     | '/tenants'
     | '/users'
     | '/audit-events'
+    | '/field'
     | '/super-admin/admin'
     | '/super-admin/announcements'
     | '/super-admin/api'
@@ -1851,6 +1869,7 @@ export interface FileRouteTypes {
     | '/super-admin/tenants/$id'
     | '/accounting/'
     | '/expenses/'
+    | '/field/'
     | '/settings/'
     | '/super-admin/billing/'
     | '/crm/customers/$id'
@@ -2028,6 +2047,7 @@ export interface FileRouteTypes {
     | '/super-admin/tenants/$id'
     | '/accounting'
     | '/expenses'
+    | '/field'
     | '/super-admin/billing'
     | '/crm/customers/$id'
     | '/inventory/items/$id'
@@ -2118,6 +2138,7 @@ export interface FileRouteTypes {
     | '/_admin/tenants'
     | '/_admin/users'
     | '/_authenticated/audit-events'
+    | '/_authenticated/field'
     | '/super-admin/admin'
     | '/super-admin/announcements'
     | '/super-admin/api'
@@ -2207,6 +2228,7 @@ export interface FileRouteTypes {
     | '/super-admin/tenants_/$id'
     | '/_authenticated/accounting/'
     | '/_authenticated/expenses/'
+    | '/_authenticated/field/'
     | '/_authenticated/settings/'
     | '/super-admin/billing/'
     | '/_authenticated/crm/customers/$id'
@@ -2507,6 +2529,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SuperAdminAdminRouteImport
       parentRoute: typeof SuperAdminRouteRoute
     }
+    '/_authenticated/field': {
+      id: '/_authenticated/field'
+      path: '/field'
+      fullPath: '/field'
+      preLoaderRoute: typeof AuthenticatedFieldRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/audit-events': {
       id: '/_authenticated/audit-events'
       path: '/audit-events'
@@ -2562,6 +2591,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/settings/'
       preLoaderRoute: typeof AuthenticatedSettingsIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/field/': {
+      id: '/_authenticated/field/'
+      path: '/'
+      fullPath: '/field/'
+      preLoaderRoute: typeof AuthenticatedFieldIndexRouteImport
+      parentRoute: typeof AuthenticatedFieldRoute
     }
     '/_authenticated/expenses/': {
       id: '/_authenticated/expenses/'
@@ -3566,6 +3602,17 @@ const AdminRouteRouteWithChildren = AdminRouteRoute._addFileChildren(
   AdminRouteRouteChildren,
 )
 
+interface AuthenticatedFieldRouteChildren {
+  AuthenticatedFieldIndexRoute: typeof AuthenticatedFieldIndexRoute
+}
+
+const AuthenticatedFieldRouteChildren: AuthenticatedFieldRouteChildren = {
+  AuthenticatedFieldIndexRoute: AuthenticatedFieldIndexRoute,
+}
+
+const AuthenticatedFieldRouteWithChildren =
+  AuthenticatedFieldRoute._addFileChildren(AuthenticatedFieldRouteChildren)
+
 interface AuthenticatedPurchasingCreditsRouteChildren {
   AuthenticatedPurchasingCreditsIdRoute: typeof AuthenticatedPurchasingCreditsIdRoute
 }
@@ -3597,6 +3644,7 @@ const AuthenticatedSalesPaymentsRouteWithChildren =
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAuditEventsRoute: typeof AuthenticatedAuditEventsRoute
+  AuthenticatedFieldRoute: typeof AuthenticatedFieldRouteWithChildren
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
   AuthenticatedAccountingAuditTrailRoute: typeof AuthenticatedAccountingAuditTrailRoute
   AuthenticatedAccountingBalanceSheetRoute: typeof AuthenticatedAccountingBalanceSheetRoute
@@ -3731,6 +3779,7 @@ interface AuthenticatedRouteRouteChildren {
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAuditEventsRoute: AuthenticatedAuditEventsRoute,
+  AuthenticatedFieldRoute: AuthenticatedFieldRouteWithChildren,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
   AuthenticatedAccountingAuditTrailRoute:
     AuthenticatedAccountingAuditTrailRoute,
