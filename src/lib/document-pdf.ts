@@ -42,6 +42,8 @@ export interface PdfDocInput {
   lines: PdfLine[];
   totals?: { subtotal: number; discount_total: number; tax_total: number; grand_total: number } | null;
   notes?: string | null;
+  /** extra labelled text sections printed after notes */
+  sections?: { heading: string; rows: string[] }[];
   /** quantity-only documents such as packages */
   quantityOnly?: boolean;
   branding?: PdfBranding | null;
@@ -241,6 +243,26 @@ export function buildDocumentPdf(input: PdfDocInput): jsPDF {
     const wrapped = doc.splitTextToSize(input.notes, pageWidth - margin * 2);
     doc.text(wrapped, margin, cursor + 14);
     cursor += 14 + wrapped.length * 11 + 12;
+  }
+
+  for (const section of input.sections ?? []) {
+    if (!section.rows.length) continue;
+    const needed = 14 + section.rows.length * 12 + 12;
+    if (cursor + needed > pageHeight - 50) {
+      doc.addPage();
+      cursor = margin;
+    }
+    doc.setFontSize(9);
+    doc.setTextColor(120);
+    doc.text(section.heading, margin, cursor);
+    doc.setTextColor(40);
+    let y = cursor + 14;
+    for (const row of section.rows) {
+      const wrapped = doc.splitTextToSize(row, pageWidth - margin * 2);
+      doc.text(wrapped, margin, y);
+      y += wrapped.length * 11 + 1;
+    }
+    cursor = y + 12;
   }
 
   if (brand.terms) {

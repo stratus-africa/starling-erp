@@ -18,6 +18,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { SalesDocumentLineage } from "@/components/sales-document-lineage";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { QuoteFollowUpDialog } from "@/components/quote-followup-dialog";
+import { Sparkles } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -227,6 +229,7 @@ export function QuoteViewPage({ id }: { id: string }) {
   const { branding } = useDocumentBranding("quote");
   const [editMode, setEditMode] = useState(false);
   const [emailOpen, setEmailOpen] = useState(false);
+  const [followUpOpen, setFollowUpOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [tab, setTab] = useState("overview");
   const canWrite = can(["sales.create", "sales.update"]);
@@ -429,6 +432,33 @@ export function QuoteViewPage({ id }: { id: string }) {
     totals: { subtotal, discount_total: discount, tax_total: tax, grand_total: total },
     branding,
     notes: quote.notes,
+    sections: [
+      {
+        heading: "Customer Details",
+        rows: [
+          ["Name", customer?.name],
+          ["Code", customer?.code],
+          ["Contact", customer?.contact_person],
+          ["Email", customer?.email],
+          ["Phone", customer?.phone],
+          ["Billing Address", customer?.billing_address],
+          ["Shipping Address", customer?.shipping_address],
+          ["Payment Terms", quote.payment_terms ?? customer?.payment_terms],
+          ["Salesperson", salesperson?.full_name],
+        ]
+          .filter(([, v]) => v)
+          .map(([k, v]) => `${k}: ${v}`),
+      },
+      {
+        heading: "Sales Document Lineage",
+        rows: [
+          `Quote ${quote.number ?? ""} · ${currentStatus} · ${dateFmt(quote.date)} · ${money(total, currency)}`,
+          convertedOrder
+            ? `→ Sales Order ${convertedOrder.number ?? ""} · ${convertedOrder.status ?? ""} · ${dateFmt(convertedOrder.date)} · ${money(Number(convertedOrder.grand_total ?? 0), convertedOrder.currency ?? currency)}`
+            : "→ Not yet converted to a sales order",
+        ],
+      },
+    ],
   });
   const kpis = [
     {
@@ -515,9 +545,25 @@ export function QuoteViewPage({ id }: { id: string }) {
                 <Pencil className="mr-1.5 h-4 w-4" /> Edit
               </Button>
             )}
-            <Button size="sm" variant="outline" onClick={() => downloadDocumentPdf(pdf())}>
-              <Download className="mr-1.5 h-4 w-4" /> Download PDF
+            <Button size="sm" variant="outline" onClick={() => setFollowUpOpen(true)}>
+              <Sparkles className="mr-1.5 h-4 w-4" /> AI Follow-up
             </Button>
+            <Button size="sm" variant="outline" onClick={() => downloadDocumentPdf(pdf())}>
+              <Download className="mr-1.5 h-4 w-4" /> Export PDF
+            </Button>
+            <QuoteFollowUpDialog
+              open={followUpOpen}
+              onOpenChange={setFollowUpOpen}
+              customerEmail={customer?.email}
+              quoteSummary={[
+                `Quote ${quote.number ?? ""} for ${customer?.name ?? "customer"}${customer?.contact_person ? ` (contact: ${customer.contact_person})` : ""}`,
+                `Status: ${currentStatus} · Date: ${dateFmt(quote.date)} · Valid until: ${dateFmt(quote.expiry)}`,
+                `Total: ${money(total, currency)}${quote.payment_terms ? ` · Terms: ${quote.payment_terms}` : ""}`,
+                "Items:",
+                ...lines.map((l) => `- ${l.description ?? "Item"} × ${Number(l.quantity ?? 0)} @ ${money(Number(l.unit_price ?? 0), currency)}`),
+                salesperson?.full_name ? `Sales rep: ${salesperson.full_name}` : "",
+              ].filter(Boolean).join("\n")}
+            />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button size="icon" variant="outline" aria-label="More quote actions">
