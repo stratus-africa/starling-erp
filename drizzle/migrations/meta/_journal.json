@@ -155,6 +155,13 @@
       "when": 1790193710859,
       "tag": "0021_multi_customer_shipments",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1790195537408,
+      "tag": "0022_tenant_custom_roles",
+      "breakpoints": true
     }
   ]
 }
