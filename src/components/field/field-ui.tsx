@@ -72,20 +72,21 @@ export function FieldShell({ children }: { children: ReactNode }) {
     { to: "/field/more", label: "More", icon: Menu, show: true },
   ].filter((t) => t.show);
   return (
-    <div className="min-h-[100dvh] bg-muted/30">
-      <div className="mx-auto flex min-h-[100dvh] w-full max-w-2xl flex-col bg-background md:border-x">
+    <div className="h-[100dvh] overflow-hidden bg-muted/30">
+      <div className="mx-auto flex h-full w-full max-w-2xl flex-col overflow-hidden bg-background md:border-x">
         {!online && (
-          <div className="sticky top-0 z-40 flex items-center gap-2 bg-destructive px-4 py-2 text-xs font-medium text-destructive-foreground">
+          <div className="flex shrink-0 items-center gap-2 bg-destructive px-4 py-2 text-xs font-medium text-destructive-foreground">
             <WifiOff className="h-4 w-4" /> You're offline. New records are saved on this phone and sent when you reconnect.
           </div>
         )}
         {online && pending > 0 && (
-          <button onClick={() => syncAll()} className="flex items-center gap-2 bg-accent px-4 py-2 text-left text-xs font-medium text-accent-foreground">
+          <Button variant="ghost" onClick={() => syncAll()} className="h-auto shrink-0 justify-start rounded-none bg-accent px-4 py-2 text-left text-xs font-medium text-accent-foreground hover:bg-accent/80">
             <RefreshCw className="h-4 w-4" /> {pending} record{pending > 1 ? "s" : ""} waiting to sync — tap to retry
-          </button>
+          </Button>
         )}
-        <div className="flex-1 pb-28">{children}</div>
-        <nav className="fixed inset-x-0 bottom-0 z-40 bg-background px-3 pt-2 pb-[max(0.75rem,env(safe-area-inset-bottom))]" aria-label="Field Sales">
+        <main className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain bg-muted/30">{children}</main>
+        <div className="relative z-40 shrink-0 bg-background px-3 pt-4 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+        <nav aria-label="Field Sales">
           <div className="mx-auto grid max-w-md rounded-[1.75rem] border border-border/60 bg-card px-2 py-2 shadow-lg" style={{ gridTemplateColumns: `repeat(${tabs.length}, minmax(0,1fr))` }}>
             {tabs.map((t) => {
               const active = t.exact ? pathname === t.to || pathname === t.to + "/" : pathname.startsWith(t.to);
@@ -103,6 +104,7 @@ export function FieldShell({ children }: { children: ReactNode }) {
             })}
           </div>
         </nav>
+        </div>
       </div>
     </div>
   );
@@ -142,12 +144,12 @@ export function NotificationBell() {
 }
 
 export function StickyFooter({ children }: { children: ReactNode }) {
-  return <div className="fixed inset-x-0 bottom-16 z-30 mx-auto flex max-w-2xl gap-2 border-t bg-background p-3 md:border-x">{children}</div>;
+  return <div className="sticky bottom-0 z-30 mt-4 flex gap-2 border-t bg-background/95 p-3 backdrop-blur">{children}</div>;
 }
 
 export function Fab({ to, search, label }: { to: string; search?: Record<string, string>; label: string }) {
   return (
-    <Link to={to as never} search={search as never} aria-label={label} className="fixed bottom-20 right-4 z-30 flex h-14 items-center gap-2 rounded-full bg-primary px-5 text-sm font-semibold text-primary-foreground shadow-lg md:right-[calc(50%-20rem)]">
+    <Link to={to as never} search={search as never} aria-label={label} className="fixed bottom-28 right-4 z-30 flex h-14 items-center gap-2 rounded-full bg-primary px-5 text-sm font-semibold text-primary-foreground shadow-lg md:right-[calc(50%-20rem)]">
       <Plus className="h-5 w-5" /> {label}
     </Link>
   );
