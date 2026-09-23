@@ -295,13 +295,13 @@ export function QuoteViewPage({ id }: { id: string }) {
     },
   });
   const { data: salesperson } = useQuery({
-    queryKey: ["profiles", "quote-view", quote?.created_by],
-    enabled: !!quote?.created_by,
+    queryKey: ["profiles", "quote-view", quote?.salesperson_id ?? quote?.created_by],
+    enabled: !!(quote?.salesperson_id ?? quote?.created_by),
     queryFn: async () => {
       const { data } = await db
         .from("profiles")
         .select("full_name,email")
-        .eq("id", quote!.created_by)
+        .eq("id", quote!.salesperson_id ?? quote!.created_by)
         .maybeSingle();
       return data as Row | null;
     },

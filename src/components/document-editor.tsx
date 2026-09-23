@@ -46,6 +46,7 @@ import {
   Ban,
 } from "lucide-react";
 import { useFkOptions } from "@/hooks/use-module-data";
+import { useSalesSettings, useSalespeople } from "@/hooks/use-sales-settings";
 import { RecordPaymentDialog } from "@/components/record-payment-dialog";
 import { EmailDocumentDialog } from "@/components/email-document-dialog";
 import { EmailStatus } from "@/components/email-status";
@@ -373,6 +374,9 @@ export function DocumentEditor({
   });
 
   const { data: parties = [] } = useFkOptions(cfg.partyTable);
+  const isSalesDoc = kind === "quote" || kind === "order" || kind === "invoice";
+  const { salespersonRequired } = useSalesSettings();
+  const { data: salespeople = [] } = useSalespeople();
 
   type DocumentHeader = Record<string, any>;
   const [header, setHeader] = useState<DocumentHeader>({
@@ -382,6 +386,7 @@ export function DocumentEditor({
     ...(cfg.extraDate ? { [cfg.extraDate.field]: "" } : {}),
     currency: tenant?.currency ?? "KES",
     notes: "",
+    ...(kind === "quote" || kind === "order" || kind === "invoice" ? { salesperson_id: user?.id ?? null } : {}),
     status: cfg.statuses[0],
     // Requisition-specific defaults
     ...(kind === "requisition"
@@ -766,6 +771,8 @@ export function DocumentEditor({
         throw new Error("Posted documents are locked. Use Void & Reverse instead.");
       if (cfg.partyRequired !== false && !header[cfg.partyField])
         throw new Error(`Please select a ${cfg.partyLabel.toLowerCase()}`);
+      if (isSalesDoc && salespersonRequired && !header.salesperson_id)
+        throw new Error("Please select a salesperson");
       if ((kind === "quote" || kind === "order") && lines.length === 0)
         throw new Error(`Add at least one line item to this ${cfg.label.toLowerCase()}`);
       if (
@@ -1422,6 +1429,30 @@ export function DocumentEditor({
                       {parties.map((c) => (
                         <SelectItem key={c.id} value={c.id}>
                           {c.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+              {isSalesDoc && (
+                <div className="grid gap-1.5">
+                  <Label>
+                    Salesperson{salespersonRequired ? <span className="text-destructive"> *</span> : <span className="text-muted-foreground"> (optional)</span>}
+                  </Label>
+                  <Select
+                    value={header.salesperson_id || "__none"}
+                    onValueChange={(v) => setHeader((h) => ({ ...h, salesperson_id: v === "__none" ? null : v }))}
+                    disabled={!canWrite || !!doc?.posted_at}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select salesperson…" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {!salespersonRequired && <SelectItem value="__none">Not assigned</SelectItem>}
+                      {salespeople.map((p) => (
+                        <SelectItem key={p.id} value={p.id}>
+                          {p.full_name || p.email || "Unnamed user"}
                         </SelectItem>
                       ))}
                     </SelectContent>

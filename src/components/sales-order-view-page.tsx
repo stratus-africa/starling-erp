@@ -432,6 +432,14 @@ export function SalesOrderViewPage({ id }: { id: string }) {
       return data as Row | null;
     },
   });
+  const { data: orderSalesperson } = useQuery({
+    queryKey: ["profiles", "order-salesperson", order?.salesperson_id],
+    enabled: !!order?.salesperson_id,
+    queryFn: async () => {
+      const { data } = await db.from("profiles").select("full_name,email").eq("id", order!.salesperson_id).maybeSingle();
+      return data as { full_name: string | null; email: string | null } | null;
+    },
+  });
   const { data: lines = [] } = useQuery({
     queryKey: ["sales_order_lines", id, "view"],
     queryFn: async () => {
@@ -719,7 +727,7 @@ export function SalesOrderViewPage({ id }: { id: string }) {
                 </span>
                 <span>
                   <strong className="text-foreground">Salesperson</strong>{" "}
-                  {order.salesperson_name ?? order.salesperson ?? "Not assigned"}
+                  {orderSalesperson?.full_name ?? orderSalesperson?.email ?? "Not assigned"}
                 </span>
               </div>
             </div>

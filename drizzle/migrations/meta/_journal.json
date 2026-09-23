@@ -169,6 +169,13 @@
       "when": 1790203227923,
       "tag": "0023_fix_procurement_matching_report",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1790203928828,
+      "tag": "0024_salesperson_on_sales_documents",
+      "breakpoints": true
     }
   ]
 }

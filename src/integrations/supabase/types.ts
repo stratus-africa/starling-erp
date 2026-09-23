@@ -2831,6 +2831,7 @@ export type Database = {
           reversal_reference: string | null
           reversed_at: string | null
           reversed_by: string | null
+          salesperson_id: string | null
           search_vec: unknown
           source_order_id: string | null
           status: string | null
@@ -2864,6 +2865,7 @@ export type Database = {
           reversal_reference?: string | null
           reversed_at?: string | null
           reversed_by?: string | null
+          salesperson_id?: string | null
           search_vec?: unknown
           source_order_id?: string | null
           status?: string | null
@@ -2897,6 +2899,7 @@ export type Database = {
           reversal_reference?: string | null
           reversed_at?: string | null
           reversed_by?: string | null
+          salesperson_id?: string | null
           search_vec?: unknown
           source_order_id?: string | null
           status?: string | null
@@ -2913,6 +2916,13 @@ export type Database = {
             columns: ["customer_id"]
             isOneToOne: false
             referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_salesperson_id_fkey"
+            columns: ["salesperson_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
           {
@@ -6464,6 +6474,7 @@ export type Database = {
           number: string | null
           payment_status: string
           promised_date: string | null
+          salesperson_id: string | null
           search_vec: unknown
           source_quote_id: string | null
           status: string | null
@@ -6491,6 +6502,7 @@ export type Database = {
           number?: string | null
           payment_status?: string
           promised_date?: string | null
+          salesperson_id?: string | null
           search_vec?: unknown
           source_quote_id?: string | null
           status?: string | null
@@ -6518,6 +6530,7 @@ export type Database = {
           number?: string | null
           payment_status?: string
           promised_date?: string | null
+          salesperson_id?: string | null
           search_vec?: unknown
           source_quote_id?: string | null
           status?: string | null
@@ -6532,6 +6545,13 @@ export type Database = {
             columns: ["customer_id"]
             isOneToOne: false
             referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_orders_salesperson_id_fkey"
+            columns: ["salesperson_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
           {
@@ -6640,6 +6660,7 @@ export type Database = {
           notes: string | null
           number: string | null
           payment_terms: string | null
+          salesperson_id: string | null
           search_vec: unknown
           status: string | null
           subtotal: number
@@ -6663,6 +6684,7 @@ export type Database = {
           notes?: string | null
           number?: string | null
           payment_terms?: string | null
+          salesperson_id?: string | null
           search_vec?: unknown
           status?: string | null
           subtotal?: number
@@ -6686,6 +6708,7 @@ export type Database = {
           notes?: string | null
           number?: string | null
           payment_terms?: string | null
+          salesperson_id?: string | null
           search_vec?: unknown
           status?: string | null
           subtotal?: number
@@ -6699,6 +6722,13 @@ export type Database = {
             columns: ["customer_id"]
             isOneToOne: false
             referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_quotes_salesperson_id_fkey"
+            columns: ["salesperson_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
           {
