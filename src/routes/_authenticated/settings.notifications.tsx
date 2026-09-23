@@ -1,10 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { ModulePage } from "@/components/module-page";
-import { modules } from "@/lib/modules";
+import { SettingsRecordsPage } from "@/components/settings-records-page";
 
 export const Route = createFileRoute("/_authenticated/settings/notifications")({
-  component: () => {
-    const m = modules["settings.notifications"];
-    return <ModulePage {...m} />;
-  },
+  component: () => <SettingsRecordsPage kind="notifications" />,
 });

@@ -7,16 +7,43 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -48,6 +75,7 @@ import { useAuth, type AppRole } from "@/hooks/use-auth";
 import { Link, useNavigate } from "@tanstack/react-router";
 import type { Permission } from "@/lib/permissions";
 import { schemaByTable, formatZodError } from "@/lib/module-validation-schemas";
+import { QueryError } from "@/components/query-state";
 
 export interface FieldDef {
   key: string;
@@ -183,7 +211,7 @@ export function DataModulePage(props: DataModulePageProps) {
   const [orderAsc, setOrderAsc] = useState(false);
   const [filters, setFilters] = useState<Record<string, string>>({});
 
-  const { data, isLoading } = useModuleList(table, {
+  const { data, isLoading, isError, error, refetch } = useModuleList(table, {
     search,
     searchColumn,
     page,
@@ -196,7 +224,8 @@ export function DataModulePage(props: DataModulePageProps) {
 
   const post = useMutation({
     mutationFn: async (id: string) => {
-      if (postPermission && !can(postPermission)) throw new Error(`Not authorized: ${postPermission}`);
+      if (postPermission && !can(postPermission))
+        throw new Error(`Not authorized: ${postPermission}`);
       const { error } = await db.rpc(postAction!.rpc, { [postAction!.paramName]: id });
       if (error) throw error;
     },
@@ -274,231 +303,264 @@ export function DataModulePage(props: DataModulePageProps) {
         </div>
       </div>
 
-      <Card className="overflow-hidden border shadow-sm p-0">
-        <div className="flex items-center gap-2 border-b px-3 py-2 bg-muted/30">
-          <div className="relative flex-1 max-w-sm">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-            <Input
-              placeholder={`Search ${searchColumn}…`}
-              value={search}
-              onChange={(e) => {
-                setSearch(e.target.value);
-                setPage(1);
-              }}
-              className="h-8 pl-8 text-sm bg-background"
-            />
-          </div>
-          {filterFields.length === 0 ? (
-            <Button variant="outline" size="sm" className="h-8">
-              <Filter className="h-3.5 w-3.5 mr-1.5" /> Filters
-            </Button>
-          ) : (
-            <div className="flex items-center gap-2">
-              <Filter className="h-3.5 w-3.5 text-muted-foreground" />
-              {filterFields.map((f) => f.type === "date" ? (
-                <Input
-                  key={f.key}
-                  type="date"
-                  value={filters[f.key] ?? ""}
-                  aria-label={f.label}
-                  title={f.label}
-                  className="h-8 w-[150px] bg-background text-xs"
-                  onChange={(e) => {
-                    setFilters((p) => ({ ...p, [f.key]: e.target.value }));
-                    setPage(1);
-                  }}
-                />
-              ) : (
-                <Select
-                  key={f.key}
-                  value={filters[f.key] ?? "all"}
-                  onValueChange={(v) => {
-                    setFilters((p) => ({ ...p, [f.key]: v }));
-                    setPage(1);
-                  }}
-                >
-                  <SelectTrigger className="h-8 w-[150px] bg-background text-xs">
-                    <SelectValue placeholder={f.label} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All {f.label}</SelectItem>
-                    {f.options.map((o) => (
-                      <SelectItem key={o} value={o}>
-                        {o}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              ))}
-              {Object.values(filters).some((v) => v && v !== "all") && (
-                <Button variant="ghost" size="sm" className="h-8 text-xs" onClick={() => setFilters({})}>
-                  Clear
-                </Button>
-              )}
+      {isError ? (
+        <QueryError
+          error={error}
+          retry={() => refetch()}
+          label={`Could not load ${title.toLowerCase()}.`}
+        />
+      ) : (
+        <Card className="overflow-hidden border shadow-sm p-0">
+          <div className="flex items-center gap-2 border-b px-3 py-2 bg-muted/30">
+            <div className="relative flex-1 max-w-sm">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+              <Input
+                placeholder={`Search ${searchColumn}…`}
+                value={search}
+                onChange={(e) => {
+                  setSearch(e.target.value);
+                  setPage(1);
+                }}
+                className="h-8 pl-8 text-sm bg-background"
+              />
             </div>
-          )}
-          <div className="ml-auto text-xs text-muted-foreground">
-            {total} record{total === 1 ? "" : "s"}
-          </div>
-        </div>
-
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow className="bg-muted/20 hover:bg-muted/20">
-                {tableFields.map((c) => (
-                  <TableHead
-                    key={c.key}
-                    className={
-                      "text-xs font-semibold uppercase tracking-wider text-muted-foreground " + (c.className ?? "")
-                    }
-                  >
-                    <button
-                      onClick={() => toggleSort(c.key)}
-                      className="inline-flex items-center gap-1 hover:text-foreground"
+            {filterFields.length === 0 ? (
+              <Button variant="outline" size="sm" className="h-8">
+                <Filter className="h-3.5 w-3.5 mr-1.5" /> Filters
+              </Button>
+            ) : (
+              <div className="flex items-center gap-2">
+                <Filter className="h-3.5 w-3.5 text-muted-foreground" />
+                {filterFields.map((f) =>
+                  f.type === "date" ? (
+                    <Input
+                      key={f.key}
+                      type="date"
+                      value={filters[f.key] ?? ""}
+                      aria-label={f.label}
+                      title={f.label}
+                      className="h-8 w-[150px] bg-background text-xs"
+                      onChange={(e) => {
+                        setFilters((p) => ({ ...p, [f.key]: e.target.value }));
+                        setPage(1);
+                      }}
+                    />
+                  ) : (
+                    <Select
+                      key={f.key}
+                      value={filters[f.key] ?? "all"}
+                      onValueChange={(v) => {
+                        setFilters((p) => ({ ...p, [f.key]: v }));
+                        setPage(1);
+                      }}
                     >
-                      {c.label}
-                      <ArrowUpDown className="h-3 w-3 opacity-50" />
-                    </button>
-                  </TableHead>
-                ))}
-                <TableHead className="w-10" />
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading && (
-                <TableRow>
-                  <TableCell colSpan={tableFields.length + 1} className="text-center py-16">
-                    <Loader2 className="h-4 w-4 animate-spin mx-auto text-muted-foreground" />
-                  </TableCell>
-                </TableRow>
-              )}
-              {!isLoading && rows.length === 0 && (
-                <TableRow>
-                  <TableCell
-                    colSpan={tableFields.length + 1}
-                    className="text-center text-sm text-muted-foreground py-16"
+                      <SelectTrigger className="h-8 w-[150px] bg-background text-xs">
+                        <SelectValue placeholder={f.label} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All {f.label}</SelectItem>
+                        {f.options.map((o) => (
+                          <SelectItem key={o} value={o}>
+                            {o}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  ),
+                )}
+                {Object.values(filters).some((v) => v && v !== "all") && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 text-xs"
+                    onClick={() => setFilters({})}
                   >
-                    No records yet.{" "}
-                    {canWrite && (
-                      <>
-                        Click <span className="font-medium">New {entityLabel}</span> to create one.
-                      </>
-                    )}
-                  </TableCell>
-                </TableRow>
-              )}
-              {rows.map((row) => {
-                const href = rowHref?.(row);
-                return (
-                  <TableRow
-                    key={row.id}
-                    className={"hover:bg-muted/30 " + (href ? "cursor-pointer" : "")}
-                    onClick={href ? () => navigate({ to: href as any }) : undefined}
-                  >
-                    {tableFields.map((c) => {
-                      const v = row[c.key];
-                      let content: ReactNode;
-                      try {
-                        content = c.render ? (
-                          c.render(v, row)
-                        ) : c.key === "status" && typeof v === "string" ? (
-                          <Badge
-                            variant="secondary"
-                            className={"font-medium " + (statusVariant[v] ?? "bg-muted text-muted-foreground")}
-                          >
-                            {v}
-                          </Badge>
-                        ) : v == null || v === "" ? (
-                          <span className="text-muted-foreground">—</span>
-                        ) : (
-                          String(v)
-                        );
-                      } catch (renderErr) {
-                        console.error(`Error rendering column "${c.key}":`, renderErr);
-                        content = <span className="text-muted-foreground">—</span>;
+                    Clear
+                  </Button>
+                )}
+              </div>
+            )}
+            <div className="ml-auto text-xs text-muted-foreground">
+              {total} record{total === 1 ? "" : "s"}
+            </div>
+          </div>
+
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-muted/20 hover:bg-muted/20">
+                  {tableFields.map((c) => (
+                    <TableHead
+                      key={c.key}
+                      className={
+                        "text-xs font-semibold uppercase tracking-wider text-muted-foreground " +
+                        (c.className ?? "")
                       }
-                      return (
-                        <TableCell key={c.key} className={"text-sm " + (c.className ?? "")}>
-                          {content}
-                        </TableCell>
-                      );
-                    })}
-                    <TableCell onClick={(e) => e.stopPropagation()}>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-7 w-7">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          {href ? (
-                            <DropdownMenuItem onClick={() => navigate({ to: href as any })}>
-                              {canWrite && !row.posted_at && row.status !== "Voided" ? "Open" : "View"}
-                            </DropdownMenuItem>
-                          ) : (
-                            <DropdownMenuItem onClick={() => setEditing(row)}>
-                              {canWrite && !row.posted_at && row.status !== "Voided" ? "Edit" : "View"}
-                            </DropdownMenuItem>
-                          )}
-                          {postAction && (!postAction.showWhen || postAction.showWhen(row)) && (
-                            <DropdownMenuItem onClick={() => post.mutate(row.id)} disabled={post.isPending}>
-                              {post.isPending && post.variables === row.id ? (
-                                <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-                              ) : null}
-                              {postAction.label}
-                            </DropdownMenuItem>
-                          )}
-                          {voidAction &&
-                            canVoid &&
-                            row.posted_at &&
-                            row.status !== "Voided" &&
-                            (!voidAction.showWhen || voidAction.showWhen(row)) && (
-                              <DropdownMenuItem className="text-destructive" onClick={() => setVoidingRow(row)}>
-                                {voidAction.label ?? "Void & Reverse"}
-                              </DropdownMenuItem>
-                            )}
-                          {canWrite && !row.posted_at && row.status !== "Voided" && (
-                            <DropdownMenuItem className="text-destructive" onClick={() => setDeletingId(row.id)}>
-                              Delete
-                            </DropdownMenuItem>
-                          )}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                    >
+                      <button
+                        onClick={() => toggleSort(c.key)}
+                        className="inline-flex items-center gap-1 hover:text-foreground"
+                      >
+                        {c.label}
+                        <ArrowUpDown className="h-3 w-3 opacity-50" />
+                      </button>
+                    </TableHead>
+                  ))}
+                  <TableHead className="w-10" />
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {isLoading && (
+                  <TableRow>
+                    <TableCell colSpan={tableFields.length + 1} className="text-center py-16">
+                      <Loader2 className="h-4 w-4 animate-spin mx-auto text-muted-foreground" />
                     </TableCell>
                   </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        </div>
+                )}
+                {!isLoading && rows.length === 0 && (
+                  <TableRow>
+                    <TableCell
+                      colSpan={tableFields.length + 1}
+                      className="text-center text-sm text-muted-foreground py-16"
+                    >
+                      No records yet.{" "}
+                      {canWrite && (
+                        <>
+                          Click <span className="font-medium">New {entityLabel}</span> to create
+                          one.
+                        </>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                )}
+                {rows.map((row) => {
+                  const href = rowHref?.(row);
+                  return (
+                    <TableRow
+                      key={row.id}
+                      className={"hover:bg-muted/30 " + (href ? "cursor-pointer" : "")}
+                      onClick={href ? () => navigate({ to: href as any }) : undefined}
+                    >
+                      {tableFields.map((c) => {
+                        const v = row[c.key];
+                        let content: ReactNode;
+                        try {
+                          content = c.render ? (
+                            c.render(v, row)
+                          ) : c.key === "status" && typeof v === "string" ? (
+                            <Badge
+                              variant="secondary"
+                              className={
+                                "font-medium " +
+                                (statusVariant[v] ?? "bg-muted text-muted-foreground")
+                              }
+                            >
+                              {v}
+                            </Badge>
+                          ) : v == null || v === "" ? (
+                            <span className="text-muted-foreground">—</span>
+                          ) : (
+                            String(v)
+                          );
+                        } catch (renderErr) {
+                          console.error(`Error rendering column "${c.key}":`, renderErr);
+                          content = <span className="text-muted-foreground">—</span>;
+                        }
+                        return (
+                          <TableCell key={c.key} className={"text-sm " + (c.className ?? "")}>
+                            {content}
+                          </TableCell>
+                        );
+                      })}
+                      <TableCell onClick={(e) => e.stopPropagation()}>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-7 w-7">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            {href ? (
+                              <DropdownMenuItem onClick={() => navigate({ to: href as any })}>
+                                {canWrite && !row.posted_at && row.status !== "Voided"
+                                  ? "Open"
+                                  : "View"}
+                              </DropdownMenuItem>
+                            ) : (
+                              <DropdownMenuItem onClick={() => setEditing(row)}>
+                                {canWrite && !row.posted_at && row.status !== "Voided"
+                                  ? "Edit"
+                                  : "View"}
+                              </DropdownMenuItem>
+                            )}
+                            {postAction && (!postAction.showWhen || postAction.showWhen(row)) && (
+                              <DropdownMenuItem
+                                onClick={() => post.mutate(row.id)}
+                                disabled={post.isPending}
+                              >
+                                {post.isPending && post.variables === row.id ? (
+                                  <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                                ) : null}
+                                {postAction.label}
+                              </DropdownMenuItem>
+                            )}
+                            {voidAction &&
+                              canVoid &&
+                              row.posted_at &&
+                              row.status !== "Voided" &&
+                              (!voidAction.showWhen || voidAction.showWhen(row)) && (
+                                <DropdownMenuItem
+                                  className="text-destructive"
+                                  onClick={() => setVoidingRow(row)}
+                                >
+                                  {voidAction.label ?? "Void & Reverse"}
+                                </DropdownMenuItem>
+                              )}
+                            {canWrite && !row.posted_at && row.status !== "Voided" && (
+                              <DropdownMenuItem
+                                className="text-destructive"
+                                onClick={() => setDeletingId(row.id)}
+                              >
+                                Delete
+                              </DropdownMenuItem>
+                            )}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </div>
 
-        <div className="flex items-center justify-between border-t px-3 py-2 text-xs text-muted-foreground">
-          <div>
-            Page {page} of {Math.max(1, Math.ceil(total / pageSize))} · {total} total
+          <div className="flex items-center justify-between border-t px-3 py-2 text-xs text-muted-foreground">
+            <div>
+              Page {page} of {Math.max(1, Math.ceil(total / pageSize))} · {total} total
+            </div>
+            <div className="flex items-center gap-1">
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-7"
+                disabled={page <= 1}
+                onClick={() => setPage((p) => p - 1)}
+              >
+                <ChevronLeft className="h-3 w-3" />
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-7"
+                disabled={page * pageSize >= total}
+                onClick={() => setPage((p) => p + 1)}
+              >
+                <ChevronRight className="h-3 w-3" />
+              </Button>
+            </div>
           </div>
-          <div className="flex items-center gap-1">
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-7"
-              disabled={page <= 1}
-              onClick={() => setPage((p) => p - 1)}
-            >
-              <ChevronLeft className="h-3 w-3" />
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-7"
-              disabled={page * pageSize >= total}
-              onClick={() => setPage((p) => p + 1)}
-            >
-              <ChevronRight className="h-3 w-3" />
-            </Button>
-          </div>
-        </div>
-      </Card>
+        </Card>
+      )}
 
       <RecordSheet
         open={creating || !!editing}
@@ -520,7 +582,9 @@ export function DataModulePage(props: DataModulePageProps) {
           const { items, ...commonValues } = values;
           if (editing) await update.mutateAsync({ id: editing.id, values: commonValues });
           else if (Array.isArray(items)) {
-            await Promise.all(items.map((item) => create.mutateAsync({ ...commonValues, ...item })));
+            await Promise.all(
+              items.map((item) => create.mutateAsync({ ...commonValues, ...item })),
+            );
           } else await create.mutateAsync(values);
           setCreating(false);
           setEditing(null);
@@ -547,9 +611,12 @@ export function DataModulePage(props: DataModulePageProps) {
             <AlertDialogDescription asChild>
               <div className="space-y-3 text-sm">
                 <p>
-                  <span className="font-mono font-semibold text-foreground">{voidingRow?.number ?? entityLabel}</span>{" "}
-                  will be permanently marked <span className="font-semibold text-destructive">VOIDED</span>. A reversal
-                  journal will be created with every debit and credit exactly swapped.
+                  <span className="font-mono font-semibold text-foreground">
+                    {voidingRow?.number ?? entityLabel}
+                  </span>{" "}
+                  will be permanently marked{" "}
+                  <span className="font-semibold text-destructive">VOIDED</span>. A reversal journal
+                  will be created with every debit and credit exactly swapped.
                 </p>
                 <ul className="space-y-1 text-xs text-muted-foreground list-disc list-inside">
                   <li>Original document remains in the ledger — it is never deleted or modified</li>
@@ -579,7 +646,8 @@ export function DataModulePage(props: DataModulePageProps) {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete this {entityLabel.toLowerCase()}?</AlertDialogTitle>
             <AlertDialogDescription>
-              The record will be soft-deleted and hidden from lists. This can be reversed by an administrator.
+              The record will be soft-deleted and hidden from lists. This can be reversed by an
+              administrator.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -653,71 +721,75 @@ function RecordSheet({
 
   const form = (
     <form
-          key={key}
-          className="grid gap-4 py-4 px-4"
-          onSubmit={async (e) => {
-            e.preventDefault();
-            const fd = new FormData(e.currentTarget);
-            const v: Record<string, any> = { ...values };
-            fields.forEach((f) => {
-              if (!f.writable || (multiItem && (f.key === "item_id" || f.key === "quantity"))) return;
-              if (v[f.key] === undefined) {
-                const raw = fd.get(f.key);
-                if (raw != null && raw !== "") v[f.key] = f.type === "number" ? Number(raw) : raw;
-              }
-            });
-            if (schema) {
-              if (!tenantId) {
-                toast.error("No workspace selected");
-                return;
-              }
-              const result = schema.safeParse({ ...v, tenant_id: tenantId });
-              if (!result.success) {
-                toast.error(formatZodError(result.error));
-                return;
-              }
-            }
-            if (multiItem) {
-              const validItems = lineItems.filter((line) => line.item_id && line.quantity != null && line.quantity !== 0);
-              if (!validItems.length) {
-                toast.error("Select at least one item and enter a non-zero quantity");
-                return;
-              }
-              v.items = validItems;
-            }
-            await onSubmit(v);
-          }}
-        >
-          {fields.filter((f) => !multiItem || (f.key !== "item_id" && f.key !== "quantity")).map((f) => (
-            <FieldInput
-              key={f.key}
-              field={f}
-              defaultValue={row?.[f.key] ?? f.defaultValue ?? ""}
-              onChange={(val) => setValues((v) => ({ ...v, [f.key]: val }))}
-              disabled={!canWrite}
-            />
-          ))}
-          {multiItem && (
-            <MultiItemFields
-              itemField={fields.find((field) => field.key === "item_id")!}
-              lineItems={lineItems}
-              onChange={setLineItems}
-              disabled={!canWrite}
-            />
-          )}
-          <Footer className="px-0">
-            <Button type="submit" disabled={!canWrite || busy}>
-              {busy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {row ? "Save changes" : "Create"}
-            </Button>
-            {postAction && row && (!postAction.showWhen || postAction.showWhen(row)) && onPost && (
-              <Button type="button" variant="secondary" onClick={onPost} disabled={postBusy}>
-                {postBusy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {postAction.label}
-              </Button>
-            )}
-          </Footer>
-        </form>
+      key={key}
+      className="grid gap-4 py-4 px-4"
+      onSubmit={async (e) => {
+        e.preventDefault();
+        const fd = new FormData(e.currentTarget);
+        const v: Record<string, any> = { ...values };
+        fields.forEach((f) => {
+          if (!f.writable || (multiItem && (f.key === "item_id" || f.key === "quantity"))) return;
+          if (v[f.key] === undefined) {
+            const raw = fd.get(f.key);
+            if (raw != null && raw !== "") v[f.key] = f.type === "number" ? Number(raw) : raw;
+          }
+        });
+        if (schema) {
+          if (!tenantId) {
+            toast.error("No workspace selected");
+            return;
+          }
+          const result = schema.safeParse({ ...v, tenant_id: tenantId });
+          if (!result.success) {
+            toast.error(formatZodError(result.error));
+            return;
+          }
+        }
+        if (multiItem) {
+          const validItems = lineItems.filter(
+            (line) => line.item_id && line.quantity != null && line.quantity !== 0,
+          );
+          if (!validItems.length) {
+            toast.error("Select at least one item and enter a non-zero quantity");
+            return;
+          }
+          v.items = validItems;
+        }
+        await onSubmit(v);
+      }}
+    >
+      {fields
+        .filter((f) => !multiItem || (f.key !== "item_id" && f.key !== "quantity"))
+        .map((f) => (
+          <FieldInput
+            key={f.key}
+            field={f}
+            defaultValue={row?.[f.key] ?? f.defaultValue ?? ""}
+            onChange={(val) => setValues((v) => ({ ...v, [f.key]: val }))}
+            disabled={!canWrite}
+          />
+        ))}
+      {multiItem && (
+        <MultiItemFields
+          itemField={fields.find((field) => field.key === "item_id")!}
+          lineItems={lineItems}
+          onChange={setLineItems}
+          disabled={!canWrite}
+        />
+      )}
+      <Footer className="px-0">
+        <Button type="submit" disabled={!canWrite || busy}>
+          {busy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          {row ? "Save changes" : "Create"}
+        </Button>
+        {postAction && row && (!postAction.showWhen || postAction.showWhen(row)) && onPost && (
+          <Button type="button" variant="secondary" onClick={onPost} disabled={postBusy}>
+            {postBusy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {postAction.label}
+          </Button>
+        )}
+      </Footer>
+    </form>
   );
 
   if (windowed) {
@@ -727,7 +799,9 @@ function RecordSheet({
           <DialogHeader>
             <DialogTitle>{row ? `Edit ${entityLabel}` : `New ${entityLabel}`}</DialogTitle>
             <DialogDescription>
-              {row ? "Update the record details." : `Add a new ${entityLabel.toLowerCase()} to your workspace.`}
+              {row
+                ? "Update the record details."
+                : `Add a new ${entityLabel.toLowerCase()} to your workspace.`}
             </DialogDescription>
           </DialogHeader>
           {form}
@@ -747,7 +821,9 @@ function RecordSheet({
         <SheetHeader>
           <SheetTitle>{row ? `Edit ${entityLabel}` : `New ${entityLabel}`}</SheetTitle>
           <SheetDescription>
-            {row ? "Update the record details." : `Add a new ${entityLabel.toLowerCase()} to your workspace.`}
+            {row
+              ? "Update the record details."
+              : `Add a new ${entityLabel.toLowerCase()} to your workspace.`}
           </SheetDescription>
         </SheetHeader>
         {form}
@@ -779,7 +855,13 @@ function FieldInput({
       {field.required && <span className="text-destructive">*</span>}
     </Label>
   );
-  const commonProps = { id, name: field.key, defaultValue: defaultValue ?? "", required: field.required, disabled };
+  const commonProps = {
+    id,
+    name: field.key,
+    defaultValue: defaultValue ?? "",
+    required: field.required,
+    disabled,
+  };
 
   if (field.type === "textarea")
     return (
@@ -811,7 +893,11 @@ function FieldInput({
     return (
       <div className="grid gap-1.5">
         {label}
-        <Select defaultValue={String(defaultValue ?? "")} onValueChange={(v) => onChange(v)} disabled={disabled}>
+        <Select
+          defaultValue={String(defaultValue ?? "")}
+          onValueChange={(v) => onChange(v)}
+          disabled={disabled}
+        >
           <SelectTrigger id={id}>
             <SelectValue placeholder="Select…" />
           </SelectTrigger>
@@ -827,7 +913,9 @@ function FieldInput({
       </div>
     );
   if (field.type === "fk")
-    return <FkField field={field} defaultValue={defaultValue} onChange={onChange} disabled={disabled} />;
+    return (
+      <FkField field={field} defaultValue={defaultValue} onChange={onChange} disabled={disabled} />
+    );
   return (
     <div className="grid gap-1.5">
       {label}
@@ -866,7 +954,9 @@ function MultiItemFields({
           <FieldInput
             field={{ ...itemField, label: index === 0 ? itemField.label : "" }}
             defaultValue={line.item_id}
-            onChange={(item_id) => onChange(lineItems.map((item, i) => (i === index ? { ...item, item_id } : item)))}
+            onChange={(item_id) =>
+              onChange(lineItems.map((item, i) => (i === index ? { ...item, item_id } : item)))
+            }
             disabled={disabled}
           />
           <div className="grid gap-1.5">
@@ -878,7 +968,12 @@ function MultiItemFields({
               onChange={(event) =>
                 onChange(
                   lineItems.map((item, i) =>
-                    i === index ? { ...item, quantity: event.target.value ? Number(event.target.value) : null } : item,
+                    i === index
+                      ? {
+                          ...item,
+                          quantity: event.target.value ? Number(event.target.value) : null,
+                        }
+                      : item,
                   ),
                 )
               }
@@ -920,12 +1015,18 @@ function FkField({
         {field.label}
         {field.required && <span className="text-destructive">*</span>}
       </Label>
-      <Select defaultValue={defaultValue ?? undefined} onValueChange={(v) => onChange(v)} disabled={disabled}>
+      <Select
+        defaultValue={defaultValue ?? undefined}
+        onValueChange={(v) => onChange(v)}
+        disabled={disabled}
+      >
         <SelectTrigger id={id}>
           <SelectValue placeholder="Select…" />
         </SelectTrigger>
         <SelectContent>
-          {opts.length === 0 && <div className="px-2 py-1.5 text-xs text-muted-foreground">No options yet</div>}
+          {opts.length === 0 && (
+            <div className="px-2 py-1.5 text-xs text-muted-foreground">No options yet</div>
+          )}
           {opts.map((o: any) => (
             <SelectItem key={o.id} value={o.id}>
               {o[field.fkLabel ?? "name"]}

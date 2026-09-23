@@ -1,10 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { ModulePage } from "@/components/module-page";
-import { modules } from "@/lib/modules";
+import { SettingsRecordsPage } from "@/components/settings-records-page";
 
 export const Route = createFileRoute("/_authenticated/settings/numbering")({
-  component: () => {
-    const m = modules["settings.numbering"];
-    return <ModulePage {...m} />;
-  },
+  component: () => <SettingsRecordsPage kind="numbering" />,
 });
