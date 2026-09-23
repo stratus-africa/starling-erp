@@ -749,6 +749,20 @@ export function BankingPage() {
 
       <BankAccountSheet open={accountEditor !== undefined} account={accountEditor ?? null} glAccounts={glAccounts} saving={accountMutation.isPending} onClose={() => setAccountEditor(undefined)} onSave={(values) => accountMutation.mutateAsync(values)} />
 
+      <BankAccountSetupWizard
+        open={wizardOpen}
+        onClose={() => setWizardOpen(false)}
+        glAccounts={glAccounts.map((gl) => ({ id: gl.id, code: gl.code ?? null, name: gl.name }))}
+        onCreated={(id) => { setSelectedAccountId(id); invalidate(); }}
+      />
+
+      <VerifyConnectionDialog
+        accountId={verifyId}
+        tenantId={tenant?.id ?? null}
+        onClose={() => setVerifyId(null)}
+      />
+
+
       {/* Void confirm */}
       <AlertDialog open={!!voidingTxn} onOpenChange={(o) => !o && setVoidingTxn(null)}>
         <AlertDialogContent>
