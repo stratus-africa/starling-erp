@@ -288,22 +288,30 @@ export function CreatePaymentDialog({ open, onOpenChange, kind }: CreatePaymentD
     onError: (e: Error) => toast.error(e.message ?? "Failed to record payment"),
   });
 
+  const isPage = variant === "page";
+  const Root: any = isPage ? PageRoot : Dialog;
+  const Content: any = isPage ? PageContent : DialogContent;
+  const Header: any = isPage ? PageHeader : DialogHeader;
+  const Title: any = isPage ? PageTitle : DialogTitle;
+  const Description: any = isPage ? PageDescription : DialogDescription;
+  const Footer: any = isPage ? PageFooter : DialogFooter;
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
-        <DialogHeader className="shrink-0">
-          <DialogTitle className="flex items-center gap-2">
+    <Root open={open} onOpenChange={onOpenChange}>
+      <Content className="max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
+        <Header className="shrink-0">
+          <Title className="flex items-center gap-2">
             <DollarSign className="h-4 w-4" />
             {isReceived ? "Create Payment Received" : "Create Payment Made"}
-          </DialogTitle>
-          <DialogDescription>
+          </Title>
+          <Description>
             {isReceived
               ? "Record a customer payment and apply it to one or more outstanding invoices."
               : "Record a supplier payment and apply it to one or more outstanding bills."}
-          </DialogDescription>
-        </DialogHeader>
+          </Description>
+        </Header>
 
-        <div className="flex-1 overflow-y-auto min-h-0 pr-1">
+        <div className={isPage ? "" : "flex-1 overflow-y-auto min-h-0 pr-1"}>
           <div className="grid gap-5 py-2">
             {/* ── Party selector ── */}
             <div className="grid gap-1.5">
