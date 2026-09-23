@@ -1285,7 +1285,7 @@ export function SalesOrderViewPage({ id }: { id: string }) {
             </Card>
           </TabsContent>
           <TabsContent value="overview" className="mt-4">
-            <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(280px,1fr)]">
+            <div className="grid w-full items-start gap-4 grid-cols-1">
               <OrderLines
                 lines={lines}
                 items={items}
