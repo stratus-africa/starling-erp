@@ -1,3 +1,4 @@
+import { InventoryModuleGate } from "@/components/inventory-module-gate";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -14,7 +15,11 @@ import {
 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/inventory/lots")({
-  component: LotsPage,
+  component: () => (
+    <InventoryModuleGate moduleKey="module_lots">
+      <LotsPage />
+    </InventoryModuleGate>
+  ),
 });
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────

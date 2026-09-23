@@ -9,7 +9,8 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ClipboardCheck, Download, Loader2, Printer, Search } from "lucide-react";
+import { ClipboardCheck, Loader2, Printer } from "lucide-react";
+import { useReportTable, ReportToolbar, ReportPagination, downloadCsv } from "@/components/report-table-kit";
 
 type AuditRow = {
   key: string;
@@ -22,13 +23,13 @@ type AuditRow = {
   itemSku: string | null;
   uom: string | null;
   onHand: number;
+  lastMovedAt: string | null;
 };
 
 const qty = (value: number) => value.toLocaleString(undefined, { maximumFractionDigits: 4 });
 
 function StockAuditPage() {
   const { tenant } = useAuth();
-  const [search, setSearch] = useState("");
   const [warehouse, setWarehouse] = useState("all");
   const [hideZero, setHideZero] = useState(true);
   const [countDate, setCountDate] = useState(() => new Date().toISOString().slice(0, 10));
@@ -40,11 +41,17 @@ function StockAuditPage() {
     queryKey: ["stock-audit", tenant?.id],
     enabled: !!tenant?.id,
     queryFn: async () => {
-      const [{ data: stock, error }, { data: items }, { data: warehouses }] = await Promise.all([
+      const [{ data: stock, error }, { data: items }, { data: warehouses }, { data: moves }] = await Promise.all([
         supabase.from("inventory_location_stock").select("*").eq("tenant_id", tenant!.id),
         supabase.from("items").select("id,name,sku,uom").eq("tenant_id", tenant!.id),
         supabase.from("warehouses").select("id,name,code").eq("tenant_id", tenant!.id),
+        supabase.from("stock_movements").select("item_id,warehouse_id,location_id,created_at").eq("tenant_id", tenant!.id).order("created_at", { ascending: false }).limit(5000),
       ]);
+      const lastMove = new Map<string, string>();
+      for (const m of (moves ?? []) as any[]) {
+        const k = `${m.warehouse_id}:${m.location_id ?? "none"}:${m.item_id}`;
+        if (!lastMove.has(k)) lastMove.set(k, m.created_at);
+      }
       if (error) throw error;
 
       const itemMap = new Map((items ?? []).map((i: any) => [i.id, i]));
@@ -65,6 +72,7 @@ function StockAuditPage() {
           itemSku: item?.sku ?? null,
           uom: item?.uom ?? null,
           onHand: Number(row.on_hand ?? 0),
+          lastMovedAt: lastMove.get(`${row.warehouse_id}:${row.location_id ?? "none"}:${row.item_id}`) ?? null,
         };
       });
 
@@ -72,25 +80,29 @@ function StockAuditPage() {
     },
   });
 
-  const rows = useMemo(() => {
-    const term = search.trim().toLowerCase();
-    return (data?.rows ?? [])
-      .filter((row) => (warehouse === "all" ? true : row.warehouseName === warehouse))
-      .filter((row) => (hideZero ? row.onHand !== 0 : true))
-      .filter((row) =>
-        !term
-          ? true
-          : [row.itemName, row.itemSku, row.locationCode, row.zoneName, row.warehouseName, row.coords]
-              .filter(Boolean)
-              .some((value) => String(value).toLowerCase().includes(term)),
-      )
-      .sort(
-        (a, b) =>
-          a.warehouseName.localeCompare(b.warehouseName) ||
-          String(a.locationCode ?? "").localeCompare(String(b.locationCode ?? "")) ||
-          a.itemName.localeCompare(b.itemName),
-      );
-  }, [data?.rows, search, warehouse, hideZero]);
+  const baseRows = useMemo(
+    () =>
+      (data?.rows ?? [])
+        .filter((row) => (warehouse === "all" ? true : row.warehouseName === warehouse))
+        .filter((row) => (hideZero ? row.onHand !== 0 : true)),
+    [data?.rows, warehouse, hideZero],
+  );
+  const table = useReportTable<AuditRow>({
+    rows: baseRows,
+    searchText: (r) => [r.itemName, r.itemSku, r.locationCode, r.zoneName, r.warehouseName, r.coords],
+    getDate: (r) => r.lastMovedAt,
+    sorts: [
+      { value: "warehouse", label: "Warehouse", get: (r) => `${r.warehouseName} ${r.locationCode ?? ""} ${r.itemName}` },
+      { value: "bin", label: "Bin", get: (r) => r.locationCode },
+      { value: "item", label: "Item", get: (r) => r.itemName },
+      { value: "qty", label: "System qty", get: (r) => r.onHand },
+      { value: "moved", label: "Last movement", get: (r) => r.lastMovedAt },
+    ],
+    defaultSort: "warehouse",
+    defaultDir: "asc",
+  });
+  const rows = table.filtered;
+  const pageRows = table.pageRows;
 
   const nextCountDate = useMemo(() => {
     const date = new Date(countDate);
@@ -118,32 +130,9 @@ function StockAuditPage() {
     setCountDate(new Date().toISOString().slice(0, 10));
   };
 
-  const exportCsv = () => {
-    const header = ["Warehouse", "Warehouse Code", "Zone", "Bin", "Bin Coordinates", "Item", "SKU", "Unit", "System Qty", "Counted Qty", "Variance", "Next Count Date"];
-    const body = rows.map((row) => [
-      row.warehouseName,
-      row.warehouseCode ?? "",
-      row.zoneName ?? "",
-      row.locationCode ?? "Unassigned",
-      row.coords ?? "",
-      row.itemName,
-      row.itemSku ?? "",
-      row.uom ?? "",
-      row.onHand,
-      outputCount(row),
-      varianceFor(row),
-      nextCountDate,
-    ]);
-    const csv = [header, ...body]
-      .map((line) => line.map((cell) => `"${String(cell).replaceAll('"', '""')}"`).join(","))
-      .join("\n");
-    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `stock-audit-${new Date().toISOString().slice(0, 10)}.csv`;
-    link.click();
-    URL.revokeObjectURL(url);
-  };
+  const exportCsv = () =>
+    downloadCsv("stock-audit", ["Warehouse", "Warehouse Code", "Zone", "Bin", "Bin Coordinates", "Item", "SKU", "Unit", "Last Movement", "System Qty", "Counted Qty", "Variance", "Next Count Date"],
+      rows.map((row) => [row.warehouseName, row.warehouseCode, row.zoneName, row.locationCode ?? "Unassigned", row.coords, row.itemName, row.itemSku, row.uom, row.lastMovedAt?.slice(0, 10), row.onHand, outputCount(row), varianceFor(row), nextCountDate]));
 
   return (
     <div className="flex w-full flex-col gap-4 p-4 md:p-6">
@@ -157,9 +146,6 @@ function StockAuditPage() {
           </p>
         </div>
         <div className="flex gap-2 print:hidden">
-          <Button variant="outline" size="sm" className="h-8" onClick={exportCsv}>
-            <Download className="mr-1.5 h-3.5 w-3.5" /> Export CSV
-          </Button>
           <Button variant="outline" size="sm" className="h-8" onClick={() => window.print()}>
             <Printer className="mr-1.5 h-3.5 w-3.5" /> Print count sheet
           </Button>
@@ -188,16 +174,7 @@ function StockAuditPage() {
       </div>
 
       <Card className="overflow-hidden border p-0 shadow-sm">
-        <div className="flex flex-wrap items-center gap-2 border-b bg-muted/30 px-3 py-2 print:hidden">
-          <div className="relative w-full max-w-sm">
-            <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder="Search item, SKU, bin or zone…"
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              className="h-8 bg-background pl-8 text-sm"
-            />
-          </div>
+        <ReportToolbar table={table} placeholder="Search item, SKU, bin or zone…" onExport={exportCsv}>
           <Select value={warehouse} onValueChange={setWarehouse}>
             <SelectTrigger className="h-8 w-56 bg-background text-sm">
               <SelectValue placeholder="All warehouses" />
@@ -222,7 +199,8 @@ function StockAuditPage() {
           <Button variant="default" size="sm" className="h-8" onClick={runRealCount}>
             Run real count
           </Button>
-          <div className="ml-auto flex items-center gap-2 text-xs text-muted-foreground">
+        </ReportToolbar>
+        <div className="flex flex-wrap items-center justify-end gap-2 border-b px-3 py-2 text-xs text-muted-foreground print:hidden">
             <label className="flex items-center gap-1.5">
               <span>Count date</span>
               <Input type="date" value={countDate} onChange={(event) => setCountDate(event.target.value)} className="h-8 w-36" />
@@ -238,7 +216,6 @@ function StockAuditPage() {
                 <SelectItem value="45">45 days</SelectItem>
               </SelectContent>
             </Select>
-          </div>
         </div>
 
         <div className="flex items-center justify-between border-b bg-muted/20 px-3 py-2 text-[11px] text-muted-foreground print:hidden">
@@ -276,7 +253,7 @@ function StockAuditPage() {
                   </TableCell>
                 </TableRow>
               )}
-              {rows.map((row) => {
+              {pageRows.map((row) => {
                 const counted = outputCount(row);
                 const diff = varianceFor(row);
                 return (
@@ -331,6 +308,7 @@ function StockAuditPage() {
             </TableBody>
           </Table>
         </div>
+        <ReportPagination table={table} label="lines" />
       </Card>
     </div>
   );
