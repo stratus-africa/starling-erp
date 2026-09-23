@@ -85,6 +85,30 @@ function UsersPage() {
     onError: (e: any) => toast.error(e.message ?? "Invitation failed"),
   });
 
+  const { data: custom } = useQuery({
+    queryKey: ["tenant", tenant?.id, "custom-roles"],
+    enabled: allowed && !!tenant?.id,
+    queryFn: async () => {
+      const [r, a] = await Promise.all([
+        db.from("tenant_custom_roles").select("id,label").eq("tenant_id", tenant!.id).order("label"),
+        db.from("tenant_user_custom_roles").select("user_id,role_id").eq("tenant_id", tenant!.id),
+      ]);
+      if (r.error) throw r.error;
+      if (a.error) throw a.error;
+      return { roles: (r.data ?? []) as { id: string; label: string }[], assigned: (a.data ?? []) as { user_id: string; role_id: string }[] };
+    },
+  });
+  const customRoles = custom?.roles ?? [];
+  const customFor = (userId: string) => (custom?.assigned ?? []).filter((x) => x.user_id === userId).map((x) => x.role_id);
+  const saveCustom = useMutation({
+    mutationFn: async ({ userId, roleIds }: { userId: string; roleIds: string[] }) => {
+      const { error } = await db.rpc("set_user_custom_roles", { _user_id: userId, _role_ids: roleIds });
+      if (error) throw error;
+    },
+    onSuccess: () => { toast.success("Custom roles updated"); qc.invalidateQueries({ queryKey: ["tenant", tenant?.id, "custom-roles"] }); },
+    onError: (e: any) => toast.error(e.message ?? "Save failed"),
+  });
+
   const rowsWithPending = useMemo(
     () => users.map((u: any) => ({ ...u, effective: pending[u.id] ?? u.roles })),
     [users, pending],
@@ -160,20 +184,23 @@ function UsersPage() {
                   {r.replace("_", " ")}
                 </TableHead>
               ))}
+              {customRoles.map((r) => (
+                <TableHead key={r.id} className="text-center text-[10px] uppercase tracking-wider text-primary">{r.label}</TableHead>
+              ))}
               <TableHead className="w-24 text-right">Save</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading && (
               <TableRow>
-                <TableCell colSpan={ALL_ROLES.length + 2} className="text-center py-8">
+                <TableCell colSpan={ALL_ROLES.length + customRoles.length + 2} className="text-center py-8">
                   <Loader2 className="h-4 w-4 animate-spin mx-auto text-muted-foreground" />
                 </TableCell>
               </TableRow>
             )}
             {!isLoading && rowsWithPending.length === 0 && (
               <TableRow>
-                <TableCell colSpan={ALL_ROLES.length + 2} className="text-center py-8 text-sm text-muted-foreground">
+                <TableCell colSpan={ALL_ROLES.length + customRoles.length + 2} className="text-center py-8 text-sm text-muted-foreground">
                   No users in this tenant.
                 </TableCell>
               </TableRow>
@@ -199,6 +226,18 @@ function UsersPage() {
                       />
                     </TableCell>
                   ))}
+                  {customRoles.map((r) => {
+                    const current = customFor(u.id);
+                    return (
+                      <TableCell key={r.id} className="text-center">
+                        <Checkbox
+                          checked={current.includes(r.id)}
+                          disabled={saveCustom.isPending}
+                          onCheckedChange={(c) => saveCustom.mutate({ userId: u.id, roleIds: c ? [...current, r.id] : current.filter((x) => x !== r.id) })}
+                        />
+                      </TableCell>
+                    );
+                  })}
                   <TableCell className="text-right">
                     <Button
                       size="sm"
