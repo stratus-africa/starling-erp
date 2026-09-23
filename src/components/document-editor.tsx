@@ -46,6 +46,7 @@ import {
   Ban,
 } from "lucide-react";
 import { useFkOptions } from "@/hooks/use-module-data";
+import { useSalesSettings, useSalespeople } from "@/hooks/use-sales-settings";
 import { RecordPaymentDialog } from "@/components/record-payment-dialog";
 import { EmailDocumentDialog } from "@/components/email-document-dialog";
 import { EmailStatus } from "@/components/email-status";
@@ -385,6 +386,7 @@ export function DocumentEditor({
     ...(cfg.extraDate ? { [cfg.extraDate.field]: "" } : {}),
     currency: tenant?.currency ?? "KES",
     notes: "",
+    ...(kind === "quote" || kind === "order" || kind === "invoice" ? { salesperson_id: user?.id ?? null } : {}),
     status: cfg.statuses[0],
     // Requisition-specific defaults
     ...(kind === "requisition"
