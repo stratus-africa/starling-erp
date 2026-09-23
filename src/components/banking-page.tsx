@@ -364,6 +364,8 @@ export function BankingPage() {
   const [postingId,         setPostingId]          = useState<string | null>(null);
   const [voidingTxn,        setVoidingTxn]         = useState<BankTransaction | null>(null);
   const [accountEditor,     setAccountEditor]      = useState<BankAccount | null | undefined>(undefined);
+  const [wizardOpen,        setWizardOpen]         = useState(false);
+  const [verifyId,          setVerifyId]           = useState<string | null>(null);
 
   // ── Accounts ──────────────────────────────────────────────────────────────
   const { data: accounts = [], isLoading: acctLoading } = useQuery<BankAccount[]>({
