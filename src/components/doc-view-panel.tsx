@@ -848,15 +848,6 @@ function InvoiceOverviewView({ id }: { id: string }) {
               </div>
 
               <aside className="space-y-4">
-                <SalesNextAction
-                  state={{
-                    kind: "invoice",
-                    status: invoice.status ?? paymentState.label,
-                    outstanding,
-                    currency,
-                  }}
-                  onAction={() => (paymentState.label === "Overdue" ? undefined : setPayOpen(true))}
-                />
                 <AgingBadge dueDate={invoice.due_date} balance={outstanding} />
               </aside>
             </div>
