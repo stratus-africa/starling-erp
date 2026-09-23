@@ -84,16 +84,20 @@ export function FieldShell({ children }: { children: ReactNode }) {
             <RefreshCw className="h-4 w-4" /> {pending} record{pending > 1 ? "s" : ""} waiting to sync — tap to retry
           </button>
         )}
-        <div className="flex-1 pb-24">{children}</div>
-        <nav className="fixed inset-x-0 bottom-0 z-40 mx-auto max-w-2xl border-t bg-background/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:border-x">
-          <div className="grid" style={{ gridTemplateColumns: `repeat(${tabs.length}, minmax(0,1fr))` }}>
+        <div className="flex-1 pb-28">{children}</div>
+        <nav className="fixed inset-x-0 bottom-0 z-40 bg-background px-3 pt-2 pb-[max(0.75rem,env(safe-area-inset-bottom))]" aria-label="Field Sales">
+          <div className="mx-auto grid max-w-md rounded-[1.75rem] border border-border/60 bg-card px-2 py-2 shadow-lg" style={{ gridTemplateColumns: `repeat(${tabs.length}, minmax(0,1fr))` }}>
             {tabs.map((t) => {
               const active = t.exact ? pathname === t.to || pathname === t.to + "/" : pathname.startsWith(t.to);
               const Icon = t.icon;
               return (
-                <Link key={t.to} to={t.to as never} className={cn("flex h-16 flex-col items-center justify-center gap-1 text-[11px] font-medium", active ? "text-primary" : "text-muted-foreground")}>
-                  <Icon className="h-5 w-5" />
-                  {t.label}
+                <Link key={t.to} to={t.to as never} aria-current={active ? "page" : undefined} className="group flex min-w-0 flex-col items-center justify-end gap-0.5 px-1 pt-1 min-h-14">
+                  <span className={cn("flex h-11 w-11 items-center justify-center rounded-full transition-all duration-200", active ? "-translate-y-3 bg-primary text-primary-foreground shadow-lg ring-4 ring-background" : "text-muted-foreground group-active:bg-muted")}>
+                    <Icon className="h-5 w-5" />
+                  </span>
+                  <span className={cn("w-full truncate text-center text-[11px] leading-none transition-colors", active ? "-mt-2 font-semibold text-primary" : "font-medium text-muted-foreground")}>
+                    {t.label}
+                  </span>
                 </Link>
               );
             })}

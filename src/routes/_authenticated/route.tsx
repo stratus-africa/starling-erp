@@ -8,6 +8,7 @@ import { SupportSessionBanner } from "@/components/support-session-banner";
 import { Loader2 } from "lucide-react";
 import { useRouterState } from "@tanstack/react-router";
 import { featureForPath } from "@/lib/features";
+import { useIsMobilePortrait } from "@/hooks/use-mobile";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
@@ -23,7 +24,8 @@ export const Route = createFileRoute("/_authenticated")({
 function Gate() {
   const { session, loading, profile, hasFeature, roles } = useAuth();
   const pathname = useRouterState({ select: (r) => r.location.pathname });
-  if (loading) return <div className="flex min-h-screen items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>;
+  const isMobilePortrait = useIsMobilePortrait();
+  if (loading || isMobilePortrait === undefined) return <div className="flex min-h-screen items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>;
   if (!session) return <Navigate to="/auth" />;
   if (!profile?.tenant_id) {
     return (
@@ -48,7 +50,8 @@ function Gate() {
   }
   const isField = pathname === "/field" || pathname.startsWith("/field/");
   const fieldOnly = roles.length > 0 && roles.every((r) => r === "field_sales");
-  if (fieldOnly && !isField) return <Navigate to="/field" />;
+  if (fieldOnly && isMobilePortrait && !isField) return <Navigate to="/field" />;
+  if (isField && !isMobilePortrait) return <Navigate to="/" />;
   if (isField) return <Outlet />;
   return (
     <SidebarProvider>

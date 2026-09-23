@@ -17,3 +17,17 @@ export function useIsMobile() {
 
   return !!isMobile;
 }
+
+export function useIsMobilePortrait() {
+  const [isMobilePortrait, setIsMobilePortrait] = React.useState<boolean | undefined>(undefined);
+
+  React.useEffect(() => {
+    const mql = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT - 1}px) and (orientation: portrait)`);
+    const onChange = () => setIsMobilePortrait(mql.matches);
+    mql.addEventListener("change", onChange);
+    onChange();
+    return () => mql.removeEventListener("change", onChange);
+  }, []);
+
+  return isMobilePortrait;
+}
