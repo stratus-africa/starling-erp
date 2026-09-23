@@ -594,7 +594,7 @@ export function BankingPage() {
                   </p>
                 </div>
                 {canWrite && (
-                  <div className="flex items-center gap-2"><Button variant="outline" size="sm" className="h-8" onClick={() => setAccountEditor(selectedAccount)}><MoreHorizontal className="mr-1.5 h-3.5 w-3.5" /> Edit account</Button>{selectedAccount.status !== "Inactive" && <Button variant="outline" size="sm" className="h-8 text-destructive" onClick={() => { if (window.confirm("Deactivate this bank account?")) deactivateMutation.mutate(selectedAccount); }}>Deactivate</Button>}<Button size="sm" className="h-8" onClick={() => setTxnSheetOpen(true)} disabled={selectedAccount.status === "Inactive"}><Plus className="mr-1.5 h-3.5 w-3.5" /> New Transaction</Button></div>
+                  <div className="flex items-center gap-2"><Button variant="outline" size="sm" className="h-8" onClick={() => setVerifyId(selectedAccount.id)}>Verify connection</Button><Button variant="outline" size="sm" className="h-8" onClick={() => setAccountEditor(selectedAccount)}><MoreHorizontal className="mr-1.5 h-3.5 w-3.5" /> Edit account</Button>{selectedAccount.status !== "Inactive" && <Button variant="outline" size="sm" className="h-8 text-destructive" onClick={() => { if (window.confirm("Deactivate this bank account?")) deactivateMutation.mutate(selectedAccount); }}>Deactivate</Button>}<Button size="sm" className="h-8" onClick={() => setTxnSheetOpen(true)} disabled={selectedAccount.status === "Inactive"}><Plus className="mr-1.5 h-3.5 w-3.5" /> New Transaction</Button></div>
                 )}
               </div>
             </div>
