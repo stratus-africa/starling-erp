@@ -10,6 +10,12 @@ import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
+  BankAccountSetupWizard, BankAccountChecklist, verifyBankAccountConnection,
+} from "@/components/bank-account-setup-wizard";
+import {
+  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
+} from "@/components/ui/dialog";
+import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import {
@@ -364,6 +370,8 @@ export function BankingPage() {
   const [postingId,         setPostingId]          = useState<string | null>(null);
   const [voidingTxn,        setVoidingTxn]         = useState<BankTransaction | null>(null);
   const [accountEditor,     setAccountEditor]      = useState<BankAccount | null | undefined>(undefined);
+  const [wizardOpen,        setWizardOpen]         = useState(false);
+  const [verifyId,          setVerifyId]           = useState<string | null>(null);
 
   // ── Accounts ──────────────────────────────────────────────────────────────
   const { data: accounts = [], isLoading: acctLoading } = useQuery<BankAccount[]>({
@@ -513,7 +521,12 @@ export function BankingPage() {
             <Landmark className="h-4 w-4 text-muted-foreground" />
             <span className="text-sm font-semibold">Bank Accounts</span>
           </div>
-          {canWrite && <Button variant="ghost" size="sm" className="h-7 w-7 p-0" title="New bank account" onClick={() => setAccountEditor(null)}><Plus className="h-4 w-4" /></Button>}
+          {canWrite && (
+            <div className="flex items-center gap-1">
+              <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" title="Guided setup" onClick={() => setWizardOpen(true)}>Setup</Button>
+              <Button variant="ghost" size="sm" className="h-7 w-7 p-0" title="New bank account" onClick={() => setAccountEditor(null)}><Plus className="h-4 w-4" /></Button>
+            </div>
+          )}
         </div>
 
         <div className="flex-1 overflow-y-auto py-2">
@@ -587,7 +600,7 @@ export function BankingPage() {
                   </p>
                 </div>
                 {canWrite && (
-                  <div className="flex items-center gap-2"><Button variant="outline" size="sm" className="h-8" onClick={() => setAccountEditor(selectedAccount)}><MoreHorizontal className="mr-1.5 h-3.5 w-3.5" /> Edit account</Button>{selectedAccount.status !== "Inactive" && <Button variant="outline" size="sm" className="h-8 text-destructive" onClick={() => { if (window.confirm("Deactivate this bank account?")) deactivateMutation.mutate(selectedAccount); }}>Deactivate</Button>}<Button size="sm" className="h-8" onClick={() => setTxnSheetOpen(true)} disabled={selectedAccount.status === "Inactive"}><Plus className="mr-1.5 h-3.5 w-3.5" /> New Transaction</Button></div>
+                  <div className="flex items-center gap-2"><Button variant="outline" size="sm" className="h-8" onClick={() => setVerifyId(selectedAccount.id)}>Verify connection</Button><Button variant="outline" size="sm" className="h-8" onClick={() => setAccountEditor(selectedAccount)}><MoreHorizontal className="mr-1.5 h-3.5 w-3.5" /> Edit account</Button>{selectedAccount.status !== "Inactive" && <Button variant="outline" size="sm" className="h-8 text-destructive" onClick={() => { if (window.confirm("Deactivate this bank account?")) deactivateMutation.mutate(selectedAccount); }}>Deactivate</Button>}<Button size="sm" className="h-8" onClick={() => setTxnSheetOpen(true)} disabled={selectedAccount.status === "Inactive"}><Plus className="mr-1.5 h-3.5 w-3.5" /> New Transaction</Button></div>
                 )}
               </div>
             </div>
@@ -742,6 +755,20 @@ export function BankingPage() {
 
       <BankAccountSheet open={accountEditor !== undefined} account={accountEditor ?? null} glAccounts={glAccounts} saving={accountMutation.isPending} onClose={() => setAccountEditor(undefined)} onSave={(values) => accountMutation.mutateAsync(values)} />
 
+      <BankAccountSetupWizard
+        open={wizardOpen}
+        onClose={() => setWizardOpen(false)}
+        glAccounts={glAccounts.map((gl) => ({ id: gl.id, code: gl.code ?? null, name: gl.name }))}
+        onCreated={(id) => { setSelectedAccountId(id); invalidate(); }}
+      />
+
+      <VerifyConnectionDialog
+        accountId={verifyId}
+        tenantId={tenant?.id ?? null}
+        onClose={() => setVerifyId(null)}
+      />
+
+
       {/* Void confirm */}
       <AlertDialog open={!!voidingTxn} onOpenChange={(o) => !o && setVoidingTxn(null)}>
         <AlertDialogContent>
@@ -768,5 +795,45 @@ export function BankingPage() {
         </AlertDialogContent>
       </AlertDialog>
     </div>
+  );
+}
+
+function VerifyConnectionDialog({
+  accountId, tenantId, onClose,
+}: { accountId: string | null; tenantId: string | null; onClose: () => void }) {
+  const checks = useQuery({
+    queryKey: ["bank-account-verify", accountId],
+    enabled: !!accountId && !!tenantId,
+    queryFn: () => verifyBankAccountConnection(accountId!, tenantId!),
+  });
+  const failed = (checks.data ?? []).some((r) => r.state === "fail");
+
+  return (
+    <Dialog open={!!accountId} onOpenChange={(v) => !v && onClose()}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Verify bank connection</DialogTitle>
+          <DialogDescription>
+            Checks that this account is linked to a usable ledger account and that activity reaches the ledger.
+          </DialogDescription>
+        </DialogHeader>
+        {checks.isFetching ? (
+          <div className="flex items-center gap-2 py-4 text-sm text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" /> Checking the connection…
+          </div>
+        ) : (
+          <div className="space-y-3 py-2">
+            <BankAccountChecklist results={checks.data ?? []} />
+            <Badge variant="outline" className={failed ? "border-destructive/30 text-destructive" : "border-emerald-500/30 text-emerald-700 dark:text-emerald-300"}>
+              {failed ? "Needs attention" : "Connection verified"}
+            </Badge>
+          </div>
+        )}
+        <DialogFooter className="gap-2">
+          <Button variant="outline" size="sm" onClick={() => checks.refetch()} disabled={checks.isFetching}>Re-run checks</Button>
+          <Button size="sm" onClick={onClose}>Close</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
