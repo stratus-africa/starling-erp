@@ -738,7 +738,7 @@ function InvoiceOverviewView({ id }: { id: string }) {
           </div>
 
           {tab === "overview" && (
-            <div className="grid items-start gap-4 p-4 lg:grid-cols-[minmax(0,2fr)_minmax(300px,1fr)]">
+            <div className="grid w-full grid-cols-1 items-start gap-4 p-4">
               <div className="space-y-4">
                 <Card>
                   <CardHeader className="flex flex-row items-center justify-between pb-3">
