@@ -39,6 +39,7 @@ import { Route as SuperAdminAuditRouteImport } from './routes/super-admin/audit'
 import { Route as SuperAdminApiRouteImport } from './routes/super-admin/api'
 import { Route as SuperAdminAnnouncementsRouteImport } from './routes/super-admin/announcements'
 import { Route as SuperAdminAdminRouteImport } from './routes/super-admin/admin'
+import { Route as AuthenticatedFieldRouteImport } from './routes/_authenticated/field'
 import { Route as AuthenticatedAuditEventsRouteImport } from './routes/_authenticated/audit-events'
 import { Route as AdminUsersRouteImport } from './routes/_admin/users'
 import { Route as AdminTenantsRouteImport } from './routes/_admin/tenants'
@@ -47,6 +48,7 @@ import { Route as AdminPlansRouteImport } from './routes/_admin/plans'
 import { Route as AdminAuditRouteImport } from './routes/_admin/audit'
 import { Route as SuperAdminBillingIndexRouteImport } from './routes/super-admin/billing/index'
 import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authenticated/settings.index'
+import { Route as AuthenticatedFieldIndexRouteImport } from './routes/_authenticated/field.index'
 import { Route as AuthenticatedExpensesIndexRouteImport } from './routes/_authenticated/expenses.index'
 import { Route as AuthenticatedAccountingIndexRouteImport } from './routes/_authenticated/accounting.index'
 import { Route as SuperAdminTenantsIdRouteImport } from './routes/super-admin/tenants_.$id'
@@ -87,6 +89,8 @@ import { Route as AuthenticatedInventorySerialsRouteImport } from './routes/_aut
 import { Route as AuthenticatedInventoryLotsRouteImport } from './routes/_authenticated/inventory.lots'
 import { Route as AuthenticatedInventoryLedgerRouteImport } from './routes/_authenticated/inventory.ledger'
 import { Route as AuthenticatedInventoryAdjustmentsRouteImport } from './routes/_authenticated/inventory.adjustments'
+import { Route as AuthenticatedFieldNotificationsRouteImport } from './routes/_authenticated/field.notifications'
+import { Route as AuthenticatedFieldMoreRouteImport } from './routes/_authenticated/field.more'
 import { Route as AuthenticatedExpensesReimbursementsRouteImport } from './routes/_authenticated/expenses.reimbursements'
 import { Route as AuthenticatedExpensesApprovalsRouteImport } from './routes/_authenticated/expenses.approvals'
 import { Route as AuthenticatedExpensesIdRouteImport } from './routes/_authenticated/expenses.$id'
@@ -133,6 +137,10 @@ import { Route as AuthenticatedManufacturingItemsIndexRouteImport } from './rout
 import { Route as AuthenticatedManufacturingBomIndexRouteImport } from './routes/_authenticated/manufacturing.bom.index'
 import { Route as AuthenticatedInventoryWarehousesIndexRouteImport } from './routes/_authenticated/inventory.warehouses.index'
 import { Route as AuthenticatedInventoryItemsIndexRouteImport } from './routes/_authenticated/inventory.items.index'
+import { Route as AuthenticatedFieldSalesIndexRouteImport } from './routes/_authenticated/field.sales.index'
+import { Route as AuthenticatedFieldPaymentsIndexRouteImport } from './routes/_authenticated/field.payments.index'
+import { Route as AuthenticatedFieldLeadsIndexRouteImport } from './routes/_authenticated/field.leads.index'
+import { Route as AuthenticatedFieldCustomersIndexRouteImport } from './routes/_authenticated/field.customers.index'
 import { Route as AuthenticatedCrmCustomersIndexRouteImport } from './routes/_authenticated/crm.customers.index'
 import { Route as SuperAdminTenantsTenantIdUsersRouteImport } from './routes/super-admin/tenants_.$tenantId.users'
 import { Route as AuthenticatedSettingsWarehousesIdRouteImport } from './routes/_authenticated/settings.warehouses.$id'
@@ -182,11 +190,18 @@ import { Route as AuthenticatedManufacturingItemsIdRouteImport } from './routes/
 import { Route as AuthenticatedManufacturingBomIdRouteImport } from './routes/_authenticated/manufacturing.bom.$id'
 import { Route as AuthenticatedInventoryWarehousesIdRouteImport } from './routes/_authenticated/inventory.warehouses.$id'
 import { Route as AuthenticatedInventoryItemsIdRouteImport } from './routes/_authenticated/inventory.items.$id'
+import { Route as AuthenticatedFieldSalesNewRouteImport } from './routes/_authenticated/field.sales.new'
+import { Route as AuthenticatedFieldPaymentsNewRouteImport } from './routes/_authenticated/field.payments.new'
+import { Route as AuthenticatedFieldLeadsNewRouteImport } from './routes/_authenticated/field.leads.new'
+import { Route as AuthenticatedFieldLeadsIdRouteImport } from './routes/_authenticated/field.leads.$id'
+import { Route as AuthenticatedFieldCustomersNewRouteImport } from './routes/_authenticated/field.customers.new'
+import { Route as AuthenticatedFieldCustomersIdRouteImport } from './routes/_authenticated/field.customers.$id'
 import { Route as AuthenticatedCrmCustomersIdRouteImport } from './routes/_authenticated/crm.customers.$id'
 import { Route as AuthenticatedReportsSalesCustomerStatementsIndexRouteImport } from './routes/_authenticated/reports.sales.customer-statements.index'
 import { Route as AuthenticatedReportsPurchasesSupplierStatementsIndexRouteImport } from './routes/_authenticated/reports.purchases.supplier-statements.index'
 import { Route as AuthenticatedReportsSalesCustomerStatementsCustomerIdRouteImport } from './routes/_authenticated/reports.sales.customer-statements.$customerId'
 import { Route as AuthenticatedReportsPurchasesSupplierStatementsSupplierIdRouteImport } from './routes/_authenticated/reports.purchases.supplier-statements.$supplierId'
+import { Route as AuthenticatedFieldSalesKindIdRouteImport } from './routes/_authenticated/field.sales.$kind.$id'
 
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
@@ -338,6 +353,11 @@ const SuperAdminAdminRoute = SuperAdminAdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => SuperAdminRouteRoute,
 } as any)
+const AuthenticatedFieldRoute = AuthenticatedFieldRouteImport.update({
+  id: '/field',
+  path: '/field',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedAuditEventsRoute =
   AuthenticatedAuditEventsRouteImport.update({
     id: '/audit-events',
@@ -380,6 +400,11 @@ const AuthenticatedSettingsIndexRoute =
     path: '/settings/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedFieldIndexRoute = AuthenticatedFieldIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AuthenticatedFieldRoute,
+} as any)
 const AuthenticatedExpensesIndexRoute =
   AuthenticatedExpensesIndexRouteImport.update({
     id: '/expenses/',
@@ -616,6 +641,17 @@ const AuthenticatedInventoryAdjustmentsRoute =
     path: '/inventory/adjustments',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedFieldNotificationsRoute =
+  AuthenticatedFieldNotificationsRouteImport.update({
+    id: '/notifications',
+    path: '/notifications',
+    getParentRoute: () => AuthenticatedFieldRoute,
+  } as any)
+const AuthenticatedFieldMoreRoute = AuthenticatedFieldMoreRouteImport.update({
+  id: '/more',
+  path: '/more',
+  getParentRoute: () => AuthenticatedFieldRoute,
+} as any)
 const AuthenticatedExpensesReimbursementsRoute =
   AuthenticatedExpensesReimbursementsRouteImport.update({
     id: '/expenses/reimbursements',
@@ -890,6 +926,30 @@ const AuthenticatedInventoryItemsIndexRoute =
     id: '/inventory/items/',
     path: '/inventory/items/',
     getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedFieldSalesIndexRoute =
+  AuthenticatedFieldSalesIndexRouteImport.update({
+    id: '/sales/',
+    path: '/sales/',
+    getParentRoute: () => AuthenticatedFieldRoute,
+  } as any)
+const AuthenticatedFieldPaymentsIndexRoute =
+  AuthenticatedFieldPaymentsIndexRouteImport.update({
+    id: '/payments/',
+    path: '/payments/',
+    getParentRoute: () => AuthenticatedFieldRoute,
+  } as any)
+const AuthenticatedFieldLeadsIndexRoute =
+  AuthenticatedFieldLeadsIndexRouteImport.update({
+    id: '/leads/',
+    path: '/leads/',
+    getParentRoute: () => AuthenticatedFieldRoute,
+  } as any)
+const AuthenticatedFieldCustomersIndexRoute =
+  AuthenticatedFieldCustomersIndexRouteImport.update({
+    id: '/customers/',
+    path: '/customers/',
+    getParentRoute: () => AuthenticatedFieldRoute,
   } as any)
 const AuthenticatedCrmCustomersIndexRoute =
   AuthenticatedCrmCustomersIndexRouteImport.update({
@@ -1185,6 +1245,42 @@ const AuthenticatedInventoryItemsIdRoute =
     path: '/inventory/items/$id',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedFieldSalesNewRoute =
+  AuthenticatedFieldSalesNewRouteImport.update({
+    id: '/sales/new',
+    path: '/sales/new',
+    getParentRoute: () => AuthenticatedFieldRoute,
+  } as any)
+const AuthenticatedFieldPaymentsNewRoute =
+  AuthenticatedFieldPaymentsNewRouteImport.update({
+    id: '/payments/new',
+    path: '/payments/new',
+    getParentRoute: () => AuthenticatedFieldRoute,
+  } as any)
+const AuthenticatedFieldLeadsNewRoute =
+  AuthenticatedFieldLeadsNewRouteImport.update({
+    id: '/leads/new',
+    path: '/leads/new',
+    getParentRoute: () => AuthenticatedFieldRoute,
+  } as any)
+const AuthenticatedFieldLeadsIdRoute =
+  AuthenticatedFieldLeadsIdRouteImport.update({
+    id: '/leads/$id',
+    path: '/leads/$id',
+    getParentRoute: () => AuthenticatedFieldRoute,
+  } as any)
+const AuthenticatedFieldCustomersNewRoute =
+  AuthenticatedFieldCustomersNewRouteImport.update({
+    id: '/customers/new',
+    path: '/customers/new',
+    getParentRoute: () => AuthenticatedFieldRoute,
+  } as any)
+const AuthenticatedFieldCustomersIdRoute =
+  AuthenticatedFieldCustomersIdRouteImport.update({
+    id: '/customers/$id',
+    path: '/customers/$id',
+    getParentRoute: () => AuthenticatedFieldRoute,
+  } as any)
 const AuthenticatedCrmCustomersIdRoute =
   AuthenticatedCrmCustomersIdRouteImport.update({
     id: '/crm/customers/$id',
@@ -1215,6 +1311,12 @@ const AuthenticatedReportsPurchasesSupplierStatementsSupplierIdRoute =
     path: '/reports/purchases/supplier-statements/$supplierId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedFieldSalesKindIdRoute =
+  AuthenticatedFieldSalesKindIdRouteImport.update({
+    id: '/sales/$kind/$id',
+    path: '/sales/$kind/$id',
+    getParentRoute: () => AuthenticatedFieldRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
@@ -1226,6 +1328,7 @@ export interface FileRoutesByFullPath {
   '/tenants': typeof AdminTenantsRoute
   '/users': typeof AdminUsersRoute
   '/audit-events': typeof AuthenticatedAuditEventsRoute
+  '/field': typeof AuthenticatedFieldRouteWithChildren
   '/super-admin/admin': typeof SuperAdminAdminRoute
   '/super-admin/announcements': typeof SuperAdminAnnouncementsRoute
   '/super-admin/api': typeof SuperAdminApiRoute
@@ -1274,6 +1377,8 @@ export interface FileRoutesByFullPath {
   '/expenses/$id': typeof AuthenticatedExpensesIdRoute
   '/expenses/approvals': typeof AuthenticatedExpensesApprovalsRoute
   '/expenses/reimbursements': typeof AuthenticatedExpensesReimbursementsRoute
+  '/field/more': typeof AuthenticatedFieldMoreRoute
+  '/field/notifications': typeof AuthenticatedFieldNotificationsRoute
   '/inventory/adjustments': typeof AuthenticatedInventoryAdjustmentsRoute
   '/inventory/ledger': typeof AuthenticatedInventoryLedgerRoute
   '/inventory/lots': typeof AuthenticatedInventoryLotsRoute
@@ -1314,9 +1419,16 @@ export interface FileRoutesByFullPath {
   '/super-admin/tenants/$id': typeof SuperAdminTenantsIdRoute
   '/accounting/': typeof AuthenticatedAccountingIndexRoute
   '/expenses/': typeof AuthenticatedExpensesIndexRoute
+  '/field/': typeof AuthenticatedFieldIndexRoute
   '/settings/': typeof AuthenticatedSettingsIndexRoute
   '/super-admin/billing/': typeof SuperAdminBillingIndexRoute
   '/crm/customers/$id': typeof AuthenticatedCrmCustomersIdRoute
+  '/field/customers/$id': typeof AuthenticatedFieldCustomersIdRoute
+  '/field/customers/new': typeof AuthenticatedFieldCustomersNewRoute
+  '/field/leads/$id': typeof AuthenticatedFieldLeadsIdRoute
+  '/field/leads/new': typeof AuthenticatedFieldLeadsNewRoute
+  '/field/payments/new': typeof AuthenticatedFieldPaymentsNewRoute
+  '/field/sales/new': typeof AuthenticatedFieldSalesNewRoute
   '/inventory/items/$id': typeof AuthenticatedInventoryItemsIdRoute
   '/inventory/warehouses/$id': typeof AuthenticatedInventoryWarehousesIdRoute
   '/manufacturing/bom/$id': typeof AuthenticatedManufacturingBomIdRoute
@@ -1366,6 +1478,10 @@ export interface FileRoutesByFullPath {
   '/settings/warehouses/$id': typeof AuthenticatedSettingsWarehousesIdRoute
   '/super-admin/tenants/$tenantId/users': typeof SuperAdminTenantsTenantIdUsersRoute
   '/crm/customers/': typeof AuthenticatedCrmCustomersIndexRoute
+  '/field/customers/': typeof AuthenticatedFieldCustomersIndexRoute
+  '/field/leads/': typeof AuthenticatedFieldLeadsIndexRoute
+  '/field/payments/': typeof AuthenticatedFieldPaymentsIndexRoute
+  '/field/sales/': typeof AuthenticatedFieldSalesIndexRoute
   '/inventory/items/': typeof AuthenticatedInventoryItemsIndexRoute
   '/inventory/warehouses/': typeof AuthenticatedInventoryWarehousesIndexRoute
   '/manufacturing/bom/': typeof AuthenticatedManufacturingBomIndexRoute
@@ -1389,6 +1505,7 @@ export interface FileRoutesByFullPath {
   '/sales/quotes/': typeof AuthenticatedSalesQuotesIndexRoute
   '/sales/shipments/': typeof AuthenticatedSalesShipmentsIndexRoute
   '/settings/warehouses/': typeof AuthenticatedSettingsWarehousesIndexRoute
+  '/field/sales/$kind/$id': typeof AuthenticatedFieldSalesKindIdRoute
   '/reports/purchases/supplier-statements/$supplierId': typeof AuthenticatedReportsPurchasesSupplierStatementsSupplierIdRoute
   '/reports/sales/customer-statements/$customerId': typeof AuthenticatedReportsSalesCustomerStatementsCustomerIdRoute
   '/reports/purchases/supplier-statements/': typeof AuthenticatedReportsPurchasesSupplierStatementsIndexRoute
@@ -1451,6 +1568,8 @@ export interface FileRoutesByTo {
   '/expenses/$id': typeof AuthenticatedExpensesIdRoute
   '/expenses/approvals': typeof AuthenticatedExpensesApprovalsRoute
   '/expenses/reimbursements': typeof AuthenticatedExpensesReimbursementsRoute
+  '/field/more': typeof AuthenticatedFieldMoreRoute
+  '/field/notifications': typeof AuthenticatedFieldNotificationsRoute
   '/inventory/adjustments': typeof AuthenticatedInventoryAdjustmentsRoute
   '/inventory/ledger': typeof AuthenticatedInventoryLedgerRoute
   '/inventory/lots': typeof AuthenticatedInventoryLotsRoute
@@ -1491,8 +1610,15 @@ export interface FileRoutesByTo {
   '/super-admin/tenants/$id': typeof SuperAdminTenantsIdRoute
   '/accounting': typeof AuthenticatedAccountingIndexRoute
   '/expenses': typeof AuthenticatedExpensesIndexRoute
+  '/field': typeof AuthenticatedFieldIndexRoute
   '/super-admin/billing': typeof SuperAdminBillingIndexRoute
   '/crm/customers/$id': typeof AuthenticatedCrmCustomersIdRoute
+  '/field/customers/$id': typeof AuthenticatedFieldCustomersIdRoute
+  '/field/customers/new': typeof AuthenticatedFieldCustomersNewRoute
+  '/field/leads/$id': typeof AuthenticatedFieldLeadsIdRoute
+  '/field/leads/new': typeof AuthenticatedFieldLeadsNewRoute
+  '/field/payments/new': typeof AuthenticatedFieldPaymentsNewRoute
+  '/field/sales/new': typeof AuthenticatedFieldSalesNewRoute
   '/inventory/items/$id': typeof AuthenticatedInventoryItemsIdRoute
   '/inventory/warehouses/$id': typeof AuthenticatedInventoryWarehousesIdRoute
   '/manufacturing/bom/$id': typeof AuthenticatedManufacturingBomIdRoute
@@ -1542,6 +1668,10 @@ export interface FileRoutesByTo {
   '/settings/warehouses/$id': typeof AuthenticatedSettingsWarehousesIdRoute
   '/super-admin/tenants/$tenantId/users': typeof SuperAdminTenantsTenantIdUsersRoute
   '/crm/customers': typeof AuthenticatedCrmCustomersIndexRoute
+  '/field/customers': typeof AuthenticatedFieldCustomersIndexRoute
+  '/field/leads': typeof AuthenticatedFieldLeadsIndexRoute
+  '/field/payments': typeof AuthenticatedFieldPaymentsIndexRoute
+  '/field/sales': typeof AuthenticatedFieldSalesIndexRoute
   '/inventory/items': typeof AuthenticatedInventoryItemsIndexRoute
   '/inventory/warehouses': typeof AuthenticatedInventoryWarehousesIndexRoute
   '/manufacturing/bom': typeof AuthenticatedManufacturingBomIndexRoute
@@ -1565,6 +1695,7 @@ export interface FileRoutesByTo {
   '/sales/quotes': typeof AuthenticatedSalesQuotesIndexRoute
   '/sales/shipments': typeof AuthenticatedSalesShipmentsIndexRoute
   '/settings/warehouses': typeof AuthenticatedSettingsWarehousesIndexRoute
+  '/field/sales/$kind/$id': typeof AuthenticatedFieldSalesKindIdRoute
   '/reports/purchases/supplier-statements/$supplierId': typeof AuthenticatedReportsPurchasesSupplierStatementsSupplierIdRoute
   '/reports/sales/customer-statements/$customerId': typeof AuthenticatedReportsSalesCustomerStatementsCustomerIdRoute
   '/reports/purchases/supplier-statements': typeof AuthenticatedReportsPurchasesSupplierStatementsIndexRoute
@@ -1582,6 +1713,7 @@ export interface FileRoutesById {
   '/_admin/tenants': typeof AdminTenantsRoute
   '/_admin/users': typeof AdminUsersRoute
   '/_authenticated/audit-events': typeof AuthenticatedAuditEventsRoute
+  '/_authenticated/field': typeof AuthenticatedFieldRouteWithChildren
   '/super-admin/admin': typeof SuperAdminAdminRoute
   '/super-admin/announcements': typeof SuperAdminAnnouncementsRoute
   '/super-admin/api': typeof SuperAdminApiRoute
@@ -1631,6 +1763,8 @@ export interface FileRoutesById {
   '/_authenticated/expenses/$id': typeof AuthenticatedExpensesIdRoute
   '/_authenticated/expenses/approvals': typeof AuthenticatedExpensesApprovalsRoute
   '/_authenticated/expenses/reimbursements': typeof AuthenticatedExpensesReimbursementsRoute
+  '/_authenticated/field/more': typeof AuthenticatedFieldMoreRoute
+  '/_authenticated/field/notifications': typeof AuthenticatedFieldNotificationsRoute
   '/_authenticated/inventory/adjustments': typeof AuthenticatedInventoryAdjustmentsRoute
   '/_authenticated/inventory/ledger': typeof AuthenticatedInventoryLedgerRoute
   '/_authenticated/inventory/lots': typeof AuthenticatedInventoryLotsRoute
@@ -1671,9 +1805,16 @@ export interface FileRoutesById {
   '/super-admin/tenants_/$id': typeof SuperAdminTenantsIdRoute
   '/_authenticated/accounting/': typeof AuthenticatedAccountingIndexRoute
   '/_authenticated/expenses/': typeof AuthenticatedExpensesIndexRoute
+  '/_authenticated/field/': typeof AuthenticatedFieldIndexRoute
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
   '/super-admin/billing/': typeof SuperAdminBillingIndexRoute
   '/_authenticated/crm/customers/$id': typeof AuthenticatedCrmCustomersIdRoute
+  '/_authenticated/field/customers/$id': typeof AuthenticatedFieldCustomersIdRoute
+  '/_authenticated/field/customers/new': typeof AuthenticatedFieldCustomersNewRoute
+  '/_authenticated/field/leads/$id': typeof AuthenticatedFieldLeadsIdRoute
+  '/_authenticated/field/leads/new': typeof AuthenticatedFieldLeadsNewRoute
+  '/_authenticated/field/payments/new': typeof AuthenticatedFieldPaymentsNewRoute
+  '/_authenticated/field/sales/new': typeof AuthenticatedFieldSalesNewRoute
   '/_authenticated/inventory/items/$id': typeof AuthenticatedInventoryItemsIdRoute
   '/_authenticated/inventory/warehouses/$id': typeof AuthenticatedInventoryWarehousesIdRoute
   '/_authenticated/manufacturing/bom/$id': typeof AuthenticatedManufacturingBomIdRoute
@@ -1723,6 +1864,10 @@ export interface FileRoutesById {
   '/_authenticated/settings/warehouses/$id': typeof AuthenticatedSettingsWarehousesIdRoute
   '/super-admin/tenants_/$tenantId/users': typeof SuperAdminTenantsTenantIdUsersRoute
   '/_authenticated/crm/customers/': typeof AuthenticatedCrmCustomersIndexRoute
+  '/_authenticated/field/customers/': typeof AuthenticatedFieldCustomersIndexRoute
+  '/_authenticated/field/leads/': typeof AuthenticatedFieldLeadsIndexRoute
+  '/_authenticated/field/payments/': typeof AuthenticatedFieldPaymentsIndexRoute
+  '/_authenticated/field/sales/': typeof AuthenticatedFieldSalesIndexRoute
   '/_authenticated/inventory/items/': typeof AuthenticatedInventoryItemsIndexRoute
   '/_authenticated/inventory/warehouses/': typeof AuthenticatedInventoryWarehousesIndexRoute
   '/_authenticated/manufacturing/bom/': typeof AuthenticatedManufacturingBomIndexRoute
@@ -1746,6 +1891,7 @@ export interface FileRoutesById {
   '/_authenticated/sales/quotes/': typeof AuthenticatedSalesQuotesIndexRoute
   '/_authenticated/sales/shipments/': typeof AuthenticatedSalesShipmentsIndexRoute
   '/_authenticated/settings/warehouses/': typeof AuthenticatedSettingsWarehousesIndexRoute
+  '/_authenticated/field/sales/$kind/$id': typeof AuthenticatedFieldSalesKindIdRoute
   '/_authenticated/reports/purchases/supplier-statements/$supplierId': typeof AuthenticatedReportsPurchasesSupplierStatementsSupplierIdRoute
   '/_authenticated/reports/sales/customer-statements/$customerId': typeof AuthenticatedReportsSalesCustomerStatementsCustomerIdRoute
   '/_authenticated/reports/purchases/supplier-statements/': typeof AuthenticatedReportsPurchasesSupplierStatementsIndexRoute
@@ -1763,6 +1909,7 @@ export interface FileRouteTypes {
     | '/tenants'
     | '/users'
     | '/audit-events'
+    | '/field'
     | '/super-admin/admin'
     | '/super-admin/announcements'
     | '/super-admin/api'
@@ -1811,6 +1958,8 @@ export interface FileRouteTypes {
     | '/expenses/$id'
     | '/expenses/approvals'
     | '/expenses/reimbursements'
+    | '/field/more'
+    | '/field/notifications'
     | '/inventory/adjustments'
     | '/inventory/ledger'
     | '/inventory/lots'
@@ -1851,9 +2000,16 @@ export interface FileRouteTypes {
     | '/super-admin/tenants/$id'
     | '/accounting/'
     | '/expenses/'
+    | '/field/'
     | '/settings/'
     | '/super-admin/billing/'
     | '/crm/customers/$id'
+    | '/field/customers/$id'
+    | '/field/customers/new'
+    | '/field/leads/$id'
+    | '/field/leads/new'
+    | '/field/payments/new'
+    | '/field/sales/new'
     | '/inventory/items/$id'
     | '/inventory/warehouses/$id'
     | '/manufacturing/bom/$id'
@@ -1903,6 +2059,10 @@ export interface FileRouteTypes {
     | '/settings/warehouses/$id'
     | '/super-admin/tenants/$tenantId/users'
     | '/crm/customers/'
+    | '/field/customers/'
+    | '/field/leads/'
+    | '/field/payments/'
+    | '/field/sales/'
     | '/inventory/items/'
     | '/inventory/warehouses/'
     | '/manufacturing/bom/'
@@ -1926,6 +2086,7 @@ export interface FileRouteTypes {
     | '/sales/quotes/'
     | '/sales/shipments/'
     | '/settings/warehouses/'
+    | '/field/sales/$kind/$id'
     | '/reports/purchases/supplier-statements/$supplierId'
     | '/reports/sales/customer-statements/$customerId'
     | '/reports/purchases/supplier-statements/'
@@ -1988,6 +2149,8 @@ export interface FileRouteTypes {
     | '/expenses/$id'
     | '/expenses/approvals'
     | '/expenses/reimbursements'
+    | '/field/more'
+    | '/field/notifications'
     | '/inventory/adjustments'
     | '/inventory/ledger'
     | '/inventory/lots'
@@ -2028,8 +2191,15 @@ export interface FileRouteTypes {
     | '/super-admin/tenants/$id'
     | '/accounting'
     | '/expenses'
+    | '/field'
     | '/super-admin/billing'
     | '/crm/customers/$id'
+    | '/field/customers/$id'
+    | '/field/customers/new'
+    | '/field/leads/$id'
+    | '/field/leads/new'
+    | '/field/payments/new'
+    | '/field/sales/new'
     | '/inventory/items/$id'
     | '/inventory/warehouses/$id'
     | '/manufacturing/bom/$id'
@@ -2079,6 +2249,10 @@ export interface FileRouteTypes {
     | '/settings/warehouses/$id'
     | '/super-admin/tenants/$tenantId/users'
     | '/crm/customers'
+    | '/field/customers'
+    | '/field/leads'
+    | '/field/payments'
+    | '/field/sales'
     | '/inventory/items'
     | '/inventory/warehouses'
     | '/manufacturing/bom'
@@ -2102,6 +2276,7 @@ export interface FileRouteTypes {
     | '/sales/quotes'
     | '/sales/shipments'
     | '/settings/warehouses'
+    | '/field/sales/$kind/$id'
     | '/reports/purchases/supplier-statements/$supplierId'
     | '/reports/sales/customer-statements/$customerId'
     | '/reports/purchases/supplier-statements'
@@ -2118,6 +2293,7 @@ export interface FileRouteTypes {
     | '/_admin/tenants'
     | '/_admin/users'
     | '/_authenticated/audit-events'
+    | '/_authenticated/field'
     | '/super-admin/admin'
     | '/super-admin/announcements'
     | '/super-admin/api'
@@ -2167,6 +2343,8 @@ export interface FileRouteTypes {
     | '/_authenticated/expenses/$id'
     | '/_authenticated/expenses/approvals'
     | '/_authenticated/expenses/reimbursements'
+    | '/_authenticated/field/more'
+    | '/_authenticated/field/notifications'
     | '/_authenticated/inventory/adjustments'
     | '/_authenticated/inventory/ledger'
     | '/_authenticated/inventory/lots'
@@ -2207,9 +2385,16 @@ export interface FileRouteTypes {
     | '/super-admin/tenants_/$id'
     | '/_authenticated/accounting/'
     | '/_authenticated/expenses/'
+    | '/_authenticated/field/'
     | '/_authenticated/settings/'
     | '/super-admin/billing/'
     | '/_authenticated/crm/customers/$id'
+    | '/_authenticated/field/customers/$id'
+    | '/_authenticated/field/customers/new'
+    | '/_authenticated/field/leads/$id'
+    | '/_authenticated/field/leads/new'
+    | '/_authenticated/field/payments/new'
+    | '/_authenticated/field/sales/new'
     | '/_authenticated/inventory/items/$id'
     | '/_authenticated/inventory/warehouses/$id'
     | '/_authenticated/manufacturing/bom/$id'
@@ -2259,6 +2444,10 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/warehouses/$id'
     | '/super-admin/tenants_/$tenantId/users'
     | '/_authenticated/crm/customers/'
+    | '/_authenticated/field/customers/'
+    | '/_authenticated/field/leads/'
+    | '/_authenticated/field/payments/'
+    | '/_authenticated/field/sales/'
     | '/_authenticated/inventory/items/'
     | '/_authenticated/inventory/warehouses/'
     | '/_authenticated/manufacturing/bom/'
@@ -2282,6 +2471,7 @@ export interface FileRouteTypes {
     | '/_authenticated/sales/quotes/'
     | '/_authenticated/sales/shipments/'
     | '/_authenticated/settings/warehouses/'
+    | '/_authenticated/field/sales/$kind/$id'
     | '/_authenticated/reports/purchases/supplier-statements/$supplierId'
     | '/_authenticated/reports/sales/customer-statements/$customerId'
     | '/_authenticated/reports/purchases/supplier-statements/'
@@ -2507,6 +2697,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SuperAdminAdminRouteImport
       parentRoute: typeof SuperAdminRouteRoute
     }
+    '/_authenticated/field': {
+      id: '/_authenticated/field'
+      path: '/field'
+      fullPath: '/field'
+      preLoaderRoute: typeof AuthenticatedFieldRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/audit-events': {
       id: '/_authenticated/audit-events'
       path: '/audit-events'
@@ -2562,6 +2759,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/settings/'
       preLoaderRoute: typeof AuthenticatedSettingsIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/field/': {
+      id: '/_authenticated/field/'
+      path: '/'
+      fullPath: '/field/'
+      preLoaderRoute: typeof AuthenticatedFieldIndexRouteImport
+      parentRoute: typeof AuthenticatedFieldRoute
     }
     '/_authenticated/expenses/': {
       id: '/_authenticated/expenses/'
@@ -2842,6 +3046,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/inventory/adjustments'
       preLoaderRoute: typeof AuthenticatedInventoryAdjustmentsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/field/notifications': {
+      id: '/_authenticated/field/notifications'
+      path: '/notifications'
+      fullPath: '/field/notifications'
+      preLoaderRoute: typeof AuthenticatedFieldNotificationsRouteImport
+      parentRoute: typeof AuthenticatedFieldRoute
+    }
+    '/_authenticated/field/more': {
+      id: '/_authenticated/field/more'
+      path: '/more'
+      fullPath: '/field/more'
+      preLoaderRoute: typeof AuthenticatedFieldMoreRouteImport
+      parentRoute: typeof AuthenticatedFieldRoute
     }
     '/_authenticated/expenses/reimbursements': {
       id: '/_authenticated/expenses/reimbursements'
@@ -3164,6 +3382,34 @@ declare module '@tanstack/react-router' {
       fullPath: '/inventory/items/'
       preLoaderRoute: typeof AuthenticatedInventoryItemsIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/field/sales/': {
+      id: '/_authenticated/field/sales/'
+      path: '/sales'
+      fullPath: '/field/sales/'
+      preLoaderRoute: typeof AuthenticatedFieldSalesIndexRouteImport
+      parentRoute: typeof AuthenticatedFieldRoute
+    }
+    '/_authenticated/field/payments/': {
+      id: '/_authenticated/field/payments/'
+      path: '/payments'
+      fullPath: '/field/payments/'
+      preLoaderRoute: typeof AuthenticatedFieldPaymentsIndexRouteImport
+      parentRoute: typeof AuthenticatedFieldRoute
+    }
+    '/_authenticated/field/leads/': {
+      id: '/_authenticated/field/leads/'
+      path: '/leads'
+      fullPath: '/field/leads/'
+      preLoaderRoute: typeof AuthenticatedFieldLeadsIndexRouteImport
+      parentRoute: typeof AuthenticatedFieldRoute
+    }
+    '/_authenticated/field/customers/': {
+      id: '/_authenticated/field/customers/'
+      path: '/customers'
+      fullPath: '/field/customers/'
+      preLoaderRoute: typeof AuthenticatedFieldCustomersIndexRouteImport
+      parentRoute: typeof AuthenticatedFieldRoute
     }
     '/_authenticated/crm/customers/': {
       id: '/_authenticated/crm/customers/'
@@ -3508,6 +3754,48 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedInventoryItemsIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/field/sales/new': {
+      id: '/_authenticated/field/sales/new'
+      path: '/sales/new'
+      fullPath: '/field/sales/new'
+      preLoaderRoute: typeof AuthenticatedFieldSalesNewRouteImport
+      parentRoute: typeof AuthenticatedFieldRoute
+    }
+    '/_authenticated/field/payments/new': {
+      id: '/_authenticated/field/payments/new'
+      path: '/payments/new'
+      fullPath: '/field/payments/new'
+      preLoaderRoute: typeof AuthenticatedFieldPaymentsNewRouteImport
+      parentRoute: typeof AuthenticatedFieldRoute
+    }
+    '/_authenticated/field/leads/new': {
+      id: '/_authenticated/field/leads/new'
+      path: '/leads/new'
+      fullPath: '/field/leads/new'
+      preLoaderRoute: typeof AuthenticatedFieldLeadsNewRouteImport
+      parentRoute: typeof AuthenticatedFieldRoute
+    }
+    '/_authenticated/field/leads/$id': {
+      id: '/_authenticated/field/leads/$id'
+      path: '/leads/$id'
+      fullPath: '/field/leads/$id'
+      preLoaderRoute: typeof AuthenticatedFieldLeadsIdRouteImport
+      parentRoute: typeof AuthenticatedFieldRoute
+    }
+    '/_authenticated/field/customers/new': {
+      id: '/_authenticated/field/customers/new'
+      path: '/customers/new'
+      fullPath: '/field/customers/new'
+      preLoaderRoute: typeof AuthenticatedFieldCustomersNewRouteImport
+      parentRoute: typeof AuthenticatedFieldRoute
+    }
+    '/_authenticated/field/customers/$id': {
+      id: '/_authenticated/field/customers/$id'
+      path: '/customers/$id'
+      fullPath: '/field/customers/$id'
+      preLoaderRoute: typeof AuthenticatedFieldCustomersIdRouteImport
+      parentRoute: typeof AuthenticatedFieldRoute
+    }
     '/_authenticated/crm/customers/$id': {
       id: '/_authenticated/crm/customers/$id'
       path: '/crm/customers/$id'
@@ -3543,6 +3831,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedReportsPurchasesSupplierStatementsSupplierIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/field/sales/$kind/$id': {
+      id: '/_authenticated/field/sales/$kind/$id'
+      path: '/sales/$kind/$id'
+      fullPath: '/field/sales/$kind/$id'
+      preLoaderRoute: typeof AuthenticatedFieldSalesKindIdRouteImport
+      parentRoute: typeof AuthenticatedFieldRoute
+    }
   }
 }
 
@@ -3565,6 +3860,43 @@ const AdminRouteRouteChildren: AdminRouteRouteChildren = {
 const AdminRouteRouteWithChildren = AdminRouteRoute._addFileChildren(
   AdminRouteRouteChildren,
 )
+
+interface AuthenticatedFieldRouteChildren {
+  AuthenticatedFieldMoreRoute: typeof AuthenticatedFieldMoreRoute
+  AuthenticatedFieldNotificationsRoute: typeof AuthenticatedFieldNotificationsRoute
+  AuthenticatedFieldIndexRoute: typeof AuthenticatedFieldIndexRoute
+  AuthenticatedFieldCustomersIdRoute: typeof AuthenticatedFieldCustomersIdRoute
+  AuthenticatedFieldCustomersNewRoute: typeof AuthenticatedFieldCustomersNewRoute
+  AuthenticatedFieldLeadsIdRoute: typeof AuthenticatedFieldLeadsIdRoute
+  AuthenticatedFieldLeadsNewRoute: typeof AuthenticatedFieldLeadsNewRoute
+  AuthenticatedFieldPaymentsNewRoute: typeof AuthenticatedFieldPaymentsNewRoute
+  AuthenticatedFieldSalesNewRoute: typeof AuthenticatedFieldSalesNewRoute
+  AuthenticatedFieldCustomersIndexRoute: typeof AuthenticatedFieldCustomersIndexRoute
+  AuthenticatedFieldLeadsIndexRoute: typeof AuthenticatedFieldLeadsIndexRoute
+  AuthenticatedFieldPaymentsIndexRoute: typeof AuthenticatedFieldPaymentsIndexRoute
+  AuthenticatedFieldSalesIndexRoute: typeof AuthenticatedFieldSalesIndexRoute
+  AuthenticatedFieldSalesKindIdRoute: typeof AuthenticatedFieldSalesKindIdRoute
+}
+
+const AuthenticatedFieldRouteChildren: AuthenticatedFieldRouteChildren = {
+  AuthenticatedFieldMoreRoute: AuthenticatedFieldMoreRoute,
+  AuthenticatedFieldNotificationsRoute: AuthenticatedFieldNotificationsRoute,
+  AuthenticatedFieldIndexRoute: AuthenticatedFieldIndexRoute,
+  AuthenticatedFieldCustomersIdRoute: AuthenticatedFieldCustomersIdRoute,
+  AuthenticatedFieldCustomersNewRoute: AuthenticatedFieldCustomersNewRoute,
+  AuthenticatedFieldLeadsIdRoute: AuthenticatedFieldLeadsIdRoute,
+  AuthenticatedFieldLeadsNewRoute: AuthenticatedFieldLeadsNewRoute,
+  AuthenticatedFieldPaymentsNewRoute: AuthenticatedFieldPaymentsNewRoute,
+  AuthenticatedFieldSalesNewRoute: AuthenticatedFieldSalesNewRoute,
+  AuthenticatedFieldCustomersIndexRoute: AuthenticatedFieldCustomersIndexRoute,
+  AuthenticatedFieldLeadsIndexRoute: AuthenticatedFieldLeadsIndexRoute,
+  AuthenticatedFieldPaymentsIndexRoute: AuthenticatedFieldPaymentsIndexRoute,
+  AuthenticatedFieldSalesIndexRoute: AuthenticatedFieldSalesIndexRoute,
+  AuthenticatedFieldSalesKindIdRoute: AuthenticatedFieldSalesKindIdRoute,
+}
+
+const AuthenticatedFieldRouteWithChildren =
+  AuthenticatedFieldRoute._addFileChildren(AuthenticatedFieldRouteChildren)
 
 interface AuthenticatedPurchasingCreditsRouteChildren {
   AuthenticatedPurchasingCreditsIdRoute: typeof AuthenticatedPurchasingCreditsIdRoute
@@ -3597,6 +3929,7 @@ const AuthenticatedSalesPaymentsRouteWithChildren =
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAuditEventsRoute: typeof AuthenticatedAuditEventsRoute
+  AuthenticatedFieldRoute: typeof AuthenticatedFieldRouteWithChildren
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
   AuthenticatedAccountingAuditTrailRoute: typeof AuthenticatedAccountingAuditTrailRoute
   AuthenticatedAccountingBalanceSheetRoute: typeof AuthenticatedAccountingBalanceSheetRoute
@@ -3731,6 +4064,7 @@ interface AuthenticatedRouteRouteChildren {
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAuditEventsRoute: AuthenticatedAuditEventsRoute,
+  AuthenticatedFieldRoute: AuthenticatedFieldRouteWithChildren,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
   AuthenticatedAccountingAuditTrailRoute:
     AuthenticatedAccountingAuditTrailRoute,

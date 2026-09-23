@@ -28,5 +28,6 @@ export const featureForPath = (pathname: string): Feature | null => {
   if (pathname.startsWith("/manufacturing/") || pathname === "/dashboards/production" || pathname.startsWith("/reports/manufacturing")) return FEATURES.manufacturing;
   if (pathname.startsWith("/accounting/banking") || pathname.startsWith("/accounting/reconciliation")) return FEATURES.banking;
   if (pathname.startsWith("/crm/")) return FEATURES.crm;
+  if (pathname.startsWith("/field/leads")) return FEATURES.crm;
   return null;
 };

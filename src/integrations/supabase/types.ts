@@ -1478,6 +1478,85 @@ export type Database = {
           },
         ]
       }
+      crm_leads: {
+        Row: {
+          assigned_to: string | null
+          company: string | null
+          converted_customer_id: string | null
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          email: string | null
+          id: string
+          last_activity_at: string
+          name: string
+          notes: string | null
+          phone: string | null
+          source: string | null
+          status: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          company?: string | null
+          converted_customer_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          email?: string | null
+          id?: string
+          last_activity_at?: string
+          name: string
+          notes?: string | null
+          phone?: string | null
+          source?: string | null
+          status?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_to?: string | null
+          company?: string | null
+          converted_customer_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          email?: string | null
+          id?: string
+          last_activity_at?: string
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          source?: string | null
+          status?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_leads_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_leads_converted_customer_id_fkey"
+            columns: ["converted_customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_leads_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       customers: {
         Row: {
           balance: number | null
@@ -10722,6 +10801,7 @@ export type Database = {
               error: true
             } & "Could not choose the best candidate function between: public.switch_tenant(target_tenant => text), public.switch_tenant(target_tenant => uuid). Try renaming the parameters or the function itself in the database so function overloading can be resolved"
           }
+      tenant_crm_enabled: { Args: never; Returns: boolean }
       tenant_write_ok: {
         Args: { _roles: Database["public"]["Enums"]["app_role"][] }
         Returns: boolean
@@ -10951,6 +11031,7 @@ export type Database = {
         | "accountant"
         | "finance_clerk"
         | "auditor"
+        | "field_sales"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -11090,6 +11171,7 @@ export const Constants = {
         "accountant",
         "finance_clerk",
         "auditor",
+        "field_sales",
       ],
     },
   },
