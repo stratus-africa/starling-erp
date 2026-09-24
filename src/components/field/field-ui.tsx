@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { Link, useNavigate, useRouterState, useRouter } from "@tanstack/react-router";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Bell, Home, Users, FileText, Wallet, Menu, WifiOff, Search, Plus, Loader2, Lock, RefreshCw, Check } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
@@ -62,8 +62,24 @@ export function FieldShell({ children }: { children: ReactNode }) {
   const online = useOnline();
   const outbox = useOutbox();
   const pending = outbox.filter((i) => i.status !== "synced").length;
+  const syncedCount = outbox.filter((i) => i.status === "synced").length;
+  const qc = useQueryClient();
+  // Refresh lists once queued items reach the server
+  useEffect(() => { if (syncedCount > 0) void qc.invalidateQueries(); }, [syncedCount, qc]);
   const access = useFieldAccess();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const router = useRouter();
+  // Download every Field Sales screen while online, so they still open with no signal
+  useEffect(() => {
+    if (!navigator.onLine) return;
+    const paths = ["/field", "/field/customers", "/field/customers/new", "/field/sales", "/field/sales/new", "/field/payments", "/field/payments/new", "/field/more", "/field/leads", "/field/notifications", "/field/dashboard"];
+    for (const to of paths) {
+      for (const m of router.matchRoutes(to, {})) {
+        const route = router.looseRoutesById[m.routeId];
+        if (route) void Promise.resolve(router.loadRouteChunk(route)).catch(() => {});
+      }
+    }
+  }, [router]);
   const tabs = [
     { to: "/field", label: "Home", icon: Home, show: true, exact: true },
     { to: "/field/customers", label: "Customers", icon: Users, show: access.customers },
