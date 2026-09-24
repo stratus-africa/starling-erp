@@ -770,7 +770,7 @@ export function SalesOrderViewPage({ id }: { id: string }) {
                       ? `Not enough stock${shortItems.length ? `: ${shortItems.join(", ")}` : ""}`
                       : undefined
                   }
-                  onClick={() => nav({ to: `/sales/packages/new?order=${id}` as never })}
+                  onClick={() => window.location.assign(`/sales/packages/new?order=${id}`)}
                 >
                   <Truck className="mr-1.5 h-4 w-4" />{" "}
                   {currentStatus === "Partially Fulfilled" ? "Fulfill Remaining" : "Fulfill Order"}
