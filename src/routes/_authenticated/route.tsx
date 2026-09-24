@@ -1,7 +1,9 @@
 import { createFileRoute, Outlet, Navigate } from "@tanstack/react-router";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
-import { AppSidebar } from "@/components/app-sidebar";
-import { AppTopbar } from "@/components/app-topbar";
+import { lazy, Suspense } from "react";
+// Office shell loads only when needed, so the Field Sales app never downloads it
+const AppSidebar = lazy(() => import("@/components/app-sidebar").then((m) => ({ default: m.AppSidebar })));
+const AppTopbar = lazy(() => import("@/components/app-topbar").then((m) => ({ default: m.AppTopbar })));
 import { AuthProvider, useAuth } from "@/hooks/use-auth";
 import { PlatformAuthProvider } from "@/hooks/use-platform-auth";
 import { SupportSessionBanner } from "@/components/support-session-banner";
@@ -58,9 +60,9 @@ function Gate() {
       <div className="flex min-h-screen w-full bg-background flex-col">
         <SupportSessionBanner />
         <div className="flex flex-1 w-full">
-          <AppSidebar />
+          <Suspense fallback={null}><AppSidebar /></Suspense>
           <SidebarInset className="min-w-0 flex-1">
-            <AppTopbar />
+            <Suspense fallback={null}><AppTopbar /></Suspense>
             <main className="flex-1 min-w-0"><Outlet /></main>
           </SidebarInset>
         </div>
