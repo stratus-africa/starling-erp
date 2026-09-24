@@ -1,10 +1,11 @@
-import { Fragment } from "react";
+import { Fragment, useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowRight, Layers, Loader2, Shield } from "lucide-react";
+import { ArrowRight, ChevronRight, Layers, Loader2, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth } from "@/hooks/use-auth";
 import { db } from "@/lib/typed-db";
 import { CustomRolesManager, type CustomRole } from "@/components/custom-roles-manager";
@@ -39,15 +40,22 @@ const ALL_ROLES: RoleSpec[] = [
   { role: "viewer", label: "Viewer", description: "Read-only access where permissions are enabled.", modules: ["Read access"], badge: "bg-muted text-muted-foreground border-border" },
 ];
 
-const ACCOUNTING_ROLES = ["tenant_admin", "accountant", "finance_clerk", "auditor", "accounting"];
-const OTHER_ROLES = ["tenant_admin", "sales", "field_sales", "purchasing", "inventory", "manufacturing", "viewer"];
-const PROCUREMENT_ROLES = ["tenant_admin", "accountant", "finance_clerk", "accounting", "purchasing"];
-const ACCOUNTING_MODULES = new Set(["accounting", "banking", "payments", "reports"]);
-
-const matchesPermissionGroup = (permission: PermissionRow, patterns: RegExp[]) =>
-  patterns.some((pattern) => pattern.test(permission.module) || pattern.test(permission.action) || pattern.test(permission.description ?? ""));
-
 const titleCase = (value: string) => value.replaceAll("_", " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
+
+const ACTION_COLUMNS = [
+  { key: "view", label: "View", actions: ["read", "view"] },
+  { key: "create", label: "Create", actions: ["create"] },
+  { key: "edit", label: "Edit", actions: ["update", "edit", "manage"] },
+  { key: "delete", label: "Delete", actions: ["delete", "archive"] },
+  { key: "approve", label: "Approve", actions: ["approve", "reject", "request"] },
+  { key: "post", label: "Post", actions: ["post", "accounting_post", "reconcile", "allocate"] },
+] as const;
+
+interface PermissionSubject {
+  key: string;
+  label: string;
+  permissions: PermissionRow[];
+}
 
 function RoleCard({ spec }: { spec: RoleSpec }) {
   return (
@@ -65,67 +73,87 @@ function RoleCard({ spec }: { spec: RoleSpec }) {
   );
 }
 
-function PermissionMatrix({ permissions, roles, grants, overrides, changing, onToggle, labels }: {
+function PermissionMatrix({ permissions, role, grants, overrides, changing, onToggle }: {
   permissions: PermissionRow[];
-  roles: string[];
+  role: string;
   grants: Set<string>;
   overrides: Map<string, boolean>;
-  changing: string | null;
-  onToggle: (role: string, permission: string, enabled: boolean) => void;
-  labels: Record<string, string>;
+  changing: Set<string>;
+  onToggle: (permissions: string[], enabled: boolean) => void;
 }) {
-  const sections = permissions.reduce<Record<string, PermissionRow[]>>((groups, permission) => {
-    const key = permission.module.split(".").map(titleCase).join(" · ");
-    (groups[key] ??= []).push(permission);
+  const sections = permissions.reduce<Record<string, Record<string, PermissionSubject>>>((groups, permission) => {
+    const moduleParts = permission.module.split(".");
+    const section = titleCase(moduleParts[0] ?? permission.module);
+    const codeParts = permission.code.split(".");
+    const subjectKey = codeParts.length > 2 ? codeParts.slice(1, -1).join(".") : moduleParts.slice(1).join(".") || moduleParts[0] || permission.module;
+    const subjectLabel = titleCase(subjectKey || permission.module);
+    groups[section] ??= {};
+    groups[section][subjectKey] ??= { key: `${section}:${subjectKey}`, label: subjectLabel, permissions: [] };
+    groups[section][subjectKey].permissions.push(permission);
     return groups;
   }, {});
 
-  const isGranted = (role: string, code: string) => {
+  const isGranted = (code: string) => {
     if (role === "tenant_admin") return true;
     return overrides.get(`${role}:${code}`) ?? grants.has(`${role}:${code}`);
   };
 
+  const actionFor = (permission: PermissionRow) => permission.code.split(".").at(-1) ?? permission.action;
+  const permissionsForColumn = (subject: PermissionSubject, actions: readonly string[]) =>
+    subject.permissions.filter((permission) => actions.includes(actionFor(permission)));
+  const otherPermissions = (subject: PermissionSubject) => subject.permissions.filter((permission) =>
+    !ACTION_COLUMNS.some((column) => column.actions.includes(actionFor(permission))),
+  );
+  const toggleCell = (cellPermissions: PermissionRow[]) => {
+    if (cellPermissions.length === 0 || role === "tenant_admin") return;
+    const shouldEnable = cellPermissions.some((permission) => !isGranted(permission.code));
+    onToggle(cellPermissions.map((permission) => permission.code), shouldEnable);
+  };
+
   return (
-    <div className="overflow-x-auto rounded-lg border">
-      <table className="w-full min-w-[780px] text-sm">
-        <thead className="bg-muted/60">
-          <tr className="border-b text-[11px] font-semibold uppercase text-muted-foreground">
-            <th className="w-72 px-3 py-2.5 text-left">Permission</th>
-            {roles.map((role) => <th key={role} className="min-w-24 px-3 py-2.5 text-center">{labels[role] ?? titleCase(role)}</th>)}
-            <th className="w-56 px-3 py-2.5 text-left">Code</th>
-          </tr>
-        </thead>
-        <tbody>
-          {Object.entries(sections).map(([section, rows]) => (
-            <Fragment key={section}>
-              <tr className="border-t bg-muted/30"><td colSpan={roles.length + 2} className="px-3 py-1.5 text-[11px] font-bold uppercase text-primary">{section}</td></tr>
-              {rows.map((permission) => (
-                <tr key={permission.code} className="border-b border-border/50 hover:bg-muted/20">
-                  <td className="px-3 py-2 pl-6">
-                    <div className="text-xs font-medium">{permission.description ?? titleCase(permission.action)}</div>
-                  </td>
-                  {roles.map((role) => {
-                    const key = `${role}:${permission.code}`;
+    <div className="space-y-3">
+      {Object.entries(sections).map(([section, subjectMap]) => {
+        const subjects = Object.values(subjectMap);
+        return (
+          <section key={section} className="overflow-hidden rounded-md border bg-card">
+            <div className="border-b bg-muted/55 px-3 py-2 text-sm font-semibold">{section}</div>
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[760px] table-fixed text-xs">
+                <thead>
+                  <tr className="border-b bg-background text-muted-foreground">
+                    <th className="w-[34%] px-3 py-2 text-left font-medium">Particulars</th>
+                    <th className="w-14 px-2 py-2 text-center font-medium">Full</th>
+                    {ACTION_COLUMNS.map((column) => <th key={column.key} className="w-16 px-2 py-2 text-center font-medium">{column.label}</th>)}
+                    <th className="w-20 px-2 py-2 text-center font-medium">Others</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {subjects.map((subject) => {
+                    const allGranted = subject.permissions.every((permission) => isGranted(permission.code));
+                    const rowChanging = subject.permissions.some((permission) => changing.has(`${role}:${permission.code}`));
+                    const other = otherPermissions(subject);
                     return (
-                      <td key={role} className="px-3 py-2 text-center">
-                        <div className="flex justify-center">
-                          <Checkbox
-                            aria-label={`${isGranted(role, permission.code) ? "Disable" : "Enable"} ${permission.description ?? permission.code} for ${titleCase(role)}`}
-                            checked={isGranted(role, permission.code)}
-                            disabled={role === "tenant_admin" || changing === key}
-                            onCheckedChange={(checked) => onToggle(role, permission.code, checked === true)}
-                          />
-                        </div>
-                      </td>
+                      <tr key={subject.key} className="border-b last:border-b-0 hover:bg-muted/20">
+                        <td className="px-3 py-2">
+                          <p className="font-medium">{subject.label}</p>
+                          {subject.permissions.length === 1 && subject.permissions[0]?.description ? <p className="mt-0.5 text-[10px] text-muted-foreground">{subject.permissions[0].description}</p> : null}
+                        </td>
+                        <td className="px-2 py-2"><div className="flex justify-center"><Checkbox aria-label={`Toggle full access to ${subject.label}`} checked={allGranted} disabled={role === "tenant_admin" || rowChanging} onCheckedChange={() => onToggle(subject.permissions.map((permission) => permission.code), !allGranted)} /></div></td>
+                        {ACTION_COLUMNS.map((column) => {
+                          const cell = permissionsForColumn(subject, column.actions);
+                          const checked = cell.length > 0 && cell.every((permission) => isGranted(permission.code));
+                          return <td key={column.key} className="px-2 py-2"><div className="flex justify-center">{cell.length > 0 ? <Checkbox aria-label={`${column.label} ${subject.label}`} checked={checked} disabled={role === "tenant_admin" || cell.some((permission) => changing.has(`${role}:${permission.code}`))} onCheckedChange={() => toggleCell(cell)} /> : <span className="text-muted-foreground/30">—</span>}</div></td>;
+                        })}
+                        <td className="px-2 py-2"><div className="flex justify-center">{other.length > 0 ? <Checkbox aria-label={`Other permissions for ${subject.label}`} checked={other.every((permission) => isGranted(permission.code))} disabled={role === "tenant_admin" || other.some((permission) => changing.has(`${role}:${permission.code}`))} onCheckedChange={() => toggleCell(other)} /> : <span className="text-muted-foreground/30">—</span>}</div></td>
+                      </tr>
                     );
                   })}
-                  <td className="px-3 py-2"><code className="select-all text-[10px] text-muted-foreground">{permission.code}</code></td>
-                </tr>
-              ))}
-            </Fragment>
-          ))}
-        </tbody>
-      </table>
+                </tbody>
+              </table>
+            </div>
+          </section>
+        );
+      })}
     </div>
   );
 }
@@ -134,6 +162,7 @@ function RolesPage() {
   const { can, tenant, refresh } = useAuth();
   const queryClient = useQueryClient();
   const allowed = can("settings.roles");
+  const [selectedRole, setSelectedRole] = useState("accountant");
 
   const { data, isLoading } = useQuery({
     queryKey: ["role-permission-matrix", tenant?.id],
@@ -154,9 +183,10 @@ function RolesPage() {
   });
 
   const updatePermission = useMutation({
-    mutationFn: async ({ role, permission, enabled }: { role: string; permission: string; enabled: boolean }) => {
-      const { error } = await db.rpc("set_role_permission_override", { _role: role, _permission_code: permission, _enabled: enabled });
-      if (error) throw error;
+    mutationFn: async ({ role, permissions, enabled }: { role: string; permissions: string[]; enabled: boolean }) => {
+      const results = await Promise.all(permissions.map((permission) => db.rpc("set_role_permission_override", { _role: role, _permission_code: permission, _enabled: enabled })));
+      const failed = results.find((result) => result.error);
+      if (failed?.error) throw failed.error;
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["role-permission-matrix", tenant?.id] });
@@ -168,74 +198,52 @@ function RolesPage() {
 
   const grants = new Set<string>((data?.grants ?? []).map((row: any) => `${row.role}:${row.permission_code}`));
   const overrides = new Map<string, boolean>((data?.overrides ?? []).map((row: any) => [`${row.role}:${row.permission_code}`, Boolean(row.enabled)] as [string, boolean]));
-  const accountingPermissions = (data?.permissions ?? []).filter((permission) => ACCOUNTING_MODULES.has(permission.module.split(".")[0]));
-  const supplierCreditsPermissions = (data?.permissions ?? []).filter((permission) =>
-    matchesPermissionGroup(permission, [/supplier.*credit|credit.*supplier/i, /credit.*apply|apply.*credit/i]),
-  );
-  const purchaseOrderPermissions = (data?.permissions ?? []).filter((permission) =>
-    matchesPermissionGroup(permission, [/purchase.*order|order.*purchase/i, /po\./i, /purchase_order/i]),
-  );
-  const supplierPaymentsPermissions = (data?.permissions ?? []).filter((permission) =>
-    matchesPermissionGroup(permission, [/supplier.*payment|payment.*supplier/i, /payments?\.made|payment_made/i, /allocate.*payment/i]),
-  );
-  const otherPermissions = (data?.permissions ?? []).filter(
-    (permission) =>
-      !ACCOUNTING_MODULES.has(permission.module.split(".")[0]) &&
-      !matchesPermissionGroup(permission, [/supplier.*credit|credit.*supplier/i, /purchase.*order|order.*purchase/i, /supplier.*payment|payment.*supplier/i]),
-  );
   const customRoles = data?.customRoles ?? [];
-  const customKeys = customRoles.map((r) => r.role_key);
   const labels: Record<string, string> = Object.fromEntries([...ALL_ROLES.map((r) => [r.role, r.label]), ...customRoles.map((r) => [r.role_key, r.label])]);
+  const descriptions: Record<string, string> = Object.fromEntries([...ALL_ROLES.map((r) => [r.role, r.description]), ...customRoles.map((r) => [r.role_key, r.description ?? "Custom workspace role."])]);
+  const selectableRoles = useMemo(() => [...ALL_ROLES.filter((role) => role.role !== "super_admin").map((role) => role.role), ...customRoles.map((role) => role.role_key)], [customRoles]);
   const refreshMatrix = () => queryClient.invalidateQueries({ queryKey: ["role-permission-matrix", tenant?.id] });
-  const changing = updatePermission.isPending ? `${updatePermission.variables?.role}:${updatePermission.variables?.permission}` : null;
+  const changing = new Set(updatePermission.isPending ? updatePermission.variables?.permissions.map((permission) => `${updatePermission.variables?.role}:${permission}`) : []);
 
   if (!allowed) return <div className="p-6 text-sm text-muted-foreground">Administrator access required.</div>;
 
-  const matrix = (permissions: PermissionRow[], roles: string[]) => isLoading ? (
-    <div className="grid min-h-48 place-items-center rounded-lg border"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
-  ) : (
-    <PermissionMatrix labels={labels} permissions={permissions} roles={[...roles, ...customKeys]} grants={grants} overrides={overrides} changing={changing} onToggle={(role, permission, enabled) => updatePermission.mutate({ role, permission, enabled })} />
-  );
-
   return (
-    <div className="flex w-full flex-col gap-5 p-4 md:p-6">
-      <div>
-        <h1 className="flex items-center gap-2 text-2xl font-semibold"><Layers className="h-5 w-5" /> Roles &amp; Permissions</h1>
-        <p className="mt-1 text-sm text-muted-foreground">Assign roles to users and tailor each role’s access for this workspace.</p>
+    <div className="flex w-full flex-col gap-4 p-4 md:p-6">
+      <div className="flex flex-wrap items-end justify-between gap-3 border-b pb-4">
+        <div>
+          <h1 className="flex items-center gap-2 text-xl font-semibold"><Layers className="h-5 w-5 text-primary" /> Roles &amp; Permissions</h1>
+          <p className="mt-1 text-sm text-muted-foreground">Control access to every workspace module and transaction.</p>
+        </div>
+        <Link to="/settings/users" className="inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline">Assign roles <ArrowRight className="h-4 w-4" /></Link>
       </div>
-      <Tabs defaultValue="roles" className="w-full">
-        <TabsList className="h-auto w-full justify-start overflow-x-auto">
-          <TabsTrigger value="roles">All Roles</TabsTrigger>
-          <TabsTrigger value="accounting">Accounting</TabsTrigger>
-          <TabsTrigger value="supplier-credits">Supplier Credits</TabsTrigger>
-          <TabsTrigger value="purchase-orders">Purchase Orders</TabsTrigger>
-          <TabsTrigger value="supplier-payments">Supplier Payments</TabsTrigger>
-          <TabsTrigger value="other">Other Modules</TabsTrigger>
+      <Tabs defaultValue="matrix" className="w-full">
+        <TabsList className="h-9 w-full justify-start rounded-none border-b bg-transparent p-0">
+          <TabsTrigger value="roles" className="h-9 rounded-none border-b-2 border-transparent px-4 data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none">All Roles</TabsTrigger>
+          <TabsTrigger value="matrix" className="h-9 rounded-none border-b-2 border-transparent px-4 data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none">Segmented Access Control</TabsTrigger>
         </TabsList>
         <TabsContent value="roles" className="pt-3">
           <div className="mb-3 flex items-center justify-between gap-3"><p className="text-sm text-muted-foreground">Available roles for this workspace.</p><Link to="/settings/users" className="inline-flex items-center gap-1 text-sm text-primary hover:underline">Assign roles <ArrowRight className="h-4 w-4" /></Link></div>
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">{ALL_ROLES.map((role) => <RoleCard key={role.role} spec={role} />)}</div>
           <div className="mt-6"><CustomRolesManager roles={customRoles} builtIn={ALL_ROLES.filter((r) => r.role !== "super_admin")} onChanged={refreshMatrix} /></div>
         </TabsContent>
-        <TabsContent value="accounting" className="space-y-3 pt-3">
-          <div className="flex items-start gap-2"><Shield className="mt-0.5 h-4 w-4 text-primary" /><p className="text-xs text-muted-foreground">Tick or untick a permission to change access. Tenant Admin always retains full access.</p></div>
-          {matrix(accountingPermissions, ACCOUNTING_ROLES)}
-        </TabsContent>
-        <TabsContent value="supplier-credits" className="space-y-3 pt-3">
-          <div className="flex items-start gap-2"><Shield className="mt-0.5 h-4 w-4 text-primary" /><p className="text-xs text-muted-foreground">Supplier credit permissions control issuance, posting, and application of credits against bills.</p></div>
-          {matrix(supplierCreditsPermissions, PROCUREMENT_ROLES)}
-        </TabsContent>
-        <TabsContent value="purchase-orders" className="space-y-3 pt-3">
-          <div className="flex items-start gap-2"><Shield className="mt-0.5 h-4 w-4 text-primary" /><p className="text-xs text-muted-foreground">Purchase order access controls creation, approval, and posting across supplier requisitions and orders.</p></div>
-          {matrix(purchaseOrderPermissions, PROCUREMENT_ROLES)}
-        </TabsContent>
-        <TabsContent value="supplier-payments" className="space-y-3 pt-3">
-          <div className="flex items-start gap-2"><Shield className="mt-0.5 h-4 w-4 text-primary" /><p className="text-xs text-muted-foreground">Supplier payment permissions cover payment entry, allocation, and settlement actions.</p></div>
-          {matrix(supplierPaymentsPermissions, PROCUREMENT_ROLES)}
-        </TabsContent>
-        <TabsContent value="other" className="space-y-3 pt-3">
-          <div className="flex items-start gap-2"><Shield className="mt-0.5 h-4 w-4 text-primary" /><p className="text-xs text-muted-foreground">Permissions are grouped by module. Changes apply only to this workspace.</p></div>
-          {matrix(otherPermissions, OTHER_ROLES)}
+        <TabsContent value="matrix" className="space-y-4 pt-4">
+          <div className="flex items-center gap-1 text-xs text-muted-foreground"><span>General</span><ChevronRight className="h-3 w-3" /><span className="font-medium text-foreground">Segmented Access Control</span></div>
+          <section className="rounded-md border bg-card">
+            <div className="grid gap-4 p-4 md:grid-cols-[180px_minmax(280px,520px)] md:items-center">
+              <label className="text-xs font-medium text-muted-foreground">Role Name</label>
+              <Select value={selectedRole} onValueChange={setSelectedRole}>
+                <SelectTrigger className="bg-background"><SelectValue /></SelectTrigger>
+                <SelectContent>{selectableRoles.map((role) => <SelectItem key={role} value={role}>{labels[role] ?? titleCase(role)}</SelectItem>)}</SelectContent>
+              </Select>
+              <span className="text-xs font-medium text-muted-foreground">Description</span>
+              <p className="text-sm leading-relaxed">{descriptions[selectedRole]}</p>
+            </div>
+            <div className="flex items-start gap-2 border-t bg-primary/5 px-4 py-3">
+              <ShieldCheck className="mt-0.5 h-4 w-4 text-primary" />
+              <div><p className="text-xs font-semibold">Access for {labels[selectedRole] ?? titleCase(selectedRole)} users</p><p className="mt-0.5 text-[11px] text-muted-foreground">Changes apply to every user assigned this role in the current workspace. Tenant Admin access is protected.</p></div>
+            </div>
+          </section>
+          {isLoading ? <div className="grid min-h-48 place-items-center rounded-md border"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div> : <PermissionMatrix permissions={data?.permissions ?? []} role={selectedRole} grants={grants} overrides={overrides} changing={changing} onToggle={(permissions, enabled) => updatePermission.mutate({ role: selectedRole, permissions, enabled })} />}
         </TabsContent>
       </Tabs>
     </div>
