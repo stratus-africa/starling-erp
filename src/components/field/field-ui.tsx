@@ -70,8 +70,10 @@ export function FieldShell({ children }: { children: ReactNode }) {
     if (!navigator.onLine) return;
     const paths = ["/field", "/field/customers", "/field/customers/new", "/field/sales", "/field/sales/new", "/field/payments", "/field/payments/new", "/field/more", "/field/leads", "/field/notifications", "/field/dashboard"];
     for (const to of paths) {
-      const r = router.matchRoutes(to, {});
-      for (const m of r) { const route = router.looseRoutesById[m.routeId]; if (route) void router.loadRouteChunk(route).catch(() => {}); }
+      for (const m of router.matchRoutes(to, {})) {
+        const route = router.looseRoutesById[m.routeId];
+        if (route) void Promise.resolve(router.loadRouteChunk(route)).catch(() => {});
+      }
     }
   }, [router]);
   const tabs = [
