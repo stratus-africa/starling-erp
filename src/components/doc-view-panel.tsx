@@ -1207,7 +1207,7 @@ function DetailsView({ kind, id }: { kind: DocKind; id: string }) {
   const grandTotal = Number(doc.grand_total ?? doc.amount ?? 0);
 
   return (
-    <div className="p-6 space-y-6 max-w-4xl">
+    <div className="p-6 space-y-6 w-full max-w-[1400px]">
       {/* ── Document header ── */}
       <div>
         <div className="flex items-center gap-3 mb-1">
