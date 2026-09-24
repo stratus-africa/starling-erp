@@ -102,7 +102,7 @@ function PermissionMatrix({ permissions, role, grants, overrides, changing, onTo
   const permissionsForColumn = (subject: PermissionSubject, actions: readonly string[]) =>
     subject.permissions.filter((permission) => actions.includes(actionFor(permission)));
   const otherPermissions = (subject: PermissionSubject) => subject.permissions.filter((permission) =>
-    !ACTION_COLUMNS.some((column) => column.actions.includes(actionFor(permission))),
+    !ACTION_COLUMNS.some((column) => (column.actions as readonly string[]).includes(actionFor(permission))),
   );
   const toggleCell = (cellPermissions: PermissionRow[]) => {
     if (cellPermissions.length === 0 || role === "tenant_admin") return;
