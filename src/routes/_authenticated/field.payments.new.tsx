@@ -41,6 +41,27 @@ function PaymentWizard() {
   const [confirm, setConfirm] = useState(false);
   const [saving, setSaving] = useState(false);
 
+  // Device draft: keep what was typed if signal drops or the app closes
+  const draftKey = `field-draft-payment-${s.customer ?? "new"}`;
+  const [draftReady, setDraftReady] = useState(false);
+  useEffect(() => {
+    try {
+      const d = JSON.parse(localStorage.getItem(draftKey) ?? "null");
+      if (d) {
+        if (d.customerId) setCustomerId(d.customerId);
+        if (d.date) setDate(d.date);
+        setAmount(d.amount ?? ""); setMethod(d.method ?? "M-Pesa"); setBank(d.bank ?? "");
+        setReference(d.reference ?? ""); setNotes(d.notes ?? ""); setAlloc(d.alloc ?? {});
+      }
+    } catch { /* ignore */ }
+    setDraftReady(true);
+  }, [draftKey]);
+  useEffect(() => {
+    if (!draftReady) return;
+    if (!customerId && !amount) { localStorage.removeItem(draftKey); return; }
+    localStorage.setItem(draftKey, JSON.stringify({ customerId, date, amount, method, bank, reference, notes, alloc }));
+  }, [draftReady, draftKey, customerId, date, amount, method, bank, reference, notes, alloc]);
+
   const { data: cust } = useQuery({
     queryKey: ["customers", "pay", customerId], enabled: !!customerId,
     queryFn: async () => (await supabase.from("customers").select("id,name,currency").eq("id", customerId).maybeSingle()).data,
@@ -95,6 +116,7 @@ function PaymentWizard() {
       payload: { _customer_id: customerId, _amount: Number(fromMinor(amountMinor)), _date: date, _payment_method: method, _reference: reference || null, _notes: notes || null, _currency: cur, _bank_account_id: bank, _allocations: allocations },
     });
     setSaving(false);
+    if (res.status !== "failed") localStorage.removeItem(draftKey);
     ["payments_received", "invoices", "customers"].forEach((k) => qc.invalidateQueries({ queryKey: [k] }));
     if (res.status === "synced") {
       toast.success("Payment recorded");

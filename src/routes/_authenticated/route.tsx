@@ -26,7 +26,7 @@ function Gate() {
   const pathname = useRouterState({ select: (r) => r.location.pathname });
   const isMobilePortrait = useIsMobilePortrait();
   if (loading || isMobilePortrait === undefined) return <div className="flex min-h-screen items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>;
-  if (!session) return <Navigate to="/auth" />;
+  if (!session) return <Navigate to={pathname === "/field" || pathname.startsWith("/field/") ? "/field-login" : "/auth"} />;
   if (!profile?.tenant_id) {
     return (
       <div className="flex min-h-screen items-center justify-center p-6 text-center">
