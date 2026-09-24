@@ -461,7 +461,10 @@ export function SalesOrderViewPage({ id }: { id: string }) {
     queryKey: ["items", itemIds],
     enabled: itemIds.length > 0,
     queryFn: async () => {
-      const { data } = await db.from("items").select("id,name,sku").in("id", itemIds);
+      const { data } = await db
+        .from("items")
+        .select("id,name,sku,stock,type,track_inventory")
+        .in("id", itemIds);
       return (data ?? []) as Row[];
     },
   });
@@ -668,7 +671,19 @@ export function SalesOrderViewPage({ id }: { id: string }) {
     "accounting.journal.create",
     "accounting.journal.update",
   ]);
-  const hasInventoryShortage = manufacturingRequirements.some(
+  const shortItems = lines
+    .filter((line) => line.item_id)
+    .map((line) => {
+      const item = items.find((i) => i.id === line.item_id);
+      if (!item || item.type === "Service" || item.track_inventory === false) return null;
+      const alreadyPacked = packageLines
+        .filter((p) => p.item_id === line.item_id)
+        .reduce((s, p) => s + Number(p.quantity ?? 0), 0);
+      const remaining = Math.max(0, Number(line.quantity ?? 0) - alreadyPacked);
+      return remaining > Number(item.stock ?? 0) ? String(item.name ?? line.description ?? "Item") : null;
+    })
+    .filter(Boolean) as string[];
+  const hasInventoryShortage = shortItems.length > 0 || manufacturingRequirements.some(
     (line) => Number(line.manufacturing_required ?? 0) > 0,
   );
   const fulfillOrderDisabled =
@@ -749,48 +764,23 @@ export function SalesOrderViewPage({ id }: { id: string }) {
               canWrite && (
                 <Button
                   size="sm"
-                  asChild
                   disabled={fulfillOrderDisabled}
                   title={
                     hasInventoryShortage
-                      ? "Inventory shortfall detected. Create manufacturing orders before fulfilling this sales order."
+                      ? `Not enough stock${shortItems.length ? `: ${shortItems.join(", ")}` : ""}`
                       : undefined
                   }
-                  className={
-                    hasInventoryShortage
-                      ? "border-amber-500 bg-amber-50 text-amber-900 hover:bg-amber-100 disabled:opacity-100"
-                      : ""
-                  }
+                  onClick={() => nav({ to: `/sales/packages/new?order=${id}` as never })}
                 >
-                  <a href={hasInventoryShortage ? undefined : `/sales/packages/new?order=${id}`}>
-                    <Truck className="mr-1.5 h-4 w-4" />{" "}
-                    {currentStatus === "Partially Fulfilled"
-                      ? "Fulfill Remaining"
-                      : "Fulfill Order"}
-                  </a>
+                  <Truck className="mr-1.5 h-4 w-4" />{" "}
+                  {currentStatus === "Partially Fulfilled" ? "Fulfill Remaining" : "Fulfill Order"}
                 </Button>
               )}
-            {canWrite &&
-              can("manufacturing.create") &&
+            {hasInventoryShortage &&
               ["Confirmed", "Processing", "Partially Fulfilled"].includes(currentStatus) && (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setMtoDialogOpen(true)}
-                  disabled={!hasInventoryShortage}
-                  className={
-                    hasInventoryShortage
-                      ? "border-amber-500 bg-amber-50 text-amber-900 hover:bg-amber-100 disabled:opacity-100"
-                      : "opacity-60"
-                  }
-                  title={
-                    hasInventoryShortage
-                      ? "Manufacturing is required to cover the shortfall for this order."
-                      : "Inventory is sufficient; no manufacturing is required."
-                  }
-                >
-                  <Factory className="mr-1.5 h-4 w-4" /> Manufacturing Required
-                </Button>
+                <span className="self-center text-xs text-destructive">
+                  Out of stock{shortItems.length ? `: ${shortItems.join(", ")}` : ""}
+                </span>
               )}
             {(currentStatus === "Confirmed" ||
               currentStatus === "Processing" ||
