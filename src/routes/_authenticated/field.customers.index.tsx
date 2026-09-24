@@ -33,7 +33,7 @@ function CustomersList() {
   return (
     <div>
       <FieldHeader title="Customers" right={
-        <select aria-label="Sort" value={sort} onChange={(e) => setSort(e.target.value as S)} className="mr-2 h-10 rounded-md border bg-background px-2 text-sm">
+        <select aria-label="Sort" value={sort} onChange={(e) => setSort(e.target.value as S)} className="mr-2 h-10 rounded-lg border bg-card/80 px-2 text-sm">
           <option value="name">A–Z</option><option value="balance">Balance</option><option value="newest">Newest</option>
         </select>
       } />

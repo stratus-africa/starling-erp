@@ -41,13 +41,13 @@ function SalesList() {
   return (
     <div>
       <FieldHeader title="Sales" right={
-        <select aria-label="Sort" value={sort} onChange={(e) => setSort(e.target.value as never)} className="mr-2 h-10 rounded-md border bg-background px-2 text-sm">
+        <select aria-label="Sort" value={sort} onChange={(e) => setSort(e.target.value as never)} className="mr-2 h-10 rounded-lg border bg-card/80 px-2 text-sm">
           <option value="newest">Newest</option><option value="oldest">Oldest</option><option value="total">Total</option>
         </select>
       } />
-      <div className="grid grid-cols-2 border-b">
+      <div className="mx-4 mt-3 grid grid-cols-2 rounded-xl border border-border/60 bg-card/60 p-1">
         {(["quote", "order"] as const).map((k) => (
-          <button key={k} onClick={() => { setSt("all"); nav({ search: { tab: k }, replace: true }); }} className={`h-12 text-sm font-medium ${kind === k ? "border-b-2 border-primary text-primary" : "text-muted-foreground"}`}>
+          <button key={k} onClick={() => { setSt("all"); nav({ search: { tab: k }, replace: true }); }} className={`h-10 rounded-lg text-sm font-medium transition-colors ${kind === k ? "bg-primary text-primary-foreground shadow-md shadow-primary/20" : "text-muted-foreground"}`}>
             {k === "quote" ? "Quotes" : "Sales Orders"}
           </button>
         ))}
