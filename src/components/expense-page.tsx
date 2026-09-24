@@ -560,7 +560,7 @@ function ExpenseEditor({
 }: any) {
   return (
     <div className="min-h-full bg-muted/20 p-4 md:p-6 xl:p-8">
-      <div className="mx-auto flex max-w-[1300px] flex-col gap-5">
+      <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-5">
         <header className="flex flex-wrap items-center justify-between gap-3 border-b pb-5">
           <div className="flex items-center gap-3">
             <Button variant="ghost" size="sm" onClick={onCancel}>
