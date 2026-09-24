@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as FieldLoginRouteImport } from './routes/field-login'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as SuperAdminRouteRouteImport } from './routes/super-admin/route'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
@@ -205,6 +206,11 @@ import { Route as AuthenticatedReportsSalesCustomerStatementsCustomerIdRouteImpo
 import { Route as AuthenticatedReportsPurchasesSupplierStatementsSupplierIdRouteImport } from './routes/_authenticated/reports.purchases.supplier-statements.$supplierId'
 import { Route as AuthenticatedFieldSalesKindIdRouteImport } from './routes/_authenticated/field.sales.$kind.$id'
 
+const FieldLoginRoute = FieldLoginRouteImport.update({
+  id: '/field-login',
+  path: '/field-login',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
@@ -1336,6 +1342,7 @@ export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
   '/super-admin': typeof SuperAdminRouteRouteWithChildren
   '/auth': typeof AuthRoute
+  '/field-login': typeof FieldLoginRoute
   '/audit': typeof AdminAuditRoute
   '/plans': typeof AdminPlansRoute
   '/settings': typeof AdminSettingsRoute
@@ -1530,6 +1537,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof AuthenticatedIndexRoute
   '/auth': typeof AuthRoute
+  '/field-login': typeof FieldLoginRoute
   '/audit': typeof AdminAuditRoute
   '/plans': typeof AdminPlansRoute
   '/settings': typeof AuthenticatedSettingsIndexRoute
@@ -1725,6 +1733,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/super-admin': typeof SuperAdminRouteRouteWithChildren
   '/auth': typeof AuthRoute
+  '/field-login': typeof FieldLoginRoute
   '/_admin/audit': typeof AdminAuditRoute
   '/_admin/plans': typeof AdminPlansRoute
   '/_admin/settings': typeof AdminSettingsRoute
@@ -1923,6 +1932,7 @@ export interface FileRouteTypes {
     | '/'
     | '/super-admin'
     | '/auth'
+    | '/field-login'
     | '/audit'
     | '/plans'
     | '/settings'
@@ -2117,6 +2127,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/auth'
+    | '/field-login'
     | '/audit'
     | '/plans'
     | '/settings'
@@ -2311,6 +2322,7 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/super-admin'
     | '/auth'
+    | '/field-login'
     | '/_admin/audit'
     | '/_admin/plans'
     | '/_admin/settings'
@@ -2509,10 +2521,18 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   SuperAdminRouteRoute: typeof SuperAdminRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
+  FieldLoginRoute: typeof FieldLoginRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/field-login': {
+      id: '/field-login'
+      path: '/field-login'
+      fullPath: '/field-login'
+      preLoaderRoute: typeof FieldLoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/auth': {
       id: '/auth'
       path: '/auth'
@@ -4406,6 +4426,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   SuperAdminRouteRoute: SuperAdminRouteRouteWithChildren,
   AuthRoute: AuthRoute,
+  FieldLoginRoute: FieldLoginRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
