@@ -782,10 +782,15 @@ export function SalesOrderViewPage({ id }: { id: string }) {
                   Out of stock{shortItems.length ? `: ${shortItems.join(", ")}` : ""}
                 </span>
               )}
-            {(currentStatus === "Confirmed" ||
-              currentStatus === "Processing" ||
-              currentStatus === "Partially Fulfilled" ||
-              currentStatus === "Fulfilled") &&
+            {[
+              "Confirmed",
+              "Processing",
+              "Partially Fulfilled",
+              "Fulfilled",
+              "Packed",
+              "Shipped",
+              "Delivered",
+            ].includes(currentStatus) &&
               canWrite && (
                 <Button
                   size="sm"
