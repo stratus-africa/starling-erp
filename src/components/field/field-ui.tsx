@@ -62,6 +62,10 @@ export function FieldShell({ children }: { children: ReactNode }) {
   const online = useOnline();
   const outbox = useOutbox();
   const pending = outbox.filter((i) => i.status !== "synced").length;
+  const syncedCount = outbox.filter((i) => i.status === "synced").length;
+  const qc = useQueryClient();
+  // Refresh lists once queued items reach the server
+  useEffect(() => { if (syncedCount > 0) void qc.invalidateQueries(); }, [syncedCount, qc]);
   const access = useFieldAccess();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const router = useRouter();
