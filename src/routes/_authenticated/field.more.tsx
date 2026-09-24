@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Target, Bell, RefreshCw, LogOut, Monitor, Trash2, ChevronRight } from "lucide-react";
+import { Target, BarChart3, Bell, RefreshCw, LogOut, Monitor, Trash2, ChevronRight } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { FieldHeader, SyncBadge, useFieldAccess } from "@/components/field/field-ui";
@@ -26,6 +26,7 @@ function More() {
         <div className="mt-3"><TenantSwitcher /></div>
       </div>
       {a.leads && <Link to="/field/leads" className={link}><Target className="h-5 w-5 text-primary" /><span className="flex-1">Leads</span><ChevronRight className="h-4 w-4 text-muted-foreground" /></Link>}
+      <Link to="/field/dashboard" className={link}><BarChart3 className="h-5 w-5 text-primary" /><span className="flex-1">My performance</span><ChevronRight className="h-4 w-4 text-muted-foreground" /></Link>
       <Link to="/field/notifications" className={link}><Bell className="h-5 w-5 text-primary" /><span className="flex-1">Notifications</span><ChevronRight className="h-4 w-4 text-muted-foreground" /></Link>
       {!fieldOnly && <Link to="/" className={link}><Monitor className="h-5 w-5 text-primary" /><span className="flex-1">Open office app</span><ChevronRight className="h-4 w-4 text-muted-foreground" /></Link>}
 
