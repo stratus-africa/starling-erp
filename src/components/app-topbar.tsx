@@ -113,8 +113,8 @@ export function AppTopbar() {
               <User className="h-4 w-4 mr-2" /> Profile
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
-              <Link to="/settings/company">
-                <Settings className="h-4 w-4 mr-2" /> Workspace settings
+              <Link to="/settings">
+                <Settings className="h-4 w-4 mr-2" /> Settings
               </Link>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
