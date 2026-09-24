@@ -190,6 +190,13 @@
       "when": 1790205675621,
       "tag": "0026_remove_duplicate_audit_triggers",
       "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "7",
+      "when": 1790269199890,
+      "tag": "0027_platform_audit_text_overload",
+      "breakpoints": true
     }
   ]
 }

@@ -10555,6 +10555,15 @@ export type Database = {
             }
             Returns: string
           }
+        | {
+            Args: {
+              _action: string
+              _details: Json
+              _target_id: string
+              _target_type: string
+            }
+            Returns: undefined
+          }
       post_adjustment: { Args: { _adjustment_id: string }; Returns: string }
       post_adjustment_unchecked: {
         Args: { _adjustment_id: string }
