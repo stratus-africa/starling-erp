@@ -360,7 +360,7 @@ export function SystemHealthPage() {
                 {/* Card footer action */}
                 <div className="pt-3 border-t mt-3 flex items-center justify-between">
                   <span className="text-[10px] text-muted-foreground">
-                    Checked {new Date(item.last_checked_at).toLocaleTimeString()}
+                    {item.last_checked_at ? `Checked ${new Date(item.last_checked_at).toLocaleTimeString()}` : "Not checked yet"}
                   </span>
                   <Button
                     variant="ghost"
