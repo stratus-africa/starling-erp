@@ -64,6 +64,16 @@ export function FieldShell({ children }: { children: ReactNode }) {
   const pending = outbox.filter((i) => i.status !== "synced").length;
   const access = useFieldAccess();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const router = useRouter();
+  // Download every Field Sales screen while online, so they still open with no signal
+  useEffect(() => {
+    if (!navigator.onLine) return;
+    const paths = ["/field", "/field/customers", "/field/customers/new", "/field/sales", "/field/sales/new", "/field/payments", "/field/payments/new", "/field/more", "/field/leads", "/field/notifications", "/field/dashboard"];
+    for (const to of paths) {
+      const r = router.matchRoutes(to, {});
+      for (const m of r) { const route = router.looseRoutesById[m.routeId]; void router.loadRouteChunk(route).catch(() => {}); }
+    }
+  }, [router]);
   const tabs = [
     { to: "/field", label: "Home", icon: Home, show: true, exact: true },
     { to: "/field/customers", label: "Customers", icon: Users, show: access.customers },
