@@ -211,6 +211,13 @@
       "when": 1790269701195,
       "tag": "0029_drop_duplicate_platform_audit_overload",
       "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1790270409695,
+      "tag": "0030_quote_closed_on_conversion",
+      "breakpoints": true
     }
   ]
 }
