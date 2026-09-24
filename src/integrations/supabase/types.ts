@@ -10538,16 +10538,6 @@ export type Database = {
             Args: {
               _action: string
               _detail?: Json
-              _target_id?: string
-              _target_label?: string
-              _target_type?: string
-            }
-            Returns: string
-          }
-        | {
-            Args: {
-              _action: string
-              _detail?: Json
               _severity?: string
               _target_id?: string
               _target_label?: string
