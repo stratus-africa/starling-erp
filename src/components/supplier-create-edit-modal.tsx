@@ -55,10 +55,10 @@ export function SupplierCreateEditWindow({
   onOpenChange?: (open: boolean) => void;
   onSaved?: (id: string) => void;
 }) {
-  const { tenant, hasRole } = useAuth();
+  const { tenant, can } = useAuth();
   const qc = useQueryClient();
   const isNew = id === "new";
-  const canWrite = hasRole(["tenant_admin", "super_admin", "purchasing"]);
+  const canWrite = can(isNew ? "purchasing.create" : "purchasing.update");
   const [activeTab, setActiveTab] = useState<(typeof SUPPLIER_TABS)[number]["value"]>("basic");
   const [values, setValues] = useState<Values>(() =>
     Object.fromEntries(
