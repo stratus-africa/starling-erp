@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
+import { Link, useNavigate, useRouterState, useRouter } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, Bell, Home, Users, FileText, Wallet, Menu, WifiOff, Search, Plus, Loader2, Lock, RefreshCw, Check } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
