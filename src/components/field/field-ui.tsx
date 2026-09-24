@@ -88,8 +88,8 @@ export function FieldShell({ children }: { children: ReactNode }) {
     { to: "/field/more", label: "More", icon: Menu, show: true },
   ].filter((t) => t.show);
   return (
-    <div className="h-[100dvh] overflow-hidden bg-muted/30">
-      <div className="mx-auto flex h-full w-full max-w-2xl flex-col overflow-hidden bg-background md:border-x">
+    <div className="field-app h-[100dvh] overflow-hidden bg-background text-foreground">
+      <div className="mx-auto flex h-full w-full max-w-2xl flex-col overflow-hidden bg-background md:border-x md:border-border/40">
         {!online && (
           <div className="flex shrink-0 items-center gap-2 bg-destructive px-4 py-2 text-xs font-medium text-destructive-foreground">
             <WifiOff className="h-4 w-4" /> You're offline. New records are saved on this phone and sent when you reconnect.
@@ -100,16 +100,16 @@ export function FieldShell({ children }: { children: ReactNode }) {
             <RefreshCw className="h-4 w-4" /> {pending} record{pending > 1 ? "s" : ""} waiting to sync — tap to retry
           </Button>
         )}
-        <main className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain bg-muted/30">{children}</main>
+        <main className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain">{children}</main>
         <div className="relative z-40 shrink-0 bg-background px-3 pt-4 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
         <nav aria-label="Field Sales">
-          <div className="mx-auto grid max-w-md rounded-[1.75rem] border border-border/60 bg-card px-2 py-2 shadow-lg" style={{ gridTemplateColumns: `repeat(${tabs.length}, minmax(0,1fr))` }}>
+          <div data-field-surface className="mx-auto grid max-w-md rounded-[1.75rem] border px-2 py-2 shadow-2xl" style={{ gridTemplateColumns: `repeat(${tabs.length}, minmax(0,1fr))` }}>
             {tabs.map((t) => {
               const active = t.exact ? pathname === t.to || pathname === t.to + "/" : pathname.startsWith(t.to);
               const Icon = t.icon;
               return (
                 <Link key={t.to} to={t.to as never} aria-current={active ? "page" : undefined} className="group flex min-w-0 flex-col items-center justify-end gap-0.5 px-1 pt-1 min-h-14">
-                  <span className={cn("flex h-11 w-11 items-center justify-center rounded-full transition-all duration-200", active ? "-translate-y-3 bg-primary text-primary-foreground shadow-lg ring-4 ring-background" : "text-muted-foreground group-active:bg-muted")}>
+                  <span className={cn("flex h-11 w-11 items-center justify-center rounded-full transition-all duration-200", active ? "-translate-y-3 bg-primary text-primary-foreground shadow-lg shadow-primary/30 ring-4 ring-background" : "text-muted-foreground group-active:bg-muted")}>
                     <Icon className="h-5 w-5" />
                   </span>
                   <span className={cn("w-full truncate text-center text-[11px] leading-none transition-colors", active ? "-mt-2 font-semibold text-primary" : "font-medium text-muted-foreground")}>
@@ -129,13 +129,13 @@ export function FieldShell({ children }: { children: ReactNode }) {
 export function FieldHeader({ title, back, right }: { title: string; back?: string; right?: ReactNode }) {
   const nav = useNavigate();
   return (
-    <header className="sticky top-0 z-30 flex h-14 items-center gap-2 border-b bg-background/95 px-2 backdrop-blur">
+    <header className="sticky top-0 z-30 flex h-16 items-center gap-2 border-b border-border/50 bg-background/80 px-2 backdrop-blur-xl">
       {back ? (
         <Button variant="ghost" size="icon" className="h-11 w-11" aria-label="Back" onClick={() => (window.history.length > 1 ? window.history.back() : nav({ to: back as never }))}>
           <ArrowLeft className="h-5 w-5" />
         </Button>
       ) : <div className="w-2" />}
-      <h1 className="flex-1 truncate text-base font-semibold">{title}</h1>
+      <h1 className="flex-1 truncate text-lg font-semibold">{title}</h1>
       {right}
     </header>
   );
@@ -160,7 +160,7 @@ export function NotificationBell() {
 }
 
 export function StickyFooter({ children }: { children: ReactNode }) {
-  return <div className="sticky bottom-0 z-30 mt-4 flex gap-2 border-t bg-background/95 p-3 backdrop-blur">{children}</div>;
+  return <div data-field-surface className="sticky bottom-0 z-30 mt-4 flex gap-2 border-t p-3 backdrop-blur-xl">{children}</div>;
 }
 
 export function Fab({ to, search, label }: { to: string; search?: Record<string, string>; label: string }) {
@@ -241,7 +241,7 @@ export function StatusPill({ status }: { status?: string | null }) {
 
 export function Row({ to, params, title, subtitle, right, meta }: { to: string; params?: Record<string, string>; title: ReactNode; subtitle?: ReactNode; right?: ReactNode; meta?: ReactNode }) {
   return (
-    <Link to={to as never} params={params as never} className="flex min-h-16 items-center gap-3 border-b px-4 py-3 active:bg-muted">
+    <Link to={to as never} params={params as never} className="mx-4 mb-2 flex min-h-16 items-center gap-3 rounded-xl border border-border/60 bg-card/70 px-3 py-3 shadow-sm active:bg-muted">
       <div className="min-w-0 flex-1">
         <div className="truncate font-medium">{title}</div>
         {subtitle && <div className="truncate text-xs text-muted-foreground">{subtitle}</div>}

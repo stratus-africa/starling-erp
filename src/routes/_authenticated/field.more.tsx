@@ -16,12 +16,12 @@ function More() {
   const { signOut, roles, tenant, profile } = useAuth();
   const outbox = useOutbox();
   const fieldOnly = roles.length > 0 && roles.every((r) => r === "field_sales");
-  const link = "flex h-14 items-center gap-3 border-b px-4 active:bg-muted";
+  const link = "mx-4 mb-2 flex h-14 items-center gap-3 rounded-xl border border-border/60 bg-card/70 px-4 active:bg-muted";
   return (
     <div>
       <FieldHeader title="More" />
-      <div className="border-b px-4 py-4">
-        <div className="font-medium">{profile?.full_name ?? profile?.email}</div>
+      <div data-field-surface className="mx-4 mb-5 rounded-2xl border px-4 py-4">
+        <div className="font-semibold">{profile?.full_name ?? profile?.email}</div>
         <div className="text-xs text-muted-foreground">{tenant?.name}</div>
         <div className="mt-3"><TenantSwitcher /></div>
       </div>
