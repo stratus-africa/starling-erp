@@ -403,10 +403,11 @@ export function QuoteViewPage({ id }: { id: string }) {
   const expiry = quote.expiry ? new Date(quote.expiry) : null;
   const daysToExpiry = expiry ? Math.ceil((expiry.getTime() - Date.now()) / 86400000) : null;
   const currentStatus = quote.status ?? "Draft";
+  const isClosed = currentStatus === "Closed" || !!quote.converted_order_id;
   const workflow =
     currentStatus === "Rejected"
       ? ["Draft", "Sent", "Viewed", "Rejected"]
-      : ["Draft", "Sent", "Viewed", "Accepted"];
+      : ["Draft", "Sent", "Viewed", "Accepted", "Closed"];
   if (!["Draft", "Sent", "Viewed", "Accepted", "Rejected"].includes(currentStatus))
     workflow.push(currentStatus);
   const pdf = (): PdfDocInput => ({
@@ -531,6 +532,19 @@ export function QuoteViewPage({ id }: { id: string }) {
                 {currentStatus === "Draft" ? "Send Quote" : "Resend Quote"}
               </Button>
             )}
+            {canWrite && ["Draft", "Sent", "Viewed"].includes(currentStatus) && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  if (window.confirm("Mark this quote as accepted by the customer?"))
+                    setStatus.mutate("Accepted");
+                }}
+                disabled={setStatus.isPending}
+              >
+                <CheckCircle2 className="mr-1.5 h-4 w-4" /> Mark as Accepted
+              </Button>
+            )}
             {canWrite && currentStatus === "Accepted" && (
               <Button
                 size="sm"
@@ -540,10 +554,15 @@ export function QuoteViewPage({ id }: { id: string }) {
                 <ShoppingCart className="mr-1.5 h-4 w-4" /> Convert to Order
               </Button>
             )}
-            {canWrite && (
+            {canWrite && !isClosed && (
               <Button size="sm" variant="outline" onClick={() => setEditMode(true)}>
                 <Pencil className="mr-1.5 h-4 w-4" /> Edit
               </Button>
+            )}
+            {isClosed && (
+              <Badge variant="outline" className="h-8 px-3">
+                <Lock className="mr-1.5 h-3.5 w-3.5" /> Closed — converted to order
+              </Badge>
             )}
             <Button size="sm" variant="outline" onClick={() => setFollowUpOpen(true)}>
               <Sparkles className="mr-1.5 h-4 w-4" /> AI Follow-up
