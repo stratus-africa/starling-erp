@@ -75,6 +75,7 @@ import { Route as AuthenticatedSettingsCurrenciesRouteImport } from './routes/_a
 import { Route as AuthenticatedSettingsCompanyRouteImport } from './routes/_authenticated/settings.company'
 import { Route as AuthenticatedSettingsApiKeysRouteImport } from './routes/_authenticated/settings.api-keys'
 import { Route as AuthenticatedSalesPaymentsRouteImport } from './routes/_authenticated/sales.payments'
+import { Route as AuthenticatedSalesFieldDashboardRouteImport } from './routes/_authenticated/sales.field-dashboard'
 import { Route as AuthenticatedReportsInventoryRouteImport } from './routes/_authenticated/reports.inventory'
 import { Route as AuthenticatedReportsFinancialRouteImport } from './routes/_authenticated/reports.financial'
 import { Route as AuthenticatedPurchasingPaymentsRouteImport } from './routes/_authenticated/purchasing.payments'
@@ -91,6 +92,7 @@ import { Route as AuthenticatedInventoryLedgerRouteImport } from './routes/_auth
 import { Route as AuthenticatedInventoryAdjustmentsRouteImport } from './routes/_authenticated/inventory.adjustments'
 import { Route as AuthenticatedFieldNotificationsRouteImport } from './routes/_authenticated/field.notifications'
 import { Route as AuthenticatedFieldMoreRouteImport } from './routes/_authenticated/field.more'
+import { Route as AuthenticatedFieldDashboardRouteImport } from './routes/_authenticated/field.dashboard'
 import { Route as AuthenticatedExpensesReimbursementsRouteImport } from './routes/_authenticated/expenses.reimbursements'
 import { Route as AuthenticatedExpensesApprovalsRouteImport } from './routes/_authenticated/expenses.approvals'
 import { Route as AuthenticatedExpensesIdRouteImport } from './routes/_authenticated/expenses.$id'
@@ -557,6 +559,12 @@ const AuthenticatedSalesPaymentsRoute =
     path: '/sales/payments',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedSalesFieldDashboardRoute =
+  AuthenticatedSalesFieldDashboardRouteImport.update({
+    id: '/sales/field-dashboard',
+    path: '/sales/field-dashboard',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedReportsInventoryRoute =
   AuthenticatedReportsInventoryRouteImport.update({
     id: '/reports/inventory',
@@ -652,6 +660,12 @@ const AuthenticatedFieldMoreRoute = AuthenticatedFieldMoreRouteImport.update({
   path: '/more',
   getParentRoute: () => AuthenticatedFieldRoute,
 } as any)
+const AuthenticatedFieldDashboardRoute =
+  AuthenticatedFieldDashboardRouteImport.update({
+    id: '/dashboard',
+    path: '/dashboard',
+    getParentRoute: () => AuthenticatedFieldRoute,
+  } as any)
 const AuthenticatedExpensesReimbursementsRoute =
   AuthenticatedExpensesReimbursementsRouteImport.update({
     id: '/expenses/reimbursements',
@@ -1377,6 +1391,7 @@ export interface FileRoutesByFullPath {
   '/expenses/$id': typeof AuthenticatedExpensesIdRoute
   '/expenses/approvals': typeof AuthenticatedExpensesApprovalsRoute
   '/expenses/reimbursements': typeof AuthenticatedExpensesReimbursementsRoute
+  '/field/dashboard': typeof AuthenticatedFieldDashboardRoute
   '/field/more': typeof AuthenticatedFieldMoreRoute
   '/field/notifications': typeof AuthenticatedFieldNotificationsRoute
   '/inventory/adjustments': typeof AuthenticatedInventoryAdjustmentsRoute
@@ -1393,6 +1408,7 @@ export interface FileRoutesByFullPath {
   '/purchasing/payments': typeof AuthenticatedPurchasingPaymentsRoute
   '/reports/financial': typeof AuthenticatedReportsFinancialRoute
   '/reports/inventory': typeof AuthenticatedReportsInventoryRoute
+  '/sales/field-dashboard': typeof AuthenticatedSalesFieldDashboardRoute
   '/sales/payments': typeof AuthenticatedSalesPaymentsRouteWithChildren
   '/settings/api-keys': typeof AuthenticatedSettingsApiKeysRoute
   '/settings/company': typeof AuthenticatedSettingsCompanyRoute
@@ -1568,6 +1584,7 @@ export interface FileRoutesByTo {
   '/expenses/$id': typeof AuthenticatedExpensesIdRoute
   '/expenses/approvals': typeof AuthenticatedExpensesApprovalsRoute
   '/expenses/reimbursements': typeof AuthenticatedExpensesReimbursementsRoute
+  '/field/dashboard': typeof AuthenticatedFieldDashboardRoute
   '/field/more': typeof AuthenticatedFieldMoreRoute
   '/field/notifications': typeof AuthenticatedFieldNotificationsRoute
   '/inventory/adjustments': typeof AuthenticatedInventoryAdjustmentsRoute
@@ -1584,6 +1601,7 @@ export interface FileRoutesByTo {
   '/purchasing/payments': typeof AuthenticatedPurchasingPaymentsRoute
   '/reports/financial': typeof AuthenticatedReportsFinancialRoute
   '/reports/inventory': typeof AuthenticatedReportsInventoryRoute
+  '/sales/field-dashboard': typeof AuthenticatedSalesFieldDashboardRoute
   '/sales/payments': typeof AuthenticatedSalesPaymentsRouteWithChildren
   '/settings/api-keys': typeof AuthenticatedSettingsApiKeysRoute
   '/settings/company': typeof AuthenticatedSettingsCompanyRoute
@@ -1763,6 +1781,7 @@ export interface FileRoutesById {
   '/_authenticated/expenses/$id': typeof AuthenticatedExpensesIdRoute
   '/_authenticated/expenses/approvals': typeof AuthenticatedExpensesApprovalsRoute
   '/_authenticated/expenses/reimbursements': typeof AuthenticatedExpensesReimbursementsRoute
+  '/_authenticated/field/dashboard': typeof AuthenticatedFieldDashboardRoute
   '/_authenticated/field/more': typeof AuthenticatedFieldMoreRoute
   '/_authenticated/field/notifications': typeof AuthenticatedFieldNotificationsRoute
   '/_authenticated/inventory/adjustments': typeof AuthenticatedInventoryAdjustmentsRoute
@@ -1779,6 +1798,7 @@ export interface FileRoutesById {
   '/_authenticated/purchasing/payments': typeof AuthenticatedPurchasingPaymentsRoute
   '/_authenticated/reports/financial': typeof AuthenticatedReportsFinancialRoute
   '/_authenticated/reports/inventory': typeof AuthenticatedReportsInventoryRoute
+  '/_authenticated/sales/field-dashboard': typeof AuthenticatedSalesFieldDashboardRoute
   '/_authenticated/sales/payments': typeof AuthenticatedSalesPaymentsRouteWithChildren
   '/_authenticated/settings/api-keys': typeof AuthenticatedSettingsApiKeysRoute
   '/_authenticated/settings/company': typeof AuthenticatedSettingsCompanyRoute
@@ -1958,6 +1978,7 @@ export interface FileRouteTypes {
     | '/expenses/$id'
     | '/expenses/approvals'
     | '/expenses/reimbursements'
+    | '/field/dashboard'
     | '/field/more'
     | '/field/notifications'
     | '/inventory/adjustments'
@@ -1974,6 +1995,7 @@ export interface FileRouteTypes {
     | '/purchasing/payments'
     | '/reports/financial'
     | '/reports/inventory'
+    | '/sales/field-dashboard'
     | '/sales/payments'
     | '/settings/api-keys'
     | '/settings/company'
@@ -2149,6 +2171,7 @@ export interface FileRouteTypes {
     | '/expenses/$id'
     | '/expenses/approvals'
     | '/expenses/reimbursements'
+    | '/field/dashboard'
     | '/field/more'
     | '/field/notifications'
     | '/inventory/adjustments'
@@ -2165,6 +2188,7 @@ export interface FileRouteTypes {
     | '/purchasing/payments'
     | '/reports/financial'
     | '/reports/inventory'
+    | '/sales/field-dashboard'
     | '/sales/payments'
     | '/settings/api-keys'
     | '/settings/company'
@@ -2343,6 +2367,7 @@ export interface FileRouteTypes {
     | '/_authenticated/expenses/$id'
     | '/_authenticated/expenses/approvals'
     | '/_authenticated/expenses/reimbursements'
+    | '/_authenticated/field/dashboard'
     | '/_authenticated/field/more'
     | '/_authenticated/field/notifications'
     | '/_authenticated/inventory/adjustments'
@@ -2359,6 +2384,7 @@ export interface FileRouteTypes {
     | '/_authenticated/purchasing/payments'
     | '/_authenticated/reports/financial'
     | '/_authenticated/reports/inventory'
+    | '/_authenticated/sales/field-dashboard'
     | '/_authenticated/sales/payments'
     | '/_authenticated/settings/api-keys'
     | '/_authenticated/settings/company'
@@ -2949,6 +2975,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSalesPaymentsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/sales/field-dashboard': {
+      id: '/_authenticated/sales/field-dashboard'
+      path: '/sales/field-dashboard'
+      fullPath: '/sales/field-dashboard'
+      preLoaderRoute: typeof AuthenticatedSalesFieldDashboardRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/reports/inventory': {
       id: '/_authenticated/reports/inventory'
       path: '/reports/inventory'
@@ -3059,6 +3092,13 @@ declare module '@tanstack/react-router' {
       path: '/more'
       fullPath: '/field/more'
       preLoaderRoute: typeof AuthenticatedFieldMoreRouteImport
+      parentRoute: typeof AuthenticatedFieldRoute
+    }
+    '/_authenticated/field/dashboard': {
+      id: '/_authenticated/field/dashboard'
+      path: '/dashboard'
+      fullPath: '/field/dashboard'
+      preLoaderRoute: typeof AuthenticatedFieldDashboardRouteImport
       parentRoute: typeof AuthenticatedFieldRoute
     }
     '/_authenticated/expenses/reimbursements': {
@@ -3862,6 +3902,7 @@ const AdminRouteRouteWithChildren = AdminRouteRoute._addFileChildren(
 )
 
 interface AuthenticatedFieldRouteChildren {
+  AuthenticatedFieldDashboardRoute: typeof AuthenticatedFieldDashboardRoute
   AuthenticatedFieldMoreRoute: typeof AuthenticatedFieldMoreRoute
   AuthenticatedFieldNotificationsRoute: typeof AuthenticatedFieldNotificationsRoute
   AuthenticatedFieldIndexRoute: typeof AuthenticatedFieldIndexRoute
@@ -3879,6 +3920,7 @@ interface AuthenticatedFieldRouteChildren {
 }
 
 const AuthenticatedFieldRouteChildren: AuthenticatedFieldRouteChildren = {
+  AuthenticatedFieldDashboardRoute: AuthenticatedFieldDashboardRoute,
   AuthenticatedFieldMoreRoute: AuthenticatedFieldMoreRoute,
   AuthenticatedFieldNotificationsRoute: AuthenticatedFieldNotificationsRoute,
   AuthenticatedFieldIndexRoute: AuthenticatedFieldIndexRoute,
@@ -3968,6 +4010,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedPurchasingPaymentsRoute: typeof AuthenticatedPurchasingPaymentsRoute
   AuthenticatedReportsFinancialRoute: typeof AuthenticatedReportsFinancialRoute
   AuthenticatedReportsInventoryRoute: typeof AuthenticatedReportsInventoryRoute
+  AuthenticatedSalesFieldDashboardRoute: typeof AuthenticatedSalesFieldDashboardRoute
   AuthenticatedSalesPaymentsRoute: typeof AuthenticatedSalesPaymentsRouteWithChildren
   AuthenticatedSettingsApiKeysRoute: typeof AuthenticatedSettingsApiKeysRoute
   AuthenticatedSettingsCompanyRoute: typeof AuthenticatedSettingsCompanyRoute
@@ -4116,6 +4159,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedPurchasingPaymentsRoute: AuthenticatedPurchasingPaymentsRoute,
   AuthenticatedReportsFinancialRoute: AuthenticatedReportsFinancialRoute,
   AuthenticatedReportsInventoryRoute: AuthenticatedReportsInventoryRoute,
+  AuthenticatedSalesFieldDashboardRoute: AuthenticatedSalesFieldDashboardRoute,
   AuthenticatedSalesPaymentsRoute: AuthenticatedSalesPaymentsRouteWithChildren,
   AuthenticatedSettingsApiKeysRoute: AuthenticatedSettingsApiKeysRoute,
   AuthenticatedSettingsCompanyRoute: AuthenticatedSettingsCompanyRoute,

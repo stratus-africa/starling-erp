@@ -98,6 +98,7 @@ export const navGroups: NavGroup[] = [
   {
     label: "Sales",
     items: [
+      { title: "Field Sales Dashboard", url: "/sales/field-dashboard", icon: Gauge },
       { title: "Quotes", url: "/sales/quotes", icon: FileText },
       { title: "Sales Orders", url: "/sales/orders", icon: ShoppingCart },
       { title: "Fulfillment", url: "/sales/packages", icon: Package },
