@@ -9,3 +9,5 @@
 - [ ] Confirm permission change from a second signed-in user account (workspace currently has only one user)
 - [x] Remove the Others column from the Roles Matrix
 - [x] Replace fixed currency-denomination icons with each tenant's base currency symbol
+- [x] Redesign Field Sales with a dark cobalt/mint glass system while preserving the bottom bar
+- [x] Remove customer Email action and show remaining customer credit

@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Phone, Mail, Pencil, FileText, ShoppingCart, Wallet } from "lucide-react";
+import { Phone, Pencil, FileText, ShoppingCart, Wallet, CreditCard, TrendingUp } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { FieldHeader, Loading, ErrorBox, NoAccess, Chips, StatusPill, Row, Empty, useFieldAccess, money } from "@/components/field/field-ui";
 import { dbMinor, formatMoney } from "@/lib/field-money";
@@ -42,9 +42,9 @@ function CustomerDetail() {
   const sales = posted.reduce((s: number, x: any) => s + dbMinor(x.grand_total), 0);
   const paid = data.payments.reduce((s: number, x: any) => s + dbMinor(x.amount), 0);
 
+  const remainingCredit = c.credit_limit == null ? null : Math.max(0, dbMinor(c.credit_limit) - outstanding);
   const act = [
     c.phone && { href: `tel:${c.phone}`, label: "Call", icon: Phone },
-    c.email && { href: `mailto:${c.email}`, label: "Email", icon: Mail },
   ].filter(Boolean) as { href: string; label: string; icon: typeof Phone }[];
 
   const tabs: { value: Tab; label: string }[] = [{ value: "overview", label: "Overview" }];
@@ -55,15 +55,18 @@ function CustomerDetail() {
   return (
     <div>
       <FieldHeader title={c.name} back="/field/customers" right={a.customersEdit ? <Link to="/field/customers/new" search={{ edit: id }} aria-label="Edit" className="flex h-11 w-11 items-center justify-center"><Pencil className="h-5 w-5" /></Link> : null} />
-      <div className="space-y-4 p-4">
+      <div className="space-y-5 p-4">
         <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0 text-sm text-muted-foreground">
-            <div>{c.code}</div><div>{c.phone}</div><div className="truncate">{c.email}</div>
+          <div className="min-w-0">
+            <div className="mb-1 text-[10px] font-bold uppercase text-primary">Account detail</div>
+            <div className="text-sm text-muted-foreground">{[c.code, c.phone].filter(Boolean).join(" · ")}</div>
+            {c.email && <div className="truncate text-xs text-muted-foreground/70">{c.email}</div>}
           </div>
           <StatusPill status={c.status ?? "Active"} />
         </div>
-        <div className="grid grid-cols-3 gap-2 text-center">
-          <Stat label="Outstanding" v={formatMoney(outstanding, cur)} />
+        <div className="grid grid-cols-2 gap-3">
+          <CreditStat label="Remaining credit" value={remainingCredit == null ? "No limit" : formatMoney(remainingCredit, cur)} icon={CreditCard} accent />
+          <CreditStat label="Outstanding" value={formatMoney(outstanding, cur)} icon={TrendingUp} />
           <Stat label="Total sales" v={formatMoney(sales, cur)} />
           <Stat label="Payments" v={formatMoney(paid, cur)} />
         </div>
@@ -101,5 +104,17 @@ function CustomerDetail() {
 }
 
 function Stat({ label, v }: { label: string; v: string }) {
-  return <div className="rounded-lg border bg-card p-2"><div className="text-[11px] text-muted-foreground">{label}</div><div className="truncate text-sm font-semibold tabular-nums">{v}</div></div>;
+  return <div data-field-surface className="rounded-xl border p-3"><div className="text-[10px] font-bold uppercase text-muted-foreground">{label}</div><div className="mt-1 truncate text-base font-semibold tabular-nums">{v}</div></div>;
+}
+
+function CreditStat({ label, value, icon: Icon, accent = false }: { label: string; value: string; icon: typeof CreditCard; accent?: boolean }) {
+  return (
+    <div data-field-surface className={`rounded-xl border p-3 ${accent ? "border-success/30 bg-success/10" : ""}`}>
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-[10px] font-bold uppercase text-muted-foreground">{label}</span>
+        <Icon className={`h-4 w-4 ${accent ? "text-success" : "text-primary"}`} />
+      </div>
+      <div className={`mt-2 truncate text-lg font-bold tabular-nums ${accent ? "text-success" : ""}`}>{value}</div>
+    </div>
+  );
 }

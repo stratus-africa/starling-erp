@@ -58,15 +58,15 @@ function FieldLogin() {
   };
 
   return (
-    <div className="flex min-h-[100dvh] flex-col bg-primary text-primary-foreground">
+    <div className="field-app flex min-h-[100dvh] flex-col bg-background text-foreground">
       <div className="flex flex-1 flex-col justify-end px-6 pb-8 pt-[max(3rem,env(safe-area-inset-top))]">
-        <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary-foreground/15">
+        <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-primary/30">
           <MapPin className="h-7 w-7" />
         </div>
         <h1 className="text-3xl font-bold leading-tight">Field Sales</h1>
-        <p className="mt-2 text-sm text-primary-foreground/80">Customers, quotes, orders and payments — wherever you are, even with no signal.</p>
+        <p className="mt-2 text-sm text-muted-foreground">Customers, quotes, orders and payments — wherever you are, even with no signal.</p>
       </div>
-      <div className="rounded-t-[2rem] bg-background px-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-8 text-foreground">
+      <div data-field-surface className="rounded-t-[2rem] border-t px-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-8 text-foreground">
         {offline && (
           <div className="mb-4 flex items-center gap-2 rounded-lg bg-destructive/10 px-3 py-2 text-xs text-destructive">
             <WifiOff className="h-4 w-4" /> You need a connection to sign in the first time.
