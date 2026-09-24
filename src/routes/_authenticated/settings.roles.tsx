@@ -101,9 +101,6 @@ function PermissionMatrix({ permissions, role, grants, overrides, changing, onTo
   const actionFor = (permission: PermissionRow) => permission.code.split(".").at(-1) ?? permission.action;
   const permissionsForColumn = (subject: PermissionSubject, actions: readonly string[]) =>
     subject.permissions.filter((permission) => actions.includes(actionFor(permission)));
-  const otherPermissions = (subject: PermissionSubject) => subject.permissions.filter((permission) =>
-    !ACTION_COLUMNS.some((column) => (column.actions as readonly string[]).includes(actionFor(permission))),
-  );
   const toggleCell = (cellPermissions: PermissionRow[]) => {
     if (cellPermissions.length === 0 || role === "tenant_admin") return;
     const shouldEnable = cellPermissions.some((permission) => !isGranted(permission.code));
@@ -124,14 +121,12 @@ function PermissionMatrix({ permissions, role, grants, overrides, changing, onTo
                     <th className="w-[34%] px-3 py-2 text-left font-medium">Particulars</th>
                     <th className="w-14 px-2 py-2 text-center font-medium">Full</th>
                     {ACTION_COLUMNS.map((column) => <th key={column.key} className="w-16 px-2 py-2 text-center font-medium">{column.label}</th>)}
-                    <th className="w-20 px-2 py-2 text-center font-medium">Others</th>
                   </tr>
                 </thead>
                 <tbody>
                   {subjects.map((subject) => {
                     const allGranted = subject.permissions.every((permission) => isGranted(permission.code));
                     const rowChanging = subject.permissions.some((permission) => changing.has(`${role}:${permission.code}`));
-                    const other = otherPermissions(subject);
                     return (
                       <tr key={subject.key} className="border-b last:border-b-0 hover:bg-muted/20">
                         <td className="px-3 py-2">
@@ -144,7 +139,6 @@ function PermissionMatrix({ permissions, role, grants, overrides, changing, onTo
                           const checked = cell.length > 0 && cell.every((permission) => isGranted(permission.code));
                           return <td key={column.key} className="px-2 py-2"><div className="flex justify-center">{cell.length > 0 ? <Checkbox aria-label={`${column.label} ${subject.label}`} checked={checked} disabled={role === "tenant_admin" || cell.some((permission) => changing.has(`${role}:${permission.code}`))} onCheckedChange={() => toggleCell(cell)} /> : <span className="text-muted-foreground/30">—</span>}</div></td>;
                         })}
-                        <td className="px-2 py-2"><div className="flex justify-center">{other.length > 0 ? <Checkbox aria-label={`Other permissions for ${subject.label}`} checked={other.every((permission) => isGranted(permission.code))} disabled={role === "tenant_admin" || other.some((permission) => changing.has(`${role}:${permission.code}`))} onCheckedChange={() => toggleCell(other)} /> : <span className="text-muted-foreground/30">—</span>}</div></td>
                       </tr>
                     );
                   })}
