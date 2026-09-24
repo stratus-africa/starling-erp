@@ -322,21 +322,12 @@ export function SystemHealthPage() {
                     </div>
                     <div>
                       <span className="text-muted-foreground block text-[10px] uppercase">
-                        30-Day Uptime
+                        Last Checked
                       </span>
-                      <span className="font-mono text-sm font-semibold text-emerald-600 dark:text-emerald-400">
-                        {item.uptime_pct}%
+                      <span className="font-mono text-sm font-semibold text-foreground">
+                        {item.last_checked_at ? new Date(item.last_checked_at).toLocaleString() : "Never"}
                       </span>
                     </div>
-                  </div>
-
-                  {/* Uptime bar */}
-                  <div className="space-y-1">
-                    <div className="flex justify-between text-[11px] text-muted-foreground">
-                      <span>Availability Target</span>
-                      <span className="font-medium text-foreground">{item.uptime_pct}%</span>
-                    </div>
-                    <Progress value={item.uptime_pct} className="h-1.5" />
                   </div>
 
                   {/* Telemetry Metrics specific to component */}
