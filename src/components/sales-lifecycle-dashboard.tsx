@@ -1,7 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import {
   BarChart3,
-  DollarSign,
   FileText,
   Loader2,
   Package,
@@ -15,6 +14,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import { CurrencyIcon } from "@/components/currency-icon";
 
 type Dashboard = {
   metrics: Record<string, number>;
@@ -58,14 +58,14 @@ export function SalesLifecycleDashboard() {
       </Card>
     );
   const cards = [
-    ["Today's Sales", metrics.todays_sales, DollarSign],
+    ["Today's Sales", metrics.todays_sales, CurrencyIcon],
     ["MTD Sales", metrics.mtd_sales, Receipt],
     ["Orders", metrics.orders, ShoppingCart],
     ["Quotes Awaiting Response", metrics.quotes_awaiting_response, FileText],
     ["Orders Awaiting Fulfillment", metrics.orders_awaiting_fulfillment, Package],
     ["Outstanding AR", metrics.outstanding_ar, Wallet],
     ["Overdue AR", metrics.overdue_ar, Wallet],
-    ["Unallocated Payments", metrics.unallocated_payments, DollarSign],
+    ["Unallocated Payments", metrics.unallocated_payments, CurrencyIcon],
   ] as const;
   return (
     <div className="flex flex-col gap-5 p-4 md:p-6">

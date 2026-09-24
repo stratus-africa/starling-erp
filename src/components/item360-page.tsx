@@ -45,7 +45,6 @@ import {
   Users,
   ListTree,
   Factory,
-  DollarSign,
   BookOpen,
   Activity,
   AlertTriangle,
@@ -62,6 +61,7 @@ import {
   FlaskConical,
   Fingerprint,
 } from "lucide-react";
+import { CurrencyIcon } from "@/components/currency-icon";
 
 import { InventoryLocationStock } from "@/components/inventory-location-stock";
 import { LotSerialPanel } from "@/components/lot-serial-panel";
@@ -926,7 +926,7 @@ export function Item360Page({ id, backTo = "/inventory/items", backLabel = "Item
                 { value: "suppliers", label: "Suppliers", icon: Users },
                 { value: "boms", label: "BOMs", icon: ListTree },
                 { value: "manufacturing", label: "Manufacturing", icon: Factory },
-                { value: "pricing", label: "Pricing", icon: DollarSign },
+                { value: "pricing", label: "Pricing", icon: CurrencyIcon },
                 { value: "accounting", label: "Accounting", icon: BookOpen },
                 { value: "activity", label: "Activity", icon: Activity },
                 ...(item?.track_batches || item?.track_serials
@@ -1675,7 +1675,7 @@ export function Item360Page({ id, backTo = "/inventory/items", backLabel = "Item
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {[
                   { label: "Total Sold (Qty)", value: qty(totalSalesQty), icon: TrendingUp },
-                  { label: "Total Revenue", value: money(totalSalesValue), icon: DollarSign },
+                  { label: "Total Revenue", value: money(totalSalesValue), icon: CurrencyIcon },
                   { label: "Reserved (Qty)", value: qty(availability.reserved), icon: ShoppingCart },
                   { label: "Invoices", value: String(invoiceLines.length), icon: FileText },
                 ].map(({ label, value, icon: Icon }) => (
@@ -1804,7 +1804,7 @@ export function Item360Page({ id, backTo = "/inventory/items", backLabel = "Item
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {[
                   { label: "Total Purchased (Qty)", value: qty(totalPurchaseQty), icon: TrendingDown },
-                  { label: "Total Spend", value: money(totalPurchaseValue), icon: DollarSign },
+                  { label: "Total Spend", value: money(totalPurchaseValue), icon: CurrencyIcon },
                   { label: "Pending Receive", value: qty(pendingReceive), icon: ShoppingBag },
                   { label: "Bills", value: String(billLines.length), icon: ReceiptText },
                 ].map(({ label, value, icon: Icon }) => (
@@ -2167,7 +2167,7 @@ export function Item360Page({ id, backTo = "/inventory/items", backLabel = "Item
               <Card>
                 <CardHeader className="pb-2 pt-4 px-4">
                   <CardTitle className="text-sm flex items-center gap-2">
-                    <DollarSign className="h-4 w-4" /> Cost & Pricing
+                    <CurrencyIcon className="h-4 min-w-4" /> Cost & Pricing
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="px-4 pb-4">

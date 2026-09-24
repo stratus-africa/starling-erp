@@ -6,7 +6,7 @@ import {
   Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis, Cell,
 } from "recharts";
 import {
-  ArrowUpRight, ArrowDownRight, DollarSign, ShoppingCart, Users, Package,
+  ArrowUpRight, ArrowDownRight, ShoppingCart, Users, Package,
   Plus, FileText, TrendingUp, AlertTriangle,
 } from "lucide-react";
 import { Link } from "@tanstack/react-router";
@@ -14,6 +14,7 @@ import type { ReactNode } from "react";
 import { useExecutiveDashboard } from "@/hooks/use-executive-dashboard";
 import { useAuth } from "@/hooks/use-auth";
 import { formatBaseCurrency } from "@/lib/currency";
+import { CurrencyIcon } from "@/components/currency-icon";
 
 const revenue = [
   { m: "Jan", rev: 214, exp: 148 }, { m: "Feb", rev: 232, exp: 152 },
@@ -87,7 +88,7 @@ export function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-        <KpiCard label="Revenue MTD" value={money(data?.revenueMtd ?? 0)} delta="Live" up icon={<DollarSign className="h-4 w-4" />} />
+        <KpiCard label="Revenue MTD" value={money(data?.revenueMtd ?? 0)} delta="Live" up icon={<CurrencyIcon className="h-4 min-w-4" />} />
         <KpiCard label="Orders" value={String(data?.orders ?? 0)} delta="Live" up icon={<ShoppingCart className="h-4 w-4" />} />
         <KpiCard label="Active Customers" value={String(data?.activeCustomers ?? 0)} delta="Live" up icon={<Users className="h-4 w-4" />} />
         <KpiCard label="Inventory Value" value={money(data?.inventoryValue ?? 0)} delta="Live" up icon={<Package className="h-4 w-4" />} />

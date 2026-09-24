@@ -15,7 +15,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { toast } from "sonner";
-import { Loader2, DollarSign, Check } from "lucide-react";
+import { Loader2, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -39,6 +39,7 @@ import {
 } from "@/components/ui/select";
 import { db } from "@/lib/typed-db";
 import { RemittanceMatcher } from "@/components/remittance-matcher";
+import { CurrencyIcon } from "@/components/currency-icon";
 
 export type PaymentCreateKind = "received" | "made";
 
@@ -313,7 +314,7 @@ export function CreatePaymentDialog({ open, onOpenChange, kind, variant = "dialo
       <Content className="max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
         <Header className="shrink-0">
           <Title className="flex items-center gap-2">
-            <DollarSign className="h-4 w-4" />
+            <CurrencyIcon className="h-4 min-w-4" />
             {isReceived ? "Create Payment Received" : "Create Payment Made"}
           </Title>
           <Description>

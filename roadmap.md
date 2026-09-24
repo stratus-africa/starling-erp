@@ -8,4 +8,4 @@
 - [x] Verified: permission matrix ticks save workspace overrides and override base role access
 - [ ] Confirm permission change from a second signed-in user account (workspace currently has only one user)
 - [x] Remove the Others column from the Roles Matrix
-- [ ] Replace fixed currency-denomination icons with each tenant's base currency symbol
+- [x] Replace fixed currency-denomination icons with each tenant's base currency symbol

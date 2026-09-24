@@ -46,7 +46,6 @@ import {
   Boxes,
   CheckCircle2,
   Clock,
-  DollarSign,
   ExternalLink,
   Layers,
   Loader2,
@@ -62,6 +61,7 @@ import {
   XCircle,
   Timer,
 } from "lucide-react";
+import { CurrencyIcon } from "@/components/currency-icon";
 import {
   Area,
   AreaChart,
@@ -341,7 +341,7 @@ export function InventoryDashboard() {
               label="Inventory Value"
               value={money(kpis?.total_value, true)}
               sub={`${num(kpis?.total_skus)} SKUs tracked`}
-              icon={DollarSign}
+              icon={CurrencyIcon}
               href="/inventory/items"
             />
             <KpiCard
@@ -557,11 +557,11 @@ export function InventoryDashboard() {
           {/* ── Section 4: Inventory valuation by category ──────────────────── */}
           <Card className="border shadow-sm">
             <CardHeader className="pb-2 pt-4 px-4">
-              <SectionHeader icon={DollarSign} title="Inventory Valuation by Category" />
+              <SectionHeader icon={CurrencyIcon} title="Inventory Valuation by Category" />
             </CardHeader>
             <CardContent className="px-4 pb-4">
               {valByCat.length === 0 ? (
-                <EmptyState icon={DollarSign} message="No inventory value recorded yet." />
+                <EmptyState icon={CurrencyIcon} message="No inventory value recorded yet." />
               ) : (
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-center">
                   {/* Bar chart */}

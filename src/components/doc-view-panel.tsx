@@ -54,7 +54,6 @@ import {
   ArrowRight,
   ArrowLeft,
   Download,
-  DollarSign,
   FileText,
   CheckCircle2,
   Wallet,
@@ -75,6 +74,7 @@ import { RecordPaymentDialog } from "@/components/record-payment-dialog";
 import { getDocumentTemplate } from "@/lib/document-template-types";
 import { SalesDocumentLineage } from "@/components/sales-document-lineage";
 import { PaymentProgress } from "@/components/payment-progress";
+import { CurrencyIcon } from "@/components/currency-icon";
 import { AgingBadge } from "@/components/aging-badge";
 import { RelatedDocuments } from "@/components/related-documents";
 
@@ -655,7 +655,7 @@ function InvoiceOverviewView({ id }: { id: string }) {
             )}
             {canRecordPayment && outstanding > 0 && (
               <Button variant={invoice.posted_at ? "default" : "secondary"} size="sm" onClick={() => setPayOpen(true)}>
-                <DollarSign className="mr-1.5 h-4 w-4" /> Record Payment
+                <CurrencyIcon className="mr-1.5 h-4 min-w-4" /> Record Payment
               </Button>
             )}
             {canWrite && (
@@ -1823,7 +1823,7 @@ export function DocViewPanel({ kind, id, embedded = false, onClose, onSaved }: D
               className="h-8 gap-1.5"
               onClick={() => setPayOpen(true)}
             >
-              <DollarSign className="h-3.5 w-3.5" />
+              <CurrencyIcon className="h-3.5 min-w-3.5" />
               Record Payment
             </Button>
           )}
