@@ -19,7 +19,7 @@ import { Separator } from "@/components/ui/separator";
 import { SalesDocumentLineage } from "@/components/sales-document-lineage";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { QuoteFollowUpDialog } from "@/components/quote-followup-dialog";
-import { Sparkles, CheckCircle2, Lock } from "lucide-react";
+import { Sparkles, Lock } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
