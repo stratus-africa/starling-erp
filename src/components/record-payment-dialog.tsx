@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { toast } from "sonner";
-import { Loader2, DollarSign } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,6 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { CurrencyIcon } from "@/components/currency-icon";
 
 interface RecordPaymentDialogProps {
   open: boolean;
@@ -160,7 +161,7 @@ export function RecordPaymentDialog({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <DollarSign className="h-4 w-4" />
+            <CurrencyIcon className="h-4 min-w-4" />
             Record {kind === "receive" ? "Payment Received" : "Payment Made"}
           </DialogTitle>
           <DialogDescription>

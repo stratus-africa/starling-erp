@@ -35,7 +35,6 @@ import {
   Send,
   Trash2,
   FileText,
-  DollarSign,
   Printer,
   Mail,
   Receipt,
@@ -62,6 +61,7 @@ import { callRpc } from "@/lib/db-rpc";
 import type { TableName } from "@/lib/typed-db";
 import type { TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
 import { ConvertReqToPoDialog } from "@/components/convert-req-to-po-dialog";
+import { CurrencyIcon } from "@/components/currency-icon";
 import {
   useEligibleQuotesForSalesOrder,
   useEligibleOrdersForInvoice,
@@ -1337,7 +1337,7 @@ export function DocumentEditor({
                     disabled={runRpc.isPending}
                     onClick={() => runRpc.mutate("post_invoice")}
                   >
-                    <DollarSign className="h-4 w-4 mr-1.5" /> Post Invoice
+                     <CurrencyIcon className="mr-1.5 h-4 min-w-4" /> Post Invoice
                   </Button>
                 )}
                 {canPost && kind === "bill" && !isNew && !doc?.posted_at && (
@@ -1347,7 +1347,7 @@ export function DocumentEditor({
                     disabled={runRpc.isPending}
                     onClick={() => runRpc.mutate("post_bill")}
                   >
-                    <DollarSign className="h-4 w-4 mr-1.5" /> Post Bill
+                     <CurrencyIcon className="mr-1.5 h-4 min-w-4" /> Post Bill
                   </Button>
                 )}
                 {canPost && kind === "credit_note" && !isNew && !doc?.posted_at && (
@@ -1357,12 +1357,12 @@ export function DocumentEditor({
                     disabled={runRpc.isPending}
                     onClick={() => runRpc.mutate("post_credit_note")}
                   >
-                    <DollarSign className="h-4 w-4 mr-1.5" /> Post Credit Note
+                     <CurrencyIcon className="mr-1.5 h-4 min-w-4" /> Post Credit Note
                   </Button>
                 )}
                 {canRecordPayment && showRecordPayment && (
                   <Button variant="secondary" size="sm" onClick={() => setPayOpen(true)}>
-                    <DollarSign className="h-4 w-4 mr-1.5" /> Record Payment
+                     <CurrencyIcon className="mr-1.5 h-4 min-w-4" /> Record Payment
                   </Button>
                 )}
                 {canVoid && (
