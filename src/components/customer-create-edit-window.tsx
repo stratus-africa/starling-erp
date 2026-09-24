@@ -63,10 +63,10 @@ export function CustomerCreateEditWindow({
   onOpenChange?: (open: boolean) => void;
   onSaved?: (id: string) => void;
 }) {
-  const { tenant, hasRole } = useAuth();
+  const { tenant, can } = useAuth();
   const qc = useQueryClient();
   const isNew = id === "new";
-  const canWrite = hasRole(["tenant_admin", "super_admin", "sales"]);
+  const canWrite = can(isNew ? "crm.create" : "crm.update");
 
   const [values, setValues] = useState<Values>(() =>
     Object.fromEntries(

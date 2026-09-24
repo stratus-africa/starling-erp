@@ -4,9 +4,8 @@ import { Party360Page } from "@/components/party-360-page";
 import { supplierFields } from "@/lib/module-field-definitions";
 
 export const Route = createFileRoute("/_authenticated/purchasing/suppliers/$id")({
-  validateSearch: (search: Record<string, unknown>): { edit?: boolean } => ({
-    edit: search.edit === true || search.edit === "true" || search.edit === "1",
-  }),
+  validateSearch: (search: Record<string, unknown>): { edit?: boolean } =>
+    search.edit === true || search.edit === "true" || search.edit === "1" ? { edit: true } : {},
   component: SupplierRoute,
 });
 
