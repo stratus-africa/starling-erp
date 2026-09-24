@@ -19,7 +19,7 @@ import { Separator } from "@/components/ui/separator";
 import { SalesDocumentLineage } from "@/components/sales-document-lineage";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { QuoteFollowUpDialog } from "@/components/quote-followup-dialog";
-import { Sparkles } from "lucide-react";
+import { Sparkles, CheckCircle2, Lock } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -73,6 +73,7 @@ const statusClass: Record<string, string> = {
   Accepted: "bg-emerald-100 text-emerald-700",
   Rejected: "bg-red-100 text-red-700",
   Expired: "bg-orange-100 text-orange-700",
+  Closed: "bg-zinc-200 text-zinc-700",
   Cancelled: "bg-red-100 text-red-700",
 };
 
@@ -596,7 +597,7 @@ export function QuoteViewPage({ id }: { id: string }) {
                     Convert to Order
                   </DropdownMenuItem>
                 )}
-                {canDelete && (
+                {canDelete && !isClosed && (
                   <DropdownMenuItem
                     className="text-destructive"
                     onClick={() => setDeleteOpen(true)}
