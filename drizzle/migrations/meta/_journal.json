@@ -225,6 +225,13 @@
       "when": 1790278697381,
       "tag": "0031_system_health_real_values",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1790517463988,
+      "tag": "0032_admin_purge_tenant",
+      "breakpoints": true
     }
   ]
 }

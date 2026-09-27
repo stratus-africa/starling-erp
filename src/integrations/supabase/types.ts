@@ -9262,6 +9262,10 @@ export type Database = {
         Args: { _component: string }
         Returns: Json
       }
+      admin_purge_tenant: {
+        Args: { _confirm_name: string; _tenant_id: string }
+        Returns: Json
+      }
       admin_reactivate_subscription: {
         Args: { _reason?: string; _subscription_id: string }
         Returns: Json

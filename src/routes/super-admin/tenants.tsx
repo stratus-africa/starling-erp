@@ -67,6 +67,7 @@ import {
   RefreshCw,
   Search,
   ShieldAlert,
+  Trash2,
   Unlock,
   Users,
   XCircle,
@@ -388,22 +389,96 @@ function SessionRowDialog({
 
 // ─── Row action menu ──────────────────────────────────────────────────────────
 
+function PurgeRowDialog({
+  tenant,
+  onClose,
+  onSuccess,
+}: {
+  tenant: TenantRow | null;
+  onClose: () => void;
+  onSuccess: () => void;
+}) {
+  const [confirm, setConfirm] = useState("");
+  const mutation = useMutation({
+    mutationFn: async () => {
+      if (!tenant) return;
+      const { data, error } = await (db as any).rpc("admin_purge_tenant", {
+        _tenant_id: tenant.id,
+        _confirm_name: confirm.trim(),
+      });
+      if (error) throw error;
+      return data as { rows_deleted?: number } | null;
+    },
+    onSuccess: (d) => {
+      toast.success(`${tenant?.name} permanently deleted (${d?.rows_deleted ?? 0} records removed).`);
+      setConfirm("");
+      onSuccess();
+    },
+    onError: (e: any) => toast.error(e.message ?? "Deletion failed"),
+  });
+  const matches = !!tenant && confirm.trim() === tenant.name;
+
+  return (
+    <AlertDialog
+      open={!!tenant}
+      onOpenChange={(v) => {
+        if (!v && !mutation.isPending) {
+          setConfirm("");
+          onClose();
+        }
+      }}
+    >
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle className="flex items-center gap-2 text-destructive">
+            <Trash2 className="h-5 w-5" /> Permanently delete {tenant?.name}?
+          </AlertDialogTitle>
+          <AlertDialogDescription>
+            This removes the workspace and every record in it — sales, purchases, inventory, accounting, users'
+            access, settings and history. User logins are kept. This cannot be undone.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <div className="space-y-2 py-2">
+          <Label htmlFor="purge-confirm" className="text-sm">
+            Type <span className="font-semibold">{tenant?.name}</span> to confirm
+          </Label>
+          <Input id="purge-confirm" value={confirm} onChange={(e) => setConfirm(e.target.value)} autoComplete="off" />
+        </div>
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={mutation.isPending}>Cancel</AlertDialogCancel>
+          <Button
+            variant="destructive"
+            disabled={!matches || mutation.isPending}
+            onClick={() => mutation.mutate()}
+          >
+            {mutation.isPending ? "Deleting…" : "Delete permanently"}
+          </Button>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+}
+
 function RowActions({
   tenant,
   canSuspend,
   canActivate,
   canSession,
+  canPurge,
   onSuspend,
   onActivate,
   onSession,
+  onPurge,
 }: {
   tenant: TenantRow;
   canSuspend: boolean;
   canActivate: boolean;
   canSession: boolean;
+  canPurge: boolean;
   onSuspend: () => void;
   onActivate: () => void;
   onSession: () => void;
+  onPurge: () => void;
 }) {
   const status = tenant.status ?? "active";
   const showSuspend = canSuspend && ["active", "trial", "past_due"].includes(status);
@@ -424,7 +499,7 @@ function RowActions({
         </Tooltip>
       </TooltipProvider>
 
-      {(canSession || showSuspend || showActivate) && (
+      {(canSession || showSuspend || showActivate || canPurge) && (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button size="sm" variant="ghost" className="h-8 w-8 p-0">
@@ -469,6 +544,18 @@ function RowActions({
                 <Unlock className="h-4 w-4" /> Reactivate Tenant
               </DropdownMenuItem>
             )}
+
+            {canPurge && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  className="flex items-center gap-2 text-destructive focus:text-destructive"
+                  onSelect={onPurge}
+                >
+                  <Trash2 className="h-4 w-4" /> Delete Permanently
+                </DropdownMenuItem>
+              </>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
       )}
@@ -492,10 +579,12 @@ function TenantsContent() {
   const [suspendTarget, setSuspendTarget] = useState<TenantRow | null>(null);
   const [activateTarget, setActivateTarget] = useState<TenantRow | null>(null);
   const [sessionTarget, setSessionTarget] = useState<TenantRow | null>(null);
+  const [purgeTarget, setPurgeTarget] = useState<TenantRow | null>(null);
 
   const canSuspend = canPlatform(PLATFORM_PERMISSIONS.tenantsSuspend);
   const canActivate = canPlatform(PLATFORM_PERMISSIONS.tenantsActivate);
   const canSession = canPlatform(PLATFORM_PERMISSIONS.supportImpersonate);
+  const canPurge = canPlatform(PLATFORM_PERMISSIONS.tenantsDelete);
 
   // ── Fetch plans for filter dropdown ────────────────────────────────────
   const { data: plans = [] } = useQuery<Plan[]>({
@@ -786,9 +875,11 @@ function TenantsContent() {
                     canSuspend={canSuspend}
                     canActivate={canActivate}
                     canSession={canSession}
+                    canPurge={canPurge}
                     onSuspend={() => setSuspendTarget(tenant)}
                     onActivate={() => setActivateTarget(tenant)}
                     onSession={() => setSessionTarget(tenant)}
+                    onPurge={() => setPurgeTarget(tenant)}
                   />
                 </TableCell>
               </TableRow>
@@ -828,6 +919,14 @@ function TenantsContent() {
       )}
 
       {/* ── Row-level action dialogs ──────────────────────────────────── */}
+      <PurgeRowDialog
+        tenant={purgeTarget}
+        onClose={() => setPurgeTarget(null)}
+        onSuccess={() => {
+          setPurgeTarget(null);
+          invalidate();
+        }}
+      />
       <SuspendRowDialog
         open={!!suspendTarget}
         onOpenChange={(v) => {
