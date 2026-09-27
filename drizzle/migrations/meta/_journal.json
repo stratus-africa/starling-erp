@@ -232,6 +232,13 @@
       "when": 1790517463988,
       "tag": "0032_admin_purge_tenant",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1790517709146,
+      "tag": "0033_admin_purge_tenant_fk_triggers",
+      "breakpoints": true
     }
   ]
 }
