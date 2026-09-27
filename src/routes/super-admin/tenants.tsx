@@ -67,6 +67,7 @@ import {
   RefreshCw,
   Search,
   ShieldAlert,
+  Trash2,
   Unlock,
   Users,
   XCircle,
