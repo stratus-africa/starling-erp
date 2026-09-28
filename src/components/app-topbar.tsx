@@ -17,6 +17,7 @@ import { useRouterState, Link } from "@tanstack/react-router";
 import { navGroups } from "@/lib/nav";
 import { useMemo } from "react";
 import { useAuth } from "@/hooks/use-auth";
+import { usePlatformAuth } from "@/hooks/use-platform-auth";
 import { TenantSwitcher } from "./tenant-switcher";
 import { GlobalSearch } from "./global-search";
 import { NotificationCenter } from "./notification-center";
@@ -39,6 +40,7 @@ export function AppTopbar() {
   const { theme, toggle } = useTheme();
   const crumbs = useBreadcrumbs();
   const { profile, tenant, roles, signOut } = useAuth();
+  const { isPlatformAdmin } = usePlatformAuth();
   const initials = (profile?.full_name ?? profile?.email ?? "??")
     .split(/\s+/)
     .map((s) => s[0])
@@ -66,7 +68,7 @@ export function AppTopbar() {
       </nav>
 
       <div className="ml-auto flex items-center gap-2">
-        {roles.includes("super_admin") && (
+        {(isPlatformAdmin || roles.includes("super_admin")) && (
           <Button
             asChild
             variant="outline"
