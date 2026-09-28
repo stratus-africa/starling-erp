@@ -29,7 +29,7 @@ function PlatformUsersDirectory() {
   });
 
   return (
-    <div className="flex flex-col gap-6 p-4 md:p-6 max-w-[1400px] mx-auto">
+    <div className="flex flex-col gap-6 p-4 md:p-6">
       <div><h1 className="text-2xl font-semibold tracking-tight flex items-center gap-2"><Users className="h-5 w-5" /> Platform Users</h1><p className="text-sm text-muted-foreground mt-1">User counts by tenant. Open a tenant to manage its users and roles.</p></div>
       {isLoading && <Card className="p-10 flex justify-center"><Loader2 className="h-5 w-5 animate-spin" /></Card>}
       {isError && <Card className="p-6 flex items-center gap-3 text-destructive"><AlertCircle className="h-5 w-5" /><span>Unable to load platform users.</span><Button variant="outline" size="sm" onClick={() => refetch()}>Retry</Button></Card>}
