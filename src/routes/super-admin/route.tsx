@@ -122,6 +122,7 @@ function SuperAdminGate() {
 
 function SuperAdminTopbar() {
   const { profile } = useAuth();
+  const hasWorkspace = Boolean(profile?.tenant_id);
   const { adminProfile, supportSession, endSupportSession } = usePlatformAuth();
   const navigate = useNavigate();
 
@@ -169,13 +170,15 @@ function SuperAdminTopbar() {
 
         <Separator orientation="vertical" className="h-5 hidden sm:block" />
 
-        {/* Exit to tenant workspace */}
-        <Button asChild variant="ghost" size="sm" className="h-8 gap-1.5 text-xs hidden sm:flex">
-          <Link to="/">
-            <ExternalLink className="h-3.5 w-3.5" />
-            Workspace
-          </Link>
-        </Button>
+        {/* Exit to tenant workspace — only when the admin actually belongs to one */}
+        {hasWorkspace && (
+          <Button asChild variant="ghost" size="sm" className="h-8 gap-1.5 text-xs hidden sm:flex">
+            <Link to="/">
+              <ExternalLink className="h-3.5 w-3.5" />
+              Workspace
+            </Link>
+          </Button>
+        )}
 
         {/* User menu */}
         <DropdownMenu>
@@ -204,12 +207,14 @@ function SuperAdminTopbar() {
               </Badge>
             </div>
             <DropdownMenuSeparator />
-            <DropdownMenuItem asChild>
-              <Link to="/">
-                <ExternalLink className="h-4 w-4 mr-2" />
-                Exit to tenant workspace
-              </Link>
-            </DropdownMenuItem>
+            {hasWorkspace && (
+              <DropdownMenuItem asChild>
+                <Link to="/">
+                  <ExternalLink className="h-4 w-4 mr-2" />
+                  Exit to tenant workspace
+                </Link>
+              </DropdownMenuItem>
+            )}
             <DropdownMenuSeparator />
             <DropdownMenuItem className="text-destructive" onClick={handleSignOut}>
               <LogOut className="h-4 w-4 mr-2" /> Sign out
