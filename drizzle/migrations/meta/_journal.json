@@ -253,6 +253,13 @@
       "when": 1790601953538,
       "tag": "0035_fix_super_admin_tenant_user_listing",
       "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1790617096167,
+      "tag": "0036_allow_super_admin_workspace_roles",
+      "breakpoints": true
     }
   ]
 }
