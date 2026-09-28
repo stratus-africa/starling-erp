@@ -13,3 +13,4 @@
 - [x] Remove customer Email action and show remaining customer credit
 
 - [x] Remove fake data and placeholders from all Super Admin pages
+- [x] Allow Super Admins to invite and manage users in any workspace
