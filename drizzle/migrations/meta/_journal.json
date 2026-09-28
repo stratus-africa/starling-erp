@@ -239,6 +239,13 @@
       "when": 1790517709146,
       "tag": "0033_admin_purge_tenant_fk_triggers",
       "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1790601823139,
+      "tag": "0034_super_admin_workspace_user_invitations",
+      "breakpoints": true
     }
   ]
 }

@@ -8873,6 +8873,19 @@ export type Database = {
         }
         Returns: string
       }
+      admin_create_tenant_invitation: {
+        Args: {
+          _email: string
+          _expires_in_hours?: number
+          _role?: Database["public"]["Enums"]["app_role"]
+          _tenant_id: string
+        }
+        Returns: {
+          expires_at: string
+          invitation_id: string
+          invitation_token: string
+        }[]
+      }
       admin_delete_announcement: { Args: { _id: string }; Returns: undefined }
       admin_extend_subscription_trial: {
         Args: {
@@ -9219,6 +9232,19 @@ export type Database = {
           user_agent: string
         }[]
       }
+      admin_list_tenant_invitations: {
+        Args: { _tenant_id: string }
+        Returns: {
+          accepted_at: string
+          created_at: string
+          expires_at: string
+          id: string
+          invited_by_email: string
+          invited_email: string
+          role: string
+          status: string
+        }[]
+      }
       admin_list_tenant_permission_matrices: { Args: never; Returns: Json }
       admin_list_tenant_subscriptions: {
         Args: {
@@ -9301,6 +9327,10 @@ export type Database = {
       admin_revoke_session: {
         Args: { _reason?: string; _session_id: string }
         Returns: undefined
+      }
+      admin_revoke_tenant_invitation: {
+        Args: { _invitation_id: string; _reason?: string; _tenant_id: string }
+        Returns: Json
       }
       admin_revoke_tenant_user_sessions: {
         Args: { _reason?: string; _tenant_id: string; _user_id: string }
