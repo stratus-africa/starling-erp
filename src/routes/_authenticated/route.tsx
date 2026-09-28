@@ -5,7 +5,7 @@ import { lazy, Suspense } from "react";
 const AppSidebar = lazy(() => import("@/components/app-sidebar").then((m) => ({ default: m.AppSidebar })));
 const AppTopbar = lazy(() => import("@/components/app-topbar").then((m) => ({ default: m.AppTopbar })));
 import { AuthProvider, useAuth } from "@/hooks/use-auth";
-import { PlatformAuthProvider } from "@/hooks/use-platform-auth";
+import { PlatformAuthProvider, usePlatformAuth } from "@/hooks/use-platform-auth";
 import { SupportSessionBanner } from "@/components/support-session-banner";
 import { Loader2 } from "lucide-react";
 import { useRouterState } from "@tanstack/react-router";
@@ -24,17 +24,21 @@ export const Route = createFileRoute("/_authenticated")({
 });
 
 function Gate() {
-  const { session, loading, profile, hasFeature, roles } = useAuth();
+  const { session, loading, profile, hasFeature, roles, signOut } = useAuth();
+  const platform = usePlatformAuth();
   const pathname = useRouterState({ select: (r) => r.location.pathname });
   const isMobilePortrait = useIsMobilePortrait();
   if (loading || isMobilePortrait === undefined) return <div className="flex min-h-screen items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>;
   if (!session) return <Navigate to={pathname === "/field" || pathname.startsWith("/field/") ? "/field-login" : "/auth"} />;
   if (!profile?.tenant_id) {
+    if (platform.loading) return <div className="flex min-h-screen items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>;
+    if (platform.isPlatformAdmin) return <Navigate to="/super-admin" />;
     return (
       <div className="flex min-h-screen items-center justify-center p-6 text-center">
-        <div className="max-w-md space-y-2">
-          <h2 className="text-lg font-semibold">Setting up your workspace…</h2>
-          <p className="text-sm text-muted-foreground">If this persists, please refresh the page.</p>
+        <div className="max-w-md space-y-3">
+          <h2 className="text-lg font-semibold">No workspace assigned</h2>
+          <p className="text-sm text-muted-foreground">Your account isn't linked to a workspace yet. Ask your administrator for an invitation.</p>
+          <button className="text-sm font-medium text-primary underline" onClick={() => signOut()}>Sign out</button>
         </div>
       </div>
     );
