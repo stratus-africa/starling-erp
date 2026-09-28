@@ -3,7 +3,7 @@
  * Route: /super-admin/invoices
  */
 
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Navigate } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { db } from "@/lib/typed-db";
@@ -23,11 +23,7 @@ import {
 } from "lucide-react";
 
 export const Route = createFileRoute("/super-admin/invoices")({
-  component: () => (
-    <PermissionGuard permission={PLATFORM_PERMISSIONS.billingView}>
-      <InvoicesPage />
-    </PermissionGuard>
-  ),
+  component: () => <Navigate to="/super-admin/billing/subscriptions" replace />,
 });
 
 // Invoices derive from tenant_subscriptions � we show billing history

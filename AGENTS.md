@@ -8,3 +8,5 @@
 > Commits you push to the connected branch sync back to Lovable and show up in
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
+
+- Super Admin screens must render live platform records only; absent data uses an empty or error state, never simulated metrics or sample rows.

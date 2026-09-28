@@ -6,8 +6,6 @@ import {
   Bell,
   Building2,
   ClipboardList,
-  CreditCard,
-  FileText,
   Flag,
   Globe,
   Layers,
@@ -23,7 +21,6 @@ import {
   Terminal,
   Users,
   Wallet,
-  Zap,
 } from "lucide-react";
 import {
   Sidebar,
@@ -104,18 +101,6 @@ const NAV: NavGroup[] = [
         icon: ReceiptText,
         permission: PLATFORM_PERMISSIONS.billingView,
       },
-      {
-        title: "Payments",
-        url: "/super-admin/payments",
-        icon: CreditCard,
-        permission: PLATFORM_PERMISSIONS.billingView,
-      },
-      {
-        title: "Invoices",
-        url: "/super-admin/invoices",
-        icon: FileText,
-        permission: PLATFORM_PERMISSIONS.billingView,
-      },
     ],
   },
   {
@@ -143,12 +128,6 @@ const NAV: NavGroup[] = [
         title: "Settings",
         url: "/super-admin/settings",
         icon: Settings2,
-        permission: PLATFORM_PERMISSIONS.settingsView,
-      },
-      {
-        title: "Integrations",
-        url: "/super-admin/integrations",
-        icon: Zap,
         permission: PLATFORM_PERMISSIONS.settingsView,
       },
     ],
@@ -248,9 +227,9 @@ export function SuperAdminSidebar() {
       <SidebarHeader className="h-14 flex items-center px-4 border-b border-border/70">
         <div className="flex items-center gap-2 font-bold text-sm text-foreground">
           <div className="h-7 w-7 rounded-md bg-primary flex items-center justify-center text-primary-foreground font-extrabold text-xs">
-            A
+            S
           </div>
-          <span>AURORA Super Admin</span>
+          <span>Starling Super Admin</span>
         </div>
       </SidebarHeader>
 

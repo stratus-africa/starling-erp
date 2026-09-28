@@ -108,6 +108,8 @@ export function SystemHealthPage() {
   const {
     data: healthItems = [],
     isLoading,
+    isError,
+    error,
     isRefetching,
     refetch,
   } = useQuery({
@@ -134,11 +136,11 @@ export function SystemHealthPage() {
   });
 
   // Calculate platform aggregates
-  const totalSubsystems = healthItems.length || 7;
+  const totalSubsystems = healthItems.length;
   const operationalCount = healthItems.filter((i) => i.status === "operational").length;
   const degradedCount = healthItems.filter((i) => i.status === "degraded").length;
   const outageCount = healthItems.filter((i) => i.status === "outage").length;
-  const isAllOperational = outageCount === 0 && degradedCount === 0;
+  const isAllOperational = totalSubsystems > 0 && outageCount === 0 && degradedCount === 0;
 
   const getStatusBadge = (status: SystemStatus) => {
     switch (status) {
@@ -196,8 +198,27 @@ export function SystemHealthPage() {
         </div>
       </div>
 
+      {isError && (
+        <Card className="border-destructive/40">
+          <CardContent className="flex items-center justify-between gap-4 p-5">
+            <div className="flex items-center gap-3">
+              <AlertCircle className="h-5 w-5 text-destructive" />
+              <div>
+                <p className="text-sm font-semibold">Health data is unavailable</p>
+                <p className="text-xs text-muted-foreground">{error instanceof Error ? error.message : "The live health check could not be loaded."}</p>
+              </div>
+            </div>
+            <Button variant="outline" size="sm" onClick={() => refetch()}>Retry</Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {!isLoading && !isError && healthItems.length === 0 && (
+        <Card><CardContent className="p-8 text-center text-sm text-muted-foreground">No health checks have been recorded.</CardContent></Card>
+      )}
+
       {/* Global Status Banner */}
-      <Card
+      {!isError && healthItems.length > 0 && <Card
         className={`border ${
           isAllOperational
             ? "border-emerald-500/30 bg-emerald-500/5"
@@ -271,7 +292,7 @@ export function SystemHealthPage() {
             )}
           </div>
         </CardContent>
-      </Card>
+      </Card>}
 
       {/* Grid of 7 Subsystems */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
