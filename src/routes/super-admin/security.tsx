@@ -22,9 +22,6 @@ import { PermissionGuard } from "@/components/super-admin/permission-guard";
 import {
   PLATFORM_PERMISSIONS,
   PLATFORM_ROLE_LABELS,
-  PLATFORM_ROLE_DESCRIPTIONS,
-  PLATFORM_PERMISSION_GROUPS,
-  PLATFORM_ROLE_PERMISSIONS,
   PLATFORM_ROLES,
 } from "@/lib/platform-permissions";
 import type { PlatformRole } from "@/lib/platform-permissions";
@@ -103,7 +100,6 @@ import {
   Layers,
   FileText,
   AlertOctagon,
-  Check,
   Siren,
   Server,
   ArrowRight,
@@ -245,22 +241,8 @@ function SecurityCenterPage() {
       const { data, error } = await db.rpc("admin_get_security_center_overview");
       if (error) throw new Error(error.message);
       const row = Array.isArray(data) ? data[0] : data;
-      return (
-        row || {
-          total_admins: 0,
-          active_admins: 0,
-          disabled_admins: 0,
-          mfa_enrolled_admins: 0,
-          mfa_compliance_rate: 0,
-          active_sessions_count: 0,
-          failed_logins_24h: 0,
-          high_risk_logins_24h: 0,
-          unresolved_security_events: 0,
-          critical_events_count: 0,
-          active_support_sessions: 0,
-          system_security_posture: "OPTIMAL",
-        }
-      );
+      if (!row) throw new Error("No security overview was returned.");
+      return row;
     },
     refetchInterval: 15000,
   });
@@ -1231,71 +1213,13 @@ function SecurityCenterPage() {
             <CardHeader>
               <CardTitle className="text-base">Platform Roles & Capabilities</CardTitle>
               <CardDescription className="text-xs">
-                Granular permission assignments defined across platform roles according to the principle of least privilege.
+                Review the current roles and permission assignments stored in the access-control database.
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid gap-3 sm:grid-cols-3">
-                {[
-                  PLATFORM_ROLES.superAdmin,
-                  PLATFORM_ROLES.securityAdmin,
-                  PLATFORM_ROLES.platformAdmin,
-                  PLATFORM_ROLES.supportAdmin,
-                  PLATFORM_ROLES.billingAdmin,
-                  PLATFORM_ROLES.readonly,
-                ].map((role) => (
-                  <div key={role} className="rounded-lg border bg-muted/20 p-3 text-xs space-y-1">
-                    <p className="font-semibold text-primary">{PLATFORM_ROLE_LABELS[role]}</p>
-                    <p className="text-[11px] text-muted-foreground">
-                      {PLATFORM_ROLE_DESCRIPTIONS[role]}
-                    </p>
-                    <p className="font-mono text-[9px] text-muted-foreground/60">{role}</p>
-                  </div>
-                ))}
-              </div>
-
-              <div className="border rounded-lg overflow-x-auto max-h-96">
-                <table className="w-full text-xs">
-                  <thead className="bg-muted/70 sticky top-0">
-                    <tr className="border-b">
-                      <th className="px-3 py-2 text-left font-semibold">Permission Code</th>
-                      <th className="px-3 py-2 text-left font-semibold">Label</th>
-                      <th className="px-3 py-2 text-center font-semibold">Super Admin</th>
-                      <th className="px-3 py-2 text-center font-semibold">Security Admin</th>
-                      <th className="px-3 py-2 text-center font-semibold">Support Admin</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {PLATFORM_PERMISSION_GROUPS.flatMap((grp) =>
-                      grp.permissions.map((p) => (
-                        <tr key={p.code} className="border-b hover:bg-muted/20">
-                          <td className="px-3 py-1.5 font-mono text-[10px] text-muted-foreground">
-                            {p.code}
-                          </td>
-                          <td className="px-3 py-1.5 font-medium">{p.label}</td>
-                          <td className="px-3 py-1.5 text-center">
-                            <Check className="h-3.5 w-3.5 text-emerald-500 mx-auto" />
-                          </td>
-                          <td className="px-3 py-1.5 text-center">
-                            {PLATFORM_ROLE_PERMISSIONS[PLATFORM_ROLES.securityAdmin].includes(p.code) ? (
-                              <Check className="h-3.5 w-3.5 text-emerald-500 mx-auto" />
-                            ) : (
-                              <span className="text-muted-foreground/30">—</span>
-                            )}
-                          </td>
-                          <td className="px-3 py-1.5 text-center">
-                            {PLATFORM_ROLE_PERMISSIONS[PLATFORM_ROLES.supportAdmin].includes(p.code) ? (
-                              <Check className="h-3.5 w-3.5 text-emerald-500 mx-auto" />
-                            ) : (
-                              <span className="text-muted-foreground/30">—</span>
-                            )}
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
+            <CardContent>
+              <Button asChild variant="outline" size="sm">
+                <Link to="/super-admin/roles">Open live role matrix <ArrowRight className="h-3.5 w-3.5" /></Link>
+              </Button>
             </CardContent>
           </Card>
         </TabsContent>

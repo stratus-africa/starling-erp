@@ -29,8 +29,8 @@ export interface SystemHealthItem {
   component: SystemComponent;
   status: SystemStatus;
   latency_ms: number | null;
-  uptime_pct: number;
-  last_checked_at: string;
+  uptime_pct: number | null;
+  last_checked_at: string | null;
   incident_message: string | null;
   metrics: Record<string, any>;
 }
@@ -147,74 +147,9 @@ export async function fetchSystemHealth(): Promise<SystemHealthItem[]> {
       return (fallback.data as SystemHealthItem[]) || [];
     }
     return (data as SystemHealthItem[]) || [];
-  } catch (err: any) {
+  } catch (err) {
     console.error("Failed to fetch system health:", err);
-    // Real local DB probe fallback
-    return [
-      {
-        component: "database",
-        status: "operational",
-        latency_ms: 8,
-        uptime_pct: 99.99,
-        last_checked_at: new Date().toISOString(),
-        incident_message: null,
-        metrics: { database_engine: "PostgreSQL", pool_active: 5 },
-      },
-      {
-        component: "authentication",
-        status: "operational",
-        latency_ms: 14,
-        uptime_pct: 99.98,
-        last_checked_at: new Date().toISOString(),
-        incident_message: null,
-        metrics: { provider: "Supabase Auth", mfa_status: "enabled" },
-      },
-      {
-        component: "storage",
-        status: "operational",
-        latency_ms: 28,
-        uptime_pct: 99.95,
-        last_checked_at: new Date().toISOString(),
-        incident_message: null,
-        metrics: { buckets_count: 4, storage_status: "available" },
-      },
-      {
-        component: "email",
-        status: "operational",
-        latency_ms: 45,
-        uptime_pct: 99.9,
-        last_checked_at: new Date().toISOString(),
-        incident_message: null,
-        metrics: { delivery_rate: 99.8, provider: "Resend / SMTP" },
-      },
-      {
-        component: "payments",
-        status: "operational",
-        latency_ms: 62,
-        uptime_pct: 99.95,
-        last_checked_at: new Date().toISOString(),
-        incident_message: null,
-        metrics: { gateway: "Stripe Connect", webhook_status: "healthy" },
-      },
-      {
-        component: "background_jobs",
-        status: "operational",
-        latency_ms: 12,
-        uptime_pct: 99.96,
-        last_checked_at: new Date().toISOString(),
-        incident_message: null,
-        metrics: { workers_active: 4, queues: 5 },
-      },
-      {
-        component: "api",
-        status: "operational",
-        latency_ms: 18,
-        uptime_pct: 99.97,
-        last_checked_at: new Date().toISOString(),
-        incident_message: null,
-        metrics: { error_rate_pct: 0.04, throughput_req_sec: 42.5 },
-      },
-    ];
+    throw err;
   }
 }
 
@@ -224,24 +159,11 @@ export async function pingComponent(component: SystemComponent): Promise<{
   latency_ms: number;
   checked_at: string;
 }> {
-  try {
-    const { data, error } = await db.rpc("admin_ping_system_component", {
-      _component: component,
-    });
-    if (error) throw error;
-    return data;
-  } catch {
-    // Simulated live probe ping timing
-    const t0 = performance.now();
-    await db.from("tenants").select("id").limit(1);
-    const latency = Math.max(1, Math.round(performance.now() - t0));
-    return {
-      component,
-      status: "operational",
-      latency_ms: latency,
-      checked_at: new Date().toISOString(),
-    };
-  }
+  const { data, error } = await db.rpc("admin_ping_system_component", {
+    _component: component,
+  });
+  if (error) throw error;
+  return data;
 }
 
 // ─── Error Logs Service ───────────────────────────────────────────────────────
