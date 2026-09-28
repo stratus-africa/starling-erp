@@ -203,14 +203,14 @@ function DashboardContent() {
       <div className="flex items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Platform Overview</h1>
-          <p className="text-sm text-muted-foreground mt-1">
+          <div className="flex items-center gap-1.5 text-sm text-muted-foreground mt-1">
             Welcome back,{" "}
             <span className="font-medium text-foreground">{adminProfile?.fullName?.split(" ")[0] ?? "Admin"}</span>
             {" · "}
             <Badge variant="outline" className="text-[10px] border-amber-500/40 text-amber-600 dark:text-amber-400">
               {roleLabel}
             </Badge>
-          </p>
+          </div>
         </div>
         <div className="flex items-center gap-2 shrink-0">
           {dataUpdatedAt > 0 && (

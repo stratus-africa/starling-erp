@@ -141,6 +141,11 @@ export function SystemHealthPage() {
   const degradedCount = healthItems.filter((i) => i.status === "degraded").length;
   const outageCount = healthItems.filter((i) => i.status === "outage").length;
   const isAllOperational = totalSubsystems > 0 && outageCount === 0 && degradedCount === 0;
+  const latestCheck = healthItems.reduce<string | null>((latest, item) => {
+    if (!item.last_checked_at) return latest;
+    if (!latest) return item.last_checked_at;
+    return new Date(item.last_checked_at) > new Date(latest) ? item.last_checked_at : latest;
+  }, null);
 
   const getStatusBadge = (status: SystemStatus) => {
     switch (status) {
@@ -253,11 +258,12 @@ export function SystemHealthPage() {
                     ? `System Alert: ${outageCount} Service Outage Detected`
                     : `System Notice: ${degradedCount} Subsystem Performance Degraded`}
                 </span>
-                <span className="inline-block h-2 w-2 rounded-full animate-pulse bg-emerald-500" />
+                <span className={`inline-block h-2 w-2 rounded-full ${isAllOperational ? "bg-emerald-500" : outageCount > 0 ? "bg-destructive" : "bg-amber-500"}`} />
               </div>
               <p className="text-xs text-muted-foreground mt-0.5">
-                Continuously monitored with real-time heartbeat queries. Last verified{" "}
-                {new Date().toLocaleTimeString()}.
+                {latestCheck
+                  ? `Latest recorded check ${new Date(latestCheck).toLocaleString()}.`
+                  : "No subsystem probe has been recorded yet."}
               </p>
             </div>
           </div>

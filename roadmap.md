@@ -12,4 +12,4 @@
 - [x] Redesign Field Sales with a dark cobalt/mint glass system while preserving the bottom bar
 - [x] Remove customer Email action and show remaining customer credit
 
-- [ ] Remove fake data and placeholders from all Super Admin pages
+- [x] Remove fake data and placeholders from all Super Admin pages
