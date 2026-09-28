@@ -10,3 +10,4 @@
 <!-- LOVABLE:END -->
 
 - Super Admin screens must render live platform records only; absent data uses an empty or error state, never simulated metrics or sample rows.
+- Workspace membership additions use tenant invitations; direct user attachment is forbidden so email ownership is verified before access is granted.

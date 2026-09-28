@@ -110,6 +110,10 @@ import {
   ExternalLink,
   ChevronRight,
   Fingerprint,
+  Copy,
+  Loader2,
+  Trash2,
+  UserPlus,
 } from "lucide-react";
 
 // ─── Route Definition ─────────────────────────────────────────────────────────
@@ -127,7 +131,11 @@ export const Route = createFileRoute("/super-admin/tenants_/$tenantId/users")({
 const AVAILABLE_TENANT_ROLES = [
   { id: "tenant_admin", label: "Tenant Admin", desc: "Full administrative access to this tenant workspace" },
   { id: "sales", label: "Sales", desc: "Sales orders, customers, and quoting" },
+  { id: "field_sales", label: "Field Sales", desc: "Mobile customers, leads, quotes, orders, and customer payments" },
   { id: "accounting", label: "Accounting", desc: "General ledger, journal entries, payments, and invoices" },
+  { id: "accountant", label: "Accountant", desc: "Accounting operations and financial reporting" },
+  { id: "finance_clerk", label: "Finance Clerk", desc: "Day-to-day finance entry and payment processing" },
+  { id: "auditor", label: "Auditor", desc: "Read-focused financial review and audit access" },
   { id: "manufacturing", label: "Manufacturing", desc: "Work orders, bills of materials, and production" },
   { id: "inventory", label: "Inventory", desc: "Stock management, transfers, and warehouse adjustments" },
   { id: "purchasing", label: "Purchasing", desc: "Purchase orders and vendor management" },
@@ -168,6 +176,17 @@ interface UserActivityRecord {
   created_at: string;
 }
 
+interface TenantInvitationRecord {
+  id: string;
+  invited_email: string;
+  role: string;
+  invited_by_email: string | null;
+  expires_at: string;
+  accepted_at: string | null;
+  created_at: string;
+  status: "pending" | "accepted" | "expired";
+}
+
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export function TenantUserManagementPage() {
@@ -190,12 +209,17 @@ export function TenantUserManagementPage() {
   const [isRevokeOpen, setIsRevokeOpen] = useState(false);
   const [isRemoveOpen, setIsRemoveOpen] = useState(false);
   const [isActivityOpen, setIsActivityOpen] = useState(false);
+  const [isInviteOpen, setIsInviteOpen] = useState(false);
 
   // Form states
   const [editedRoles, setEditedRoles] = useState<string[]>([]);
   const [targetStatus, setTargetStatus] = useState<boolean>(true);
   const [auditReason, setAuditReason] = useState("");
   const [confirmRemoveEmail, setConfirmRemoveEmail] = useState("");
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteRole, setInviteRole] = useState("viewer");
+  const [inviteExpiry, setInviteExpiry] = useState("72");
+  const [inviteLink, setInviteLink] = useState("");
 
   // ── Fetch Tenant Info ───────────────────────────────────────────────────────
   const { data: tenantData, isLoading: isTenantLoading } = useQuery({
@@ -247,6 +271,18 @@ export function TenantUserManagementPage() {
       return data ?? [];
     },
     enabled: !!selectedUser?.id && isActivityOpen,
+  });
+
+  const {
+    data: invitations = [],
+    isLoading: isInvitationsLoading,
+  } = useQuery<TenantInvitationRecord[]>({
+    queryKey: ["super-admin", "tenant-invitations", tenantId],
+    queryFn: async () => {
+      const { data, error } = await db.rpc("admin_list_tenant_invitations", { _tenant_id: tenantId });
+      if (error) throw error;
+      return data ?? [];
+    },
   });
 
   // ── Mutations ──────────────────────────────────────────────────────────────
@@ -343,6 +379,43 @@ export function TenantUserManagementPage() {
     },
   });
 
+  const inviteUserMutation = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await db.rpc("admin_create_tenant_invitation", {
+        _tenant_id: tenantId,
+        _email: inviteEmail.trim(),
+        _role: inviteRole,
+        _expires_in_hours: Number(inviteExpiry),
+      });
+      if (error) throw error;
+      const invitation = data?.[0];
+      if (!invitation?.invitation_token) throw new Error("The invitation link could not be created.");
+      return `${window.location.origin}/auth?invitation=${encodeURIComponent(invitation.invitation_token)}`;
+    },
+    onSuccess: (link) => {
+      setInviteLink(link);
+      queryClient.invalidateQueries({ queryKey: ["super-admin", "tenant-invitations", tenantId] });
+      toast.success("Workspace invitation created.");
+    },
+    onError: (err: any) => toast.error(err.message || "Failed to invite user"),
+  });
+
+  const revokeInvitationMutation = useMutation({
+    mutationFn: async (invitation: TenantInvitationRecord) => {
+      const { error } = await db.rpc("admin_revoke_tenant_invitation", {
+        _tenant_id: tenantId,
+        _invitation_id: invitation.id,
+        _reason: "Invitation cancelled by Super Admin",
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["super-admin", "tenant-invitations", tenantId] });
+      toast.success("Invitation cancelled.");
+    },
+    onError: (err: any) => toast.error(err.message || "Failed to cancel invitation"),
+  });
+
   // ── Metrics Calculation ─────────────────────────────────────────────────────
   const stats = useMemo(() => {
     const total = users.length;
@@ -424,6 +497,22 @@ export function TenantUserManagementPage() {
         </div>
 
         <div className="flex items-center gap-2">
+          {canManage && (
+            <Button
+              size="sm"
+              className="h-9 gap-1.5 text-xs"
+              onClick={() => {
+                setInviteEmail("");
+                setInviteRole("viewer");
+                setInviteExpiry("72");
+                setInviteLink("");
+                setIsInviteOpen(true);
+              }}
+            >
+              <UserPlus className="h-3.5 w-3.5" />
+              Invite User
+            </Button>
+          )}
           <Button
             variant="outline"
             size="sm"
@@ -459,6 +548,64 @@ export function TenantUserManagementPage() {
             </div>
           </div>
         </CardContent>
+      </Card>
+
+      {/* ─── Pending Invitations ───────────────────────────────────────────── */}
+      <Card className="overflow-hidden border-border/70 p-0">
+        <CardHeader className="flex flex-row items-center justify-between border-b px-4 py-3">
+          <div>
+            <CardTitle className="text-sm">Workspace Invitations</CardTitle>
+            <p className="mt-0.5 text-xs text-muted-foreground">Pending and recently completed invitations for this workspace.</p>
+          </div>
+          <Badge variant="outline" className="text-[10px]">
+            {invitations.filter((invitation) => invitation.status === "pending").length} pending
+          </Badge>
+        </CardHeader>
+        <Table>
+          <TableHeader>
+            <TableRow className="bg-muted/30">
+              <TableHead className="text-xs">Email</TableHead>
+              <TableHead className="text-xs">Role</TableHead>
+              <TableHead className="text-xs">Status</TableHead>
+              <TableHead className="text-xs">Expires</TableHead>
+              <TableHead className="text-xs text-right">Action</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {isInvitationsLoading ? (
+              <TableRow><TableCell colSpan={5} className="py-8 text-center text-xs text-muted-foreground"><Loader2 className="mr-2 inline h-4 w-4 animate-spin" />Loading invitations…</TableCell></TableRow>
+            ) : invitations.length === 0 ? (
+              <TableRow><TableCell colSpan={5} className="py-8 text-center text-xs text-muted-foreground">No invitations have been created for this workspace.</TableCell></TableRow>
+            ) : invitations.map((invitation) => (
+              <TableRow key={invitation.id}>
+                <TableCell className="text-xs font-medium">{invitation.invited_email}</TableCell>
+                <TableCell className="text-xs">{AVAILABLE_TENANT_ROLES.find((role) => role.id === invitation.role)?.label ?? invitation.role.replace(/_/g, " ")}</TableCell>
+                <TableCell>
+                  <Badge variant={invitation.status === "pending" ? "default" : "outline"} className="text-[10px] capitalize">{invitation.status}</Badge>
+                </TableCell>
+                <TableCell className="text-xs text-muted-foreground">{dateFmt(invitation.expires_at)}</TableCell>
+                <TableCell className="text-right">
+                  {canManage && invitation.status === "pending" && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7 text-destructive"
+                      title="Cancel invitation"
+                      disabled={revokeInvitationMutation.isPending}
+                      onClick={() => {
+                        if (window.confirm(`Cancel the invitation for ${invitation.invited_email}?`)) {
+                          revokeInvitationMutation.mutate(invitation);
+                        }
+                      }}
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  )}
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
       </Card>
 
       {/* ─── Metric Cards ───────────────────────────────────────────────────── */}
@@ -1089,6 +1236,81 @@ export function TenantUserManagementPage() {
             >
               {updateRolesMutation.isPending ? "Saving Roles..." : "Save Role Changes"}
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ─── Dialog: Invite User ───────────────────────────────────────────── */}
+      <Dialog open={isInviteOpen} onOpenChange={setIsInviteOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-base"><UserPlus className="h-4 w-4 text-primary" />Invite Workspace User</DialogTitle>
+            <DialogDescription className="text-xs">
+              Create access to {tenantData?.name ?? "this workspace"}. The user will join after opening the secure invitation link.
+            </DialogDescription>
+          </DialogHeader>
+          {inviteLink ? (
+            <div className="space-y-3 py-2">
+              <div className="space-y-1.5">
+                <Label className="text-xs">Secure invitation link</Label>
+                <div className="flex gap-2">
+                  <Input value={inviteLink} readOnly className="text-xs font-mono" />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    title="Copy invitation link"
+                    onClick={async () => {
+                      await navigator.clipboard.writeText(inviteLink);
+                      toast.success("Invitation link copied.");
+                    }}
+                  >
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground">Share this link securely with {inviteEmail}. It expires after the selected period.</p>
+            </div>
+          ) : (
+            <div className="space-y-4 py-2">
+              <div className="space-y-1.5">
+                <Label htmlFor="workspace-invite-email" className="text-xs">Email address</Label>
+                <Input id="workspace-invite-email" type="email" placeholder="user@company.com" value={inviteEmail} onChange={(event) => setInviteEmail(event.target.value)} />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Initial role</Label>
+                <Select value={inviteRole} onValueChange={setInviteRole}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {AVAILABLE_TENANT_ROLES.map((role) => <SelectItem key={role.id} value={role.id}>{role.label}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Link expires</Label>
+                <Select value={inviteExpiry} onValueChange={setInviteExpiry}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="24">After 24 hours</SelectItem>
+                    <SelectItem value="72">After 3 days</SelectItem>
+                    <SelectItem value="168">After 7 days</SelectItem>
+                    <SelectItem value="720">After 30 days</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsInviteOpen(false)}>{inviteLink ? "Done" : "Cancel"}</Button>
+            {!inviteLink && (
+              <Button
+                disabled={inviteUserMutation.isPending || !/^\S+@\S+\.\S+$/.test(inviteEmail.trim())}
+                onClick={() => inviteUserMutation.mutate()}
+              >
+                {inviteUserMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UserPlus className="mr-2 h-4 w-4" />}
+                Create Invitation
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
