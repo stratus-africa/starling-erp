@@ -481,9 +481,9 @@ function DashboardContent() {
         )}
         </div>
       </div>
-        {/* Recent tenant registrations */}
+        {/* Recent tenant registrations (full width) */}
         {canPlatform(PLATFORM_PERMISSIONS.tenantsView) && (
-          <div className="lg:col-span-2">
+          <>
             <Section title="Recent Tenant Registrations" href="/super-admin/tenants">
               {!stats?.recent_tenants?.length ? (
                 <EmptyState message="No tenants yet." />
@@ -525,75 +525,8 @@ function DashboardContent() {
                 </div>
               )}
             </Section>
-          </div>
+          </>
         )}
-
-        {/* System health + Security */}
-        <div className="flex flex-col gap-4">
-          {/* System health */}
-          {canPlatform(PLATFORM_PERMISSIONS.systemView) && (
-            <Section title="System Health" href="/super-admin/system">
-              <div className="space-y-2.5">
-                <HealthRow
-                  label="Stale support sessions"
-                  value={stats?.system?.stale_sessions ?? 0}
-                  okWhen={0}
-                  href="/super-admin/support-sessions"
-                />
-                <HealthRow
-                  label="Tenants without subscription"
-                  value={stats?.system?.tenants_no_subscription ?? 0}
-                  okWhen={0}
-                  href="/super-admin/subscriptions"
-                />
-                <HealthRow
-                  label="GL integrity errors"
-                  value={stats?.system?.integrity_errors ?? 0}
-                  okWhen={0}
-                  severity="error"
-                  href="/super-admin/system"
-                />
-                <HealthRow
-                  label="GL integrity warnings"
-                  value={stats?.system?.integrity_warnings ?? 0}
-                  okWhen={0}
-                  severity="warning"
-                  href="/super-admin/system"
-                />
-              </div>
-            </Section>
-          )}
-
-          {/* Security events */}
-          {canPlatform(PLATFORM_PERMISSIONS.securityView) && (
-            <Section title="Security Events" href="/super-admin/security-events">
-              <div className="space-y-2.5">
-                <HealthRow
-                  label="Critical (unresolved)"
-                  value={stats?.security_events?.unresolved_critical ?? 0}
-                  okWhen={0}
-                  severity="error"
-                  href="/super-admin/security-events"
-                />
-                <HealthRow
-                  label="Errors (unresolved)"
-                  value={stats?.security_events?.unresolved_error ?? 0}
-                  okWhen={0}
-                  severity="error"
-                  href="/super-admin/security-events"
-                />
-                <HealthRow
-                  label="Warnings (unresolved)"
-                  value={stats?.security_events?.unresolved_warning ?? 0}
-                  okWhen={0}
-                  severity="warning"
-                  href="/super-admin/security-events"
-                />
-              </div>
-            </Section>
-          )}
-        </div>
-      </div>
 
       {/* ── Recent platform activity ── */}
       {canPlatform(PLATFORM_PERMISSIONS.auditView) && (
