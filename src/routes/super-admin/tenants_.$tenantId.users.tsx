@@ -464,7 +464,7 @@ export function TenantUserManagementPage() {
   };
 
   return (
-    <div className="flex flex-col gap-6 p-6 max-w-7xl mx-auto w-full">
+    <div className="flex flex-col gap-6 p-6 w-full">
       {/* ─── Header & Navigation ────────────────────────────────────────────── */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
