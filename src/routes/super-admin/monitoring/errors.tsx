@@ -86,6 +86,8 @@ export function ErrorMonitoringPage() {
   const {
     data: result = { data: [], total: 0 },
     isLoading,
+    isError,
+    error,
     isRefetching,
     refetch,
   } = useQuery({
@@ -164,6 +166,8 @@ export function ErrorMonitoringPage() {
   const criticalCount = result.data.filter((e) => e.severity === "critical" && !e.resolved).length;
   const errorCount = result.data.filter((e) => e.severity === "error" && !e.resolved).length;
 
+  if (isLoading || isError) return <div className="p-6 space-y-3"><h1 className="text-2xl font-semibold">Application Error Monitoring</h1><p className="text-sm text-muted-foreground">{isLoading ? "Loading errors…" : `Error records unavailable: ${error instanceof Error ? error.message : "Unable to read live errors."}`}</p>{isError && <Button variant="outline" onClick={() => refetch()}>Retry</Button>}</div>;
+
   return (
     <div className="p-6 space-y-6 w-full">
       {/* Header */}
@@ -191,6 +195,7 @@ export function ErrorMonitoringPage() {
         </div>
       </div>
 
+      <p className="text-xs text-muted-foreground">Showing {result.data.length} of {result.total} matching error records. Counts below apply to displayed records.</p>
       {/* KPI Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <Card className="border-border/70">
@@ -397,7 +402,7 @@ export function ErrorMonitoringPage() {
                 <div>
                   <span className="text-muted-foreground block uppercase text-[10px]">Error Code</span>
                   <span className="font-mono font-semibold text-foreground">
-                    {selectedError.error_code || "GENERIC_ERROR"}
+                    {selectedError.error_code || "Not recorded"}
                   </span>
                 </div>
                 <div>
@@ -415,7 +420,7 @@ export function ErrorMonitoringPage() {
                 <div>
                   <span className="text-muted-foreground block uppercase text-[10px]">Client IP</span>
                   <span className="font-mono text-foreground">
-                    {selectedError.client_ip || "Internal RPC / Gateway"}
+                    {selectedError.client_ip || "Not recorded"}
                   </span>
                 </div>
               </div>

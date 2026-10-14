@@ -80,6 +80,8 @@ export function ApiMonitoringPage() {
       endpoints: [],
     },
     isLoading,
+    isError,
+    error,
     isRefetching,
     refetch,
   } = useQuery({
@@ -137,7 +139,7 @@ export function ApiMonitoringPage() {
   const pct2xx =
     summary.totalRequests > 0
       ? Math.round((summary.status2xx / summary.totalRequests) * 100)
-      : 100;
+      : 0;
   const pct4xx =
     summary.totalRequests > 0
       ? Math.round((summary.status4xx / summary.totalRequests) * 100)
@@ -146,6 +148,8 @@ export function ApiMonitoringPage() {
     summary.totalRequests > 0
       ? Math.round((summary.status5xx / summary.totalRequests) * 100)
       : 0;
+
+  if (isLoading || isError) return <div className="p-6 space-y-3"><h1 className="text-2xl font-semibold">API Performance & Telemetry</h1><p className="text-sm text-muted-foreground">{isLoading ? "Loading telemetry…" : `Telemetry unavailable: ${error instanceof Error ? error.message : "Unable to read live metrics."}`}</p>{isError && <Button variant="outline" onClick={() => refetch()}>Retry</Button>}</div>;
 
   return (
     <div className="p-6 space-y-6 w-full">
@@ -166,9 +170,9 @@ export function ApiMonitoringPage() {
               <SelectValue placeholder="Timeframe" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="today">Today (24h)</SelectItem>
-              <SelectItem value="7days">Past 7 Days</SelectItem>
-              <SelectItem value="30days">Past 30 Days</SelectItem>
+              <SelectItem value="today">Today</SelectItem>
+              <SelectItem value="7d">Past 7 Days</SelectItem>
+              <SelectItem value="30d">Past 30 Days</SelectItem>
             </SelectContent>
           </Select>
 
@@ -201,10 +205,10 @@ export function ApiMonitoringPage() {
           <CardContent className="p-4">
             <span className="text-xs text-muted-foreground uppercase font-medium">Average Latency</span>
             <div className="text-2xl font-bold mt-1 text-foreground flex items-baseline gap-1">
-              {summary.avgLatency} <span className="text-xs font-normal text-muted-foreground">ms</span>
+              {summary.avgLatency ?? "—"} {summary.avgLatency !== null && <span className="text-xs font-normal text-muted-foreground">ms</span>}
             </div>
             <span className="text-[11px] text-emerald-600 dark:text-emerald-400 mt-0.5 flex items-center gap-0.5">
-              <Zap className="h-3 w-3" /> Within SLA target (&lt;100ms)
+              {summary.avgLatency === null ? "No latency measurements recorded" : "Recorded request-weighted average"}
             </span>
           </CardContent>
         </Card>
@@ -213,7 +217,7 @@ export function ApiMonitoringPage() {
           <CardContent className="p-4">
             <span className="text-xs text-muted-foreground uppercase font-medium">Error Rate</span>
             <div className="text-2xl font-bold mt-1 text-foreground flex items-baseline gap-1">
-              {summary.overallErrorRate}%
+              {summary.totalRequests > 0 ? `${summary.overallErrorRate}%` : "—"}
             </div>
             <span className="text-[11px] text-muted-foreground mt-0.5 block">
               {summary.totalErrors.toLocaleString()} failed requests
@@ -227,8 +231,8 @@ export function ApiMonitoringPage() {
             <div className="text-2xl font-bold mt-1 text-emerald-600 dark:text-emerald-400">
               {summary.totalRequests > 0
                 ? ((summary.status2xx / summary.totalRequests) * 100).toFixed(2)
-                : "100.00"}
-              %
+                : "—"}
+              {summary.totalRequests > 0 && "%"}
             </div>
             <span className="text-[11px] text-muted-foreground mt-0.5 block">HTTP 2xx responses</span>
           </CardContent>

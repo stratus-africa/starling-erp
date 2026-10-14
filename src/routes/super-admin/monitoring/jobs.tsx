@@ -89,6 +89,8 @@ export function BackgroundJobsPage() {
   const {
     data: result = { data: [], total: 0 },
     isLoading,
+    isError,
+    error,
     isRefetching,
     refetch,
   } = useQuery({
@@ -182,6 +184,8 @@ export function BackgroundJobsPage() {
   const completedCount = result.data.filter((j) => j.status === "completed").length;
   const failedCount = result.data.filter((j) => j.status === "failed").length;
 
+  if (isLoading || isError) return <div className="p-6 space-y-3"><h1 className="text-2xl font-semibold">Background Job Queues</h1><p className="text-sm text-muted-foreground">{isLoading ? "Loading jobs…" : `Jobs unavailable: ${error instanceof Error ? error.message : "Unable to read live jobs."}`}</p>{isError && <Button variant="outline" onClick={() => refetch()}>Retry</Button>}</div>;
+
   return (
     <div className="p-6 space-y-6 w-full">
       {/* Header */}
@@ -209,6 +213,7 @@ export function BackgroundJobsPage() {
         </div>
       </div>
 
+      <p className="text-xs text-muted-foreground">Showing {result.data.length} of {result.total} matching jobs. Counts below apply to displayed records.</p>
       {/* KPI Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <Card className="border-border/70">
@@ -277,11 +282,7 @@ export function BackgroundJobsPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Queues</SelectItem>
-                <SelectItem value="default">default</SelectItem>
-                <SelectItem value="billing">billing</SelectItem>
-                <SelectItem value="reconciliation">reconciliation</SelectItem>
-                <SelectItem value="notifications">notifications</SelectItem>
-                <SelectItem value="maintenance">maintenance</SelectItem>
+                {[...new Set(result.data.map((job) => job.queue_name))].sort().map((queue) => <SelectItem key={queue} value={queue}>{queue}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
