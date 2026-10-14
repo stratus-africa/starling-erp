@@ -75,7 +75,7 @@ export function FieldShell({ children }: { children: ReactNode }) {
     const paths = ["/field", "/field/customers", "/field/customers/new", "/field/sales", "/field/sales/new", "/field/payments", "/field/payments/new", "/field/more", "/field/leads", "/field/notifications", "/field/dashboard"];
     for (const to of paths) {
       for (const m of router.matchRoutes(to, {})) {
-        const route = router.looseRoutesById[m.routeId];
+        const route = router.routesById[m.routeId];
         if (route) void Promise.resolve(router.loadRouteChunk(route)).catch(() => {});
       }
     }

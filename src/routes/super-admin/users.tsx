@@ -1,3 +1,4 @@
+import { readAllPlatformRecords } from "@/lib/platform-records";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -9,6 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { AlertCircle, Loader2, Users } from "lucide-react";
 
 export const Route = createFileRoute("/super-admin/users")({
+  head: () => ({ meta: [{"title": "Workspace User Directory | Starling Super Admin"}, {"name": "description", "content": "Live users records and management for Starling ERP platform administrators."}, {"property": "og:title", "content": "Workspace User Directory | Starling Super Admin"}, {"property": "og:description", "content": "Live users records and management for Starling ERP platform administrators."}, {"property": "og:type", "content": "website"}, {"name": "twitter:card", "content": "summary"}] }),
   component: () => (
     <PermissionGuard permission={PLATFORM_PERMISSIONS.usersView}>
       <PlatformUsersDirectory />
@@ -20,11 +22,13 @@ function PlatformUsersDirectory() {
   const { data = [], isLoading, isError, refetch } = useQuery({
     queryKey: ["super-admin", "users", "tenants"],
     queryFn: async () => {
+      return readAllPlatformRecords<any>(async (offset, limit) => {
       const { data, error } = await (supabase as any).rpc("list_platform_tenants", {
-        _search: null, _status: null, _plan_code: null, _limit: 500, _offset: 0,
+        _search: null, _status: null, _plan_code: null, _limit: limit, _offset: offset,
       });
       if (error) throw error;
       return (data ?? []) as Array<{ id: string; name: string; user_count: number }>;
+      });
     },
   });
 

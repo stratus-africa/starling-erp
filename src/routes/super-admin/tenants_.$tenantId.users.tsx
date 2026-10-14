@@ -1,3 +1,4 @@
+import { readAllPlatformRecords } from "@/lib/platform-records";
 /**
  * Super Admin — Tenant User Management
  *
@@ -119,6 +120,7 @@ import {
 // ─── Route Definition ─────────────────────────────────────────────────────────
 
 export const Route = createFileRoute("/super-admin/tenants_/$tenantId/users")({
+  head: () => ({ meta: [{"title": "Workspace Members | Starling Super Admin"}, {"name": "description", "content": "Live workspace members records and management for Starling ERP platform administrators."}, {"property": "og:title", "content": "Workspace Members | Starling Super Admin"}, {"property": "og:description", "content": "Live workspace members records and management for Starling ERP platform administrators."}, {"property": "og:type", "content": "website"}, {"name": "twitter:card", "content": "summary"}] }),
   component: () => (
     <PermissionGuard permission={PLATFORM_PERMISSIONS.tenantsView}>
       <TenantUserManagementPage />
@@ -236,17 +238,20 @@ export function TenantUserManagementPage() {
     data: users = [],
     isLoading: isUsersLoading,
     isRefetching,
+    isError: isUsersError,
+    error: usersError,
     refetch,
   } = useQuery<TenantUserRecord[]>({
     queryKey: ["super-admin", "tenant-users", tenantId, searchTerm, roleFilter, statusFilter],
     queryFn: async () => {
+      return readAllPlatformRecords<TenantUserRecord>(async (offset, limit) => {
       const { data, error } = await db.rpc("list_tenant_users", {
         _tenant_id: tenantId,
         _search: searchTerm.trim() || null,
         _role: roleFilter === "all" ? null : roleFilter,
         _status: statusFilter === "all" ? null : statusFilter,
-        _limit: 100,
-        _offset: 0,
+        _limit: limit,
+        _offset: offset,
       });
 
       if (error) {
@@ -254,6 +259,7 @@ export function TenantUserManagementPage() {
         throw error;
       }
       return data ?? [];
+      });
     },
   });
 
@@ -462,6 +468,8 @@ export function TenantUserManagementPage() {
     setSelectedUser(user);
     setIsDetailsOpen(true);
   };
+
+  if (isUsersLoading || isUsersError) return <div className="p-6 space-y-3"><h1 className="text-2xl font-semibold">Tenant User Management</h1><p className="text-sm text-muted-foreground">{isUsersLoading ? "Loading members…" : `Members unavailable: ${usersError instanceof Error ? usersError.message : "Unable to load members."}`}</p>{isUsersError && <Button variant="outline" onClick={() => refetch()}>Retry</Button>}</div>;
 
   return (
     <div className="flex flex-col gap-6 p-6 w-full">

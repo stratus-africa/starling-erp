@@ -75,6 +75,7 @@ import {
 import { useMemo, useState, useCallback } from "react";
 
 export const Route = createFileRoute("/super-admin/tenants")({
+  head: () => ({ meta: [{"title": "Workspaces | Starling Super Admin"}, {"name": "description", "content": "Live tenants records and management for Starling ERP platform administrators."}, {"property": "og:title", "content": "Workspaces | Starling Super Admin"}, {"property": "og:description", "content": "Live tenants records and management for Starling ERP platform administrators."}, {"property": "og:type", "content": "website"}, {"name": "twitter:card", "content": "summary"}] }),
   component: () => (
     <PermissionGuard permission={PLATFORM_PERMISSIONS.tenantsView}>
       <TenantsContent />
@@ -129,8 +130,8 @@ function KpiBar({ tenants }: { tenants: TenantRow[] }) {
   const counts = useMemo(() => {
     const map: Record<string, number> = { active: 0, trial: 0, past_due: 0, suspended: 0, cancelled: 0 };
     tenants.forEach((t) => {
-      const s = t.status ?? "active";
-      if (s in map) map[s]++;
+      const s = t.status;
+      if (s && s in map) map[s]++;
     });
     return map;
   }, [tenants]);
@@ -659,7 +660,7 @@ function TenantsContent() {
           <h1 className="text-2xl font-semibold tracking-tight flex items-center gap-2">
             <Building2 className="h-5 w-5" /> Tenants
           </h1>
-          <p className="text-sm text-muted-foreground mt-0.5">All business workspaces on the AURORA platform.</p>
+          <p className="text-sm text-muted-foreground mt-0.5">All business workspaces on the platform.</p>
         </div>
         <Button
           size="sm"
@@ -674,7 +675,7 @@ function TenantsContent() {
       </div>
 
       {/* ── KPI bar ──────────────────────────────────────────────────── */}
-      {rows.length > 0 && <KpiBar tenants={rows} />}
+      {!isLoading && !isError && rows.length > 0 && <><p className="text-xs text-muted-foreground">Status counts for the {rows.length} workspaces on this page.</p><KpiBar tenants={rows} /></>}
 
       {/* ── Filter row ───────────────────────────────────────────────── */}
       <div className="flex flex-col sm:flex-row gap-2">

@@ -52,6 +52,7 @@ import {
 } from "lucide-react";
 
 export const Route = createFileRoute("/super-admin/monitoring/health")({
+  head: () => ({ meta: [{"title": "System Health | Starling Super Admin"}, {"name": "description", "content": "Live monitoring health records and management for Starling ERP platform administrators."}, {"property": "og:title", "content": "System Health | Starling Super Admin"}, {"property": "og:description", "content": "Live monitoring health records and management for Starling ERP platform administrators."}, {"property": "og:type", "content": "website"}, {"name": "twitter:card", "content": "summary"}] }),
   component: () => (
     <PermissionGuard permission={PLATFORM_PERMISSIONS.systemView}>
       <SystemHealthPage />
@@ -71,7 +72,7 @@ const COMPONENT_META: Record<
   },
   authentication: {
     label: "Authentication & Identity",
-    description: "Supabase Auth, session lifecycle, JWT issuance & MFA verification",
+    description: "Recorded account and identity data",
     icon: KeyRound,
   },
   storage: {
@@ -86,7 +87,7 @@ const COMPONENT_META: Record<
   },
   payments: {
     label: "Payment Infrastructure",
-    description: "Stripe Connect webhooks, subscription billing & payout processing",
+    description: "Recorded subscription billing data",
     icon: Wallet,
   },
   background_jobs: {
@@ -124,7 +125,7 @@ export function SystemHealthPage() {
       return await pingComponent(component);
     },
     onSuccess: (res) => {
-      toast.success(`Probe Succeeded: ${COMPONENT_META[res.component as SystemComponent]?.label || res.component} responded in ${res.latency_ms} ms.`);
+      toast.success(`Database query succeeded in ${res.latency_ms} ms.`);
       queryClient.invalidateQueries({ queryKey: ["super-admin", "system-health"] });
     },
     onError: (err: any) => {
@@ -140,7 +141,9 @@ export function SystemHealthPage() {
   const operationalCount = healthItems.filter((i) => i.status === "operational").length;
   const degradedCount = healthItems.filter((i) => i.status === "degraded").length;
   const outageCount = healthItems.filter((i) => i.status === "outage").length;
-  const isAllOperational = totalSubsystems > 0 && outageCount === 0 && degradedCount === 0;
+  const unknownCount = healthItems.filter((i) => i.status === "unknown").length;
+  const maintenanceCount = healthItems.filter((i) => i.status === "maintenance").length;
+  const isAllOperational = totalSubsystems > 0 && operationalCount === totalSubsystems;
   const latestCheck = healthItems.reduce<string | null>((latest, item) => {
     if (!item.last_checked_at) return latest;
     if (!latest) return item.last_checked_at;
@@ -149,6 +152,8 @@ export function SystemHealthPage() {
 
   const getStatusBadge = (status: SystemStatus) => {
     switch (status) {
+      case "unknown":
+        return <Badge variant="secondary">Not verified</Badge>;
       case "operational":
         return (
           <Badge className="bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border-emerald-500/30 gap-1">
@@ -186,7 +191,7 @@ export function SystemHealthPage() {
             System Health Monitoring
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Live telemetry and operational status across all core NimbusERP platform infrastructure.
+            Recorded platform checks and activity.
           </p>
         </div>
         <div className="flex items-center gap-2.5">
@@ -256,7 +261,9 @@ export function SystemHealthPage() {
                     ? "All Core Subsystems Operational"
                     : outageCount > 0
                     ? `System Alert: ${outageCount} Service Outage Detected`
-                    : `System Notice: ${degradedCount} Subsystem Performance Degraded`}
+                    : degradedCount > 0 ? `System Notice: ${degradedCount} Subsystem Performance Degraded`
+                    : maintenanceCount > 0 ? `${maintenanceCount} subsystems under maintenance`
+                    : `${unknownCount} subsystem statuses not verified`}
                 </span>
                 <span className={`inline-block h-2 w-2 rounded-full ${isAllOperational ? "bg-emerald-500" : outageCount > 0 ? "bg-destructive" : "bg-amber-500"}`} />
               </div>
@@ -341,7 +348,7 @@ export function SystemHealthPage() {
                   <div className="grid grid-cols-2 gap-3 py-2 px-3 rounded-lg bg-muted/40 border">
                     <div>
                       <span className="text-muted-foreground block text-[10px] uppercase">
-                        Round-Trip Latency
+                        Database Query Latency
                       </span>
                       <span className="font-mono text-sm font-semibold text-foreground">
                         {item.latency_ms !== null ? `${item.latency_ms} ms` : "N/A"}
@@ -393,11 +400,11 @@ export function SystemHealthPage() {
                     variant="ghost"
                     size="sm"
                     className="h-7 text-xs px-2.5 gap-1"
-                    disabled={isPinging}
+                    disabled={isPinging || item.component !== "database"}
                     onClick={() => pingMutation.mutate(item.component)}
                   >
                     <Zap className={`h-3 w-3 ${isPinging ? "animate-spin text-primary" : ""}`} />
-                    {isPinging ? "Probing..." : "Probe Ping"}
+                    {isPinging ? "Probing..." : item.component === "database" ? "Probe Database" : "No live probe"}
                   </Button>
                 </div>
               </CardContent>

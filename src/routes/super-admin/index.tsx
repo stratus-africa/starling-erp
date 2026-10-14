@@ -1,3 +1,4 @@
+import { percentageChange } from "@/lib/platform-records";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -51,6 +52,7 @@ import {
 // ─── Route ───────────────────────────────────────────────────────────────────
 
 export const Route = createFileRoute("/super-admin/")({
+  head: () => ({ meta: [{"title": "Platform Overview | Starling Super Admin"}, {"name": "description", "content": "Live platform records and management for Starling ERP platform administrators."}, {"property": "og:title", "content": "Platform Overview | Starling Super Admin"}, {"property": "og:description", "content": "Live platform records and management for Starling ERP platform administrators."}, {"property": "og:type", "content": "website"}, {"name": "twitter:card", "content": "summary"}] }),
   component: SuperAdminDashboard,
 });
 
@@ -175,8 +177,8 @@ function DashboardContent() {
   const revLastMonth = stats?.billing?.revenue_last_month ?? 0;
   const failedPay = stats?.billing?.failed_payments ?? 0;
 
-  const mrrDelta = revLastMonth > 0 ? ((revMonth - revLastMonth) / revLastMonth) * 100 : 0;
-  const growthDelta = newLastMonth > 0 ? ((newThisMonth - newLastMonth) / newLastMonth) * 100 : 0;
+  const mrrDelta = percentageChange(revMonth, revLastMonth);
+  const growthDelta = percentageChange(newThisMonth, newLastMonth);
 
   if (isLoading) return <DashboardSkeleton />;
 
@@ -270,7 +272,7 @@ function DashboardContent() {
           <Section title="Users" href="/super-admin/users">
             <div className="grid grid-cols-3 gap-3">
               <KpiCard label="Total users" value={totalUsers} icon={Users} />
-              <KpiCard label="Active (30d)" value={activeUsers} icon={Activity} color="emerald" />
+              <KpiCard label="Profiles updated (30d)" value={activeUsers} icon={Activity} color="emerald" />
               <KpiCard label="New this month" value={newUsersMonth} icon={ArrowUpRight} color="blue" />
             </div>
           </Section>
@@ -281,18 +283,16 @@ function DashboardContent() {
           <Section title="Billing" href="/super-admin/subscriptions">
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
               <KpiCard
-                label="MRR"
+                label="Active plan prices (USD)"
                 value={mrr}
                 icon={DollarSign}
                 format="money"
                 color="emerald"
-                delta={mrrDelta}
-                deltaLabel="vs last month"
               />
-              <KpiCard label="ARR" value={arr} icon={TrendingUp} format="money" />
-              <KpiCard label="Rev. this month" value={revMonth} icon={CreditCard} format="money" color="blue" />
+              <KpiCard label="Plan prices × 12 (USD)" value={arr} icon={TrendingUp} format="money" />
+              <KpiCard label="Plans started this month" value={revMonth} icon={CreditCard} format="money" color="blue" />
               <KpiCard
-                label="Failed payments"
+                label="Past-due subscriptions"
                 value={failedPay}
                 icon={AlertCircle}
                 color={failedPay > 0 ? "red" : "default"}
@@ -409,7 +409,7 @@ function DashboardContent() {
                   </span>
                   <span className="flex items-center gap-3 text-muted-foreground tabular-nums">
                     <span>{p.count} tenants</span>
-                    <span className="font-medium text-foreground">{fmtMoney(p.mrr)}/mo</span>
+                    <span className="font-medium text-foreground">{fmtMoney(p.mrr)} plan value</span>
                   </span>
                 </div>
               ))}
@@ -512,9 +512,9 @@ function DashboardContent() {
                           </td>
                           <td className="py-2 pr-3">
                             <span
-                              className={`inline-flex rounded-full border px-2 py-0.5 text-[10px] font-medium ${STATUS_BADGE[t.status ?? "active"] ?? STATUS_BADGE.active}`}
+                              className={`inline-flex rounded-full border px-2 py-0.5 text-[10px] font-medium ${STATUS_BADGE[t.status ?? "unknown"] ?? "text-muted-foreground"}`}
                             >
-                              {t.status ?? "active"}
+                              {t.status ?? "unknown"}
                             </span>
                           </td>
                           <td className="py-2 text-muted-foreground whitespace-nowrap">{dateFmt(t.created_at)}</td>

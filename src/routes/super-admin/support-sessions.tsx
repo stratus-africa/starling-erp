@@ -1,3 +1,4 @@
+import { readAllPlatformRecords } from "@/lib/platform-records";
 /**
  * Super Admin — Support Sessions & Tenant Impersonation
  *
@@ -74,6 +75,7 @@ import {
 } from "lucide-react";
 
 export const Route = createFileRoute("/super-admin/support-sessions")({
+  head: () => ({ meta: [{"title": "Support Sessions | Starling Super Admin"}, {"name": "description", "content": "Live support-sessions records and management for Starling ERP platform administrators."}, {"property": "og:title", "content": "Support Sessions | Starling Super Admin"}, {"property": "og:description", "content": "Live support-sessions records and management for Starling ERP platform administrators."}, {"property": "og:type", "content": "website"}, {"name": "twitter:card", "content": "summary"}] }),
   component: () => (
     <PermissionGuard permission={PLATFORM_PERMISSIONS.supportView}>
       <SupportSessionsPage />
@@ -156,20 +158,24 @@ function SupportSessionsPage() {
     data: sessionsData = [],
     isLoading,
     isRefetching,
+    isError,
+    error: sessionsError,
     refetch,
   } = useQuery<SupportSessionRow[]>({
     queryKey: ["admin_support_sessions", searchTerm, statusFilter, tenantFilter],
     queryFn: async () => {
+      return readAllPlatformRecords<SupportSessionRow>(async (offset, limit) => {
       const { data, error } = await db.rpc("admin_list_support_sessions", {
         _search: searchTerm.trim() || null,
         _status: statusFilter === "all" ? null : statusFilter,
         _tenant_id: tenantFilter === "all" ? null : tenantFilter,
-        _limit: 100,
-        _offset: 0,
+        _limit: limit,
+        _offset: offset,
       });
 
       if (error) throw new Error(error.message);
       return (data as any[]) || [];
+      });
     },
     refetchInterval: 15000, // Real-time poll every 15s for active session monitor
   });
@@ -237,7 +243,7 @@ function SupportSessionsPage() {
     startOfToday.setHours(0, 0, 0, 0);
 
     sessionsData.forEach((s) => {
-      if (s.status === "active") active++;
+      if (s.status === "active" && !s.is_revoked && new Date(s.expires_at) > new Date()) active++;
       if (s.is_revoked || s.status === "revoked") revoked++;
       if (new Date(s.started_at) >= startOfToday) today++;
     });
@@ -337,6 +343,8 @@ function SupportSessionsPage() {
         return <Badge variant="outline">{status}</Badge>;
     }
   };
+
+  if (isLoading || isError) return <div className="p-6 space-y-3"><h1 className="text-2xl font-semibold">Support Sessions</h1><p className="text-sm text-muted-foreground">{isLoading ? "Loading sessions…" : `Sessions unavailable: ${sessionsError instanceof Error ? sessionsError.message : "Unable to load records."}`}</p>{isError && <Button variant="outline" onClick={() => refetch()}>Retry</Button>}</div>;
 
   return (
     <div className="space-y-6 p-6">

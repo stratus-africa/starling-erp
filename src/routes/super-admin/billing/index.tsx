@@ -29,6 +29,7 @@ import {
 } from "lucide-react";
 
 export const Route = createFileRoute("/super-admin/billing/")({
+  head: () => ({ meta: [{"title": "Billing Overview | Starling Super Admin"}, {"name": "description", "content": "Live billing platform records and management for Starling ERP platform administrators."}, {"property": "og:title", "content": "Billing Overview | Starling Super Admin"}, {"property": "og:description", "content": "Live billing platform records and management for Starling ERP platform administrators."}, {"property": "og:type", "content": "website"}, {"name": "twitter:card", "content": "summary"}] }),
   component: () => (
     <PermissionGuard permission={PLATFORM_PERMISSIONS.billingView}>
       <BillingDashboard />
@@ -129,7 +130,7 @@ function BillingDashboard() {
         </div>
         <div className="flex items-center gap-2">
           <Link to="/super-admin/invoices">
-            <Button variant="outline" size="sm"><CreditCard className="h-4 w-4 mr-1.5" />Invoices</Button>
+            <Button variant="outline" size="sm"><CreditCard className="h-4 w-4 mr-1.5" />Subscriptions</Button>
           </Link>
           <Button variant="ghost" size="sm" onClick={() => setRefreshKey((k) => k + 1)}>
             <RefreshCw className="h-4 w-4" />
@@ -141,24 +142,24 @@ function BillingDashboard() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-1 pt-4 px-4">
-            <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wider">MRR</CardTitle>
+            <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Active plan prices (USD)</CardTitle>
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent className="px-4 pb-4">
             <div className="text-2xl font-bold">{fmtK(mrr)}</div>
-            <DeltaBadge current={revMonth} last={revLastMonth} />
-            <p className="text-xs text-muted-foreground mt-1">Monthly Recurring Revenue</p>
+            
+            <p className="text-xs text-muted-foreground mt-1">Sum of active subscriptions’ listed plan prices</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-1 pt-4 px-4">
-            <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wider">ARR</CardTitle>
+            <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Plan prices × 12 (USD)</CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent className="px-4 pb-4">
             <div className="text-2xl font-bold">{fmtK(arr)}</div>
-            <p className="text-xs text-muted-foreground mt-1">Annual Recurring Revenue</p>
+            <p className="text-xs text-muted-foreground mt-1">Annualized listed plan prices</p>
           </CardContent>
         </Card>
 
@@ -178,7 +179,7 @@ function BillingDashboard() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-1 pt-4 px-4">
-            <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Failed Payments</CardTitle>
+            <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Past-due subscriptions</CardTitle>
             <AlertTriangle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent className="px-4 pb-4">
@@ -224,7 +225,7 @@ function BillingDashboard() {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-semibold">Plan Distribution</CardTitle>
-            <CardDescription className="text-xs">Active subscriptions by plan</CardDescription>
+            <CardDescription className="text-xs">Active and trial subscriptions by plan</CardDescription>
           </CardHeader>
           <CardContent>
             {planDistribution.length > 0 ? (
@@ -266,7 +267,7 @@ function BillingDashboard() {
         {[
           { label: "Manage Plans", desc: "Configure pricing tiers", to: "/super-admin/billing/plans", icon: CreditCard },
           { label: "Subscriptions", desc: "All tenant subscriptions", to: "/super-admin/billing/subscriptions", icon: CheckCircle2 },
-          { label: "Invoices", desc: "Platform billing documents", to: "/super-admin/invoices", icon: Clock },
+          { label: "Billing records", desc: "Tenant subscriptions", to: "/super-admin/invoices", icon: Clock },
         ].map((item) => (
           <Link key={item.to} to={item.to}>
             <Card className="cursor-pointer hover:bg-accent/50 transition-colors">
