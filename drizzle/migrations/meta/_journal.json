@@ -267,6 +267,13 @@
       "when": 1791937767568,
       "tag": "0037_honest_platform_health_checks",
       "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1791938339269,
+      "tag": "0038_qualify_platform_health_measurements",
+      "breakpoints": true
     }
   ]
 }
