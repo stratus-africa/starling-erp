@@ -14,4 +14,4 @@
 
 - [x] Remove fake data and placeholders from all Super Admin pages
 - [x] Allow Super Admins to invite and manage users in any workspace
-- [ ] Audit every Super Admin page and replace invented runtime data with live data or unavailable states
+- [x] Audit every Super Admin page and replace invented runtime data with live data or unavailable states
