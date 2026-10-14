@@ -281,6 +281,13 @@
       "when": 1791938638951,
       "tag": "0039_fix_support_session_status_ambiguity",
       "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1791938856156,
+      "tag": "0040_fix_tenant_member_removal_admin_status",
+      "breakpoints": true
     }
   ]
 }
