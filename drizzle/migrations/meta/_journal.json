@@ -260,6 +260,13 @@
       "when": 1790617096167,
       "tag": "0036_allow_super_admin_workspace_roles",
       "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "7",
+      "when": 1791937767568,
+      "tag": "0037_honest_platform_health_checks",
+      "breakpoints": true
     }
   ]
 }
