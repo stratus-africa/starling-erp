@@ -23,7 +23,7 @@ export type SystemComponent =
   | "background_jobs"
   | "api";
 
-export type SystemStatus = "operational" | "degraded" | "outage" | "maintenance";
+export type SystemStatus = "operational" | "degraded" | "outage" | "maintenance" | "unknown";
 
 export interface SystemHealthItem {
   component: SystemComponent;
@@ -125,7 +125,7 @@ export interface ApiMonitoringSummary {
   totalRequests: number;
   totalErrors: number;
   overallErrorRate: number;
-  avgLatency: number;
+  avgLatency: number | null;
   status2xx: number;
   status4xx: number;
   status5xx: number;
@@ -184,7 +184,7 @@ export async function fetchErrorLogs(filters: ListErrorLogsFilter = {}): Promise
 
     if (error) {
       console.warn("RPC admin_list_error_logs fallback:", error.message);
-      let q = db.from("platform_error_logs").select("*, tenants(name)");
+      let q = db.from("platform_error_logs").select("*, tenants(name)", { count: "exact" });
       if (filters.severity && filters.severity !== "all") {
         q = q.eq("severity", filters.severity);
       }
@@ -192,16 +192,18 @@ export async function fetchErrorLogs(filters: ListErrorLogsFilter = {}): Promise
         q = q.eq("resolved", filters.resolved);
       }
       if (filters.search?.trim()) {
-        q = q.ilike("endpoint", `%${filters.search.trim()}%`);
+        q = q.or(`endpoint.ilike.%${filters.search.trim()}%,error_message.ilike.%${filters.search.trim()}%`);
       }
-      const res = await q.order("last_seen_at", { ascending: false }).limit(50);
+      if (filters.tenantId) q = q.eq("tenant_id", filters.tenantId);
+      const offset = filters.offset ?? 0;
+      const res = await q.order("last_seen_at", { ascending: false }).range(offset, offset + (filters.limit ?? 50) - 1);
       if (res.error) throw res.error;
       const rows = (res.data || []).map((r: any) => ({
         ...r,
         tenant_name: r.tenants?.name || r.tenant_name,
-        total_count: res.data.length,
+        total_count: res.count,
       }));
-      return { data: rows, total: rows.length };
+      return { data: rows, total: res.count ?? rows.length };
     }
 
     const items = (data as ErrorLogItem[]) || [];
@@ -209,7 +211,7 @@ export async function fetchErrorLogs(filters: ListErrorLogsFilter = {}): Promise
     return { data: items, total };
   } catch (err) {
     console.error("Failed to fetch error logs:", err);
-    return { data: [], total: 0 };
+    throw err;
   }
 }
 
@@ -252,21 +254,23 @@ export async function fetchBackgroundJobs(filters: ListJobsFilter = {}): Promise
 
     if (error) {
       console.warn("RPC admin_list_background_jobs fallback:", error.message);
-      let q = db.from("platform_background_jobs").select("*, tenants(name)");
+      let q = db.from("platform_background_jobs").select("*, tenants(name)", { count: "exact" });
       if (filters.status && filters.status !== "all") {
         q = q.eq("status", filters.status);
       }
       if (filters.queue && filters.queue !== "all") {
         q = q.eq("queue_name", filters.queue);
       }
-      const res = await q.order("created_at", { ascending: false }).limit(50);
+      if (filters.search?.trim()) q = q.or(`job_name.ilike.%${filters.search.trim()}%,error_message.ilike.%${filters.search.trim()}%`);
+      const offset = filters.offset ?? 0;
+      const res = await q.order("created_at", { ascending: false }).range(offset, offset + (filters.limit ?? 50) - 1);
       if (res.error) throw res.error;
       const rows = (res.data || []).map((r: any) => ({
         ...r,
         tenant_name: r.tenants?.name || r.tenant_name,
-        total_count: res.data.length,
+        total_count: res.count,
       }));
-      return { data: rows, total: rows.length };
+      return { data: rows, total: res.count ?? rows.length };
     }
 
     const items = (data as BackgroundJobItem[]) || [];
@@ -274,7 +278,7 @@ export async function fetchBackgroundJobs(filters: ListJobsFilter = {}): Promise
     return { data: items, total };
   } catch (err) {
     console.error("Failed to fetch background jobs:", err);
-    return { data: [], total: 0 };
+    throw err;
   }
 }
 
@@ -319,26 +323,8 @@ export async function fetchApiMetrics(timeframe = "today"): Promise<ApiMonitorin
       _timeframe: timeframe,
     });
 
-    let endpoints: ApiEndpointMetrics[] = [];
-
-    if (error) {
-      console.warn("RPC admin_get_api_monitoring_metrics fallback:", error.message);
-      const res = await db
-        .from("platform_api_metrics")
-        .select("*")
-        .order("request_volume", { ascending: false });
-      if (res.data) {
-        endpoints = res.data.map((r: any) => ({
-          ...r,
-          error_rate_pct:
-            r.request_volume > 0
-              ? Number(((r.failure_count / r.request_volume) * 100).toFixed(2))
-              : 0,
-        }));
-      }
-    } else {
-      endpoints = (data as ApiEndpointMetrics[]) || [];
-    }
+    if (error) throw error;
+    const endpoints = (data as ApiEndpointMetrics[]) || [];
 
     const totalRequests = endpoints.reduce((acc, ep) => acc + (ep.request_volume || 0), 0);
     const totalErrors = endpoints.reduce((acc, ep) => acc + (ep.failure_count || 0), 0);
@@ -350,11 +336,11 @@ export async function fetchApiMetrics(timeframe = "today"): Promise<ApiMonitorin
       totalRequests > 0 ? Number(((totalErrors / totalRequests) * 100).toFixed(2)) : 0;
 
     const weightedLatencySum = endpoints.reduce(
-      (acc, ep) => acc + (ep.avg_latency_ms || 0) * (ep.request_volume || 1),
+      (acc, ep) => acc + (ep.avg_latency_ms || 0) * (ep.request_volume || 0),
       0
     );
     const avgLatency =
-      totalRequests > 0 ? Number((weightedLatencySum / totalRequests).toFixed(1)) : 24.5;
+      totalRequests > 0 ? Number((weightedLatencySum / totalRequests).toFixed(1)) : null;
 
     return {
       totalRequests,
@@ -368,16 +354,7 @@ export async function fetchApiMetrics(timeframe = "today"): Promise<ApiMonitorin
     };
   } catch (err) {
     console.error("Failed to fetch API monitoring metrics:", err);
-    return {
-      totalRequests: 0,
-      totalErrors: 0,
-      overallErrorRate: 0,
-      avgLatency: 0,
-      status2xx: 0,
-      status4xx: 0,
-      status5xx: 0,
-      endpoints: [],
-    };
+    throw err;
   }
 }
 
