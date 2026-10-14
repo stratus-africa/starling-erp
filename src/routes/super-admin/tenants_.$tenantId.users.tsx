@@ -194,7 +194,7 @@ interface TenantInvitationRecord {
 export function TenantUserManagementPage() {
   const { tenantId } = useParams({ from: "/super-admin/tenants_/$tenantId/users" });
   const queryClient = useQueryClient();
-  const { canPlatform, platformRole } = usePlatformAuth();
+  const { canPlatform, adminProfile } = usePlatformAuth();
 
   const canManage = canPlatform(PLATFORM_PERMISSIONS.usersManage) || canPlatform(PLATFORM_PERMISSIONS.tenantsUpdate);
 
@@ -226,7 +226,7 @@ export function TenantUserManagementPage() {
   const [addEmail, setAddEmail] = useState("");
   const [addRole, setAddRole] = useState("viewer");
   const [addReason, setAddReason] = useState("");
-  const canAddDirectly = platformRole === "super_admin" || platformRole === "platform_super_admin";
+  const canAddDirectly = adminProfile?.platformRole === "super_admin";
 
   // ── Fetch Tenant Info ───────────────────────────────────────────────────────
   const { data: tenantData, isLoading: isTenantLoading } = useQuery({
