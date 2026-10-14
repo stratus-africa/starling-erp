@@ -105,6 +105,7 @@ import {
 // ─── Route Definition ─────────────────────────────────────────────────────────
 
 export const Route = createFileRoute("/super-admin/billing/subscriptions")({
+  head: () => ({ meta: [{"title": "Subscription Management | Starling Super Admin"}, {"name": "description", "content": "Live billing subscriptions records and management for Starling ERP platform administrators."}, {"property": "og:title", "content": "Subscription Management | Starling Super Admin"}, {"property": "og:description", "content": "Live billing subscriptions records and management for Starling ERP platform administrators."}, {"property": "og:type", "content": "website"}, {"name": "twitter:card", "content": "summary"}] }),
   component: () => (
     <PermissionGuard permission={PLATFORM_PERMISSIONS.billingView}>
       <SubscriptionManagementPage />

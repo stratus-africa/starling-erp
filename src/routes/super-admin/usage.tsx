@@ -10,6 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { AlertCircle, BarChart3, Loader2 } from "lucide-react";
 
 export const Route = createFileRoute("/super-admin/usage")({
+  head: () => ({ meta: [{"title": "Workspace Usage | Starling Super Admin"}, {"name": "description", "content": "Live usage records and management for Starling ERP platform administrators."}, {"property": "og:title", "content": "Workspace Usage | Starling Super Admin"}, {"property": "og:description", "content": "Live usage records and management for Starling ERP platform administrators."}, {"property": "og:type", "content": "website"}, {"name": "twitter:card", "content": "summary"}] }),
   component: () => (
     <PermissionGuard permission={PLATFORM_PERMISSIONS.systemView}>
       <UsageDirectory />

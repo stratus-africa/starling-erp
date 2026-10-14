@@ -106,6 +106,7 @@ import {
 // ─── Route ────────────────────────────────────────────────────────────────────
 
 export const Route = createFileRoute("/super-admin/tenants_/$id")({
+  head: () => ({ meta: [{"title": "Workspace Details | Starling Super Admin"}, {"name": "description", "content": "Live workspace details records and management for Starling ERP platform administrators."}, {"property": "og:title", "content": "Workspace Details | Starling Super Admin"}, {"property": "og:description", "content": "Live workspace details records and management for Starling ERP platform administrators."}, {"property": "og:type", "content": "website"}, {"name": "twitter:card", "content": "summary"}] }),
   component: () => (
     <PermissionGuard permission={PLATFORM_PERMISSIONS.tenantsView}>
       <TenantDetailPage />
@@ -644,7 +645,7 @@ function WorkspaceSettingsTab({
   const navigate = useNavigate();
   const [workspaceName, setWorkspaceName] = useState(tenant.name);
   const [workspaceSlug, setWorkspaceSlug] = useState(tenant.slug ?? "");
-  const [workspaceStatus, setWorkspaceStatus] = useState<string>(tenant.status ?? "active");
+  const [workspaceStatus, setWorkspaceStatus] = useState<string>(tenant.status ?? "unknown");
   const [primaryAdminId, setPrimaryAdminId] = useState(() => {
     const adminUser = users.find((user) => (user.roles ?? []).includes("tenant_admin"));
     return adminUser?.id ?? users[0]?.id ?? "";
@@ -803,19 +804,13 @@ function WorkspaceSettingsTab({
 function OverviewTab({ data, tenant }: { data: DetailPayload; tenant: Tenant }) {
   const sub = data.subscription;
   const health = data.health;
-  const totalScore =
-    (health.integrity_errors > 0 ? 30 : 0) +
-    (health.integrity_warnings > 0 ? 10 : 0) +
-    (health.unbalanced_journals > 0 ? 20 : 0) +
-    (health.unposted_invoices > 3 ? 10 : 0);
-  const healthScore = Math.max(0, 100 - totalScore);
 
   return (
     <div className="flex flex-col gap-6">
       {/* KPI strip */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <Card className="p-4">
-          <Kpi label="Total Users" value={data.usage.user_count} sub={`${data.usage.active_users_30d} active (30d)`} />
+          <Kpi label="Total Users" value={data.usage.user_count} sub={`${data.usage.active_users_30d} profiles updated (30d)`} />
         </Card>
         <Card className="p-4">
           <Kpi
@@ -836,38 +831,12 @@ function OverviewTab({ data, tenant }: { data: DetailPayload; tenant: Tenant }) 
       <Card className="p-4">
         <SectionHeader icon={ShieldCheck} title="Account Health" />
         <div className="flex items-center gap-4 mb-4">
-          <div className="relative h-16 w-16 shrink-0">
-            <svg className="h-16 w-16 -rotate-90" viewBox="0 0 64 64">
-              <circle
-                cx="32"
-                cy="32"
-                r="26"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="6"
-                className="text-muted/40"
-              />
-              <circle
-                cx="32"
-                cy="32"
-                r="26"
-                fill="none"
-                stroke={healthScore >= 80 ? "#22c55e" : healthScore >= 50 ? "#f59e0b" : "#ef4444"}
-                strokeWidth="6"
-                strokeDasharray={`${(healthScore / 100) * 163.4} 163.4`}
-              />
-            </svg>
-            <div className="absolute inset-0 flex items-center justify-center">
-              <span className="text-sm font-bold">{healthScore}</span>
-            </div>
-          </div>
           <div className="flex flex-wrap gap-2">
             <HealthBadge count={health.integrity_errors} label="integrity errors" variant="error" />
             <HealthBadge count={health.integrity_warnings} label="warnings" variant="warning" />
             <HealthBadge count={health.unbalanced_journals} label="unbalanced journals" variant="error" />
             <HealthBadge count={health.draft_journals} label="draft journals" variant="warning" />
             <HealthBadge count={health.unposted_invoices} label="unposted invoices" variant="warning" />
-            {healthScore === 100 && <HealthBadge count={0} label="All checks passing" variant="ok" />}
           </div>
         </div>
       </Card>
@@ -879,7 +848,7 @@ function OverviewTab({ data, tenant }: { data: DetailPayload; tenant: Tenant }) 
           {[
             ["ID", <span className="font-mono text-xs">{tenant.id}</span>],
             ["Slug", <span className="font-mono">{tenant.slug}</span>],
-            ["Currency", tenant.currency ?? "USD"],
+            ["Currency", tenant.currency ?? "—"],
             ["Status", <StatusBadge status={tenant.status} />],
             ["Created", dateFmt(tenant.created_at)],
             ["Updated", dateFmt(tenant.updated_at)],
@@ -1266,21 +1235,21 @@ function ActivityTab({ events }: { events: PlatformEvent[] }) {
 }
 
 function BillingTab({ sub, history }: { sub: TenantSubscription | null; history: TenantSubscription[] }) {
-  const mrr = sub?.price_usd ?? 0;
-  const arr = mrr * 12;
+  const mrr = sub?.price_usd;
+  const arr = mrr == null ? undefined : mrr * 12;
 
   return (
     <div className="flex flex-col gap-6">
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
         <Card className="p-4">
-          <div className="text-xs text-muted-foreground mb-1">MRR</div>
-          <div className="text-2xl font-bold">{fmtMoney(mrr)}</div>
-          <div className="text-xs text-muted-foreground">Monthly recurring revenue</div>
+          <div className="text-xs text-muted-foreground mb-1">Listed plan price</div>
+          <div className="text-2xl font-bold">{mrr == null ? "—" : fmtMoney(mrr)}</div>
+          <div className="text-xs text-muted-foreground">Listed plan price (USD)</div>
         </Card>
         <Card className="p-4">
-          <div className="text-xs text-muted-foreground mb-1">ARR</div>
-          <div className="text-2xl font-bold">{fmtMoney(arr)}</div>
-          <div className="text-xs text-muted-foreground">Annual recurring revenue</div>
+          <div className="text-xs text-muted-foreground mb-1">Plan price × 12</div>
+          <div className="text-2xl font-bold">{arr == null ? "—" : fmtMoney(arr)}</div>
+          <div className="text-xs text-muted-foreground">Annualized listed plan price (USD)</div>
         </Card>
         <Card className="p-4">
           <div className="text-xs text-muted-foreground mb-1">Status</div>
@@ -1544,7 +1513,7 @@ function TenantDetailPage() {
   }
 
   const { tenant } = payload;
-  const status = tenant.status ?? "active";
+  const status = tenant.status ?? "unknown";
   const isActive = ["active", "trial"].includes(status);
   const isSuspended = status === "suspended";
   const isCancelled = status === "cancelled";

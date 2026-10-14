@@ -75,6 +75,7 @@ import {
 } from "lucide-react";
 
 export const Route = createFileRoute("/super-admin/support-sessions")({
+  head: () => ({ meta: [{"title": "Support Sessions | Starling Super Admin"}, {"name": "description", "content": "Live support-sessions records and management for Starling ERP platform administrators."}, {"property": "og:title", "content": "Support Sessions | Starling Super Admin"}, {"property": "og:description", "content": "Live support-sessions records and management for Starling ERP platform administrators."}, {"property": "og:type", "content": "website"}, {"name": "twitter:card", "content": "summary"}] }),
   component: () => (
     <PermissionGuard permission={PLATFORM_PERMISSIONS.supportView}>
       <SupportSessionsPage />

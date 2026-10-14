@@ -56,6 +56,7 @@ import {
 } from "lucide-react";
 
 export const Route = createFileRoute("/super-admin/monitoring/api")({
+  head: () => ({ meta: [{"title": "API Telemetry | Starling Super Admin"}, {"name": "description", "content": "Live monitoring api records and management for Starling ERP platform administrators."}, {"property": "og:title", "content": "API Telemetry | Starling Super Admin"}, {"property": "og:description", "content": "Live monitoring api records and management for Starling ERP platform administrators."}, {"property": "og:type", "content": "website"}, {"name": "twitter:card", "content": "summary"}] }),
   component: () => (
     <PermissionGuard permission={PLATFORM_PERMISSIONS.systemView}>
       <ApiMonitoringPage />

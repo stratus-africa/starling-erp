@@ -29,6 +29,7 @@ import {
 } from "lucide-react";
 
 export const Route = createFileRoute("/super-admin/billing/")({
+  head: () => ({ meta: [{"title": "Billing Overview | Starling Super Admin"}, {"name": "description", "content": "Live billing platform records and management for Starling ERP platform administrators."}, {"property": "og:title", "content": "Billing Overview | Starling Super Admin"}, {"property": "og:description", "content": "Live billing platform records and management for Starling ERP platform administrators."}, {"property": "og:type", "content": "website"}, {"name": "twitter:card", "content": "summary"}] }),
   component: () => (
     <PermissionGuard permission={PLATFORM_PERMISSIONS.billingView}>
       <BillingDashboard />

@@ -120,6 +120,7 @@ import {
 // ─── Route Definition ─────────────────────────────────────────────────────────
 
 export const Route = createFileRoute("/super-admin/tenants_/$tenantId/users")({
+  head: () => ({ meta: [{"title": "Workspace Members | Starling Super Admin"}, {"name": "description", "content": "Live workspace members records and management for Starling ERP platform administrators."}, {"property": "og:title", "content": "Workspace Members | Starling Super Admin"}, {"property": "og:description", "content": "Live workspace members records and management for Starling ERP platform administrators."}, {"property": "og:type", "content": "website"}, {"name": "twitter:card", "content": "summary"}] }),
   component: () => (
     <PermissionGuard permission={PLATFORM_PERMISSIONS.tenantsView}>
       <TenantUserManagementPage />

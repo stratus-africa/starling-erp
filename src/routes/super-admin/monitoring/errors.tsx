@@ -67,6 +67,7 @@ import {
 } from "lucide-react";
 
 export const Route = createFileRoute("/super-admin/monitoring/errors")({
+  head: () => ({ meta: [{"title": "Application Errors | Starling Super Admin"}, {"name": "description", "content": "Live monitoring errors records and management for Starling ERP platform administrators."}, {"property": "og:title", "content": "Application Errors | Starling Super Admin"}, {"property": "og:description", "content": "Live monitoring errors records and management for Starling ERP platform administrators."}, {"property": "og:type", "content": "website"}, {"name": "twitter:card", "content": "summary"}] }),
   component: () => (
     <PermissionGuard permission={PLATFORM_PERMISSIONS.systemView}>
       <ErrorMonitoringPage />

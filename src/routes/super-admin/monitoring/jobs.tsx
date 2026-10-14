@@ -71,6 +71,7 @@ import {
 } from "lucide-react";
 
 export const Route = createFileRoute("/super-admin/monitoring/jobs")({
+  head: () => ({ meta: [{"title": "Background Jobs | Starling Super Admin"}, {"name": "description", "content": "Live monitoring jobs records and management for Starling ERP platform administrators."}, {"property": "og:title", "content": "Background Jobs | Starling Super Admin"}, {"property": "og:description", "content": "Live monitoring jobs records and management for Starling ERP platform administrators."}, {"property": "og:type", "content": "website"}, {"name": "twitter:card", "content": "summary"}] }),
   component: () => (
     <PermissionGuard permission={PLATFORM_PERMISSIONS.systemView}>
       <BackgroundJobsPage />

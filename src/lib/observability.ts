@@ -137,15 +137,7 @@ export interface ApiMonitoringSummary {
 export async function fetchSystemHealth(): Promise<SystemHealthItem[]> {
   try {
     const { data, error } = await db.rpc("admin_get_system_health");
-    if (error) {
-      console.warn("RPC admin_get_system_health unavailable, falling back to direct table select:", error.message);
-      const fallback = await db
-        .from("platform_system_health")
-        .select("*")
-        .order("status", { ascending: true });
-      if (fallback.error) throw fallback.error;
-      return (fallback.data as SystemHealthItem[]) || [];
-    }
+    if (error) throw error;
     return (data as SystemHealthItem[]) || [];
   } catch (err) {
     console.error("Failed to fetch system health:", err);

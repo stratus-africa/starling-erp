@@ -52,6 +52,7 @@ import {
 } from "lucide-react";
 
 export const Route = createFileRoute("/super-admin/monitoring/health")({
+  head: () => ({ meta: [{"title": "System Health | Starling Super Admin"}, {"name": "description", "content": "Live monitoring health records and management for Starling ERP platform administrators."}, {"property": "og:title", "content": "System Health | Starling Super Admin"}, {"property": "og:description", "content": "Live monitoring health records and management for Starling ERP platform administrators."}, {"property": "og:type", "content": "website"}, {"name": "twitter:card", "content": "summary"}] }),
   component: () => (
     <PermissionGuard permission={PLATFORM_PERMISSIONS.systemView}>
       <SystemHealthPage />

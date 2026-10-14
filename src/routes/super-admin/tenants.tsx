@@ -75,6 +75,7 @@ import {
 import { useMemo, useState, useCallback } from "react";
 
 export const Route = createFileRoute("/super-admin/tenants")({
+  head: () => ({ meta: [{"title": "Workspaces | Starling Super Admin"}, {"name": "description", "content": "Live tenants records and management for Starling ERP platform administrators."}, {"property": "og:title", "content": "Workspaces | Starling Super Admin"}, {"property": "og:description", "content": "Live tenants records and management for Starling ERP platform administrators."}, {"property": "og:type", "content": "website"}, {"name": "twitter:card", "content": "summary"}] }),
   component: () => (
     <PermissionGuard permission={PLATFORM_PERMISSIONS.tenantsView}>
       <TenantsContent />
