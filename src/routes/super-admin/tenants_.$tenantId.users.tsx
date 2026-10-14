@@ -194,7 +194,7 @@ interface TenantInvitationRecord {
 export function TenantUserManagementPage() {
   const { tenantId } = useParams({ from: "/super-admin/tenants_/$tenantId/users" });
   const queryClient = useQueryClient();
-  const { canPlatform } = usePlatformAuth();
+  const { canPlatform, adminProfile } = usePlatformAuth();
 
   const canManage = canPlatform(PLATFORM_PERMISSIONS.usersManage) || canPlatform(PLATFORM_PERMISSIONS.tenantsUpdate);
 
@@ -222,6 +222,11 @@ export function TenantUserManagementPage() {
   const [inviteRole, setInviteRole] = useState("viewer");
   const [inviteExpiry, setInviteExpiry] = useState("72");
   const [inviteLink, setInviteLink] = useState("");
+  const [isAddOpen, setIsAddOpen] = useState(false);
+  const [addEmail, setAddEmail] = useState("");
+  const [addRole, setAddRole] = useState("viewer");
+  const [addReason, setAddReason] = useState("");
+  const canAddDirectly = adminProfile?.platformRole === "super_admin";
 
   // ── Fetch Tenant Info ───────────────────────────────────────────────────────
   const { data: tenantData, isLoading: isTenantLoading } = useQuery({
@@ -406,6 +411,26 @@ export function TenantUserManagementPage() {
     onError: (err: any) => toast.error(err.message || "Failed to invite user"),
   });
 
+  const addUserMutation = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await db.rpc("admin_add_tenant_user", {
+        _tenant_id: tenantId,
+        _email: addEmail.trim(),
+        _role: addRole,
+        _reason: addReason.trim() || "Direct workspace assignment by Super Admin",
+      });
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["super-admin", "tenant-users", tenantId] });
+      queryClient.invalidateQueries({ queryKey: ["super-admin", "tenant", tenantId] });
+      setIsAddOpen(false);
+      toast.success("User added to the workspace. No invitation required.");
+    },
+    onError: (error: Error) => toast.error(error.message || "Failed to add workspace user"),
+  });
+
   const revokeInvitationMutation = useMutation({
     mutationFn: async (invitation: TenantInvitationRecord) => {
       const { error } = await db.rpc("admin_revoke_tenant_invitation", {
@@ -505,8 +530,16 @@ export function TenantUserManagementPage() {
         </div>
 
         <div className="flex items-center gap-2">
+          {canAddDirectly && (
+            <Button size="sm" className="h-9 gap-1.5 text-xs" onClick={() => {
+              setAddEmail(""); setAddRole("viewer"); setAddReason(""); setIsAddOpen(true);
+            }}>
+              <UserPlus className="h-3.5 w-3.5" />Add User
+            </Button>
+          )}
           {canManage && (
             <Button
+              variant="outline"
               size="sm"
               className="h-9 gap-1.5 text-xs"
               onClick={() => {
@@ -1245,6 +1278,41 @@ export function TenantUserManagementPage() {
               {updateRolesMutation.isPending ? "Saving Roles..." : "Save Role Changes"}
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isAddOpen} onOpenChange={(open) => { if (!addUserMutation.isPending) setIsAddOpen(open); }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Add Workspace User</DialogTitle>
+            <DialogDescription>
+              Grant an existing, email-verified account access to {tenantData?.name ?? "this workspace"} immediately, without an invitation.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={(event) => { event.preventDefault(); if (!addUserMutation.isPending) addUserMutation.mutate(); }} className="space-y-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="workspace-add-email">Account email</Label>
+              <Input id="workspace-add-email" type="email" required value={addEmail} onChange={(event) => setAddEmail(event.target.value)} disabled={addUserMutation.isPending} />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="workspace-add-role">Workspace role</Label>
+              <Select value={addRole} onValueChange={setAddRole} disabled={addUserMutation.isPending}>
+                <SelectTrigger id="workspace-add-role"><SelectValue /></SelectTrigger>
+                <SelectContent>{AVAILABLE_TENANT_ROLES.map((role) => <SelectItem key={role.id} value={role.id}>{role.label}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="workspace-add-reason">Reason (optional)</Label>
+              <Textarea id="workspace-add-reason" value={addReason} onChange={(event) => setAddReason(event.target.value)} disabled={addUserMutation.isPending} />
+            </div>
+            <p className="text-xs text-muted-foreground">Confirm the account and role before granting immediate access. Accounts assigned to another workspace must be removed there first.</p>
+            <DialogFooter>
+              <Button type="button" variant="outline" disabled={addUserMutation.isPending} onClick={() => setIsAddOpen(false)}>Cancel</Button>
+              <Button type="submit" disabled={addUserMutation.isPending || !/^\S+@\S+\.\S+$/.test(addEmail.trim())}>
+                {addUserMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UserPlus className="mr-2 h-4 w-4" />}Add to Workspace
+              </Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
 

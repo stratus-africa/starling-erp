@@ -8839,6 +8839,15 @@ export type Database = {
         }
         Returns: string
       }
+      admin_add_tenant_user: {
+        Args: {
+          _email: string
+          _reason?: string
+          _role?: Database["public"]["Enums"]["app_role"]
+          _tenant_id: string
+        }
+        Returns: Json
+      }
       admin_cancel_background_job: {
         Args: { _job_id: string }
         Returns: undefined

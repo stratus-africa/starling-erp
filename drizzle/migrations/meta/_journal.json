@@ -288,6 +288,13 @@
       "when": 1791938856156,
       "tag": "0040_fix_tenant_member_removal_admin_status",
       "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1791939044858,
+      "tag": "0041_direct_verified_workspace_user_assignment",
+      "breakpoints": true
     }
   ]
 }
