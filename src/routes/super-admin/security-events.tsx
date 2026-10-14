@@ -1,3 +1,4 @@
+import { readAllPlatformRecords } from "@/lib/platform-records";
 /**
  * Super Admin � Security Events
  * Route: /super-admin/security-events
@@ -73,33 +74,25 @@ function SecurityEventsPage() {
   const [severityFilter, setSeverityFilter] = useState("all");
   const [refreshKey, setRefreshKey] = useState(0);
 
-  const { data: stats } = useQuery({
-    queryKey: ["platform_audit_stats", refreshKey],
-    staleTime: 30_000,
-    queryFn: async () => {
-      const { data, error } = await (supabase as any).rpc("admin_get_platform_audit_stats");
-      if (error) throw error;
-      return (data?.[0] ?? data ?? {}) as Record<string, number>;
-    },
-  });
-
   const { data: events = [], isLoading, error } = useQuery({
     queryKey: ["platform_security_events", severityFilter, refreshKey],
     staleTime: 30_000,
     queryFn: async () => {
+      return readAllPlatformRecords<AuditEvent & { total_count?: number }>(async (offset, limit) => {
       const { data, error } = await (supabase as any).rpc("admin_list_platform_audit_logs", {
-        _limit: 200,
+        _limit: limit,
         _severity: severityFilter === "all" ? null : severityFilter,
         _action: null,
         _actor_email: null,
         _tenant_id: null,
         _from: null,
         _to: null,
-        _offset: 0,
+        _offset: offset,
         _search: null,
       });
       if (error) throw error;
       return (data ?? []) as AuditEvent[];
+      });
     },
   });
 
@@ -112,8 +105,8 @@ function SecurityEventsPage() {
     return matchSearch;
   });
 
-  const criticalCount = stats?.critical_events ?? events.filter((e) => e.severity === "critical").length;
-  const highCount = stats?.high_events ?? events.filter((e) => e.severity === "high").length;
+  const criticalCount = events.filter((e) => e.severity === "critical").length;
+  const highCount = events.filter((e) => e.severity === "high").length;
   const mediumCount = events.filter((e) => e.severity === "medium").length;
   const lowCount = events.filter((e) => e.severity === "low").length;
 
@@ -130,6 +123,7 @@ function SecurityEventsPage() {
         </Button>
       </div>
 
+      <p className="text-xs text-muted-foreground">Counts for the selected severity.</p>
       {/* KPI cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {(["critical", "high", "medium", "low"] as const).map((sev) => {
@@ -146,7 +140,7 @@ function SecurityEventsPage() {
                   <Icon className="h-5 w-5" />
                 </div>
                 <div>
-                  <div className="text-xl font-bold">{count}</div>
+                  <div className="text-xl font-bold">{isLoading || error ? "—" : count}</div>
                   <div className="text-xs text-muted-foreground capitalize">{sev}</div>
                 </div>
               </CardContent>

@@ -1,3 +1,4 @@
+import { readAllPlatformRecords } from "@/lib/platform-records";
 /**
  * Super Admin — Subscription Management
  *
@@ -242,6 +243,8 @@ export function SubscriptionManagementPage() {
     data: subscriptions = [],
     isLoading,
     isRefetching,
+    isError,
+    error: listError,
     refetch,
   } = useQuery<SubscriptionRecord[]>({
     queryKey: [
@@ -253,13 +256,14 @@ export function SubscriptionManagementPage() {
       planFilter,
     ],
     queryFn: async () => {
+      return readAllPlatformRecords<SubscriptionRecord>(async (offset, limit) => {
       const { data, error } = await db.rpc("admin_list_tenant_subscriptions", {
         _search: searchTerm.trim() || null,
         _status: statusFilter === "all" ? null : statusFilter,
         _plan_id: planFilter === "all" ? null : planFilter,
         _payment_status: paymentFilter === "all" ? null : paymentFilter,
-        _limit: 100,
-        _offset: 0,
+        _limit: limit,
+        _offset: offset,
       });
 
       if (error) {
@@ -267,6 +271,7 @@ export function SubscriptionManagementPage() {
         throw error;
       }
       return (data as SubscriptionRecord[]) ?? [];
+      });
     },
   });
 
@@ -456,7 +461,7 @@ export function SubscriptionManagementPage() {
     ).length;
     const totalMmr = subscriptions
       .filter((s) => s.status === "active")
-      .reduce((acc, s) => acc + (Number(s.amount) || 0), 0);
+      .reduce((acc, s) => acc + (s.currency === "USD" ? (Number(s.amount) || 0) / (s.billing_interval === "yearly" || s.billing_interval === "annual" ? 12 : 1) : 0), 0);
 
     return { total, active, trialing, pastDue, pausedOrCancelled, totalMmr };
   }, [subscriptions]);
@@ -502,6 +507,8 @@ export function SubscriptionManagementPage() {
     setAuditReason("");
     setIsCancelOpen(true);
   };
+
+  if (isLoading || isError) return <div className="p-6 space-y-3"><h1 className="text-2xl font-semibold">Subscription Management</h1><p className="text-sm text-muted-foreground">{isLoading ? "Loading subscriptions…" : `Subscriptions unavailable: ${listError instanceof Error ? listError.message : "Unable to load records."}`}</p>{isError && <Button variant="outline" onClick={() => refetch()}>Retry</Button>}</div>;
 
   return (
     <div className="flex flex-col gap-6 p-6 w-full">
@@ -585,7 +592,7 @@ export function SubscriptionManagementPage() {
             {stats.active}
           </div>
           <p className="text-[11px] text-muted-foreground mt-0.5">
-            {fmtMoney(stats.totalMmr)} / mo MRR
+            {subscriptions.some((s) => s.status === "active" && s.currency !== "USD") ? "Multiple currencies — see subscription amounts" : `${fmtMoney(stats.totalMmr)} / mo MRR`}
           </p>
         </Card>
 

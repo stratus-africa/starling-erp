@@ -1,3 +1,4 @@
+import { readAllPlatformRecords } from "@/lib/platform-records";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -20,11 +21,13 @@ function PlatformUsersDirectory() {
   const { data = [], isLoading, isError, refetch } = useQuery({
     queryKey: ["super-admin", "users", "tenants"],
     queryFn: async () => {
+      return readAllPlatformRecords<any>(async (offset, limit) => {
       const { data, error } = await (supabase as any).rpc("list_platform_tenants", {
-        _search: null, _status: null, _plan_code: null, _limit: 500, _offset: 0,
+        _search: null, _status: null, _plan_code: null, _limit: limit, _offset: offset,
       });
       if (error) throw error;
       return (data ?? []) as Array<{ id: string; name: string; user_count: number }>;
+      });
     },
   });
 
