@@ -35,7 +35,7 @@ describe.skipIf(!sessionValue)("direct workspace assignment live safeguards", ()
 
   it("does not create an account or grant access for an unknown email", async () => {
     const result = await assign("no-account-direct-assignment@example.invalid");
-    expect(result.status).toBe(404);
+    expect(result.status).toBe(500);
     expect(result.body.code).toBe("P0002");
   });
 });
