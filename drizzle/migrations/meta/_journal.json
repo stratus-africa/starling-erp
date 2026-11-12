@@ -295,6 +295,13 @@
       "when": 1791939044858,
       "tag": "0041_direct_verified_workspace_user_assignment",
       "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "7",
+      "when": 1794476462300,
+      "tag": "0042_add_warehouse_contact_location_fields",
+      "breakpoints": true
     }
   ]
 }
