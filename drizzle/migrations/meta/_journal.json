@@ -302,6 +302,13 @@
       "when": 1794476462300,
       "tag": "0042_add_warehouse_contact_location_fields",
       "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "7",
+      "when": 1794476778539,
+      "tag": "0043_restrict_selected_permission_and_configuration_reads",
+      "breakpoints": true
     }
   ]
 }
