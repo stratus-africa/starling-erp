@@ -8581,39 +8581,51 @@ export type Database = {
       }
       warehouses: {
         Row: {
+          address: string | null
           capacity_sqm: number | null
+          city: string | null
           code: string | null
+          country: string | null
           created_at: string
           created_by: string | null
           deleted_at: string | null
           id: string
           location: string | null
+          manager_name: string | null
           name: string
           status: string | null
           tenant_id: string
           updated_at: string
         }
         Insert: {
+          address?: string | null
           capacity_sqm?: number | null
+          city?: string | null
           code?: string | null
+          country?: string | null
           created_at?: string
           created_by?: string | null
           deleted_at?: string | null
           id?: string
           location?: string | null
+          manager_name?: string | null
           name: string
           status?: string | null
           tenant_id: string
           updated_at?: string
         }
         Update: {
+          address?: string | null
           capacity_sqm?: number | null
+          city?: string | null
           code?: string | null
+          country?: string | null
           created_at?: string
           created_by?: string | null
           deleted_at?: string | null
           id?: string
           location?: string | null
+          manager_name?: string | null
           name?: string
           status?: string | null
           tenant_id?: string
